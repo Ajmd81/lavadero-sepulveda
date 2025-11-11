@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Lavadero Sepúlveda - Córdoba - Centro de lavado de coches a mano</title>
+    <meta name="description" content="Lavadero de coches a mano en Córdoba. Realizamos limpieza interior, exterior y limpieza de tapicería. Limpiamos todo tipo de vehículos tanto particulares como de empresa.">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/cookie-banner.css}">
+</head>
+<body>
+<header>
+    <div class="container">
+        <div class="logo-container">
+            <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
+            <div class="logo-text">Lavadero Sepúlveda</div>
+        </div>
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fa fa-bars"></i>
+        </button>
+        <nav id="mainNav">
+            <a href="/" class="btn btn-white">Inicio</a>
+            <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+            <a href="/horario" class="btn btn-white">Horario</a>
+            <a href="/galeria" class="btn btn-white">Galería</a>
+            <a href="/productos" class="btn btn-white">Productos</a>
+            <a href="/tarifas" class="btn btn-white">Tarifas</a>
+        </nav>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="container">
+        <h1>Reserva tu cita para lavado de vehículo</h1>
+        <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+    </div>
+</section>
+
+<section class="container" id="servicios">
+    <br>
+    <h2>Quiénes Somos</h2>
+    <div class="about-us">
+        <p>Somos una empresa cordobesa con más de 25 años dedicados al lavado manual y al mantenimiento integral de vehículos, utilizando las últimas tecnologías.</p>
+        <p>Desde Lavadero Sepúlveda sabemos la importancia que tiene su vehículo, por eso puede confiar plenamente que se encontrará en las mejores manos hasta su entrega.</p>
+        <p>Con nuestro sistema de lavado iónico, no necesitamos utilizar ningún producto; así ayudamos a proteger el medio ambiente y además no dañar ningún componente tanto interior como exterior de su vehículo, prolongando la conservación y aspecto original de su vehículo.</p>
+    </div>
+    <br>
+    <h2>Nuestros Servicios</h2>
+    <br>
+
+    <div class="card">
+        <h3 class="card-title">Lavado Completo</h3>
+        <p>Incluye lavado exterior e interior completo, aspirado, limpieza de salpicadero, marcos y cristales.</p>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">Lavado Interior</h3>
+        <p>Aspirado, limpieza de salpicadero, marcos y cristales interiores.</p>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">Lavado Exterior</h3>
+        <p>Limpieza de carrocería, llantas, marcos y cristales exteriores.</p>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">Tapicería</h3>
+        <p>Limpieza especializada de la tapicería de tu vehículo para eliminar manchas y malos olores.</p>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">Encerado</h3>
+        <p>Aplicación de cera de alta calidad para proteger la pintura y darle brillo a tu vehículo.</p>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">Tratamiento de Ozono</h3>
+        <p>Desinfección completa del interior del vehículo eliminando bacterias, virus y malos olores.</p>
+    </div>
+
+    <h2>Dónde Encontrarnos</h2>
+    <br>
+    <div class="location">
+        <p>Puede encontrarnos en C/Ingeniero Ruiz de Azua s/n Local 8, <br>Esquina con C/Sor Angela de la Cruz, <br>Frente al campo de Fútbol del Deportivo Córdoba y el Parque de la Asomadillas.</p>
+        <div class="map-container">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3149.6890072278087!2d-4.7767345234971525!3d37.90208297188561!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDU0JzA3LjYiTiA0wrA0NicyNi45Ilc!5e0!3m2!1ses!2ses!4v1619144531373!5m2!1ses!2ses" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <div class="contact-info">
+            <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
+            <p>Teléfono: 658 527 186</p>
+            <p>Email: contacto@lavaderosepulveda.es</p>
+        </div>
+        <div class="social-links">
+            <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank"><i class="fab fa-facebook-f"></i> Facebook</a>
+            <a href="https://www.twitter.com/LavaSepulveda" target="_blank"><i class="fab fa-twitter"></i> Twitter</a>
+            <a href="http://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i> Instagram</a>
+        </div>
+        <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
+        <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuToggle = document.getElementById('menuToggle');
+        const mainNav = document.getElementById('mainNav');
+
+        if (menuToggle && mainNav) {
+            // Inicialmente, ocultar menú en móviles
+            if (window.innerWidth <= 768) {
+                mainNav.style.display = 'none';
+            }
+
+            menuToggle.addEventListener('click', function() {
+                if (mainNav.style.display === 'none' || mainNav.style.display === '') {
+                    mainNav.style.display = 'flex';
+                    mainNav.style.flexDirection = 'column';
+                } else {
+                    mainNav.style.display = 'none';
+                }
+            });
+
+            // Ajustar menú en cambio de tamaño de ventana
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    mainNav.style.display = 'flex';
+                    mainNav.style.flexDirection = 'row';
+                } else {
+                    mainNav.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+<div th:replace="fragments/cookie-banner :: cookie-banner"></div>
+<script th:src="@{/js/cookie-banner.js}"></script>
+</body>
+</html>

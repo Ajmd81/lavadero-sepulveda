@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!-- Fragment del banner de cookies -->
+<div th:fragment="cookie-banner">
+    <!-- Overlay para bloquear interacción -->
+    <div class="page-overlay" id="pageOverlay"></div>
+
+    <!-- Banner de Cookies -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <h3>🍪 Política de Cookies y Privacidad</h3>
+                <p>
+                    Utilizamos cookies para mejorar tu experiencia en nuestro sitio web.
+                    Al continuar navegando, aceptas nuestra
+                    <a th:href="@{/policy}" target="_blank">Política de Privacidad</a>
+                    y el uso de cookies.
+                </p>
+            </div>
+            <div class="cookie-buttons">
+                <button class="btn-accept" onclick="acceptCookies()">
+                    ✓ Aceptar Todo
+                </button>
+                <button class="btn-decline" onclick="declineCookies()">
+                    ✗ Rechazar
+                </button>
+                <button class="btn-more-info" onclick="showMoreInfo()">
+                    📋 Más Info
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

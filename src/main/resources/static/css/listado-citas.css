@@ -1,0 +1,66 @@
+/* Estilos generales para el cuerpo de la página */
+body {
+    padding: 20px;
+}
+
+/* Estilos para el título principal */
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #0099ff;
+    font-size: 2rem;
+}
+
+/* Contenedor responsive para tablas */
+.table-responsive {
+    margin-top: 20px;
+}
+
+/* Estilos para acciones en las tablas */
+.actions {
+    white-space: nowrap;
+}
+
+/* Grupo de fechas */
+.date-group {
+    margin-bottom: 30px;
+}
+
+/* Encabezado del grupo de fechas */
+.date-group h3 {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 20px;
+}/* Estilos generales para el cuerpo de la página */
+body {
+    padding: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Contenedor responsive para tablas */
+.table-responsive {
+    margin-top: 20px;
+}
+
+/* Estilos para acciones en las tablas */
+.actions {
+    white-space: nowrap;
+}
+
+/* Grupo de fechas */
+.date-group {
+    margin-bottom: 30px;
+}
+
+/* Encabezado del grupo de fechas */
+.date-group h3 {
+    background-color: #f5f7fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 20px;
+    color: #0099ff;
+    border-left: 4px solid #0099ff;
+}
