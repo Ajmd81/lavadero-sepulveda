@@ -1,0 +1,640 @@
+:root {
+    --color-primary: #0099ff;
+    --color-primary-dark: #0d47a1;
+    --color-primary-light: #64b5f6;
+    --color-background: #f5f7fa;
+    --color-text: #333;
+    --color-text-light: #666;
+    --color-success: #28a745;
+    --color-error: #dc3545;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Header y navegación */
+header {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 15px 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Estilos para el header con logotipo */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 20%;
+    object-fit: cover;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 5px 0;
+}
+
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: var(--color-primary);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s, transform 0.2s;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.btn:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-white {
+    background-color: white;
+    color: var(--color-primary);
+}
+
+.btn-white:hover {
+    background-color: #f0f0f0;
+}
+
+/* Hamburger menu para móviles */
+.menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* Hero section */
+.hero {
+    background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
+    color: white;
+    padding: 20px 0; /* Reducido de 40px a 20px */
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 1.8rem; /* Reducido de 2.2rem */
+    margin-bottom: 10px; /* Reducido de 15px */
+}
+
+.hero p {
+    font-size: 1rem; /* Reducido de 1.1rem */
+    max-width: 700px;
+    margin: 0 auto 15px; /* Reducido de 25px a 15px */
+}
+
+/* Cards y contenido */
+.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    color: var(--color-primary);
+    font-size: 1.3rem;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--color-primary-light);
+    padding-bottom: 8px;
+}
+
+/* Formularios */
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+/* Alertas */
+.alert {
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.error-message {
+    color: var(--color-error);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.field-error {
+    border-color: var(--color-error) !important;
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+/* Footer */
+footer {
+    background-color: var(--color-primary-dark);
+    color: white;
+    text-align: center;
+    padding: 25px 0;
+    margin-top: 40px;
+}
+
+.contact-info {
+    margin-bottom: 15px;
+}
+
+.social-links {
+    margin-bottom: 15px;
+}
+
+.social-links a {
+    color: white;
+    margin: 0 10px;
+    text-decoration: none;
+}
+
+.social-links a:hover {
+    text-decoration: underline;
+}
+
+/* Detalles de confirmación */
+.confirmation-details {
+    background-color: #e3f2fd;
+    border-left: 5px solid var(--color-primary);
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.confirmation-details p {
+    margin: 5px 0;
+}
+
+/* Secciones adicionales */
+.about-us, .location {
+    margin-top: 30px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.map-container {
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    padding-bottom: 56.25%; /* Proporción 16:9 */
+    height: 0;
+}
+
+.map-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* Selector de tipo de vehículo */
+.vehicle-btn {
+    padding: 8px 12px;
+    margin: 0 5px 10px;
+    background-color: white;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.vehicle-btn:hover,
+.vehicle-btn.active {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+/* Notas importantes */
+.important-note {
+    background-color: #fff3cd;
+    border-left: 5px solid #ffc107;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.important-note h3 {
+    color: #856404;
+    margin-top: 0;
+}
+
+.important-note ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+/* CTA Sección */
+.cta-section {
+    text-align: center;
+    margin: 30px 0;
+    padding: 25px 15px;
+    background-color: #e3f2fd;
+    border-radius: 8px;
+}
+
+/* Servicios Adicionales */
+.additional-services {
+    grid-column: 1/-1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+}
+
+.additional-services-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    width: 100%;
+}
+
+/* Estilos para información de categoría de vehículo */
+.vehicle-category-info {
+    background: #e8f4fd;
+    border: 1px solid #b8daff;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 14px;
+    color: #155724;
+    display: none;
+    position: relative;
+    z-index: 1;
+}
+
+.vehicle-category-info.show {
+    display: block;
+}
+
+.loading-services {
+    color: #6c757d;
+    font-style: italic;
+    display: none;
+    margin: 10px 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Estilos para el toggle de turismo - VERSIÓN SIMPLE Y CORREGIDA */
+#turismoToggle {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 20px 0;
+    color: #856404;
+    display: none;
+    position: relative;
+    z-index: 2;
+    clear: both;
+}
+
+#turismoToggle > div:first-child {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+#turismoToggle > div:last-child {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#turismoToggle label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Cambio importante: flex-start en lugar de center */
+    margin: 0;
+    cursor: pointer;
+    padding: 12px 15px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid #ffc107; /* Agregar borde visible */
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    /* DIMENSIONES FIJAS */
+    width: 200px;
+    height: 50px;
+    min-width: 200px;
+    max-width: 200px;
+    min-height: 50px;
+    max-height: 50px;
+    box-sizing: border-box;
+    /* Evitar desbordamiento */
+    overflow: hidden;
+    position: relative;
+}
+
+#turismoToggle label:hover {
+    background-color: rgba(255, 193, 7, 0.3);
+    border-color: #ffc107;
+}
+
+#turismoToggle input[type="radio"] {
+    margin: 0 8px 0 0; /* Solo margen derecho */
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 16px; /* Tamaño fijo */
+    height: 16px;
+    position: relative; /* Asegurar posición relativa */
+    z-index: 1;
+}
+
+#turismoToggle label span {
+    flex: 1;
+    text-align: left; /* Alinear texto a la izquierda */
+    line-height: 1.2;
+    font-size: 14px;
+    white-space: nowrap; /* Evitar salto de línea */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Separación del elemento anterior */
+.vehicle-category-info + #turismoToggle,
+#vehicleCategoryInfo + #turismoToggle {
+    margin-top: 25px;
+}
+
+@media (max-width: 576px) {
+    .additional-services-grid {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+}
+
+/* Media queries para responsive */
+@media (max-width: 992px) {
+    .hero h1 {
+        font-size: 1.8rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+    }
+
+    .comparison-container {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .logo-container {
+        margin-bottom: 10px;
+        justify-content: center;
+    }
+
+    .logo-img {
+        width: 32px;
+        height: 32px;
+    }
+
+    .logo-text {
+        font-size: 1.3rem;
+    }
+
+    nav {
+        justify-content: center;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .form-row .form-group {
+        width: 100%;
+    }
+
+    .hero {
+        padding: 15px 0; /* Aún más compacto en móviles */
+    }
+
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .hero p {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+
+    .price-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .productos-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .menu-toggle {
+        display: block;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+    }
+
+    nav {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    /* Responsive para el toggle de turismo */
+    #turismoToggle > div:last-child {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    #turismoToggle label {
+        width: 100%;
+        max-width: 250px;
+        min-width: 250px;
+        height: 45px;
+        min-height: 45px;
+        max-height: 45px;
+    }
+}
+
+@media (max-width: 576px) {
+    .productos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .card, .section, .schedule-container, .policy-container {
+        padding: 15px;
+    }
+
+    .comparison-pair {
+        max-width: 100%;
+    }
+
+    .producto-img {
+        width: 120px;
+        height: 120px;
+    }
+
+    .section-title, .card-title, .policy-title {
+        font-size: 1.1rem;
+    }
+
+    /* Responsive para móviles pequeños */
+    #turismoToggle {
+        padding: 12px;
+        margin: 20px 0;
+    }
+
+    #turismoToggle label {
+        width: 100%;
+        max-width: 220px;
+        min-width: 220px;
+        height: 40px;
+        min-height: 40px;
+        max-height: 40px;
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    #turismoToggle label {
+        width: 100%;
+        max-width: 200px;
+        min-width: 200px;
+        height: 38px;
+        min-height: 38px;
+        max-height: 38px;
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Impresión */
+@media print {
+    header, footer, .hero, .btn {
+        display: none;
+    }
+
+    body {
+        background-color: white;
+        color: black;
+    }
+
+    .card, .section, .policy-container {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
