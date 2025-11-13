@@ -1,14 +1,10 @@
 # Proyecto Integrado Lavadero Sepúlveda
-## Descripción del proyecto
-
-**Descripción del Proyecto**  
-El **Sistema Integral de Reservas – Lavadero Sepúlveda** es una plataforma multiplataforma que facilita la gestión de citas y la administración de los servicios en un lavadero de vehículos. Consiste en una aplicación web y una versión móvil que permiten a los usuarios realizar reservas de servicios de manera eficiente, mientras que los administradores gestionan las citas y supervisan el rendimiento del lavadero.
 
 ---
 
 ## 1. **Descripción del Proyecto**
 
-Este sistema se ha desarrollado con el objetivo de mejorar la eficiencia operativa y la experiencia del cliente mediante la digitalización de las reservas. El sistema ofrece funcionalidades como:
+El **Sistema Integral de Reservas – Lavadero Sepúlveda** es una plataforma multiplataforma que facilita la gestión de citas y la administración de los servicios en un lavadero de vehículos. Consiste en una aplicación web y una versión móvil que permiten a los usuarios realizar reservas de servicios de manera eficiente, mientras que los administradores gestionan las citas y supervisan el rendimiento del lavadero. El sistema ofrece funcionalidades como:
 
 - **Reservas online** 24/7.
 - **Gestión de citas** para clientes y servicios realizados.
