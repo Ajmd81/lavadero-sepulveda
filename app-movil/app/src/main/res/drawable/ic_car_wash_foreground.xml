@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+        android:translateX="27"
+        android:translateY="27">
+        <!-- Contorno del coche -->
+        <path
+            android:fillColor="#3F51B5"
+            android:pathData="M90,45c-0.7,-3.4 -3,-6.3 -6.1,-7.5L71.6,32c-3.2,-1.2 -6.7,-1.2 -9.9,0l-12.3,5.5c-3.1,1.2 -5.4,4.1 -6.1,7.5L42,52h48L90,45zM48,60c-3.3,0 -6,2.7 -6,6s2.7,6 6,6s6,-2.7 6,-6S51.3,60 48,60zM84,60c-3.3,0 -6,2.7 -6,6s2.7,6 6,6s6,-2.7 6,-6S87.3,60 84,60z"/>
+
+        <!-- Burbujas de jabón -->
+        <path
+            android:fillColor="#2196F3"
+            android:pathData="M35,30m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"/>
+        <path
+            android:fillColor="#2196F3"
+            android:pathData="M95,35m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"/>
+        <path
+            android:fillColor="#2196F3"
+            android:pathData="M65,25m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+    </group>
+</vector>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">CitasLavadero</string>
+    <string name="error_campos_vacios">Por favor complete todos los campos</string>
+    <string name="cita_guardada_exito">Cita guardada con éxito</string>
+</resources>

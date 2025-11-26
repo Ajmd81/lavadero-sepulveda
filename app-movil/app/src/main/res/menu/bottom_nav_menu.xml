@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id= "@+id/fragmentoNuevaCita"
+        android:icon="@drawable/ic_add"
+        android:title="Nueva Cita" />
+    <item
+        android:id="@+id/fragmentoListaCitas"
+        android:icon="@drawable/ic_list"
+        android:title="Lista Citas" />
+</menu>
