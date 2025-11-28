@@ -20,8 +20,36 @@ El **Sistema Integral de Reservas – Lavadero Sepúlveda** es una plataforma mu
 **DevOps:** Docker, Maven, Git
 
 ---
+## 2. 🎨 Detalles de la Interfaz de Usuario
 
-## 2. **Información sobre Despliegue**
+### Sistema de Clasificación de Vehículos
+El formulario de reservas incluye un sistema inteligente de clasificación:
+
+// Clasificación automática basada en modelo de vehículo
+- Turismo → Toggle Sedán/Ranchera
+- Monovolumen → Servicios específicos
+- Todoterreno → Categorías Grande/Pequeño
+- Furgonetas → Clasificación por tamaño
+
+### Componentes UI Personalizados
+- Toggle de vehículos: Botones con dimensiones fijas (200x50px)
+- Estados visuales: Normal, Hover, Seleccionado
+- Responsive design: Adaptación automática en móviles
+- Feedback de carga: Indicadores de estado durante clasificación
+- Validación en tiempo real: Verificación de disponibilidad instantánea
+
+### Paleta de Colores
+`color-primary: #0099ff;`
+
+`color-warning: #ffc107;`
+
+`color-warning-light: #fff3cd;`
+
+`color-warning-text: #856404;`
+
+---
+
+## 3. **Información sobre Despliegue**
 
 ### **Requisitos Previos**
 
