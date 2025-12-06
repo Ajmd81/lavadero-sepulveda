@@ -1,0 +1,20 @@
+.vehicle-category-info {
+    background: #e8f4fd;
+    border: 1px solid #b8daff;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 14px;
+    color: #155724;
+    display: none;
+}
+
+.vehicle-category-info.show {
+    display: block;
+}
+
+.loading-services {
+    color: #6c757d;
+    font-style: italic;
+    display: none;
+}

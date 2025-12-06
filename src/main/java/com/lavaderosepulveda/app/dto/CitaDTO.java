@@ -1,60 +1,78 @@
 package com.lavaderosepulveda.app.dto;
 
+import com.lavaderosepulveda.app.model.TipoLavado;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 /**
- * DTO para recibir los datos de citas desde la aplicación Android
+ * DTO completo para transferencia de datos de Cita
+ * Incluye todos los campos necesarios para el sistema de pagos y observaciones
  */
 public class CitaDTO {
-    private Long id;
-    private String fecha;
-    private String hora;
-    private String nombre;
-    private String email;
-    private String telefono;
-    private String modeloVehiculo;
-    private String tipoLavado;
-    private String estado;
 
-    // Constructor vacío requerido por Jackson
+    private Long id;
+
+    @NotBlank(message = "El nombre es obligatorio")
+    private String nombre;
+
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "Formato de email no válido")
+    private String email;
+
+    @NotBlank(message = "El teléfono es obligatorio")
+    private String telefono;
+
+    @NotBlank(message = "El modelo del vehículo es obligatorio")
+    private String modeloVehiculo;
+
+    @NotNull(message = "El tipo de lavado es obligatorio")
+    private TipoLavado tipoLavado;
+
+    @NotNull(message = "La fecha es obligatoria")
+    private LocalDate fecha;
+
+    @NotNull(message = "La hora es obligatoria")
+    private LocalTime hora;
+
+    // Campos adicionales para gestión de estado y pagos
+    private String estado = "PENDIENTE";
+
+    private Boolean pagoAdelantado = false;
+
+    private String referenciaPago;
+
+    private String numeroBizum;
+
+    private String observaciones;
+
+    // Constructores
     public CitaDTO() {
     }
 
-    // Constructor con todos los campos
-    public CitaDTO(Long id, String fecha, String hora, String nombre, String email,
-                   String telefono, String modeloVehiculo, String tipoLavado, String estado) {
-        this.id = id;
-        this.fecha = fecha;
-        this.hora = hora;
+    public CitaDTO(String nombre, String email, String telefono, String modeloVehiculo,
+                   TipoLavado tipoLavado, LocalDate fecha, LocalTime hora) {
         this.nombre = nombre;
         this.email = email;
         this.telefono = telefono;
         this.modeloVehiculo = modeloVehiculo;
         this.tipoLavado = tipoLavado;
-        this.estado = estado;
+        this.fecha = fecha;
+        this.hora = hora;
+        this.estado = "PENDIENTE";
+        this.pagoAdelantado = false;
     }
 
-    // Getters y setters
+    // Getters y Setters
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(String fecha) {
-        this.fecha = fecha;
-    }
-
-    public String getHora() {
-        return hora;
-    }
-
-    public void setHora(String hora) {
-        this.hora = hora;
     }
 
     public String getNombre() {
@@ -89,12 +107,28 @@ public class CitaDTO {
         this.modeloVehiculo = modeloVehiculo;
     }
 
-    public String getTipoLavado() {
+    public TipoLavado getTipoLavado() {
         return tipoLavado;
     }
 
-    public void setTipoLavado(String tipoLavado) {
+    public void setTipoLavado(TipoLavado tipoLavado) {
         this.tipoLavado = tipoLavado;
+    }
+
+    public LocalDate getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDate fecha) {
+        this.fecha = fecha;
+    }
+
+    public LocalTime getHora() {
+        return hora;
+    }
+
+    public void setHora(LocalTime hora) {
+        this.hora = hora;
     }
 
     public String getEstado() {
@@ -105,18 +139,54 @@ public class CitaDTO {
         this.estado = estado;
     }
 
+    public Boolean getPagoAdelantado() {
+        return pagoAdelantado;
+    }
+
+    public void setPagoAdelantado(Boolean pagoAdelantado) {
+        this.pagoAdelantado = pagoAdelantado;
+    }
+
+    public String getReferenciaPago() {
+        return referenciaPago;
+    }
+
+    public void setReferenciaPago(String referenciaPago) {
+        this.referenciaPago = referenciaPago;
+    }
+
+    public String getNumeroBizum() {
+        return numeroBizum;
+    }
+
+    public void setNumeroBizum(String numeroBizum) {
+        this.numeroBizum = numeroBizum;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
     @Override
     public String toString() {
         return "CitaDTO{" +
                 "id=" + id +
-                ", fecha='" + fecha + '\'' +
-                ", hora='" + hora + '\'' +
                 ", nombre='" + nombre + '\'' +
                 ", email='" + email + '\'' +
                 ", telefono='" + telefono + '\'' +
                 ", modeloVehiculo='" + modeloVehiculo + '\'' +
-                ", tipoLavado='" + tipoLavado + '\'' +
+                ", tipoLavado=" + tipoLavado +
+                ", fecha=" + fecha +
+                ", hora=" + hora +
                 ", estado='" + estado + '\'' +
+                ", pagoAdelantado=" + pagoAdelantado +
+                ", referenciaPago='" + referenciaPago + '\'' +
+                ", numeroBizum='" + numeroBizum + '\'' +
+                ", observaciones='" + observaciones + '\'' +
                 '}';
     }
 }

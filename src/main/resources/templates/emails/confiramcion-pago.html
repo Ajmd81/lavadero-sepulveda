@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Confirmación de Pago</title>
+    <link rel="stylesheet" href="../static/css/email-styles.css" th:href="@{css/email-styles.css}" />
+    <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+</head>
+<body>
+<div class="container">
+    <div class="header header-green">
+        <h1>Lavadero Sepúlveda</h1>
+    </div>
+
+    <div class="content">
+        <h2 class="h2-success">¡Confirmación de Pago Recibido!</h2>
+
+        <p>Estimado/a <strong th:text="${cita.nombre}">Cliente</strong>,</p>
+
+        <p>Gracias por realizar el pago anticipado de su cita. Hemos recibido su pago correctamente y su reserva ha sido <strong>confirmada</strong>.</p>
+
+        <div class="payment-info">
+            <p><strong>Referencia de pago:</strong> <span th:text="${referenciaPago}">BIZ12345</span></p>
+            <p><strong>Importe pagado:</strong> <span class="price price-success" th:text="${importePagado + '€'}">11.50€</span> (50% del total)</p>
+            <p><strong>Estado de la cita:</strong> <span class="text-success">CONFIRMADA</span></p>
+        </div>
+
+        <div class="details details-success">
+            <p><strong>Número de reserva:</strong> <span th:text="${cita.id}">12345</span></p>
+            <p><strong>Fecha:</strong> <span th:text="${fechaFormateada}">01/01/2025</span></p>
+            <p><strong>Hora:</strong> <span th:text="${horaFormateada}">10:00</span></p>
+            <p><strong>Tipo de servicio:</strong> <span th:text="${cita.tipoLavado.descripcion}">Lavado Completo</span></p>
+            <p><strong>Precio total:</strong> <span class="price price-success" th:text="${cita.tipoLavado.precio + '€'}">23€</span></p>
+            <p><strong>Vehículo:</strong> <span th:text="${cita.modeloVehiculo}">Toyota Corolla 2020</span></p>
+        </div>
+
+        <h3>Recordatorio importante:</h3>
+        <ul>
+            <li>El resto del importe se pagará al finalizar el servicio.</li>
+            <li>Le recomendamos llegar 10 minutos antes de la hora programada.</li>
+            <li>Nuestra dirección es: C/Ingeniero Ruiz de Azua s/n Local 8, esquina con C/Sor Angela de la Cruz, frente al campo de Fútbol del Deportivo Córdoba.</li>
+            <li>Si necesita cancelar o modificar su cita, por favor, comuníquese con nosotros con al menos 24 horas de anticipación para evitar la pérdida del importe pagado.</li>
+        </ul>
+
+        <p>Si tiene alguna pregunta, no dude en contactarnos al <strong>658 527 186</strong> o respondiendo a este email.</p>
+
+        <p>¡Esperamos verle pronto!</p>
+
+        <p>Atentamente,<br>El equipo de Lavadero Sepúlveda</p>
+
+        <a href="https://www.lavaderosepulveda.es/contacto" class="button">Contactar</a>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Lavadero Sepúlveda. Todos los derechos reservados.</p>
+        <p>C/Ingeniero Ruiz de Azua s/n Local 8 - Córdoba</p>
+    </div>
+</div>
+</body>
+</html>

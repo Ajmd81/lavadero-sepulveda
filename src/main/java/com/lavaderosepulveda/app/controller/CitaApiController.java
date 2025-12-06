@@ -1,10 +1,15 @@
 package com.lavaderosepulveda.app.controller;
 
 import com.lavaderosepulveda.app.dto.CitaDTO;
+import com.lavaderosepulveda.app.mapper.CitaMapper;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.TipoLavado;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
+import com.lavaderosepulveda.app.service.HorarioService;
+import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,224 +17,223 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+/**
+ * API REST refactorizada para gestión de citas
+ * Usa utilities centralizadas y manejo de errores globalizado
+ */
 @RestController
 @RequestMapping("/api")
 public class CitaApiController {
+
+    private static final Logger logger = LoggerFactory.getLogger(CitaApiController.class);
 
     @Autowired
     private CitaService citaService;
 
     @Autowired
+    private HorarioService horarioService;
+
+    @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private CitaMapper citaMapper;
+
+    /**
+     * Obtener todas las citas
+     */
     @GetMapping("/citas")
-    public List<Cita> listarCitas() {
-        return citaService.obtenerTodasLasCitas();
+    public ResponseEntity<List<CitaDTO>> listarCitas() {
+        List<Cita> citas = citaService.obtenerTodasLasCitas();
+        List<CitaDTO> citasDTO = citas.stream()
+                .map(citaMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(citasDTO);
     }
 
+    /**
+     * Obtener cita por ID
+     */
     @GetMapping("/citas/{id}")
-    public ResponseEntity<Optional<Cita>> obtenerCitaPorId(@PathVariable Long id) {
-        try {
-            Optional<Cita> cita = citaService.obtenerCitaPorId(id);
-            return ResponseEntity.ok(cita);
-        } catch (Exception e) {
+    public ResponseEntity<CitaDTO> obtenerCitaPorId(@PathVariable Long id) {
+        Optional<Cita> cita = citaService.obtenerCitaPorId(id);
+
+        if (cita.isPresent()) {
+            CitaDTO citaDTO = citaMapper.toDTO(cita.get());
+            return ResponseEntity.ok(citaDTO);
+        } else {
             return ResponseEntity.notFound().build();
         }
     }
 
+    /**
+     * Crear nueva cita - Simplificado usando CitaMapper
+     */
     @PostMapping("/citas")
-    public ResponseEntity<?> crearCita(@RequestBody CitaDTO citaDTO) {
-        try {
-            // Imprimir el DTO recibido para depuración
-            System.out.println("Recibida solicitud para crear cita: " + citaDTO);
+    public ResponseEntity<CitaDTO> crearCita(@RequestBody CitaDTO citaDTO) {
+        logger.info("Recibida solicitud para crear cita: {}", citaDTO);
 
-            // Validación básica de campos obligatorios
-            if (citaDTO.getNombre() == null || citaDTO.getFecha() == null || citaDTO.getHora() == null) {
-                return ResponseEntity.badRequest().body("Los campos nombre, fecha y hora son obligatorios");
-            }
+        // Mapeo automático usando CitaMapper (maneja validaciones)
+        Cita cita = citaMapper.toEntity(citaDTO);
 
-            // Convertir DTO a entidad
-            Cita cita = new Cita();
+        // Guardar cita usando servicio
+        Cita nuevaCita = citaService.crearCita(cita);
+        logger.info("Cita creada exitosamente con ID: {}", nuevaCita.getId());
 
-            try {
-                // Convertir fecha String a LocalDate
-                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                LocalDate fecha = LocalDate.parse(citaDTO.getFecha(), dateFormatter);
+        // Enviar email de confirmación si está configurado y hay email
+        enviarEmailConfirmacionSiEsPosible(nuevaCita);
 
-                // Convertir hora String a LocalTime
-                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-                LocalTime hora = LocalTime.parse(citaDTO.getHora(), timeFormatter);
-
-                // Convertir String a Enum TipoLavado
-                TipoLavado tipoLavado;
-                try {
-                    tipoLavado = TipoLavado.valueOf(citaDTO.getTipoLavado().toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    return ResponseEntity.badRequest().body("Tipo de lavado no válido: " + citaDTO.getTipoLavado());
-                }
-
-                // Configurar la entidad
-                if (citaDTO.getId() != null) {
-                    cita.setId(citaDTO.getId());
-                }
-                cita.setNombre(citaDTO.getNombre());
-                cita.setEmail(citaDTO.getEmail() != null ? citaDTO.getEmail() : "");
-                cita.setTelefono(citaDTO.getTelefono());
-                cita.setModeloVehiculo(citaDTO.getModeloVehiculo());
-                cita.setTipoLavado(tipoLavado);
-                cita.setFecha(fecha);
-                cita.setHora(hora);
-
-            } catch (DateTimeParseException e) {
-                e.printStackTrace();
-                String mensaje = "Error al procesar fecha u hora: " + e.getMessage();
-                System.err.println(mensaje);
-                return ResponseEntity.badRequest().body(mensaje);
-            } catch (Exception e) {
-                e.printStackTrace();
-                String mensaje = "Error al procesar datos: " + e.getMessage();
-                System.err.println(mensaje);
-                return ResponseEntity.badRequest().body(mensaje);
-            }
-
-            // Guardar cita
-            try {
-                Cita nuevaCita = citaService.crearCita(cita);
-                System.out.println("Cita creada exitosamente: " + nuevaCita);
-
-                // Enviar email de confirmación si el email no está vacío
-                if (nuevaCita.getEmail() != null && !nuevaCita.getEmail().isEmpty()) {
-                    try {
-                        emailService.enviarEmailConfirmacion(nuevaCita);
-                        System.out.println("Email de confirmación enviado a: " + nuevaCita.getEmail());
-                    } catch (Exception emailError) {
-                        // Log del error pero continuamos, no afecta a la creación de la cita
-                        System.err.println("Error al enviar email de confirmación: " + emailError.getMessage());
-                        emailError.printStackTrace();
-                    }
-                }
-
-                return ResponseEntity.status(HttpStatus.CREATED).body(nuevaCita);
-            } catch (Exception e) {
-                e.printStackTrace();
-                String mensaje = "Error al guardar la cita: " + e.getMessage();
-                System.err.println(mensaje);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mensaje);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error inesperado: " + e.getMessage());
-        }
+        // Retornar DTO de respuesta
+        CitaDTO respuestaDTO = citaMapper.toDTO(nuevaCita);
+        return ResponseEntity.status(HttpStatus.CREATED).body(respuestaDTO);
     }
 
+    /**
+     * Obtener horarios disponibles para una fecha - Simplificado
+     */
     @GetMapping("/citas/horarios-disponibles")
-    public ResponseEntity<List<String>> obtenerHorariosDisponibles(
-            @RequestParam("fecha") String fechaStr) {
-        try {
-            // Convertir String a LocalDate
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate fecha = LocalDate.parse(fechaStr, formatter);
+    public ResponseEntity<List<String>> obtenerHorariosDisponibles(@RequestParam("fecha") String fechaStr) {
+        logger.debug("Solicitando horarios disponibles para: {}", fechaStr);
 
-            // Obtener los horarios disponibles usando el método existente
-            List<LocalTime> horariosDisponibles = citaService.obtenerHorariosDisponibles(fecha);
+        // Parsear fecha usando utility centralizada
+        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
 
-            // Filtro adicional para excluir la hora 14:00 específicamente para la API
-            horariosDisponibles = horariosDisponibles.stream()
-                    .filter(hora -> hora.getHour() != 14)
-                    .collect(Collectors.toList());
+        // Obtener horarios usando servicio especializado
+        List<LocalTime> horariosDisponibles = horarioService.obtenerHorariosDisponibles(fecha);
 
-            // Convertir LocalTime a String en formato HH:mm
-            List<String> horariosFormateados = new ArrayList<>();
-            for (LocalTime hora : horariosDisponibles) {
-                horariosFormateados.add(hora.format(DateTimeFormatter.ofPattern("HH:mm")));
-            }
+        // Aplicar filtro específico para API (excluir 14:00)
+        List<LocalTime> horariosFiltrados = horariosDisponibles.stream()
+                .filter(hora -> hora.getHour() != 14)
+                .collect(Collectors.toList());
 
-            // Imprimir para depuración
-            System.out.println("Horarios disponibles enviados: " + horariosFormateados);
+        // Convertir a strings usando utility
+        List<String> horariosFormateados = horariosFiltrados.stream()
+                .map(DateTimeFormatUtils::formatearHoraCorta)
+                .collect(Collectors.toList());
 
-            return ResponseEntity.ok(horariosFormateados);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        logger.debug("Horarios disponibles enviados: {}", horariosFormateados);
+        return ResponseEntity.ok(horariosFormateados);
     }
 
+    @GetMapping("/tipos-lavado")
+    public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
+        List<Map<String, Object>> tiposLavado = Arrays.stream(TipoLavado.values())
+                .map(tipo -> {
+                    Map<String, Object> tipoMap = new HashMap<>();
+                    tipoMap.put("id", tipo.name());
+                    tipoMap.put("nombre", tipo.name());
+                    tipoMap.put("descripcion", tipo.getDescripcion());
+                    tipoMap.put("precio", tipo.getPrecio());
+                    return tipoMap;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(tiposLavado);
+    }
+
+    /**
+     * Eliminar cita por ID
+     */
     @DeleteMapping("/citas/{id}")
     public ResponseEntity<Void> eliminarCita(@PathVariable Long id) {
-        try {
-            citaService.eliminarCita(id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+        citaService.eliminarCita(id);
+        return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Verificar disponibilidad de un horario específico
+     */
     @GetMapping("/citas/verificar-disponibilidad")
     public ResponseEntity<Boolean> verificarDisponibilidad(
             @RequestParam("fecha") String fechaStr,
             @RequestParam("hora") String horaStr) {
-        try {
-            // Convertir String a LocalDate y LocalTime
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate fecha = LocalDate.parse(fechaStr, dateFormatter);
 
-            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-            LocalTime hora = LocalTime.parse(horaStr, timeFormatter);
+        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
+        LocalTime hora = DateTimeFormatUtils.parsearHoraCorta(horaStr);
+        boolean disponible = horarioService.esHorarioDisponible(fecha, hora);
 
-            // Verificar si existe cita
-            boolean existeCita = citaService.existeCitaEnFechaHora(fecha, hora);
-
-            return ResponseEntity.ok(existeCita);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        return ResponseEntity.ok(!disponible);  // ← Devolver solo el boolean
     }
 
+    /**
+     * Obtener citas agrupadas por fecha - Mejorado
+     */
     @GetMapping("/citas/por-fecha")
-    public ResponseEntity<Map<String, List<Cita>>> obtenerCitasPorFecha() {
-        try {
-            // Obtener todas las citas
-            List<Cita> citas = citaService.obtenerTodasLasCitas();
+    public ResponseEntity<Map<String, List<CitaDTO>>> obtenerCitasPorFecha() {
+        // Obtener citas agrupadas desde el servicio (ya formateadas)
+        Map<String, List<Cita>> citasPorFecha = citaService.obtenerCitasAgrupadasPorFechaFormateada();
 
-            // Agrupar las citas por fecha y ordenar por hora dentro de cada grupo
-            Map<LocalDate, List<Cita>> citasPorFechaDesordenado = citas.stream()
-                    .collect(Collectors.groupingBy(
-                            Cita::getFecha,
-                            Collectors.collectingAndThen(
-                                    Collectors.toList(),
-                                    list -> {
-                                        list.sort(Comparator.comparing(Cita::getHora));
-                                        return list;
-                                    }
-                            )
-                    ));
+        // Convertir entidades a DTOs
+        Map<String, List<CitaDTO>> citasPorFechaDTO = new LinkedHashMap<>();
+        citasPorFecha.forEach((fecha, citas) -> {
+            List<CitaDTO> citasDTO = citas.stream()
+                    .map(citaMapper::toDTO)
+                    .collect(Collectors.toList());
+            citasPorFechaDTO.put(fecha, citasDTO);
+        });
 
-            // Ordenar las fechas de forma descendente (más reciente primero)
-            List<LocalDate> fechasOrdenadas = new ArrayList<>(citasPorFechaDesordenado.keySet());
-            fechasOrdenadas.sort(Comparator.reverseOrder()); // Cambio de naturalOrder a reverseOrder
+        return ResponseEntity.ok(citasPorFechaDTO);
+    }
 
-            // Convertir las claves LocalDate a String para facilitar la serialización
-            Map<String, List<Cita>> citasPorFechaStr = new LinkedHashMap<>(); // LinkedHashMap mantiene el orden de inserción
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    /**
+     * Actualizar cita existente
+     */
+    @PutMapping("/citas/{id}")
+    public ResponseEntity<CitaDTO> actualizarCita(@PathVariable Long id, @RequestBody CitaDTO citaDTO) {
+        logger.info("Actualizando cita ID: {} con datos: {}", id, citaDTO);
 
-            // Añadir las fechas ordenadas al mapa final
-            for (LocalDate fecha : fechasOrdenadas) {
-                String fechaStr = fecha.format(formatter);
-                citasPorFechaStr.put(fechaStr, citasPorFechaDesordenado.get(fecha));
+        // Mapear DTO a entidad
+        Cita citaActualizada = citaMapper.toEntity(citaDTO);
+
+        // Actualizar usando servicio
+        Cita cita = citaService.actualizarCita(id, citaActualizada);
+
+        // Retornar DTO actualizado
+        CitaDTO respuestaDTO = citaMapper.toDTO(cita);
+        return ResponseEntity.ok(respuestaDTO);
+    }
+
+    /**
+     * Obtener estadísticas de ocupación para una fecha
+     */
+    @GetMapping("/citas/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas(@RequestParam("fecha") String fechaStr) {
+        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
+        Map<String, Object> estadisticas = horarioService.obtenerEstadisticasOcupacion(fecha);
+
+        return ResponseEntity.ok(estadisticas);
+    }
+
+    /**
+     * Obtener citas por teléfono (historial del cliente)
+     */
+    @GetMapping("/citas/cliente/{telefono}")
+    public ResponseEntity<List<CitaDTO>> obtenerCitasPorTelefono(@PathVariable String telefono) {
+        List<Cita> citas = citaService.obtenerCitasPorTelefono(telefono);
+        List<CitaDTO> citasDTO = citas.stream()
+                .map(citaMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(citasDTO);
+    }
+
+    /**
+     * Método privado para enviar email de confirmación
+     */
+    private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
+        if (emailService != null && cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
+            try {
+                emailService.enviarEmailConfirmacion(cita);
+                logger.info("Email de confirmación enviado a: {}", cita.getEmail());
+            } catch (Exception emailError) {
+                // Log del error pero no afecta la creación de la cita
+                logger.warn("Error al enviar email de confirmación a {}: {}",
+                        cita.getEmail(), emailError.getMessage());
             }
-
-            return ResponseEntity.ok(citasPorFechaStr);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }
