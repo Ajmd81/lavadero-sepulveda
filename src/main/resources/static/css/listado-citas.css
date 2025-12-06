@@ -1,0 +1,453 @@
+.filter-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.filter-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filter-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-card .card-title::before {
+    content: '🔍';
+    font-size: 1.3rem;
+}
+
+/* Botones de filtro */
+.filter-card .d-flex .btn {
+    flex: 1;
+    min-width: 150px;
+    padding: 12px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.filter-card .btn-outline-primary {
+    border: 2px solid #0099ff;
+    color: #0099ff;
+    background: white;
+}
+
+.filter-card .btn-outline-primary:hover,
+.filter-card .btn-outline-primary:focus {
+    background: #0099ff;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 153, 255, 0.3);
+}
+
+.filter-card .btn-outline-secondary {
+    border: 2px solid #6b7280;
+    color: #6b7280;
+    background: white;
+}
+
+.filter-card .btn-outline-secondary:hover,
+.filter-card .btn-outline-secondary:focus {
+    background: #6b7280;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.filter-card .btn-outline-danger {
+    border: 2px solid #ef4444;
+    color: #ef4444;
+    background: white;
+}
+
+.filter-card .btn-outline-danger:hover,
+.filter-card .btn-outline-danger:focus {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* ====================================
+   GRUPOS DE CITAS POR FECHA
+   ==================================== */
+
+.date-group {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.date-group h3 {
+    background-color: #f5f7fa;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #0099ff;
+    border-left: 4px solid #0099ff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-group h3::before {
+    content: '📅';
+    font-size: 1.5rem;
+}
+
+/* ====================================
+   TABLA DE CITAS
+   ==================================== */
+
+.table-responsive {
+    margin-top: 20px;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+
+.table {
+    width: 100%;
+    background: white;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.table thead {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    color: white;
+}
+
+.table thead th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background: #f7fafc;
+    transform: scale(1.005);
+}
+
+/* ====================================
+   ACCIONES Y DROPDOWN
+   ==================================== */
+
+.actions {
+    white-space: nowrap;
+}
+
+.btn-group {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-group .btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-group .dropdown-toggle {
+    background: linear-gradient(135deg, #0099ff 0%, #0077cc 100%);
+    color: white;
+    border: none;
+}
+
+.btn-group .dropdown-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 153, 255, 0.4);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    min-width: 200px;
+    padding: 8px 0;
+    margin: 8px 0 0;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    color: #2d3748;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    color: #0099ff;
+    padding-left: 25px;
+}
+
+/* ====================================
+   BADGES DE ESTADO
+   ==================================== */
+
+.badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    box-shadow: 0 2px 4px rgba(251, 191, 36, 0.2);
+}
+
+.badge.bg-primary {
+    background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+    color: #1e40af;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.badge.bg-secondary {
+    background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+    color: #4b5563;
+    box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+}
+
+/* ====================================
+   MODALES
+   ==================================== */
+
+.modal-dialog {
+    margin: 1.75rem auto;
+    max-width: 500px;
+}
+
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #0099ff 0%, #0077cc 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    padding: 20px 25px;
+    border-bottom: none;
+}
+
+.modal-header .modal-title {
+    color: white;
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.modal-header .btn-close {
+    background: white;
+    opacity: 0.8;
+    border-radius: 50%;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    border-top: 1px solid #e5e7eb;
+    padding: 15px 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-body .alert-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border-left: 4px solid #0099ff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-body .alert-info strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 1rem;
+}
+
+/* ====================================
+   BOTÓN VOLVER
+   ==================================== */
+
+.container > .btn-primary {
+    margin-top: 30px;
+    padding: 12px 30px;
+    font-size: 1rem;
+    background: linear-gradient(135deg, #0099ff 0%, #0077cc 100%);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.container > .btn-primary::before {
+    content: '←';
+    font-size: 1.2rem;
+}
+
+.container > .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 153, 255, 0.4);
+}
+
+/* ====================================
+   RESPONSIVE
+   ==================================== */
+
+@media (max-width: 992px) {
+    .table {
+        font-size: 0.9rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .date-group {
+        padding: 20px 15px;
+    }
+
+    .date-group h3 {
+        font-size: 1.1rem;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 10px;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+    }
+
+    .filter-card .d-flex {
+        flex-direction: column;
+    }
+
+    .filter-card .btn {
+        width: 100%;
+    }
+
+    .dropdown-menu {
+        right: auto;
+        left: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-responsive {
+        margin: 0 -15px;
+        padding: 0 15px;
+    }
+
+    .table {
+        font-size: 0.8rem;
+        min-width: 800px;
+    }
+
+    .table th,
+    .table td {
+        padding: 6px 8px;
+    }
+
+    .modal-dialog {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+}

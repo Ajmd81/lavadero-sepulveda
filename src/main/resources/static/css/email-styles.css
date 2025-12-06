@@ -1,0 +1,171 @@
+/* email-styles.css */
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    padding: 20px;
+    text-align: center;
+    color: white;
+    border-radius: 5px 5px 0 0;
+}
+
+.header-blue {
+    background-color: #0099ff;
+}
+
+.header-green {
+    background-color: #28a745;
+}
+
+.header-orange {
+    background-color: #fd7e14;
+}
+
+.content {
+    background-color: #f5f7fa;
+    padding: 20px;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+}
+
+.details {
+    background-color: white;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+.details-primary {
+    border-left: 4px solid #0099ff;
+}
+
+.details-success {
+    border-left: 4px solid #28a745;
+}
+
+.details-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.details p {
+    margin: 5px 0;
+}
+
+.footer {
+    background-color: #0d47a1;
+    padding: 15px;
+    text-align: center;
+    color: white;
+    font-size: 0.9em;
+    border-radius: 0 0 5px 5px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+h2 {
+    font-size: 20px;
+}
+
+.h2-primary {
+    color: #0099ff;
+}
+
+.h2-success {
+    color: #28a745;
+}
+
+.h2-warning {
+    color: #fd7e14;
+}
+
+.button {
+    display: inline-block;
+    background-color: #0099ff;
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.important-note {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+.note-info {
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+}
+
+.note-warning {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+.note-success {
+    background-color: #e9f7ef;
+    border-left: 4px solid #28a745;
+}
+
+.note-danger {
+    background-color: #f8d7da;
+    border-left: 4px solid #dc3545;
+}
+
+.highlight {
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+.price {
+    font-weight: bold;
+}
+
+.price-primary {
+    color: #0d47a1;
+}
+
+.price-success {
+    color: #28a745;
+}
+
+.text-success {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.text-danger {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.text-warning {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.payment-info {
+    background-color: #e9f7ef;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 5px;
+    border-left: 4px solid #28a745;
+}

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horario - Lavadero Sepúlveda - Córdoba</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+  <link rel="stylesheet" th:href="@{/css/horario.css}">
+  <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+  
+</head>
+<body>
+<header>
+  <div class="container">
+    <div class="logo-container">
+      <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
+      <div class="logo-text">Lavadero Sepúlveda</div>
+    </div>
+    <button class="menu-toggle" id="menuToggle">
+      <i class="fa fa-bars"></i> <!-- Necesitarás añadir Font Awesome -->
+    </button>
+    <nav id="mainNav">
+      <a href="/" class="btn btn-white">Inicio</a>
+      <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+      <a href="/horario" class="btn btn-white">Horario</a>
+      <a href="/galeria" class="btn btn-white">Galería</a>
+      <a href="/productos" class="btn btn-white">Productos</a>
+      <a href="/tarifas" class="btn btn-white">Tarifas</a>
+    </nav>
+  </div>
+</header>
+<section class="hero">
+  <div class="container">
+    <h1>Horario de Atención</h1>
+    <p>Consulta nuestros horarios y agenda tu cita para el mejor servicio de lavado de vehículos en Córdoba.</p>
+    <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+  </div>
+</section>
+
+<section class="container">
+  <div class="schedule-container">
+    <div class="special-note">
+      <p>Estimados clientes, estaremos encantados de ofrecerles nuestros servicios <strong>CON CITA PREVIA</strong>.</p>
+    </div>
+
+    <h2>Nuestro Horario</h2>
+
+    <div class="schedule-item">
+      <div class="schedule-day">De Lunes a Viernes</div>
+      <p>De 9:00 a 14:00 y de 17:00 a 20:00 horas</p>
+    </div>
+
+    <div class="schedule-item">
+      <div class="schedule-day">Sábados</div>
+      <p>De 9:00 a 13:30 horas</p>
+    </div>
+
+    <div class="cita-previa">
+      <h3>Reserva tu cita</h3>
+      <p>Para ofrecerte el mejor servicio y evitar esperas, te recomendamos reservar tu cita con antelación.</p>
+      <a href="/nueva-cita" class="btn">Reservar Ahora</a>
+    </div>
+
+    <div class="special-note">
+      <p>También puedes contactarnos directamente por teléfono al <strong>658 527 186</strong> o vía <a href="https://api.whatsapp.com/send?phone=34658527186&text=Buenas%20¿me%20podrian%20dar%20cita?" target="_blank">WhatsApp</a>.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="contact-info">
+      <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
+      <p>Teléfono: 658 527 186</p>
+      <p>Email: contacto@lavaderosepulveda.es</p>
+    </div>
+    <div class="social-links">
+      <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank">Facebook</a>
+      <a href="https://www.twitter.com/LavaSepulveda" target="_blank">Twitter</a>
+      <a href="http://www.instagram.com/lavaderosepulveda" target="_blank">Instagram</a>
+    </div>
+    <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
+  </div>
+</footer>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.getElementById('menuToggle');
+    const mainNav = document.getElementById('mainNav');
+
+    if (menuToggle && mainNav) {
+      // Inicialmente, ocultar menú en móviles
+      if (window.innerWidth <= 768) {
+        mainNav.style.display = 'none';
+      }
+
+      menuToggle.addEventListener('click', function() {
+        if (mainNav.style.display === 'none' || mainNav.style.display === '') {
+          mainNav.style.display = 'flex';
+          mainNav.style.flexDirection = 'column';
+        } else {
+          mainNav.style.display = 'none';
+        }
+      });
+
+      // Ajustar menú en cambio de tamaño de ventana
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          mainNav.style.display = 'flex';
+          mainNav.style.flexDirection = 'row';
+        } else {
+          mainNav.style.display = 'none';
+        }
+      });
+    }
+  });
+</script>
+</body>
+</html>

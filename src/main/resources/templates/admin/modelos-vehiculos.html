@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Modelos de Vehículos - Admin</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #007bff;
+    }
+    .categoria {
+      margin-bottom: 40px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .categoria h2 {
+      color: white;
+      background: #007bff;
+      margin: 0;
+      padding: 15px 20px;
+      font-size: 1.2em;
+      text-transform: capitalize;
+    }
+    .modelos-container {
+      padding: 20px;
+    }
+    .modelos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .modelo {
+      background: #f8f9fa;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+      text-align: center;
+      font-size: 0.9em;
+      transition: background-color 0.2s;
+    }
+    .modelo:hover {
+      background: #e9ecef;
+    }
+    .stats {
+      background: #e9ecef;
+      padding: 10px 20px;
+      font-weight: bold;
+      color: #495057;
+      border-top: 1px solid #dee2e6;
+    }
+    .navigation {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #6c757d;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    .btn:hover {
+      background: #5a6268;
+    }
+    .search-box {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .search-box input {
+      padding: 10px;
+      width: 300px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Modelos de Vehículos por Categoría</h1>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Buscar modelo..." onkeyup="filtrarModelos()">
+  </div>
+
+  <div th:each="entrada : ${modelosPorCategoria}" class="categoria">
+    <h2 th:text="${entrada.value[0].category.description}"></h2>
+    <div class="modelos-container">
+      <div class="modelos">
+                    <span th:each="modelo : ${entrada.value}"
+                          th:text="${modelo.name}"
+                          class="modelo"
+                          th:data-name="${modelo.name}"></span>
+      </div>
+      <div class="stats">
+        Total de modelos: <span th:text="${entrada.value.size()}"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="navigation">
+    <a href="/admin/listado-citas" class="btn">← Volver al Panel de Administración</a>
+  </div>
+</div>
+
+<script>
+  function filtrarModelos() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const modelos = document.querySelectorAll('.modelo');
+    const categorias = document.querySelectorAll('.categoria');
+
+    modelos.forEach(modelo => {
+      const nombre = modelo.getAttribute('data-name').toLowerCase();
+      if (nombre.includes(searchTerm)) {
+        modelo.style.display = '';
+      } else {
+        modelo.style.display = 'none';
+      }
+    });
+
+    // Ocultar categorías que no tienen modelos visibles
+    categorias.forEach(categoria => {
+      const modelosVisibles = categoria.querySelectorAll('.modelo[style=""], .modelo:not([style])');
+      if (modelosVisibles.length === 0 && searchTerm !== '') {
+        categoria.style.display = 'none';
+      } else {
+        categoria.style.display = '';
+      }
+    });
+  }
+</script>
+</body>
+</html>
