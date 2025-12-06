@@ -5,21 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Política de Privacidad - Lavadero Sepúlveda</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/policy.css">
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+  <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+  <style>
+    .policy-container {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      margin: 30px 0;
+    }
 
+    .policy-title {
+      color: var(--color-primary);
+      margin-top: 0;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--color-primary-light);
+      padding-bottom: 10px;
+    }
+
+    .policy-section {
+      margin-bottom: 25px;
+    }
+
+    .policy-section h3 {
+      color: var(--color-primary);
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    .policy-section p {
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+
+    .policy-section ul {
+      margin-bottom: 15px;
+    }
+
+    .policy-section li {
+      margin-bottom: 5px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
 <header>
   <div class="container">
     <div class="logo">Lavadero Sepúlveda</div>
     <nav>
-      <a href="index.html" class="btn btn-white">Inicio</a>
-      <a href="nueva-cita" class="btn btn-white">Reservar Cita</a>
-      <a href="horario" class="btn btn-white">Horario</a>
-      <a href="galeria" class="btn btn-white">Galería</a>
-      <a href="productos" class="btn btn-white">Productos</a>
-      <a href="tarifas" class="btn btn-white">Tarifas</a>
+      <a href="/" class="btn btn-white">Inicio</a>
+      <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+      <a href="/horario" class="btn btn-white">Horario</a>
+      <a href="/galeria" class="btn btn-white">Galería</a>
+      <a href="/productos" class="btn btn-white">Productos</a>
+      <a href="/tarifas" class="btn btn-white">Tarifas</a>
     </nav>
   </div>
 </header>

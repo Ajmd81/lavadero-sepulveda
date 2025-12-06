@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # Aplicación Spring Boot
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lavadero-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    environment:
+      - DB_URL=jdbc:mysql://mysql:3306/lavadero_db?allowPublicKeyRetrieval=true&useSSL=false
+      - DB_USERNAME=root
+      - DB_PASSWORD=Sepulveda13
+      - MAIL_HOST=smtp.1and1.es
+      - MAIL_PORT=587
+      - MAIL_USERNAME=contacto@lavaderosepulveda.es
+      - MAIL_PASSWORD=R1bHu8Nn%
+    networks:
+      - lavadero-network
+    restart: unless-stopped
+
+  # Base de datos MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: lavadero-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=Sepulveda13
+      - MYSQL_DATABASE=lavadero_db
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - lavadero-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  # phpMyAdmin para gestionar MySQL
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: lavadero-phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+    depends_on:
+      - mysql
+    networks:
+      - lavadero-network
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+
+networks:
+  lavadero-network:
+    driver: bridge

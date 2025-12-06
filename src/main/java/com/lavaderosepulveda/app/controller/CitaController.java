@@ -2,8 +2,14 @@ package com.lavaderosepulveda.app.controller;
 
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.TipoLavado;
+import com.lavaderosepulveda.app.model.VehicleModel;
+import com.lavaderosepulveda.app.repository.VehicleModelRepository;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
+import com.lavaderosepulveda.app.service.HorarioService;
+import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -13,31 +19,44 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.validation.Valid;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Controlador refactorizado para la interfaz web PÚBLICA de citas
+ * SOLO contiene endpoints públicos - Los endpoints /admin/* están en AdminController
+ * Usa los nuevos services y utilities para eliminar duplicación
+ */
 @Controller
 public class CitaController {
+
+    private static final Logger logger = LoggerFactory.getLogger(CitaController.class);
 
     @Autowired
     private CitaService citaService;
 
     @Autowired
+    private HorarioService horarioService;
+
+    @Autowired
     private EmailService emailService;
 
-    // Página principal
+    @Autowired
+    private VehicleModelRepository modelRepository;
+
+    /**
+     * Página principal
+     */
     @GetMapping("/")
     public String index() {
         return "index";
     }
 
-    // Mostrar formulario para crear una cita
+    /**
+     * Mostrar formulario para crear una cita
+     */
     @GetMapping("/nueva-cita")
     public String mostrarFormulario(Model model) {
         model.addAttribute("cita", new Cita());
@@ -45,21 +64,14 @@ public class CitaController {
         return "formulario";
     }
 
-
-    // Procesar el formulario para crear una cita
+    /**
+     * Procesar el formulario para crear una cita - Refactorizado
+     */
     @PostMapping("/guardar-cita")
-    public String guardarCita(@RequestParam(value="tipoLavadoName", required=false) String tipoLavadoName,
-                              @Valid @ModelAttribute Cita cita, BindingResult bindingResult,
-                              Model model, RedirectAttributes redirectAttributes) {
-
-        if (tipoLavadoName != null && !tipoLavadoName.isEmpty()) {
-            try {
-                TipoLavado tipoLavado = TipoLavado.valueOf(tipoLavadoName);
-                cita.setTipoLavado(tipoLavado);
-            } catch (IllegalArgumentException e) {
-                bindingResult.rejectValue("tipoLavado", "error.tipoLavado", "Tipo de lavado inválido");
-            }
-        }
+    public String guardarCita(@Valid @ModelAttribute Cita cita,
+                              BindingResult bindingResult,
+                              Model model,
+                              RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("tiposLavado", TipoLavado.values());
@@ -67,227 +79,109 @@ public class CitaController {
         }
 
         try {
-            // Calcular el precio total y depósito basados en el tipo de lavado seleccionado
-            if (cita.getTipoLavado() != null) {
-                BigDecimal precioTotal = cita.getTipoLavado().getPrecio();
-                BigDecimal deposito = precioTotal.multiply(new BigDecimal("0.5")).setScale(2, RoundingMode.HALF_UP);
-
-                cita.setPrecioTotal(precioTotal);
-                cita.setDeposito(deposito);
-                cita.setDepositoPagado(false); // Por defecto, el depósito no está pagado
+            // Validaciones adicionales usando HorarioService
+            if (!horarioService.esHorarioDisponible(cita.getFecha(), cita.getHora())) {
+                model.addAttribute("error", "El horario seleccionado no está disponible");
+                model.addAttribute("tiposLavado", TipoLavado.values());
+                return "formulario";
             }
 
+            // Crear cita usando servicio refactorizado
             Cita citaGuardada = citaService.crearCita(cita);
+            logger.info("Cita creada exitosamente: ID {}, Cliente: {}",
+                    citaGuardada.getId(), citaGuardada.getNombre());
 
-            // Enviar email con instrucciones de pago
-            emailService.enviarEmailReservaPendiente(citaGuardada);
+            // Enviar email si el servicio está disponible
+            enviarEmailConfirmacionSiEsPosible(citaGuardada);
 
-            redirectAttributes.addFlashAttribute("mensaje", "¡Reserva pre-registrada! Por favor, realiza el pago del depósito mediante Bizum para confirmarla.");
+            // Preparar mensajes para la vista usando DateTimeFormatUtils
+            String fechaFormateada = DateTimeFormatUtils.formatearFechaCompleta(citaGuardada.getFecha());
+            String horaFormateada = DateTimeFormatUtils.formatearHoraCorta(citaGuardada.getHora());
+
+            redirectAttributes.addFlashAttribute("mensaje",
+                    "¡Cita reservada con éxito para el " + fechaFormateada + " a las " + horaFormateada + "!");
             redirectAttributes.addFlashAttribute("cita", citaGuardada);
-            return "redirect:/instrucciones-pago";
+
+            return "redirect:/confirmacion";
+
         } catch (Exception e) {
+            logger.error("Error al guardar cita: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/nueva-cita";
         }
     }
 
-    // Página de confirmación
+    /**
+     * Página de confirmación
+     */
     @GetMapping("/confirmacion")
     public String confirmacion() {
         return "confirmacion";
     }
 
-    // Endpoint para obtener horarios disponibles (usado por AJAX)
+    /**
+     * Endpoint AJAX para obtener horarios disponibles - Simplificado
+     * Usa HorarioService en lugar de lógica duplicada
+     */
     @GetMapping("/horarios-disponibles")
     @ResponseBody
-    public List<LocalTime> obtenerHorariosDisponibles(
+    public List<String> obtenerHorariosDisponibles(
             @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        return citaService.obtenerHorariosDisponibles(fecha);
-    }
 
-    // Endpoint para ver las citas
-    @GetMapping("/admin/listado-citas")
-    public String listarTodasLasCitas(Model model) {
-        // Obtener la fecha actual
-        LocalDate fechaActual = LocalDate.now();
-        LocalTime horaActual = LocalTime.now();
-
-        // Obtener todas las citas
-        List<Cita> citas = citaService.obtenerTodasLasCitas();
-
-        // Filtrar citas pendientes (futuras)
-        List<Cita> citasPendientes = citas.stream()
-                .filter(cita -> cita.getFecha().isAfter(fechaActual) ||
-                        (cita.getFecha().isEqual(fechaActual) && cita.getHora().isAfter(horaActual)))
-                .collect(Collectors.toList());
-
-        // Agrupar las citas pendientes por fecha y ordenar por hora
-        Map<LocalDate, List<Cita>> citasPorFechaDesordenado = citasPendientes.stream()
-                .collect(Collectors.groupingBy(
-                        Cita::getFecha,
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                list -> {
-                                    list.sort(Comparator.comparing(Cita::getHora));
-                                    return list;
-                                }
-                        )
-                ));
-
-        // Crear un nuevo mapa ordenado por fecha (ascendente)
-        Map<LocalDate, List<Cita>> citasPorFechaOrdenado = new TreeMap<>(Comparator.naturalOrder());
-        citasPorFechaOrdenado.putAll(citasPorFechaDesordenado);
-
-        // Convertir a un mapa con fechas formateadas como cadenas
-        Map<String, List<Cita>> citasPorFechaFormateado = new LinkedHashMap<>();
-
-        // Formatear cada fecha al formato deseado (dd/MM/yyyy)
-        for (Map.Entry<LocalDate, List<Cita>> entry : citasPorFechaOrdenado.entrySet()) {
-            String fechaFormateada = entry.getKey().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            citasPorFechaFormateado.put(fechaFormateada, entry.getValue());
-        }
-
-        // Obtener citas históricas (pasadas)
-        List<Cita> citasHistoricas = citas.stream()
-                .filter(cita -> cita.getFecha().isBefore(fechaActual) ||
-                        (cita.getFecha().isEqual(fechaActual) && cita.getHora().isBefore(horaActual)))
-                .sorted(Comparator.comparing(Cita::getFecha).reversed()
-                        .thenComparing(Cita::getHora))
-                .collect(Collectors.toList());
-
-        // Obtener clientes con 2 o más faltas
-        List<Cita> clientesConFaltas = citas.stream()
-                .filter(cita -> cita.getFaltas() != null && cita.getFaltas() >= 2)
-                .collect(Collectors.toList());
-
-        // Pasar todos los datos al modelo
-        model.addAttribute("citasPorFecha", citasPorFechaFormateado);
-        model.addAttribute("citasHistoricas", citasHistoricas);
-        model.addAttribute("clientesConFaltas", clientesConFaltas);
-
-        return "admin/listado-citas";
-    }
-
-    // Endpoint para eliminar las citas
-    @GetMapping("/admin/eliminar-cita/{id}")
-    public String eliminarCita(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            citaService.eliminarCita(id);
-            redirectAttributes.addFlashAttribute("mensaje", "Cita eliminada con éxito");
+            // Usar servicio especializado en horarios
+            List<LocalTime> horariosDisponibles = horarioService.obtenerHorariosDisponibles(fecha);
+
+            // Convertir a strings usando utility centralizada
+            List<String> horariosFormateados = horariosDisponibles.stream()
+                    .map(DateTimeFormatUtils::formatearHoraCorta)
+                    .collect(Collectors.toList());
+
+            logger.debug("Horarios disponibles para {}: {}", fecha, horariosFormateados);
+            return horariosFormateados;
+
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error al eliminar la cita: " + e.getMessage());
+            logger.error("Error obteniendo horarios disponibles para {}: {}", fecha, e.getMessage());
+            return List.of(); // Retornar lista vacía en caso de error
         }
-        return "redirect:/admin/listado-citas";
     }
 
-    // Nuevo endpoint para marcar asistencia
-    @GetMapping("/admin/marcar-asistencia/{id}/{asistio}")
-    public String marcarAsistencia(@PathVariable Long id, @PathVariable Boolean asistio,
-                                   RedirectAttributes redirectAttributes) {
+    /**
+     * API PÚBLICA para obtener todos los modelos (usado por JavaScript en el formulario)
+     * Este endpoint es público y no causa conflicto
+     */
+    @GetMapping("/api/modelos")
+    @ResponseBody
+    public List<VehicleModel> obtenerTodosLosModelos() {
         try {
-            Optional<Cita> citaOpt = citaService.obtenerCitaPorId(id);
+            return modelRepository.findAll().stream()
+                    .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error obteniendo modelos para API: {}", e.getMessage(), e);
+            return List.of();
+        }
+    }
 
-            if (citaOpt.isPresent()) {
-                Cita cita = citaOpt.get();
-
-                // Verificar que el depósito está pagado
-                if (!cita.getDepositoPagado()) {
-                    redirectAttributes.addFlashAttribute("error",
-                            "No se puede registrar asistencia para una cita sin depósito pagado.");
-                    return "redirect:/admin/listado-citas";
-                }
-
-                cita.setAsistida(asistio);
-
-                // Si no asistió, incrementar contador de faltas
-                if (!asistio) {
-                    if (cita.getFaltas() == null) {
-                        cita.setFaltas(1);
-                    } else {
-                        cita.setFaltas(cita.getFaltas() + 1);
-                    }
-
-                    // Enviar email informando de la pérdida del depósito
-                    emailService.enviarEmailNoAsistencia(cita);
-
-                    redirectAttributes.addFlashAttribute("mensaje",
-                            "Se ha registrado la falta de asistencia. El cliente ha perdido su depósito de " +
-                                    cita.getDeposito() + "€.");
+    /**
+     * Método privado para envío de email - Centralizado
+     */
+    private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
+        if (emailService != null && emailService.isServicioDisponible()) {
+            try {
+                if (cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
+                    emailService.enviarEmailConfirmacion(cita);
+                    logger.info("Email de confirmación enviado a: {}", cita.getEmail());
                 } else {
-                    // Si asistió, enviar email de agradecimiento
-                    emailService.enviarEmailAgradecimiento(cita);
-
-                    redirectAttributes.addFlashAttribute("mensaje",
-                            "Se ha registrado la asistencia correctamente. Al cliente se le descontará el depósito de " +
-                                    cita.getDeposito() + "€ del precio total.");
+                    logger.debug("No se envía email: dirección vacía para cita ID {}", cita.getId());
                 }
-
-                citaService.actualizarCita(id, cita);
-            } else {
-                redirectAttributes.addFlashAttribute("error", "No se encontró la cita con ID " + id);
+            } catch (Exception e) {
+                // Error en email no debe afectar la creación de la cita
+                logger.warn("Error enviando email de confirmación para cita ID {}: {}",
+                        cita.getId(), e.getMessage());
             }
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error al registrar asistencia: " + e.getMessage());
+        } else {
+            logger.debug("Servicio de email no disponible - no se envía confirmación");
         }
-        return "redirect:/admin/listado-citas";
-    }
-    // Añadir estos endpoints al CitaController.java
-
-    // Página de instrucciones de pago
-    @GetMapping("/instrucciones-pago")
-    public String instruccionesPago(Model model) {
-        return "instrucciones-pago";
-    }
-
-    // Endpoint para confirmar pago de depósito
-    @PostMapping("/confirmar-pago")
-    public String confirmarPago(@RequestParam("citaId") Long citaId,
-                                @RequestParam("referenciaBizum") String referenciaBizum,
-                                RedirectAttributes redirectAttributes) {
-        try {
-            Optional<Cita> citaOpt = citaService.obtenerCitaPorId(citaId);
-            if (citaOpt.isPresent()) {
-                Cita cita = citaOpt.get();
-                cita.setDepositoPagado(true);
-                cita.setReferenciaBizum(referenciaBizum);
-                cita.setFechaPagoDeposito(LocalDate.now());
-
-                citaService.actualizarCita(citaId, cita);
-
-                // Enviar email de confirmación final
-                emailService.enviarEmailConfirmacion(cita);
-
-                redirectAttributes.addFlashAttribute("mensaje", "¡Pago confirmado! Tu cita ha sido reservada. Hemos enviado un email de confirmación.");
-                return "redirect:/confirmacion";
-            } else {
-                redirectAttributes.addFlashAttribute("error", "No se encontró la cita especificada.");
-                return "redirect:/";
-            }
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error al confirmar el pago: " + e.getMessage());
-            return "redirect:/";
-        }
-    }
-
-    // Endpoint para confirmar pago del depósito desde el panel de administración
-    @GetMapping("/admin/confirmar-deposito/{id}")
-    public String confirmarDepositoAdmin(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            Optional<Cita> citaOpt = citaService.obtenerCitaPorId(id);
-            if (citaOpt.isPresent()) {
-                Cita cita = citaOpt.get();
-                cita.setDepositoPagado(true);
-                cita.setFechaPagoDeposito(LocalDate.now());
-
-                citaService.actualizarCita(id, cita);
-
-                redirectAttributes.addFlashAttribute("mensaje", "Pago del depósito confirmado para la cita #" + id);
-            } else {
-                redirectAttributes.addFlashAttribute("error", "No se encontró la cita especificada.");
-            }
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error al confirmar el pago: " + e.getMessage());
-        }
-        return "redirect:/admin/listado-citas";
     }
 }

@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -48,33 +46,21 @@ public class Cita {
     @Column(nullable = false)
     private LocalTime hora;
 
-    // Campos para el control de asistencia
-    @Column(name = "asistida")
-    private Boolean asistida;  // true: asistió, false: faltó, null: pendiente
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoCita estado = EstadoCita.PENDIENTE; // Valor por defecto
 
-    @Column(name = "faltas")
-    private Integer faltas;    // contador de faltas acumuladas
+    @Column(name = "pago_adelantado", nullable = false)
+    private Boolean pagoAdelantado = false; // Valor por defecto
 
-    // Campos para gestión de pagos
-    @Column(name = "precio_total", precision = 10, scale = 2)
-    private BigDecimal precioTotal;
+    @Column(name = "referencia_pago")
+    private String referenciaPago;
 
-    @Column(name = "deposito", precision = 10, scale = 2)
-    private BigDecimal deposito;
-
-    @Column(name = "deposito_pagado")
-    private Boolean depositoPagado;
-
-    @Column(name = "referencia_bizum", length = 50)
-    private String referenciaBizum;
-
-    @Column(name = "fecha_pago_deposito")
-    private LocalDate fechaPagoDeposito;
+    @Column(columnDefinition = "TEXT")
+    private String observaciones;
 
     // Constructores
     public Cita() {
-        this.faltas = 0;
-        this.depositoPagado = false;
     }
 
     public Cita(String nombre, String email, String telefono, String modeloVehiculo, TipoLavado tipoLavado, LocalDate fecha, LocalTime hora) {
@@ -85,17 +71,11 @@ public class Cita {
         this.tipoLavado = tipoLavado;
         this.fecha = fecha;
         this.hora = hora;
-        this.faltas = 0;
-        this.depositoPagado = false;
-
-        // Calcular precio total y depósito si el tipo de lavado está definido
-        if (tipoLavado != null) {
-            this.precioTotal = tipoLavado.getPrecio();
-            this.deposito = this.precioTotal.multiply(new BigDecimal("0.5"));
-        }
+        this.estado = EstadoCita.PENDIENTE; // Por defecto
+        this.pagoAdelantado = false; // Por defecto
     }
 
-    // Getters y Setters
+    // Getters y Setters existentes
     public Long getId() {
         return id;
     }
@@ -160,73 +140,37 @@ public class Cita {
         this.hora = hora;
     }
 
-    public Boolean getAsistida() {
-        return asistida;
+    // NUEVOS GETTERS Y SETTERS
+    public EstadoCita getEstado() {
+        return estado;
     }
 
-    public void setAsistida(Boolean asistida) {
-        this.asistida = asistida;
+    public void setEstado(EstadoCita estado) {
+        this.estado = estado;
     }
 
-    public Integer getFaltas() {
-        return faltas;
+    public Boolean isPagoAdelantado() {
+        return pagoAdelantado;
     }
 
-    public void setFaltas(Integer faltas) {
-        this.faltas = faltas;
+    public void setPagoAdelantado(Boolean pagoAdelantado) {
+        this.pagoAdelantado = pagoAdelantado;
     }
 
-    public BigDecimal getPrecioTotal() {
-        return precioTotal;
+    public String getReferenciaPago() {
+        return referenciaPago;
     }
 
-    public void setPrecioTotal(BigDecimal precioTotal) {
-        this.precioTotal = precioTotal;
+    public void setReferenciaPago(String referenciaPago) {
+        this.referenciaPago = referenciaPago;
     }
 
-    public BigDecimal getDeposito() {
-        return deposito;
+    public String getObservaciones() {
+        return observaciones;
     }
 
-    public void setDeposito(BigDecimal deposito) {
-        this.deposito = deposito;
-    }
-
-    public Boolean getDepositoPagado() {
-        return depositoPagado;
-    }
-
-    public void setDepositoPagado(Boolean depositoPagado) {
-        this.depositoPagado = depositoPagado;
-    }
-
-    public String getReferenciaBizum() {
-        return referenciaBizum;
-    }
-
-    public void setReferenciaBizum(String referenciaBizum) {
-        this.referenciaBizum = referenciaBizum;
-    }
-
-    public LocalDate getFechaPagoDeposito() {
-        return fechaPagoDeposito;
-    }
-
-    public void setFechaPagoDeposito(LocalDate fechaPagoDeposito) {
-        this.fechaPagoDeposito = fechaPagoDeposito;
-    }
-
-    // Método para calcular el saldo pendiente
-    public BigDecimal getSaldoPendiente() {
-        if (precioTotal == null) {
-            return BigDecimal.ZERO;
-        }
-
-        if (depositoPagado != null && depositoPagado && deposito != null) {
-            return precioTotal.subtract(deposito);
-        }
-
-        return precioTotal;
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
     }
 
     @Override
@@ -240,13 +184,10 @@ public class Cita {
                 ", tipoLavado=" + tipoLavado +
                 ", fecha=" + fecha +
                 ", hora=" + hora +
-                ", asistida=" + asistida +
-                ", faltas=" + faltas +
-                ", precioTotal=" + precioTotal +
-                ", deposito=" + deposito +
-                ", depositoPagado=" + depositoPagado +
-                ", referenciaBizum='" + referenciaBizum + '\'' +
-                ", fechaPagoDeposito=" + fechaPagoDeposito +
+                ", estado=" + estado +
+                ", pagoAdelantado=" + pagoAdelantado +
+                ", referenciaPago='" + referenciaPago + '\'' +
+                ", observaciones='" + observaciones + '\'' +
                 '}';
     }
 }
