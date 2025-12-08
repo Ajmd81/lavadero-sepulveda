@@ -169,3 +169,42 @@ h2 {
     border-radius: 5px;
     border-left: 4px solid #28a745;
 }
+
+/* Actualización para la sección de información de pago */
+.note-info h4 {
+    color: #dc3545; /* Rojo */
+    text-align: center; /* Centrado */
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.note-info p {
+    color: #333; /* Texto normal */
+    margin: 10px 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: left; /* Alineado a la izquierda */
+}
+
+.note-info p strong {
+    color: #856404;
+    font-weight: 600;
+}
+
+.note-info span {
+    color: #333;
+    font-weight: normal;
+}
+
+/* Actualización para la nota de advertencia */
+.note-warning p {
+    margin: 0;
+    color: #856404;
+    font-size: 0.95rem;
+}
+
+.note-warning strong {
+    color: #d84315;
+}
