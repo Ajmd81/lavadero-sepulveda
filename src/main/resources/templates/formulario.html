@@ -132,6 +132,21 @@
                 </div>
             </div>
 
+            <!-- Información de pago anticipado - Se muestra al seleccionar servicio -->
+            <div class="important-note note-info" id="paymentInfo" style="display: none;">
+                <h4>Información de Pago Anticipado</h4>
+                <p>Para confirmar su cita, es necesario realizar un pago anticipado del 50% del valor del servicio mediante Bizum.</p>
+                <p><strong>Importe a pagar:</strong> <span class="payment-amount" id="paymentAmount">-</span></p>
+                <p><strong>Número de Bizum:</strong> 658 527 186</p>
+                <p><strong>Concepto:</strong> "Reserva" + Su número de reserva</p>
+                <p>Una vez enviada la reserva, recibirá un email de confirmación con su número de reserva.</p>
+                <p>Realice el pago en las próximas 24 horas para confirmar su cita.</p>
+            </div>
+
+            <div class="important-note note-warning">
+                <p><strong>Nota:</strong> El precio puede incrementarse entre 3€ y 5€ por exceso de suciedad o pelos de animal.</p>
+            </div>
+
             <div class="form-group">
                 <button type="submit" class="btn">Reservar Cita</button>
             </div>
@@ -437,7 +452,38 @@
             // Resetear selector de servicios
             tipoLavadoSelect.innerHTML = '<option value="">-- Primero introduce el modelo del vehículo --</option>';
             tipoLavadoSelect.value = '';
+
+            // Ocultar información de pago
+            const paymentInfo = document.getElementById('paymentInfo');
+            if (paymentInfo) {
+                paymentInfo.style.display = 'none';
+            }
         }
+
+        // Calcular y mostrar información de pago cuando se selecciona un servicio
+        tipoLavadoSelect.addEventListener('change', function() {
+            const paymentInfo = document.getElementById('paymentInfo');
+            const paymentAmount = document.getElementById('paymentAmount');
+
+            if (this.value) {
+                // Extraer el precio del texto de la opción seleccionada
+                const selectedOption = this.options[this.selectedIndex];
+                const text = selectedOption.textContent;
+
+                // Buscar el precio en el formato "- XXX€"
+                const priceMatch = text.match(/(\d+)€/);
+
+                if (priceMatch) {
+                    const precio = parseFloat(priceMatch[1]);
+                    const cincuentaPorciento = (precio / 2).toFixed(2);
+
+                    paymentAmount.textContent = cincuentaPorciento + '€';
+                    paymentInfo.style.display = 'block';
+                }
+            } else {
+                paymentInfo.style.display = 'none';
+            }
+        });
 
         // Cargar horarios disponibles cuando cambie la fecha
         fechaInput.addEventListener('change', function() {
