@@ -13,11 +13,11 @@ El **Sistema Integral de Reservas – Lavadero Sepúlveda** es una plataforma mu
 
 🛠️ **Tecnologías Principales**
 
-**Backend:** Spring Boot 3.x, Spring Data JPA, MySQL  
-**Frontend Web:** Thymeleaf, HTML5, CSS3, JS  
-**Móvil:** Android Studio (Java, Retrofit)  
-**Escritorio:** JavaFX, Scene Builder  
-**DevOps:** Docker, Maven, Git
+- **Backend:** Spring Boot 3.x, Spring Data JPA, MySQL  
+- **Frontend Web:** Thymeleaf, HTML5, CSS3, JS  
+- **Móvil:** Android Studio (Java, Retrofit)  
+- **Escritorio:** JavaFX, Scene Builder  
+- **DevOps:** Docker, Maven, Git
 
 ---
 ## 2. 🎨 Detalles de la Interfaz de Usuario
@@ -53,21 +53,19 @@ El formulario de reservas incluye un sistema inteligente de clasificación:
 
 ### **Requisitos Previos**
 
-#### **Aplicación Web:**
+### Aplicación Escritorio:
 
-- **Sistema operativo**: Windows, macOS o Linux.
-- **Conexión a internet**.
-- **Navegador**: Chrome, Firefox, Safari o Edge (recomendados).
+* **Sistema Operativo:** Windows 10 o superior o Linux
+* **Procesador:** 1 GHZ o superior
+* **Memoria:** 2 GB o superior
+* **Java 17**
+* **Programas para crear BD y lanzar la APP:** MySQL Workbench | IDE (IntelliJ, Eclipse, VS Code...)
 
-#### **Aplicación Móvil:**
+### Aplicación Móvil:
 
-- **Sistema operativo**: Android 8.0 o superior.
-- **Conexión a internet**.
-
-#### **Backend:**
-
-- **Node.js** (v14 o superior).
-- **MongoDB** (base de datos).
+* **Sistema Operativo:** Android
+* **Conexión a internet para sincronizar datos.**
+* **Programas para emular y crear el puente:** Android Studio y Ngrok
 
 ### Instalación:
 
