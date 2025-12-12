@@ -1,0 +1,90 @@
+# flyctl launch added from .gitignore
+# Compiled class files
+**/*.class
+
+# Log files
+**/*.log
+
+# Package Files
+**/*.jar
+**/*.war
+**/*.nar
+**/*.ear
+**/*.zip
+**/*.tar.gz
+**/*.rar
+
+# Maven
+**/target
+**/pom.xml.tag
+**/pom.xml.releaseBackup
+**/pom.xml.versionsBackup
+
+# IntelliJ IDEA
+**/.idea
+**/*.iws
+**/*.iml
+**/*.ipr
+**/out
+
+# VS Code
+**/.vscode
+
+# Eclipse
+**/.classpath
+**/.project
+**/.settings
+
+# macOS
+**/.DS_Store
+
+# Environment variables
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Logs
+**/logs
+**/*.log
+
+# Temporary files
+**/*.tmp
+**/*.temp
+
+# flyctl launch added from .idea/.gitignore
+# Default ignored files
+.idea/shelf
+.idea/workspace.xml
+# Editor-based HTTP Client requests
+.idea/httpRequests
+# Environment-dependent path to Maven home directory
+.idea/mavenHomeManager.xml
+# Datasource local storage ignored files
+.idea/dataSources
+.idea/dataSources.local.xml
+
+# flyctl launch added from app-movil/.gitignore
+app-movil/**/*.iml
+app-movil/**/.gradle
+app-movil/local.properties
+app-movil/.idea/caches
+app-movil/.idea/libraries
+app-movil/.idea/modules.xml
+app-movil/.idea/workspace.xml
+app-movil/.idea/navEditor.xml
+app-movil/.idea/assetWizardSettings.xml
+app-movil/**/.DS_Store
+app-movil/build
+app-movil/captures
+app-movil/**/.externalNativeBuild
+app-movil/**/.cxx
+app-movil/**/local.properties
+
+# flyctl launch added from app-movil/.idea/.gitignore
+# Default ignored files
+app-movil/.idea/shelf
+app-movil/.idea/workspace.xml
+
+# flyctl launch added from app-movil/app/.gitignore
+app-movil/app/build
+fly.toml
