@@ -1,0 +1,32 @@
+# fly.toml app configuration file generated for lavadero-sepulveda on 2025-12-12T14:21:13+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'lavadero-sepulveda'
+primary_region = 'cdg'
+
+[build]
+
+[env]
+PORT = "8080"
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = false
+auto_start_machines = true
+min_machines_running = 1
+processes = ['app']
+
+[[vm]]
+cpus = 1
+memory_mb = 1024
+
+# Health check para asegurar que la app está corriendo
+[[http_service.http_checks]]
+interval = "30s"
+timeout = "10s"
+grace_period = "30s"
+method = "GET"
+path = "/actuator/health"
