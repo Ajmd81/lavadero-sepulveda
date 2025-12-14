@@ -9,14 +9,13 @@ El **Sistema Integral de Reservas – Lavadero Sepúlveda** es una plataforma mu
 - **Reservas online** 24/7.
 - **Gestión de citas** para clientes y servicios realizados.
 - **Estadísticas y reportes** de ocupación y demanda.
-- **Accesibilidad** desde plataformas web, móviles y de escritorio
+- **Accesibilidad** desde plataformas web y móviles.
 
 🛠️ **Tecnologías Principales**
 
 - **Backend:** Spring Boot 3.x, Spring Data JPA, MySQL  
 - **Frontend Web:** Thymeleaf, HTML5, CSS3, JS  
-- **Móvil:** Android Studio (Java, Retrofit)  
-- **Escritorio:** JavaFX, Scene Builder  
+- **Móvil:** Android Studio (Java, Retrofit)   
 - **DevOps:** Docker, Maven, Git
 
 ---
@@ -53,11 +52,9 @@ El formulario de reservas incluye un sistema inteligente de clasificación:
 
 ### **Requisitos Previos**
 
-### Aplicación Escritorio:
+### Aplicación Web:
 
-* **Sistema Operativo:** Windows 10 o superior o Linux
-* **Procesador:** 1 GHZ o superior
-* **Memoria:** 2 GB o superior
+* **Navegadores soportados**
 * **Java 17**
 * **Programas para crear BD y lanzar la APP:** MySQL Workbench | IDE (IntelliJ, Eclipse, VS Code...)
 
@@ -65,7 +62,7 @@ El formulario de reservas incluye un sistema inteligente de clasificación:
 
 * **Sistema Operativo:** Android
 * **Conexión a internet para sincronizar datos.**
-* **Programas para emular y crear el puente:** Android Studio y Ngrok
+* **Programas para emular y crear el puente:** Android Studio y Railway
 
 ### Instalación:
 
