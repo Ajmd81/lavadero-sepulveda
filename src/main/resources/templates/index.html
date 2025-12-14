@@ -35,7 +35,6 @@
 <section class="hero">
     <div class="container">
         <h1>Reserva tu cita para lavado de vehículo</h1>
-
         <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
     </div>
 </section>
@@ -105,6 +104,89 @@
     </div>
 </footer>
 
+<!-- ============================================================ -->
+<!-- CHATBOT WIDGET -->
+<!-- ============================================================ -->
+
+<!-- CSS del chatbot -->
+<link rel="stylesheet" th:href="@{/css/chatbot.css}">
+
+<div id="chatbot-widget">
+    <!-- Botón flotante -->
+    <div id="chatbot-button" onclick="toggleChat()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span id="notification-badge">1</span>
+    </div>
+
+    <!-- Ventana del chat -->
+    <div id="chatbot-window" style="display: none;">
+        <!-- Header -->
+        <div id="chatbot-header">
+            <div class="header-info">
+                <div class="avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </div>
+                <div class="header-text">
+                    <h3>Asistente Virtual</h3>
+                    <p class="status">
+                        <span class="status-dot"></span>
+                        En línea
+                    </p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mensajes -->
+        <div id="chatbot-messages">
+            <div class="message bot-message">
+                <div class="message-content">
+                    <p>👋 <strong>¡Hola! Bienvenido/a a Lavadero Sepúlveda</strong></p>
+                    <p>Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?</p>
+                </div>
+                <span class="message-time">Ahora</span>
+            </div>
+
+            <div class="quick-options" id="initial-options">
+                <button class="option-btn" onclick="sendQuickOption('HORARIO')">🕒 Horario</button>
+                <button class="option-btn" onclick="sendQuickOption('TARIFAS')">📋 Ver tarifas</button>
+                <button class="option-btn" onclick="sendQuickOption('RESERVA')">📅 Reservar cita</button>
+                <button class="option-btn" onclick="sendQuickOption('UBICACION')">📍 Ubicación</button>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div id="chatbot-input">
+            <input
+                    type="text"
+                    id="user-input"
+                    placeholder="Escribe tu mensaje..."
+                    onkeypress="handleKeyPress(event)"
+            />
+            <button onclick="sendMessage()" class="send-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript del chatbot -->
+<script th:src="@{/js/chatbot-widget.js}"></script>
+
+<!-- Script del menú responsive -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const menuToggle = document.getElementById('menuToggle');
@@ -137,5 +219,6 @@
         }
     });
 </script>
+
 </body>
 </html>
