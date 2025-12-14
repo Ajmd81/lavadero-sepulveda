@@ -10,6 +10,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -21,7 +26,39 @@ public class SecurityConfig {
     @Value("${app.admin.password}")
     private String adminPassword;
 
-    // *** ELIMINADO passwordEncoder() completamente ***
+    /**
+     * ✅ Configuración CORS para Railway y desarrollo local
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // Orígenes permitidos
+        configuration.setAllowedOrigins(Arrays.asList(
+                "https://lavadero-sepulveda-production.up.railway.app",
+                "http://localhost:8080",
+                "http://127.0.0.1:8080"
+        ));
+
+        // Métodos HTTP permitidos
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
+        ));
+
+        // Headers permitidos
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // Permitir credenciales (cookies, auth headers)
+        configuration.setAllowCredentials(true);
+
+        // Cache de preflight requests (1 hora)
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -43,15 +80,26 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // ✅ CRÍTICO: Aplicar configuración CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 .authorizeHttpRequests(authz -> authz
-                        // Permitir acceso sin autenticación a la API y páginas públicas
+                        // API y chatbot públicos
                         .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/chatbot").permitAll() // ✅ Añadido
+
+                        // Páginas públicas
                         .requestMatchers("/", "/nueva-cita", "/guardar-cita", "/confirmacion",
                                 "/horarios-disponibles", "/horario", "/galeria",
                                 "/productos", "/tarifas", "/policy").permitAll()
+
+                        // Recursos estáticos
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                        // Requerir autenticación para rutas de administración
+
+                        // Admin protegido
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                        // Resto público
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot - Lavadero Sepúlveda</title>
+  <link rel="stylesheet" th:href="@{/css/chatbot.css}">
+</head>
+<body>
+<h1>Demo del Asistente Virtual</h1>
+<p>Haz click en el botón flotante de la esquina inferior derecha para probar el chatbot.</p>
+
+<!-- WIDGET DEL CHATBOT -->
+<div id="chatbot-widget">
+  <!-- Botón flotante -->
+  <div id="chatbot-button" onclick="toggleChat()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+    <span id="notification-badge">1</span>
+  </div>
+
+  <!-- Ventana del chat -->
+  <div id="chatbot-window" style="display: none;">
+    <!-- Header -->
+    <div id="chatbot-header">
+      <div class="header-info">
+        <div class="avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h3>Asistente Virtual</h3>
+          <p class="status">
+            <span class="status-dot"></span>
+            En línea
+          </p>
+        </div>
+      </div>
+      <button onclick="toggleChat()" class="close-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mensajes -->
+    <div id="chatbot-messages">
+      <div class="message bot-message">
+        <div class="message-content">
+          <p>👋 <strong>¡Hola! Bienvenido/a a Lavadero Sepúlveda</strong></p>
+          <p>Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?</p>
+        </div>
+        <span class="message-time">Ahora</span>
+      </div>
+
+      <div class="quick-options" id="initial-options">
+        <button onclick="sendQuickOption('HORARIO')">🕒 Horario</button>
+        <button onclick="sendQuickOption('Tarifas')">📋 Ver tarifas</button>
+        <button onclick="sendQuickOption('Cita')">📅 Reservar cita</button>
+        <button onclick="sendQuickOption('Ubicacion')">📍 Ubicación</button>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div id="chatbot-input">
+      <input
+              type="text"
+              id="user-input"
+              placeholder="Escribe tu mensaje..."
+              onkeypress="handleKeyPress(event)"
+      />
+      <button onclick="sendMessage()" class="send-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/chatbot-widget.js}"></script>
+</body>
+</html>
