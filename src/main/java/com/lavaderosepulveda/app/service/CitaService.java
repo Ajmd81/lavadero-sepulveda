@@ -1,6 +1,8 @@
 package com.lavaderosepulveda.app.service;
 
+import com.lavaderosepulveda.app.dto.ClienteEstadisticaDTO;
 import com.lavaderosepulveda.app.model.Cita;
+import com.lavaderosepulveda.app.model.TipoLavado;
 import com.lavaderosepulveda.app.repository.CitaRepository;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -209,8 +211,117 @@ public class CitaService {
         return obtenerCitasEnRango(hoy, fechaLimite);
     }
 
+    // ==================== MÉTODOS DE ESTADÍSTICAS ====================
+
     /**
-     * Validaciones privadas
+     * Obtener los 10 mejores clientes del último año
+     * Incluye servicio más frecuente por cada cliente
+     */
+    public List<ClienteEstadisticaDTO> obtenerTop10ClientesUltimoAnio() {
+        LocalDate fechaHaceUnAnio = LocalDate.now().minusYears(1);
+        
+        // Obtener la lista base de clientes
+        List<ClienteEstadisticaDTO> clientes = citaRepository
+            .findTop10ClientesByReservasUltimoAnio(fechaHaceUnAnio)
+            .stream()
+            .limit(10)
+            .collect(Collectors.toList());
+        
+        // Completar con el servicio más frecuente de cada cliente
+        clientes.forEach(cliente -> {
+            String servicioMasFrecuente = citaRepository
+                .findServicioMasFrecuenteByTelefono(cliente.getTelefono(), fechaHaceUnAnio);
+            
+            if (servicioMasFrecuente != null) {
+                cliente.setServicioMasFrecuente(
+                    formatearNombreServicio(servicioMasFrecuente)
+                );
+            } else {
+                cliente.setServicioMasFrecuente("Variado");
+            }
+        });
+        
+        return clientes;
+    }
+    
+    /**
+     * Obtener estadísticas generales del negocio en el último año
+     */
+    public Map<String, Object> obtenerEstadisticasGenerales() {
+        LocalDate fechaHaceUnAnio = LocalDate.now().minusYears(1);
+        
+        Map<String, Object> estadisticas = new HashMap<>();
+        
+        // Total de clientes únicos
+        Long clientesUnicos = citaRepository.countClientesUnicos(fechaHaceUnAnio);
+        estadisticas.put("clientesUnicos", clientesUnicos);
+        
+        // Total de reservas completadas
+        Long reservasCompletadas = citaRepository.countReservasCompletadas(fechaHaceUnAnio);
+        estadisticas.put("reservasCompletadas", reservasCompletadas);
+        
+        // Servicio más popular
+        String servicioMasPopular = citaRepository.findServicioMasPopular(fechaHaceUnAnio);
+        estadisticas.put("servicioMasPopular", 
+            servicioMasPopular != null ? formatearNombreServicio(servicioMasPopular) : "N/A");
+        
+        // Promedio de reservas por cliente
+        if (clientesUnicos != null && clientesUnicos > 0) {
+            double promedioReservas = (double) reservasCompletadas / clientesUnicos;
+            estadisticas.put("promedioReservasPorCliente", 
+                String.format("%.1f", promedioReservas));
+        } else {
+            estadisticas.put("promedioReservasPorCliente", "0.0");
+        }
+        
+        return estadisticas;
+    }
+    
+    /**
+     * Formatear el nombre del tipo de lavado para mostrar en la UI
+     * Usa directamente el enum TipoLavado para obtener la descripción
+     */
+    private String formatearNombreServicio(String tipoLavado) {
+        if (tipoLavado == null) return "N/A";
+        
+        // Intentar obtener directamente del enum
+        try {
+            TipoLavado tipo = TipoLavado.valueOf(tipoLavado);
+            return tipo.getDescripcion();
+        } catch (IllegalArgumentException e) {
+            // Si no existe en el enum, hacer el formateo manual (fallback)
+            return switch (tipoLavado) {
+                case "LAVADO_COMPLETO_TURISMO" -> "Lavado Completo Turismo";
+                case "LAVADO_INTERIOR_TURISMO" -> "Lavado Interior Turismo";
+                case "LAVADO_EXTERIOR_TURISMO" -> "Lavado Exterior Turismo";
+                case "LAVADO_COMPLETO_RANCHERA" -> "Lavado Completo Turismo Ranchera";
+                case "LAVADO_INTERIOR_RANCHERA" -> "Lavado Interior Turismo Ranchera";
+                case "LAVADO_EXTERIOR_RANCHERA" -> "Lavado Exterior Turismo Ranchera";
+                case "LAVADO_COMPLETO_MONOVOLUMEN" -> "Lavado Completo Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_INTERIOR_MONOVOLUMEN" -> "Lavado Interior Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_EXTERIOR_MONOVOLUMEN" -> "Lavado Exterior Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_COMPLETO_TODOTERRENO" -> "Lavado Completo Todoterreno Grande";
+                case "LAVADO_INTERIOR_TODOTERRENO" -> "Lavado Interior Todoterreno Grande";
+                case "LAVADO_EXTERIOR_TODOTERRENO" -> "Lavado Exterior Todoterreno Grande";
+                case "LAVADO_COMPLETO_FURGONETA_PEQUEÑA" -> "Lavado Completo Furgoneta Pequeña";
+                case "LAVADO_INTERIOR_FURGONETA_PEQUEÑA" -> "Lavado Interior Furgoneta Pequeña";
+                case "LAVADO_EXTERIOR_FURGONETA_PEQUEÑA" -> "Lavado Exterior Furgoneta Pequeña";
+                case "LAVADO_COMPLETO_FURGONETA_GRANDE" -> "Lavado Completo Furgoneta Grande";
+                case "LAVADO_INTERIOR_FURGONETA_GRANDE" -> "Lavado Interior Furgoneta Grande";
+                case "LAVADO_EXTERIOR_FURGONETA_GRANDE" -> "Lavado Exterior Furgoneta Grande";
+                case "TRATAMIENTO_OZONO" -> "Tratamiento de Ozono";
+                case "ENCERADO" -> "Encerado de Vehículo a Mano";
+                case "TAPICERIA_SIN_DESMONTAR" -> "Limpieza de tapicería sin desmontar asientos";
+                case "TAPICERIA_DESMONTANDO" -> "Limpieza de tapicería desmontando asientos";
+                default -> tipoLavado.replace("_", " ");
+            };
+        }
+    }
+
+    // ==================== VALIDACIONES PRIVADAS ====================
+
+    /**
+     * Validar disponibilidad del horario
      */
     private void validarDisponibilidadHorario(LocalDate fecha, LocalTime hora) {
         if (!horarioService.esHorarioDisponible(fecha, hora)) {
@@ -219,6 +330,9 @@ public class CitaService {
         }
     }
 
+    /**
+     * Validar que la fecha sea futura
+     */
     private void validarFechaFutura(LocalDate fecha) {
         if (fecha.isBefore(LocalDate.now())) {
             throw new RuntimeException("No se pueden crear citas en fechas pasadas");

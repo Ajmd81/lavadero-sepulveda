@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas - Lavadero Sepúlveda</title>
+    <link rel="stylesheet" th:href="@{/css/admin-menu.css}">
+    <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Tarjetas de estadísticas generales */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Tabla de Top 10 */
+        .top10-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        tbody tr:nth-child(1) {
+            background: linear-gradient(90deg, #ffd700 5%, transparent 5%);
+        }
+
+        tbody tr:nth-child(2) {
+            background: linear-gradient(90deg, #c0c0c0 5%, transparent 5%);
+        }
+
+        tbody tr:nth-child(3) {
+            background: linear-gradient(90deg, #cd7f32 5%, transparent 5%);
+        }
+
+        td {
+            padding: 15px;
+            color: #333;
+        }
+
+        .ranking {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #667eea;
+            text-align: center;
+            min-width: 50px;
+        }
+
+        .ranking-medal {
+            font-size: 1.5rem;
+        }
+
+        .cliente-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cliente-nombre {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .cliente-telefono {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-reservas {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-dinero {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .badge-servicio {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+            font-size: 1.2rem;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 10px 8px;
+            }
+
+            .ranking-medal {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Menú de navegación -->
+    <div th:replace="~{admin/menu :: menu}"></div>
+
+    <div class="container">
+        <!-- Encabezado -->
+        <div class="page-header">
+            <h1>📊 Estadísticas del Negocio</h1>
+            <p>Análisis de los últimos 12 meses</p>
+        </div>
+
+        <!-- Mensaje de error -->
+        <div th:if="${error}" class="error-message" th:text="${error}"></div>
+
+        <!-- Tarjetas de estadísticas generales -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" th:text="${estadisticas.clientesUnicos}">0</div>
+                <div class="stat-label">Clientes Únicos</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value" th:text="${estadisticas.reservasCompletadas}">0</div>
+                <div class="stat-label">Reservas Completadas</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value" th:text="${estadisticas.promedioReservasPorCliente}">0</div>
+                <div class="stat-label">Promedio por Cliente</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" th:text="${estadisticas.servicioMasPopular}" style="font-size: 1.3rem;">N/A</div>
+                <div class="stat-label">Servicio Más Popular</div>
+            </div>
+        </div>
+
+        <!-- Top 10 Clientes -->
+        <div class="top10-section">
+            <h2 class="section-title">🏆 Top 10 Mejores Clientes</h2>
+
+            <div th:if="${top10Clientes != null and !top10Clientes.isEmpty()}" class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 80px; text-align: center;">#</th>
+                            <th>Cliente</th>
+                            <th>Email</th>
+                            <th style="text-align: center;">Reservas</th>
+                            <th style="text-align: right;">Total Gastado</th>
+                            <th>Servicio Favorito</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="cliente, iterStat : ${top10Clientes}">
+                            <td class="ranking">
+                                <span th:if="${iterStat.index == 0}" class="ranking-medal">🥇</span>
+                                <span th:if="${iterStat.index == 1}" class="ranking-medal">🥈</span>
+                                <span th:if="${iterStat.index == 2}" class="ranking-medal">🥉</span>
+                                <span th:if="${iterStat.index > 2}" th:text="${iterStat.index + 1}">4</span>
+                            </td>
+                            <td>
+                                <div class="cliente-info">
+                                    <span class="cliente-nombre" th:text="${cliente.nombre}">Nombre</span>
+                                    <span class="cliente-telefono" th:text="${cliente.telefono}">Teléfono</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span th:text="${cliente.email}">email@ejemplo.com</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-reservas" th:text="${cliente.totalReservas}">0</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <span class="badge badge-dinero" 
+                                      th:text="${#numbers.formatDecimal(cliente.totalGastado, 1, 2)} + ' €'">0 €</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-servicio" th:text="${cliente.servicioMasFrecuente}">Servicio</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${top10Clientes == null or top10Clientes.isEmpty()}" class="no-data">
+                <p>📊 No hay datos suficientes para mostrar estadísticas</p>
+                <p style="font-size: 0.9rem; margin-top: 10px;">
+                    Necesitas al menos una cita completada en el último año
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
