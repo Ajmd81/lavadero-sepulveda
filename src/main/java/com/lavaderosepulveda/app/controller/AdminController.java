@@ -1,5 +1,6 @@
 package com.lavaderosepulveda.app.controller;
 
+import com.lavaderosepulveda.app.dto.ClienteEstadisticaDTO;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.EstadoCita;
 import com.lavaderosepulveda.app.model.VehicleModel;
@@ -290,12 +291,33 @@ public class AdminController {
     }
 
     /**
-     * Estadísticas (para futuras implementaciones)
+     * Estadísticas - Top 10 clientes del último año
      */
     @GetMapping("/estadisticas")
     public String estadisticas(Model model) {
-        // Por ahora redirige al listado
-        // Aquí podrías agregar gráficos, reportes, etc.
-        return "redirect:/admin/listado-citas";
+        try {
+            logger.info("Accediendo a estadísticas...");
+
+            // Obtener top 10 clientes
+            List<ClienteEstadisticaDTO> top10Clientes = citaService.obtenerTop10ClientesUltimoAnio();
+            logger.info("Top 10 clientes obtenidos: {}", top10Clientes.size());
+
+            // Obtener estadísticas generales
+            Map<String, Object> estadisticasGenerales = citaService.obtenerEstadisticasGenerales();
+            logger.info("Estadísticas generales obtenidas: {}", estadisticasGenerales);
+
+            // Agregar al modelo
+            model.addAttribute("top10Clientes", top10Clientes);
+            model.addAttribute("estadisticas", estadisticasGenerales);
+
+            logger.info("Cargadas estadísticas: {} clientes en top 10", top10Clientes.size());
+
+            return "admin/estadisticas";
+
+        } catch (Exception e) {
+            logger.error("Error al cargar estadísticas: {}", e.getMessage(), e);
+            model.addAttribute("error", "Error al cargar las estadísticas: " + e.getMessage());
+            return "redirect:/admin/listado-citas";
+        }
     }
 }
