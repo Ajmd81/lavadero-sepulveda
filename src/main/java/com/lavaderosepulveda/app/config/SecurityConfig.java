@@ -105,7 +105,7 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/admin/login")
                         .loginProcessingUrl("/admin/login")
-                        .defaultSuccessUrl("/admin/listado-citas", true)
+                        .defaultSuccessUrl("/admin/citas-por-estado", true)
                         .failureUrl("/admin/login?error=true")
                         .permitAll()
                 )

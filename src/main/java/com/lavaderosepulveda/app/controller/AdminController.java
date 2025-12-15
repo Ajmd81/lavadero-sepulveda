@@ -281,13 +281,12 @@ public class AdminController {
     }
 
     /**
-     * Configuración (para futuras implementaciones)
+     * Página de configuración del panel de administración
      */
     @GetMapping("/configuracion")
     public String configuracion(Model model) {
-        // Por ahora redirige al listado
-        // Aquí podrías agregar configuración de horarios, precios, etc.
-        return "redirect:/admin/listado-citas";
+        logger.info("Accediendo a configuración del panel admin");
+        return "admin/configuracion";
     }
 
     /**

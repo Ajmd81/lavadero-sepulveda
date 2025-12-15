@@ -88,6 +88,9 @@
     margin-bottom: 30px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     animation: fadeInUp 0.5s ease;
+    /* 🔧 FIX: Permitir que el dropdown sea visible */
+    overflow: visible !important;
+    position: relative;
 }
 
 @keyframes fadeInUp {
@@ -125,8 +128,24 @@
 
 .table-responsive {
     margin-top: 20px;
-    overflow-x: auto;
+    /* 🔧 FIX CRÍTICO: Cambiar overflow-x: auto a overflow: visible */
+    overflow: visible !important;
     border-radius: 8px;
+    position: relative;
+}
+
+/* 🔧 NUEVO: Envolver tabla para scroll horizontal en móviles */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Pero mantener z-index alto para el dropdown */
+    .table-responsive .dropdown-menu {
+        position: fixed !important;
+        z-index: 9999 !important;
+    }
 }
 
 .table {
@@ -159,6 +178,8 @@
 
 .table tbody tr {
     transition: all 0.2s ease;
+    /* 🔧 FIX: Establecer position relative para que el dropdown funcione */
+    position: relative;
 }
 
 .table tbody tr:hover {
@@ -172,6 +193,8 @@
 
 .actions {
     white-space: nowrap;
+    /* 🔧 FIX: Asegurar position relative */
+    position: relative;
 }
 
 .btn-group {
@@ -197,11 +220,12 @@
     box-shadow: 0 4px 12px rgba(0, 153, 255, 0.4);
 }
 
+/* 🔧 FIX PRINCIPAL: Dropdown visible por encima de todo */
 .dropdown-menu {
-    position: absolute;
+    position: absolute !important;
     top: 100%;
     right: 0;
-    z-index: 1000;
+    z-index: 1050 !important; /* Bootstrap usa 1000, nosotros usamos 1050 */
     min-width: 200px;
     padding: 8px 0;
     margin: 8px 0 0;
@@ -209,6 +233,13 @@
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     animation: slideDown 0.2s ease;
+    border: 1px solid #e5e7eb;
+}
+
+/* 🔧 NUEVO: Asegurar que el dropdown se vea en todas las situaciones */
+.dropdown-menu.show {
+    display: block;
+    z-index: 1050 !important;
 }
 
 @keyframes slideDown {
@@ -240,6 +271,19 @@
     background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
     color: #0099ff;
     padding-left: 25px;
+}
+
+/* 🔧 NUEVO: Estilo para el divider del dropdown */
+.dropdown-divider {
+    height: 1px;
+    margin: 8px 0;
+    background: #e5e7eb;
+    border: none;
+}
+
+/* 🔧 NUEVO: Dropdown items con iconos */
+.dropdown-item::before {
+    margin-right: 8px;
 }
 
 /* ====================================
@@ -287,6 +331,11 @@
     box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
 }
 
+/* 🔧 NUEVO: Badge con texto oscuro en warning */
+.badge.bg-warning.text-dark {
+    color: #92400e !important;
+}
+
 /* ====================================
    MODALES
    ==================================== */
@@ -294,6 +343,13 @@
 .modal-dialog {
     margin: 1.75rem auto;
     max-width: 500px;
+}
+
+/* 🔧 NUEVO: Modal centrado */
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 3.5rem);
 }
 
 .modal-content {
@@ -324,6 +380,7 @@
 
 .modal-header .btn-close:hover {
     opacity: 1;
+    transform: scale(1.1);
 }
 
 .modal-body {
@@ -378,6 +435,33 @@
     box-shadow: 0 6px 20px rgba(0, 153, 255, 0.4);
 }
 
+/* 🔧 NUEVO: Alertas mejoradas */
+.alert {
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-success {
+    background: #d1fae5;
+    border-left: 4px solid #10b981;
+    color: #065f46;
+}
+
+.alert-danger {
+    background: #fee2e2;
+    border-left: 4px solid #ef4444;
+    color: #991b1b;
+}
+
+.alert-dismissible .btn-close {
+    padding: 0.5rem;
+    background: transparent;
+}
+
 /* ====================================
    RESPONSIVE
    ==================================== */
@@ -424,6 +508,7 @@
         width: 100%;
     }
 
+    /* 🔧 FIX: Alinear dropdown a la izquierda en móviles */
     .dropdown-menu {
         right: auto;
         left: 0;
@@ -434,6 +519,8 @@
     .table-responsive {
         margin: 0 -15px;
         padding: 0 15px;
+        /* En móviles SÍ permitir scroll horizontal */
+        overflow-x: auto !important;
     }
 
     .table {
@@ -450,4 +537,57 @@
         margin: 10px;
         max-width: calc(100% - 20px);
     }
+
+    /* 🔧 FIX: En móviles, usar position fixed para el dropdown */
+    .dropdown-menu {
+        position: fixed !important;
+        z-index: 9999 !important;
+    }
+}
+
+/* ====================================
+   🔧 FIXES ADICIONALES IMPORTANTES
+   ==================================== */
+
+/* Asegurar que el dropdown no se corte */
+body {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.container {
+    overflow: visible;
+}
+
+/* Mejorar el botón de acciones */
+.btn-group .btn-sm {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+/* Hover suave en items del dropdown */
+.dropdown-item {
+    position: relative;
+}
+
+.dropdown-item::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: #0099ff;
+    transition: height 0.2s ease;
+}
+
+.dropdown-item:hover::after {
+    height: 60%;
+}
+
+/* Texto de peligro en dropdown */
+.dropdown-item.text-danger:hover {
+    background: #fee2e2;
+    color: #991b1b;
 }

@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estadísticas - Lavadero Sepúlveda</title>
+    <script>
+        (function() {
+            'use strict';
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.documentElement.classList.add('dark-theme');
+            }
+            const fontSize = localStorage.getItem('fontSize') || 'medium';
+            document.documentElement.classList.add('font-' + fontSize);
+            const compactView = localStorage.getItem('compactView') === 'true';
+            if (compactView) {
+                document.documentElement.classList.add('compact-view');
+            }
+        })();
+    </script>
     <link rel="stylesheet" th:href="@{/css/admin-menu.css}">
     <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
     <style>

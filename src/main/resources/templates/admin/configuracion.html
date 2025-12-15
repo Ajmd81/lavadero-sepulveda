@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - Lavadero Sepúlveda</title>
+
+    <!-- MODO OSCURO - Script INLINE para ejecución inmediata -->
+    <script>
+        (function() {
+            'use strict';
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.documentElement.classList.add('dark-theme');
+            }
+            const fontSize = localStorage.getItem('fontSize') || 'medium';
+            document.documentElement.classList.add('font-' + fontSize);
+            const compactView = localStorage.getItem('compactView') === 'true';
+            if (compactView) {
+                document.documentElement.classList.add('compact-view');
+            }
+        })();
+    </script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-menu.css}">
+    <link rel="stylesheet" th:href="@{/css/dark-theme.css}">
+    <link rel="stylesheet" th:href="@{/css/configuracion.css}">
+</head>
+<body>
+
+<!-- Menú de navegación -->
+<div th:replace="~{admin/menu :: menu}"></div>
+
+<div class="config-container">
+    <div class="config-header">
+        <h1>⚙️ Configuración</h1>
+        <p>Personaliza la experiencia del panel de administración</p>
+    </div>
+
+    <!-- Apariencia -->
+    <div class="config-section">
+        <div class="config-section-title">
+            🎨 Apariencia
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Modo Oscuro</div>
+                <div class="option-description">Activa el tema oscuro para reducir la fatiga visual</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Tamaño de Texto</div>
+                <div class="option-description">Ajusta el tamaño de la fuente para mayor comodidad</div>
+            </div>
+            <select class="custom-select" id="fontSizeSelect">
+                <option value="small">Pequeño</option>
+                <option value="medium" selected>Medio</option>
+                <option value="large">Grande</option>
+            </select>
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Vista Compacta</div>
+                <div class="option-description">Reduce el espaciado para ver más contenido</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="compactViewToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div class="config-section">
+        <div class="config-section-title">
+            🔔 Notificaciones
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Notificaciones de Email</div>
+                <div class="option-description">Recibe alertas por email de nuevas citas</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="emailNotificationsToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Sonidos de Notificación</div>
+                <div class="option-description">Reproduce un sonido cuando llegue una nueva cita</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="soundNotificationsToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Notificaciones de Recordatorio</div>
+                <div class="option-description">Alertas para citas próximas (24h antes)</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="reminderNotificationsToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Actualizaciones Automáticas -->
+    <div class="config-section">
+        <div class="config-section-title">
+            🔄 Actualizaciones
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Auto-Refresh de Citas</div>
+                <div class="option-description">Actualiza automáticamente la lista de citas</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="autoRefreshToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Intervalo de Actualización</div>
+                <div class="option-description">Frecuencia de actualización automática</div>
+            </div>
+            <select class="custom-select" id="refreshIntervalSelect">
+                <option value="30">30 segundos</option>
+                <option value="60" selected>1 minuto</option>
+                <option value="120">2 minutos</option>
+                <option value="300">5 minutos</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Horarios del Negocio -->
+    <div class="config-section">
+        <div class="config-section-title">
+            🕐 Horarios del Negocio
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Hora de Apertura</div>
+                <div class="option-description">Hora de inicio del servicio</div>
+            </div>
+            <input type="time" class="custom-select" id="openingTime" value="09:00">
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Hora de Cierre</div>
+                <div class="option-description">Hora de fin del servicio</div>
+            </div>
+            <input type="time" class="custom-select" id="closingTime" value="19:00">
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Duración de Cita (minutos)</div>
+                <div class="option-description">Tiempo estimado por servicio</div>
+            </div>
+            <select class="custom-select" id="appointmentDurationSelect">
+                <option value="15">15 minutos</option>
+                <option value="30" selected>30 minutos</option>
+                <option value="45">45 minutos</option>
+                <option value="60">60 minutos</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Datos y Privacidad -->
+    <div class="config-section">
+        <div class="config-section-title">
+            🔒 Datos y Privacidad
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Guardar Historial de Búsqueda</div>
+                <div class="option-description">Mantiene un registro de tus búsquedas recientes</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="searchHistoryToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="config-option">
+            <div class="option-info">
+                <div class="option-title">Recordar Filtros</div>
+                <div class="option-description">Mantiene los filtros aplicados entre sesiones</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="rememberFiltersToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="config-actions">
+        <button class="btn-reset" onclick="resetToDefaults()">
+            🔄 Restablecer Valores por Defecto
+        </button>
+        <button class="btn-save" onclick="saveConfiguration()">
+            💾 Guardar Configuración
+        </button>
+    </div>
+</div>
+
+<!-- Mensaje de guardado -->
+<div class="save-message" id="saveMessage">
+    ✅ Configuración guardada correctamente
+</div>
+
+<script th:src="@{/js/configuracion.js}"></script>
+
+</body>
+</html>
