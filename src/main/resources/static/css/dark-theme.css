@@ -36,16 +36,20 @@ body.dark-theme {
     --input-bg: #374151;
 }
 
-/* Asegurar que el fondo se aplique al HTML también */
-html.dark-theme {
-    background-color: var(--bg-color);
+body {
+    background-color: var(--bg-color) !important;
+    color: var(--text-primary) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Aplicar variables a elementos comunes */
-body {
-    background-color: var(--bg-color);
-    color: var(--text-primary);
-    transition: background-color 0.3s ease, color 0.3s ease;
+/* Asegurar que el fondo se aplique al HTML también */
+html.dark-theme {
+    background-color: var(--bg-color) !important;
+}
+
+body.dark-theme {
+    background-color: #1a202c !important;
+    color: #f7fafc !important;
 }
 
 /* Tarjetas */
