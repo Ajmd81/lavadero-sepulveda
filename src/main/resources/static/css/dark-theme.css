@@ -1,0 +1,259 @@
+/**
+ * dark-theme.css
+ * Estilos adicionales para el tema oscuro en todas las páginas de admin
+ * Ubicación: src/main/resources/static/css/dark-theme.css
+ */
+
+/* Variables CSS para ambos temas */
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --bg-color: #f5f7fa;
+    --card-bg: #ffffff;
+    --text-primary: #2d3748;
+    --text-secondary: #718096;
+    --border-color: #e2e8f0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --shadow-hover: rgba(0, 0, 0, 0.15);
+    --hover-bg: #f7fafc;
+    --input-bg: #ffffff;
+    --success-color: #48bb78;
+    --warning-color: #ed8936;
+    --error-color: #f56565;
+    --info-color: #4299e1;
+}
+/* Tema Oscuro - Aplicar tanto a HTML como a BODY */
+html.dark-theme,
+body.dark-theme {
+    --bg-color: #1a202c;
+    --card-bg: #2d3748;
+    --text-primary: #f7fafc;
+    --text-secondary: #cbd5e0;
+    --border-color: #4a5568;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 0, 0, 0.4);
+    --hover-bg: #374151;
+    --input-bg: #374151;
+}
+
+/* Asegurar que el fondo se aplique al HTML también */
+html.dark-theme {
+    background-color: var(--bg-color);
+}
+
+/* Aplicar variables a elementos comunes */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Tarjetas */
+.card, .cita-card, .estadistica-card, .info-card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.card:hover, .cita-card:hover {
+    box-shadow: 0 4px 12px var(--shadow-hover);
+}
+
+/* Tablas */
+table {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+thead {
+    background-color: var(--hover-bg);
+}
+
+tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+tbody tr:hover {
+    background-color: var(--hover-bg);
+}
+
+th, td {
+    color: var(--text-primary);
+}
+
+/* Inputs y Selects */
+input, select, textarea {
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+input::placeholder, textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Botones */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+.btn-secondary {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--hover-bg);
+}
+
+/* Menú de navegación */
+.menu, .navbar, .sidebar {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+.menu a, .navbar a, .sidebar a {
+    color: var(--text-primary);
+}
+
+.menu a:hover, .navbar a:hover, .sidebar a:hover {
+    background-color: var(--hover-bg);
+}
+
+.menu a.active, .navbar a.active, .sidebar a.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Badges y Tags */
+.badge, .tag, .status-badge {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+/* Estados de citas */
+.badge.pendiente {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.badge.confirmada {
+    background-color: var(--info-color);
+    color: white;
+}
+
+.badge.completada {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.badge.cancelada, .badge.no-presentado {
+    background-color: var(--error-color);
+    color: white;
+}
+
+/* Modales */
+.modal, .dialog {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+.modal-header, .dialog-header {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-footer, .dialog-footer {
+    border-top: 1px solid var(--border-color);
+}
+
+/* Tooltips */
+.tooltip {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+/* Scrollbar personalizado para tema oscuro */
+body.dark-theme::-webkit-scrollbar {
+    width: 12px;
+}
+
+body.dark-theme::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
+body.dark-theme::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 6px;
+}
+
+body.dark-theme::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Tamaños de fuente */
+body.font-small {
+    font-size: 14px;
+}
+
+body.font-medium {
+    font-size: 16px;
+}
+
+body.font-large {
+    font-size: 18px;
+}
+
+body.font-large h1 {
+    font-size: 2.5rem;
+}
+
+body.font-large h2 {
+    font-size: 2rem;
+}
+
+body.font-large h3 {
+    font-size: 1.75rem;
+}
+
+/* Vista compacta */
+body.compact-view .card,
+body.compact-view .cita-card,
+body.compact-view .estadistica-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+body.compact-view h1 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+}
+
+body.compact-view h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+body.compact-view .section {
+    margin-bottom: 1.5rem;
+}
+
+body.compact-view table {
+    font-size: 0.9rem;
+}
+
+body.compact-view th, body.compact-view td {
+    padding: 0.5rem;
+}
+
+/* Transiciones suaves */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

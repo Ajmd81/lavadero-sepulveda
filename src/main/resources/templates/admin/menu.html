@@ -2,7 +2,26 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+
+    <!-- MODO OSCURO - Script INLINE para ejecución inmediata -->
+    <script>
+        (function() {
+            'use strict';
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.documentElement.classList.add('dark-theme');
+            }
+            const fontSize = localStorage.getItem('fontSize') || 'medium';
+            document.documentElement.classList.add('font-' + fontSize);
+            const compactView = localStorage.getItem('compactView') === 'true';
+            if (compactView) {
+                document.documentElement.classList.add('compact-view');
+            }
+        })();
+    </script>
+
     <link rel="stylesheet" th:href="@{/css/admin-menu.css}">
+    <link rel="stylesheet" th:href="@{/css/dark-theme.css}">
     <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
 </head>
 <body>
@@ -67,6 +86,28 @@
 </nav>
 
 <script>
+    // Aplicar tema también al body cuando esté disponible
+    (function() {
+        function applyThemeToBody() {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.body.classList.add('dark-theme');
+            }
+            const fontSize = localStorage.getItem('fontSize') || 'medium';
+            document.body.classList.add('font-' + fontSize);
+            const compactView = localStorage.getItem('compactView') === 'true';
+            if (compactView) {
+                document.body.classList.add('compact-view');
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyThemeToBody);
+        } else {
+            applyThemeToBody();
+        }
+    })();
+
     // Marcar página activa según la URL actual
     document.addEventListener('DOMContentLoaded', function() {
         const currentPath = window.location.pathname;
