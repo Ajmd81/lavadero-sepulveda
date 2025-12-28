@@ -1,35 +1,35 @@
 # Configuración de la aplicación Lavadero Sepúlveda CRM
 
 # Información de la empresa
-app.empresa.nombre=Lavadero Sepúlveda
-app.empresa.cif=B12345678
-app.empresa.direccion=Calle Principal, 123
-app.empresa.codigo_postal=28001
-app.empresa.ciudad=Madrid
-app.empresa.provincia=Madrid
-app.empresa.telefono=+34 XXX XXX XXX
-app.empresa.email=info@lavaderosepulveda.com
-app.empresa.web=www.lavaderosepulveda.com
+app.empresa.nombre=TU_NOMBRE_O_RAZON_SOCIAL
+app.empresa.cif=TU_CIF_O_NIF
+app.empresa.direccion=TU_DIRECCION_COMPLETA
+app.empresa.codigo_postal=TU_CODIGO_POSTAL
+app.empresa.ciudad=TU_CIUDAD
+app.empresa.provincia=TU_PROVINCIA
+app.empresa.telefono=TU_TELEFONO
+app.empresa.email=TU_EMAIL_EMPRESA
+app.empresa.web=TU_WEB
 
 # Configuración de facturación
-facturacion.serie.defecto=A
+facturacion.serie.defecto=2026-
 facturacion.iva.defecto=21.0
-facturacion.dias_vencimiento=30
+facturacion.dias_vencimiento=0
 
 # Configuración de Email SMTP
-email.smtp.host=smtp.gmail.com
+email.smtp.host=smtp.tu-proveedor.com
 email.smtp.port=587
-email.smtp.username=
-email.smtp.password=
-email.smtp.from=
-email.smtp.from_name=Lavadero Sepúlveda
+email.smtp.username=TU_EMAIL_SMTP
+email.smtp.password=TU_PASSWORD_SMTP
+email.smtp.from=TU_EMAIL_FROM
+email.smtp.from_name=TU_NOMBRE_EMPRESA
 email.smtp.ssl.enable=true
 email.smtp.auth=true
 
 # Configuración de WhatsApp Business API
 whatsapp.api.url=https://graph.facebook.com/v18.0
-whatsapp.api.phone_number_id=
-whatsapp.api.access_token=
+whatsapp.api.phone_number_id=TU_PHONE_NUMBER_ID
+whatsapp.api.access_token=TU_ACCESS_TOKEN
 
 # Configuración de recordatorios
 citas.recordatorio.horas_antes=24

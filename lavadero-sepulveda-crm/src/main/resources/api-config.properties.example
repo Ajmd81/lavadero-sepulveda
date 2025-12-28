@@ -1,9 +1,8 @@
 # Configuración de conexión a CitasApi
-
 # URL base de la API
-api.base.url=http://localhost:8080
+# api.base.url=http://localhost:8080
 # O si está desplegada en Railway:
-# api.base.url=https://tu-app.railway.app
+api.base.url=https://TU-APP-RAILWAY.up.railway.app
 
 # Endpoints de la API
 api.endpoints.clientes=/api/clientes
@@ -23,28 +22,28 @@ api.timeout.read=30
 api.timeout.write=30
 
 # Configuración de la empresa (para facturas)
-app.empresa.nombre=Lavadero Sepúlveda
-app.empresa.cif=B12345678
-app.empresa.direccion=Calle Principal, 123
-app.empresa.codigo_postal=28001
-app.empresa.ciudad=Madrid
-app.empresa.provincia=Madrid
-app.empresa.telefono=+34 XXX XXX XXX
-app.empresa.email=info@lavaderosepulveda.com
-app.empresa.web=www.lavaderosepulveda.com
+app.empresa.nombre=TU_NOMBRE_O_RAZON_SOCIAL
+app.empresa.cif=TU_CIF_O_NIF
+app.empresa.direccion=TU_DIRECCION_COMPLETA
+app.empresa.codigo_postal=TU_CODIGO_POSTAL
+app.empresa.ciudad=TU_CIUDAD
+app.empresa.provincia=TU_PROVINCIA
+app.empresa.telefono=TU_TELEFONO
+app.empresa.email=TU_EMAIL_EMPRESA
+app.empresa.web=TU_WEB
 
 # Configuración de Email SMTP
-email.smtp.host=smtp.gmail.com
+email.smtp.host=smtp.tu-proveedor.com
 email.smtp.port=587
-email.smtp.username=
-email.smtp.password=
-email.smtp.from=
-email.smtp.from_name=Lavadero Sepúlveda
+email.smtp.username=TU_EMAIL_SMTP
+email.smtp.password=TU_PASSWORD_SMTP
+email.smtp.from=TU_EMAIL_FROM
+email.smtp.from_name=TU_NOMBRE_EMPRESA
 
 # Configuración de WhatsApp
 whatsapp.api.url=https://graph.facebook.com/v18.0
-whatsapp.api.phone_number_id=
-whatsapp.api.access_token=
+whatsapp.api.phone_number_id=TU_PHONE_NUMBER_ID
+whatsapp.api.access_token=TU_ACCESS_TOKEN
 
 # Configuración de PDFs
 pdf.output.path=./facturas/

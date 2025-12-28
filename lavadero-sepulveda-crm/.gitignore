@@ -1,0 +1,19 @@
+# Archivos de configuración con datos sensibles
+src/main/resources/api-config.properties
+src/main/resources/application.properties
+
+# Archivos de base de datos local
+data/
+*.db
+*.h2.db
+
+# Logs
+logs/
+*.log
+
+# Facturas y backups
+facturas/
+backup/
+
+# Archivos de recursos locales
+resources/logo.png

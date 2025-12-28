@@ -1,7 +1,6 @@
 package com.lavaderosepulveda.crm.controller;
 
 import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
-import com.lavaderosepulveda.crm.model.EstadoCita;
 import com.lavaderosepulveda.crm.service.DashboardService;
 import com.lavaderosepulveda.crm.service.DashboardService.DashboardMetrics;
 import javafx.application.Platform;
@@ -15,7 +14,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 public class DashboardController {
