@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      spacing="20">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="Contabilidad y Reportes" styleClass="title-label"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Generar Reporte" styleClass="primary-button"/>
+        <Button text="Exportar Excel"/>
+    </HBox>
+
+    <!-- Filtros de período -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Período:"/>
+        <ComboBox prefWidth="150" promptText="Seleccionar...">
+            <items>
+                <String fx:value="Este mes"/>
+                <String fx:value="Mes anterior"/>
+                <String fx:value="Este trimestre"/>
+                <String fx:value="Este año"/>
+                <String fx:value="Personalizado"/>
+            </items>
+        </ComboBox>
+        <Label text="Desde:"/>
+        <DatePicker prefWidth="130"/>
+        <Label text="Hasta:"/>
+        <DatePicker prefWidth="130"/>
+        <Button text="Generar"/>
+    </HBox>
+
+    <!-- Resumen financiero -->
+    <GridPane hgap="15" vgap="15">
+        <VBox styleClass="metric-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Ingresos Totales"/>
+            <Label text="0.00 €" styleClass="metric-value-small"/>
+        </VBox>
+
+        <VBox styleClass="metric-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="IVA Repercutido"/>
+            <Label text="0.00 €" styleClass="metric-value-small"/>
+        </VBox>
+
+        <VBox styleClass="metric-card" GridPane.columnIndex="2" GridPane.rowIndex="0">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Base Imponible"/>
+            <Label text="0.00 €" styleClass="metric-value-small"/>
+        </VBox>
+
+        <VBox styleClass="metric-card" GridPane.columnIndex="3" GridPane.rowIndex="0">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Nº Facturas"/>
+            <Label text="0" styleClass="metric-value-small"/>
+        </VBox>
+    </GridPane>
+
+    <!-- Tabla de desglose -->
+    <TabPane VBox.vgrow="ALWAYS">
+        <Tab text="Resumen Mensual" closable="false">
+            <TableView>
+                <columns>
+                    <TableColumn text="Mes" prefWidth="150"/>
+                    <TableColumn text="Facturas" prefWidth="100"/>
+                    <TableColumn text="Base" prefWidth="120"/>
+                    <TableColumn text="IVA" prefWidth="100"/>
+                    <TableColumn text="Total" prefWidth="120"/>
+                </columns>
+            </TableView>
+        </Tab>
+        <Tab text="Por Cliente" closable="false">
+            <TableView>
+                <columns>
+                    <TableColumn text="Cliente" prefWidth="250"/>
+                    <TableColumn text="Facturas" prefWidth="100"/>
+                    <TableColumn text="Total" prefWidth="150"/>
+                </columns>
+            </TableView>
+        </Tab>
+        <Tab text="Por Servicio" closable="false">
+            <TableView>
+                <columns>
+                    <TableColumn text="Servicio" prefWidth="250"/>
+                    <TableColumn text="Cantidad" prefWidth="100"/>
+                    <TableColumn text="Total" prefWidth="150"/>
+                </columns>
+            </TableView>
+        </Tab>
+    </TabPane>
+
+</VBox>

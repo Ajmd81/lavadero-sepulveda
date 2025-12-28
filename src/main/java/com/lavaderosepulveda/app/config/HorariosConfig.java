@@ -23,7 +23,6 @@ public class HorariosConfig {
         // Valores por defecto
         manana.setInicio(9);
         manana.setFin(14);
-        manana.setExcluir(List.of(14)); // Excluir 14:00 para API Android
 
         tarde.setInicio(17);
         tarde.setFin(20);

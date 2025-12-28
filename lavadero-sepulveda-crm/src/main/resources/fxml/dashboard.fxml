@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.lavaderosepulveda.crm.controller.DashboardController"
+      spacing="20">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Título -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="Dashboard" styleClass="title-label"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Refrescar" onAction="#refrescar" styleClass="primary-button"/>
+    </HBox>
+
+    <!-- Métricas principales -->
+    <GridPane hgap="15" vgap="15">
+        <!-- Primera fila -->
+        <VBox styleClass="metric-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Citas Hoy" styleClass="metric-title"/>
+            <Label fx:id="lblCitasHoy" text="0" styleClass="metric-value"/>
+        </VBox>
+
+        <VBox styleClass="metric-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Citas Pendientes" styleClass="metric-title"/>
+            <Label fx:id="lblCitasPendientes" text="0" styleClass="metric-value"/>
+        </VBox>
+
+        <VBox styleClass="metric-card" GridPane.columnIndex="2" GridPane.rowIndex="0">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Facturado Hoy" styleClass="metric-title"/>
+            <Label fx:id="lblFacturadoHoy" text="0.00 €" styleClass="metric-value"/>
+        </VBox>
+
+        <!-- Segunda fila -->
+        <VBox styleClass="metric-card" GridPane.columnIndex="0" GridPane.rowIndex="1">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Facturado Este Mes" styleClass="metric-title"/>
+            <Label fx:id="lblFacturadoMes" text="0.00 €" styleClass="metric-value"/>
+        </VBox>
+
+        <VBox styleClass="metric-card" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Pendiente de Cobro" styleClass="metric-title"/>
+            <Label fx:id="lblPendienteCobro" text="0.00 €" styleClass="metric-value"/>
+        </VBox>
+
+        <VBox styleClass="metric-card" GridPane.columnIndex="2" GridPane.rowIndex="1">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <Label text="Clientes Activos" styleClass="metric-title"/>
+            <Label fx:id="lblClientesActivos" text="0" styleClass="metric-value"/>
+        </VBox>
+    </GridPane>
+
+    <!-- Tablas de estadísticas -->
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <!-- Top Clientes -->
+        <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="table-container">
+            <Label text="Top 10 Clientes por Facturación" styleClass="subtitle-label"/>
+            <TableView fx:id="tblTopClientes" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colNombreTop" text="Cliente" prefWidth="200"/>
+                    <TableColumn fx:id="colCitasTop" text="Citas" prefWidth="80"/>
+                    <TableColumn fx:id="colFacturadoTop" text="Facturado" prefWidth="120"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <!-- Clientes con más no presentaciones -->
+        <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="table-container">
+            <Label text="Clientes con Más No Presentaciones" styleClass="subtitle-label"/>
+            <TableView fx:id="tblNoPresentados" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colNombreNo" text="Cliente" prefWidth="200"/>
+                    <TableColumn fx:id="colNoPresentaciones" text="No Present." prefWidth="100"/>
+                    <TableColumn fx:id="colTasaNo" text="Tasa %" prefWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </HBox>
+
+</VBox>

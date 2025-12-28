@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx" 
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.lavaderosepulveda.crm.controller.MainController"
+            prefHeight="800.0" prefWidth="1200.0">
+
+    <!-- Top: MenuBar -->
+    <top>
+        <VBox>
+            <MenuBar>
+                <Menu text="Archivo">
+                    <MenuItem text="Configuración" onAction="#abrirConfiguracion"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="Salir" onAction="#salir"/>
+                </Menu>
+                <Menu text="Gestión">
+                    <MenuItem text="Clientes" onAction="#cargarClientes"/>
+                    <MenuItem text="Citas" onAction="#cargarCitas"/>
+                    <MenuItem text="Facturación" onAction="#cargarFacturacion"/>
+                </Menu>
+                <Menu text="Reportes">
+                    <MenuItem text="Contabilidad" onAction="#cargarContabilidad"/>
+                    <MenuItem text="Dashboard" onAction="#cargarDashboard"/>
+                </Menu>
+                <Menu text="Ayuda">
+                    <MenuItem text="Acerca de"/>
+                </Menu>
+            </MenuBar>
+            
+            <!-- Barra de herramientas -->
+            <ToolBar>
+                <Button text="Dashboard" onAction="#cargarDashboard" styleClass="toolbar-button"/>
+                <Separator orientation="VERTICAL"/>
+                <Button text="Clientes" onAction="#cargarClientes" styleClass="toolbar-button"/>
+                <Button text="Citas" onAction="#cargarCitas" styleClass="toolbar-button"/>
+                <Button text="Facturación" onAction="#cargarFacturacion" styleClass="toolbar-button"/>
+                <Separator orientation="VERTICAL"/>
+                <Button text="Contabilidad" onAction="#cargarContabilidad" styleClass="toolbar-button"/>
+            </ToolBar>
+        </VBox>
+    </top>
+
+    <!-- Center: Contenido dinámico -->
+    <center>
+        <BorderPane fx:id="mainBorderPane" styleClass="content-area">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+        </BorderPane>
+    </center>
+
+    <!-- Bottom: Barra de estado -->
+    <bottom>
+        <HBox styleClass="status-bar" spacing="20" alignment="CENTER_LEFT">
+            <padding>
+                <Insets top="5" right="10" bottom="5" left="10"/>
+            </padding>
+            <Label text="Lavadero Sepúlveda CRM v1.0" styleClass="status-label"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblStatusMessage" text="Listo" styleClass="status-label"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
