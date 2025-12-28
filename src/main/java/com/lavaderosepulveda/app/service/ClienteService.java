@@ -90,7 +90,7 @@ public class ClienteService {
         
         // Calcular si está activo (tiene citas en los últimos 6 meses)
         LocalDate hace6Meses = LocalDate.now().minusMonths(6);
-        boolean tieneC itasRecientes = citas.stream()
+        boolean tieneCitasRecientes = citas.stream()
             .anyMatch(cita -> cita.getFecha().isAfter(hace6Meses));
         cliente.setActivo(tieneCitasRecientes);
         
