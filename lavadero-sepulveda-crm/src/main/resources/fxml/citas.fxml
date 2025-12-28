@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      spacing="20">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="Gestión de Citas" styleClass="title-label"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Nueva Cita" styleClass="primary-button"/>
+        <Button text="Calendario"/>
+    </HBox>
+
+    <!-- Filtros -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Fecha:"/>
+        <DatePicker prefWidth="150"/>
+        <Label text="Estado:"/>
+        <ComboBox prefWidth="150" promptText="Todos"/>
+        <Button text="Filtrar"/>
+    </HBox>
+
+    <!-- Tabla de citas -->
+    <TableView VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn text="ID" prefWidth="50"/>
+            <TableColumn text="Fecha/Hora" prefWidth="150"/>
+            <TableColumn text="Cliente" prefWidth="200"/>
+            <TableColumn text="Servicios" prefWidth="250"/>
+            <TableColumn text="Estado" prefWidth="120"/>
+            <TableColumn text="Importe" prefWidth="100"/>
+            <TableColumn text="Acciones" prefWidth="150"/>
+        </columns>
+    </TableView>
+
+</VBox>

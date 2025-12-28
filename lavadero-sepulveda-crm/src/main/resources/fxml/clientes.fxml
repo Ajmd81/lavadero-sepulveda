@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      spacing="20">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Título y botones -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="Gestión de Clientes" styleClass="title-label"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Nuevo Cliente" styleClass="primary-button"/>
+        <Button text="Buscar"/>
+        <Button text="Exportar"/>
+    </HBox>
+
+    <!-- Barra de búsqueda -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Buscar:"/>
+        <TextField promptText="Nombre, teléfono o email..." prefWidth="300"/>
+        <Button text="Limpiar"/>
+    </HBox>
+
+    <!-- Tabla de clientes -->
+    <TableView VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn text="ID" prefWidth="50"/>
+            <TableColumn text="Nombre Completo" prefWidth="200"/>
+            <TableColumn text="Teléfono" prefWidth="120"/>
+            <TableColumn text="Email" prefWidth="200"/>
+            <TableColumn text="Matrícula" prefWidth="100"/>
+            <TableColumn text="Total Citas" prefWidth="100"/>
+            <TableColumn text="Facturado" prefWidth="120"/>
+            <TableColumn text="Acciones" prefWidth="150"/>
+        </columns>
+    </TableView>
+
+    <!-- Barra de estado -->
+    <HBox spacing="10">
+        <Label text="Total clientes: 0"/>
+    </HBox>
+
+</VBox>
