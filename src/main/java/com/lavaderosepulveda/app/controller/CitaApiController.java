@@ -105,9 +105,9 @@ public class CitaApiController {
         // Obtener horarios usando servicio especializado
         List<LocalTime> horariosDisponibles = horarioService.obtenerHorariosDisponibles(fecha);
 
-        // Aplicar filtro específico para API (excluir 14:00)
+        // Aplicar filtro específico para API (excluir 15:00)
         List<LocalTime> horariosFiltrados = horariosDisponibles.stream()
-                .filter(hora -> hora.getHour() != 14)
+                .filter(hora -> hora.getHour() != 15)
                 .collect(Collectors.toList());
 
         // Convertir a strings usando utility

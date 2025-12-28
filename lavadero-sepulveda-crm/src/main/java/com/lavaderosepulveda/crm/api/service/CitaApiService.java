@@ -2,10 +2,13 @@ package com.lavaderosepulveda.crm.api.service;
 
 import com.google.gson.reflect.TypeToken;
 import com.lavaderosepulveda.crm.api.ApiClient;
+import com.lavaderosepulveda.crm.api.dto.CitaApiResponseDTO;
 import com.lavaderosepulveda.crm.api.dto.CitaDTO;
+import com.lavaderosepulveda.crm.api.mapper.CitaMapper;
 import com.lavaderosepulveda.crm.config.ConfigManager;
 import com.lavaderosepulveda.crm.model.EstadoCita;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -13,8 +16,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 public class CitaApiService {
+    
+    private static final Logger log = LoggerFactory.getLogger(CitaApiService.class);
     
     private static CitaApiService instance;
     private final ApiClient apiClient;
@@ -35,13 +39,19 @@ public class CitaApiService {
     }
     
     /**
-     * Obtener todas las citas
+     * Obtener todas las citas (ahora con mapper)
      */
     public List<CitaDTO> findAll() {
         try {
             String response = apiClient.getRaw(baseUrl);
-            Type listType = new TypeToken<ArrayList<CitaDTO>>(){}.getType();
-            List<CitaDTO> citas = apiClient.getGson().fromJson(response, listType);
+            
+            // Parsear JSON a CitaApiResponseDTO
+            Type listType = new TypeToken<ArrayList<CitaApiResponseDTO>>(){}.getType();
+            List<CitaApiResponseDTO> apiResponses = apiClient.getGson().fromJson(response, listType);
+            
+            // Convertir usando el mapper
+            List<CitaDTO> citas = CitaMapper.toDTOList(apiResponses);
+            
             log.info("Obtenidas {} citas de la API", citas != null ? citas.size() : 0);
             return citas != null ? citas : new ArrayList<>();
         } catch (IOException e) {
@@ -55,7 +65,9 @@ public class CitaApiService {
      */
     public CitaDTO findById(Long id) {
         try {
-            CitaDTO cita = apiClient.get(baseUrl + "/" + id, CitaDTO.class);
+            String response = apiClient.getRaw(baseUrl + "/" + id);
+            CitaApiResponseDTO apiResponse = apiClient.getGson().fromJson(response, CitaApiResponseDTO.class);
+            CitaDTO cita = CitaMapper.toDTO(apiResponse);
             log.info("Cita obtenida: {}", id);
             return cita;
         } catch (IOException e) {

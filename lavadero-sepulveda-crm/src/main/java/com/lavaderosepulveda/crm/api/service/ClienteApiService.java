@@ -4,15 +4,18 @@ import com.google.gson.reflect.TypeToken;
 import com.lavaderosepulveda.crm.api.ApiClient;
 import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
 import com.lavaderosepulveda.crm.config.ConfigManager;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Slf4j
 public class ClienteApiService {
+    
+    private static final Logger log = LoggerFactory.getLogger(ClienteApiService.class);
     
     private static ClienteApiService instance;
     private final ApiClient apiClient;
@@ -35,11 +38,14 @@ public class ClienteApiService {
     /**
      * Obtener todos los clientes
      */
-    public List<ClienteDTO> findAll() {
+    public List<ClienteDTO> obtenerTodosLosClientes() {
         try {
             String response = apiClient.getRaw(baseUrl);
+            
+            // Parsear JSON a List<ClienteDTO>
             Type listType = new TypeToken<ArrayList<ClienteDTO>>(){}.getType();
             List<ClienteDTO> clientes = apiClient.getGson().fromJson(response, listType);
+            
             log.info("Obtenidos {} clientes de la API", clientes != null ? clientes.size() : 0);
             return clientes != null ? clientes : new ArrayList<>();
         } catch (IOException e) {
@@ -51,9 +57,10 @@ public class ClienteApiService {
     /**
      * Obtener cliente por ID
      */
-    public ClienteDTO findById(Long id) {
+    public ClienteDTO obtenerClientePorId(Long id) {
         try {
-            ClienteDTO cliente = apiClient.get(baseUrl + "/" + id, ClienteDTO.class);
+            String response = apiClient.getRaw(baseUrl + "/" + id);
+            ClienteDTO cliente = apiClient.getGson().fromJson(response, ClienteDTO.class);
             log.info("Cliente obtenido: {}", id);
             return cliente;
         } catch (IOException e) {
@@ -63,18 +70,37 @@ public class ClienteApiService {
     }
     
     /**
-     * Buscar clientes por nombre (filtrado local)
+     * Obtener cliente por teléfono
+     */
+    public ClienteDTO obtenerClientePorTelefono(String telefono) {
+        try {
+            String response = apiClient.getRaw(baseUrl + "/telefono/" + telefono);
+            ClienteDTO cliente = apiClient.getGson().fromJson(response, ClienteDTO.class);
+            log.info("Cliente obtenido por teléfono: {}", telefono);
+            return cliente;
+        } catch (IOException e) {
+            log.error("Error al obtener cliente por teléfono: " + telefono, e);
+            return null;
+        }
+    }
+    
+    /**
+     * Filtrar clientes por nombre (filtrado local)
      */
     public List<ClienteDTO> buscarPorNombre(String nombre) {
         try {
-            List<ClienteDTO> todosLosClientes = findAll();
-            String nombreLower = nombre.toLowerCase();
+            List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
+            String nombreBusqueda = nombre.toLowerCase();
+            
             return todosLosClientes.stream()
                 .filter(cliente -> {
-                    String nombreCompleto = (cliente.getNombre() + " " + cliente.getApellidos()).toLowerCase();
-                    return nombreCompleto.contains(nombreLower);
+                    String nombreCompleto = cliente.getNombre();
+                    if (cliente.getApellidos() != null) {
+                        nombreCompleto += " " + cliente.getApellidos();
+                    }
+                    return nombreCompleto.toLowerCase().contains(nombreBusqueda);
                 })
-                .toList();
+                .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Error al buscar clientes por nombre", e);
             return new ArrayList<>();
@@ -82,30 +108,14 @@ public class ClienteApiService {
     }
     
     /**
-     * Buscar cliente por teléfono (filtrado local)
-     */
-    public ClienteDTO buscarPorTelefono(String telefono) {
-        try {
-            List<ClienteDTO> todosLosClientes = findAll();
-            return todosLosClientes.stream()
-                .filter(cliente -> telefono.equals(cliente.getTelefono()))
-                .findFirst()
-                .orElse(null);
-        } catch (Exception e) {
-            log.error("Error al buscar cliente por teléfono", e);
-            return null;
-        }
-    }
-    
-    /**
      * Obtener clientes activos (filtrado local)
      */
-    public List<ClienteDTO> findActivos() {
+    public List<ClienteDTO> obtenerClientesActivos() {
         try {
-            List<ClienteDTO> todosLosClientes = findAll();
+            List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
             return todosLosClientes.stream()
                 .filter(cliente -> cliente.getActivo() != null && cliente.getActivo())
-                .toList();
+                .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Error al obtener clientes activos", e);
             return new ArrayList<>();
@@ -113,48 +123,83 @@ public class ClienteApiService {
     }
     
     /**
-     * Obtener top clientes por facturación (calculado localmente)
+     * Obtener clientes inactivos (filtrado local)
      */
-    public List<ClienteDTO> findTopClientesPorFacturacion(int limit) {
+    public List<ClienteDTO> obtenerClientesInactivos() {
         try {
-            List<ClienteDTO> todosLosClientes = findAll();
+            List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
             return todosLosClientes.stream()
-                .sorted((c1, c2) -> {
-                    Double total1 = c1.getTotalFacturado() != null ? c1.getTotalFacturado() : 0.0;
-                    Double total2 = c2.getTotalFacturado() != null ? c2.getTotalFacturado() : 0.0;
-                    return total2.compareTo(total1); // Descendente
-                })
-                .limit(limit)
-                .toList();
+                .filter(cliente -> cliente.getActivo() == null || !cliente.getActivo())
+                .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Error al obtener top clientes", e);
+            log.error("Error al obtener clientes inactivos", e);
             return new ArrayList<>();
         }
     }
     
     /**
-     * Obtener clientes con más no presentaciones (calculado localmente)
+     * Obtener clientes con más citas (filtrado local)
      */
-    public List<ClienteDTO> findClientesConMasNoPresentaciones(int limit) {
+    public List<ClienteDTO> obtenerTopClientesPorCitas(int limite) {
         try {
-            List<ClienteDTO> todosLosClientes = findAll();
+            List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
+            return todosLosClientes.stream()
+                .sorted((c1, c2) -> {
+                    int citas1 = c1.getTotalCitas() != null ? c1.getTotalCitas() : 0;
+                    int citas2 = c2.getTotalCitas() != null ? c2.getTotalCitas() : 0;
+                    return Integer.compare(citas2, citas1);
+                })
+                .limit(limite)
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error al obtener top clientes por citas", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Obtener clientes con más facturación (filtrado local)
+     */
+    public List<ClienteDTO> obtenerTopClientesPorFacturacion(int limite) {
+        try {
+            List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
+            return todosLosClientes.stream()
+                .sorted((c1, c2) -> {
+                    double fact1 = c1.getTotalFacturado() != null ? c1.getTotalFacturado() : 0.0;
+                    double fact2 = c2.getTotalFacturado() != null ? c2.getTotalFacturado() : 0.0;
+                    return Double.compare(fact2, fact1);
+                })
+                .limit(limite)
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error al obtener top clientes por facturación", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Obtener clientes con más no presentaciones (filtrado local)
+     */
+    public List<ClienteDTO> obtenerClientesConMasNoPresentaciones(int limite) {
+        try {
+            List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
             return todosLosClientes.stream()
                 .filter(cliente -> cliente.getCitasNoPresentadas() != null && cliente.getCitasNoPresentadas() > 0)
                 .sorted((c1, c2) -> {
-                    Integer np1 = c1.getCitasNoPresentadas() != null ? c1.getCitasNoPresentadas() : 0;
-                    Integer np2 = c2.getCitasNoPresentadas() != null ? c2.getCitasNoPresentadas() : 0;
-                    return np2.compareTo(np1); // Descendente
+                    int noP1 = c1.getCitasNoPresentadas() != null ? c1.getCitasNoPresentadas() : 0;
+                    int noP2 = c2.getCitasNoPresentadas() != null ? c2.getCitasNoPresentadas() : 0;
+                    return Integer.compare(noP2, noP1);
                 })
-                .limit(limit)
-                .toList();
+                .limit(limite)
+                .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Error al obtener clientes con no presentaciones", e);
+            log.error("Error al obtener clientes con más no presentaciones", e);
             return new ArrayList<>();
         }
     }
     
     /**
-     * Crear nuevo cliente
+     * Crear nuevo cliente (cuando esté disponible en la API)
      */
     public ClienteDTO crear(ClienteDTO cliente) {
         try {
@@ -168,7 +213,7 @@ public class ClienteApiService {
     }
     
     /**
-     * Actualizar cliente
+     * Actualizar cliente (cuando esté disponible en la API)
      */
     public ClienteDTO actualizar(Long id, ClienteDTO cliente) {
         try {
@@ -182,7 +227,7 @@ public class ClienteApiService {
     }
     
     /**
-     * Eliminar cliente
+     * Eliminar cliente (cuando esté disponible en la API)
      */
     public boolean eliminar(Long id) {
         try {
@@ -196,14 +241,27 @@ public class ClienteApiService {
     }
     
     /**
-     * Contar clientes
+     * Contar total de clientes
      */
-    public long count() {
+    public long contarTotalClientes() {
         try {
-            String response = apiClient.getRaw(baseUrl + "/count");
-            return Long.parseLong(response);
+            List<ClienteDTO> clientes = obtenerTodosLosClientes();
+            return clientes.size();
         } catch (Exception e) {
             log.error("Error al contar clientes", e);
+            return 0;
+        }
+    }
+    
+    /**
+     * Contar clientes activos
+     */
+    public long contarClientesActivos() {
+        try {
+            List<ClienteDTO> activos = obtenerClientesActivos();
+            return activos.size();
+        } catch (Exception e) {
+            log.error("Error al contar clientes activos", e);
             return 0;
         }
     }
