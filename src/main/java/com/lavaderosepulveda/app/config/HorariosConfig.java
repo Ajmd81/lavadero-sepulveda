@@ -21,11 +21,11 @@ public class HorariosConfig {
     // Constructores
     public HorariosConfig() {
         // Valores por defecto
-        manana.setInicio(9);
-        manana.setFin(14);
+        manana.setInicio(8);
+        manana.setFin(15);
 
-        tarde.setInicio(17);
-        tarde.setFin(20);
+        //tarde.setInicio(17);
+        //tarde.setFin(20);
 
         sabado.setInicio(9);
         sabado.setFin(14);
