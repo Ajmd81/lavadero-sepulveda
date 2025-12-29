@@ -12,6 +12,7 @@ Este documento explica cómo está integrado el CRM de Lavadero Sepúlveda con e
     - `GET /api/citas/{id}` - Obtiene una cita por ID
     - `POST /api/citas` - Crea una nueva cita
     - `PUT /api/citas/{id}` - Actualiza una cita
+    - `PUT /api/citas/{id}/estado/{estado}` - Cambia solo el estado de una cita (sin validar horarios)
     - `DELETE /api/citas/{id}` - Elimina una cita
     - `GET /api/citas/horarios-disponibles?fecha={fecha}` - Obtiene horarios disponibles
     - `GET /api/tipos-lavado` - Obtiene tipos de lavado disponibles
@@ -175,6 +176,7 @@ Actualiza el mapa `PRECIOS_LAVADO` en `CitaMapper.java` para que coincida con `T
 | GET | `/api/citas/{id}` | Obtiene una cita |
 | POST | `/api/citas` | Crea una cita |
 | PUT | `/api/citas/{id}` | Actualiza una cita |
+| PUT | `/api/citas/{id}/estado/{estado}` | Cambia solo el estado (PENDIENTE, CONFIRMADA, COMPLETADA, CANCELADA, NO_PRESENTADO) |
 | DELETE | `/api/citas/{id}` | Elimina una cita |
 | GET | `/api/citas/horarios-disponibles?fecha={fecha}` | Horarios disponibles |
 | GET | `/api/citas/verificar-disponibilidad?fecha={fecha}&hora={hora}` | Verifica disponibilidad |

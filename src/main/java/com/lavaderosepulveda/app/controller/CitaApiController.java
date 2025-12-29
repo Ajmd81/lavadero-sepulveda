@@ -3,6 +3,7 @@ package com.lavaderosepulveda.app.controller;
 import com.lavaderosepulveda.app.dto.CitaDTO;
 import com.lavaderosepulveda.app.mapper.CitaMapper;
 import com.lavaderosepulveda.app.model.Cita;
+import com.lavaderosepulveda.app.model.EstadoCita;
 import com.lavaderosepulveda.app.model.TipoLavado;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
@@ -195,6 +196,29 @@ public class CitaApiController {
         // Retornar DTO actualizado
         CitaDTO respuestaDTO = citaMapper.toDTO(cita);
         return ResponseEntity.ok(respuestaDTO);
+    }
+
+    /**
+     * Cambiar solo el estado de una cita (sin validar horarios)
+     */
+    @PutMapping("/citas/{id}/estado/{estado}")
+    public ResponseEntity<CitaDTO> cambiarEstado(@PathVariable Long id, @PathVariable String estado) {
+        logger.info("Cambiando estado de cita ID: {} a estado: {}", id, estado);
+
+        try {
+            // Convertir string a enum EstadoCita
+            EstadoCita nuevoEstado = EstadoCita.valueOf(estado);
+
+            // Cambiar estado usando servicio
+            Cita cita = citaService.cambiarEstado(id, nuevoEstado);
+
+            // Retornar DTO actualizado
+            CitaDTO respuestaDTO = citaMapper.toDTO(cita);
+            return ResponseEntity.ok(respuestaDTO);
+        } catch (IllegalArgumentException e) {
+            logger.error("Estado no válido: {}", estado);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**

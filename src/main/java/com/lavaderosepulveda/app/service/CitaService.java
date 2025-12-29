@@ -2,6 +2,7 @@ package com.lavaderosepulveda.app.service;
 
 import com.lavaderosepulveda.app.dto.ClienteEstadisticaDTO;
 import com.lavaderosepulveda.app.model.Cita;
+import com.lavaderosepulveda.app.model.EstadoCita;
 import com.lavaderosepulveda.app.model.TipoLavado;
 import com.lavaderosepulveda.app.repository.CitaRepository;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
@@ -93,6 +94,22 @@ public class CitaService {
                     }
 
                     return citaRepository.save(citaExistente);
+                })
+                .orElseThrow(() -> new RuntimeException("Cita no encontrada con ID: " + id));
+    }
+
+    /**
+     * Cambiar solo el estado de una cita sin validar horarios
+     */
+    public Cita cambiarEstado(Long id, EstadoCita nuevoEstado) {
+        if (id == null || nuevoEstado == null) {
+            throw new IllegalArgumentException("El ID y el estado no pueden ser nulos");
+        }
+
+        return citaRepository.findById(id)
+                .map(cita -> {
+                    cita.setEstado(nuevoEstado);
+                    return citaRepository.save(cita);
                 })
                 .orElseThrow(() -> new RuntimeException("Cita no encontrada con ID: " + id));
     }
