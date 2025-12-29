@@ -181,4 +181,117 @@ public class ClienteController {
                     .body(Map.of("error", "Error al migrar clientes: " + e.getMessage()));
         }
     }
+
+    // ========================================
+    // NUEVOS ENDPOINTS PARA INTEGRACIÓN CRM
+    // ========================================
+
+    /**
+     * GET /api/clientes/activos
+     * Obtener solo clientes activos
+     */
+    @GetMapping("/activos")
+    public ResponseEntity<List<ClienteDTO>> obtenerClientesActivos() {
+        try {
+            List<ClienteDTO> clientes = clienteService.obtenerClientesActivos();
+            log.info("Obtenidos {} clientes activos", clientes.size());
+            return ResponseEntity.ok(clientes);
+        } catch (Exception e) {
+            log.error("Error al obtener clientes activos", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * GET /api/clientes/buscar?nombre=X
+     * Buscar clientes por nombre
+     */
+    @GetMapping("/buscar")
+    public ResponseEntity<List<ClienteDTO>> buscarClientesPorNombre(
+            @RequestParam(value = "nombre", required = false) String nombre) {
+        try {
+            if (nombre == null || nombre.trim().isEmpty()) {
+                return ResponseEntity.ok(clienteService.obtenerTodosLosClientes());
+            }
+            
+            List<ClienteDTO> clientes = clienteService.buscarPorNombre(nombre);
+            log.info("Encontrados {} clientes con nombre que contiene '{}'", clientes.size(), nombre);
+            return ResponseEntity.ok(clientes);
+        } catch (Exception e) {
+            log.error("Error al buscar clientes por nombre: {}", nombre, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * GET /api/clientes/count
+     * Contar total de clientes
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> contarClientes() {
+        try {
+            long total = clienteService.contarClientes();
+            long activos = clienteService.contarClientesActivos();
+            
+            Map<String, Long> counts = Map.of(
+                    "total", total,
+                    "activos", activos,
+                    "inactivos", total - activos
+            );
+            
+            return ResponseEntity.ok(counts);
+        } catch (Exception e) {
+            log.error("Error al contar clientes", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * GET /api/clientes/top-facturacion?limit=10
+     * Obtener top clientes por facturación
+     */
+    @GetMapping("/top-facturacion")
+    public ResponseEntity<List<ClienteDTO>> obtenerTopClientesPorFacturacion(
+            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        try {
+            List<ClienteDTO> topClientes = clienteService.obtenerTopClientesPorFacturacion(limit);
+            log.info("Obtenidos top {} clientes por facturación", topClientes.size());
+            return ResponseEntity.ok(topClientes);
+        } catch (Exception e) {
+            log.error("Error al obtener top clientes por facturación", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * GET /api/clientes/no-presentaciones?limit=10
+     * Obtener clientes con más no presentaciones
+     */
+    @GetMapping("/no-presentaciones")
+    public ResponseEntity<List<ClienteDTO>> obtenerClientesConMasNoPresentaciones(
+            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        try {
+            List<ClienteDTO> clientesProblematicos = clienteService.obtenerClientesConMasNoPresentaciones(limit);
+            log.info("Obtenidos {} clientes con más no presentaciones", clientesProblematicos.size());
+            return ResponseEntity.ok(clientesProblematicos);
+        } catch (Exception e) {
+            log.error("Error al obtener clientes con no presentaciones", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * GET /api/clientes/estadisticas
+     * Obtener estadísticas generales de clientes
+     */
+    @GetMapping("/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticasClientes() {
+        try {
+            Map<String, Object> stats = clienteService.obtenerEstadisticasClientes();
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            log.error("Error al obtener estadísticas de clientes", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

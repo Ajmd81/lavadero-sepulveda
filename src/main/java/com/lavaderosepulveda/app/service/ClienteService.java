@@ -72,6 +72,18 @@ public class ClienteService {
         cliente.setEmail(clienteDTO.getEmail());
         cliente.setVehiculoHabitual(clienteDTO.getVehiculoHabitual());
         cliente.setActivo(clienteDTO.getActivo() != null ? clienteDTO.getActivo() : true);
+        
+        // Campos adicionales CRM
+        cliente.setNif(clienteDTO.getNif());
+        cliente.setDireccion(clienteDTO.getDireccion());
+        cliente.setCodigoPostal(clienteDTO.getCodigoPostal());
+        cliente.setCiudad(clienteDTO.getCiudad());
+        cliente.setProvincia(clienteDTO.getProvincia());
+        cliente.setMatricula(clienteDTO.getMatricula());
+        cliente.setMarca(clienteDTO.getMarca());
+        cliente.setModelo(clienteDTO.getModelo());
+        cliente.setColor(clienteDTO.getColor());
+        cliente.setNotas(clienteDTO.getNotas());
 
         Cliente clienteGuardado = clienteRepository.save(cliente);
         log.info("Cliente creado: {} - {}", clienteGuardado.getId(), clienteGuardado.getNombre());
@@ -100,6 +112,18 @@ public class ClienteService {
         cliente.setEmail(clienteDTO.getEmail());
         cliente.setVehiculoHabitual(clienteDTO.getVehiculoHabitual());
         cliente.setActivo(clienteDTO.getActivo());
+        
+        // Campos adicionales CRM
+        cliente.setNif(clienteDTO.getNif());
+        cliente.setDireccion(clienteDTO.getDireccion());
+        cliente.setCodigoPostal(clienteDTO.getCodigoPostal());
+        cliente.setCiudad(clienteDTO.getCiudad());
+        cliente.setProvincia(clienteDTO.getProvincia());
+        cliente.setMatricula(clienteDTO.getMatricula());
+        cliente.setMarca(clienteDTO.getMarca());
+        cliente.setModelo(clienteDTO.getModelo());
+        cliente.setColor(clienteDTO.getColor());
+        cliente.setNotas(clienteDTO.getNotas());
 
         Cliente clienteActualizado = clienteRepository.save(cliente);
         log.info("Cliente actualizado: {} - {}", clienteActualizado.getId(), clienteActualizado.getNombre());
@@ -188,6 +212,98 @@ public class ClienteService {
     }
 
     /**
+     * Obtener clientes activos
+     */
+    public List<ClienteDTO> obtenerClientesActivos() {
+        List<Cliente> clientes = clienteRepository.findByActivoTrue();
+        return clientes.stream()
+                .map(this::convertirADTO)
+                .sorted(Comparator.comparing(ClienteDTO::getNombre))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Buscar clientes por nombre
+     */
+    public List<ClienteDTO> buscarPorNombre(String nombre) {
+        List<Cliente> clientes = clienteRepository.findByNombreContainingIgnoreCase(nombre);
+        return clientes.stream()
+                .map(this::convertirADTO)
+                .sorted(Comparator.comparing(ClienteDTO::getNombre))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Contar total de clientes
+     */
+    public long contarClientes() {
+        return clienteRepository.count();
+    }
+
+    /**
+     * Contar clientes activos
+     */
+    public long contarClientesActivos() {
+        return clienteRepository.countByActivoTrue();
+    }
+
+    /**
+     * Obtener top clientes por facturación
+     */
+    public List<ClienteDTO> obtenerTopClientesPorFacturacion(int limit) {
+        List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
+        
+        return todosLosClientes.stream()
+                .filter(c -> c.getTotalFacturado() != null && c.getTotalFacturado() > 0)
+                .sorted(Comparator.comparing(ClienteDTO::getTotalFacturado).reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtener clientes con más no presentaciones (clientes problemáticos)
+     */
+    public List<ClienteDTO> obtenerClientesConMasNoPresentaciones(int limit) {
+        List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
+        
+        return todosLosClientes.stream()
+                .filter(c -> c.getCitasNoPresentadas() != null && c.getCitasNoPresentadas() > 0)
+                .sorted(Comparator.comparing(ClienteDTO::getCitasNoPresentadas).reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtener estadísticas generales de clientes
+     */
+    public Map<String, Object> obtenerEstadisticasClientes() {
+        List<ClienteDTO> clientes = obtenerTodosLosClientes();
+        
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalClientes", clientes.size());
+        stats.put("clientesActivos", clientes.stream().filter(c -> Boolean.TRUE.equals(c.getActivo())).count());
+        stats.put("clientesInactivos", clientes.stream().filter(c -> !Boolean.TRUE.equals(c.getActivo())).count());
+        
+        // Total facturado global
+        double totalFacturadoGlobal = clientes.stream()
+                .mapToDouble(c -> c.getTotalFacturado() != null ? c.getTotalFacturado() : 0)
+                .sum();
+        stats.put("totalFacturadoGlobal", totalFacturadoGlobal);
+        
+        // Promedio de facturación por cliente
+        double promedioFacturacion = clientes.isEmpty() ? 0 : totalFacturadoGlobal / clientes.size();
+        stats.put("promedioFacturacionPorCliente", promedioFacturacion);
+        
+        // Total de no presentaciones
+        int totalNoPresentaciones = clientes.stream()
+                .mapToInt(c -> c.getCitasNoPresentadas() != null ? c.getCitasNoPresentadas() : 0)
+                .sum();
+        stats.put("totalNoPresentaciones", totalNoPresentaciones);
+        
+        return stats;
+    }
+
+    /**
      * Convertir entidad Cliente a ClienteDTO (con estadísticas de citas)
      */
     private ClienteDTO convertirADTO(Cliente cliente) {
@@ -200,6 +316,18 @@ public class ClienteService {
         dto.setEmail(cliente.getEmail());
         dto.setVehiculoHabitual(cliente.getVehiculoHabitual());
         dto.setActivo(cliente.getActivo());
+        
+        // Campos adicionales CRM
+        dto.setNif(cliente.getNif());
+        dto.setDireccion(cliente.getDireccion());
+        dto.setCodigoPostal(cliente.getCodigoPostal());
+        dto.setCiudad(cliente.getCiudad());
+        dto.setProvincia(cliente.getProvincia());
+        dto.setMatricula(cliente.getMatricula());
+        dto.setMarca(cliente.getMarca());
+        dto.setModelo(cliente.getModelo());
+        dto.setColor(cliente.getColor());
+        dto.setNotas(cliente.getNotas());
 
         // Obtener estadísticas de las citas del cliente
         List<Cita> citas = citaRepository.findByTelefono(cliente.getTelefono());

@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 @Table(name = "clientes", indexes = {
         @Index(name = "idx_clientes_telefono", columnList = "telefono"),
         @Index(name = "idx_clientes_email", columnList = "email"),
-        @Index(name = "idx_clientes_activo", columnList = "activo")
+        @Index(name = "idx_clientes_activo", columnList = "activo"),
+        @Index(name = "idx_clientes_nif", columnList = "nif")
 })
 
 public class Cliente {
@@ -30,6 +31,35 @@ public class Cliente {
 
     @Column(nullable = false)
     private Boolean activo = true;
+
+    // ========================================
+    // CAMPOS ADICIONALES PARA CRM
+    // ========================================
+    
+    @Column(unique = true)
+    private String nif;
+    
+    private String direccion;
+    
+    @Column(name = "codigo_postal")
+    private String codigoPostal;
+    
+    private String ciudad;
+    
+    private String provincia;
+    
+    // Datos del vehículo
+    private String matricula;
+    
+    private String marca;
+    
+    private String modelo;
+    
+    private String color;
+    
+    // Notas adicionales sobre el cliente
+    @Column(columnDefinition = "TEXT")
+    private String notas;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -134,6 +164,90 @@ public class Cliente {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    // ========================================
+    // GETTERS Y SETTERS CAMPOS CRM
+    // ========================================
+    
+    public String getNif() {
+        return nif;
+    }
+
+    public void setNif(String nif) {
+        this.nif = nif;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public String getCodigoPostal() {
+        return codigoPostal;
+    }
+
+    public void setCodigoPostal(String codigoPostal) {
+        this.codigoPostal = codigoPostal;
+    }
+
+    public String getCiudad() {
+        return ciudad;
+    }
+
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
+    }
+
+    public String getProvincia() {
+        return provincia;
+    }
+
+    public void setProvincia(String provincia) {
+        this.provincia = provincia;
+    }
+
+    public String getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(String matricula) {
+        this.matricula = matricula;
+    }
+
+    public String getMarca() {
+        return marca;
+    }
+
+    public void setMarca(String marca) {
+        this.marca = marca;
+    }
+
+    public String getModelo() {
+        return modelo;
+    }
+
+    public void setModelo(String modelo) {
+        this.modelo = modelo;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public String getNotas() {
+        return notas;
+    }
+
+    public void setNotas(String notas) {
+        this.notas = notas;
     }
 
     @Override

@@ -16,6 +16,20 @@ public class ClienteDTO {
     private Double totalFacturado;
     private String vehiculoHabitual;
 
+    // ========================================
+    // CAMPOS ADICIONALES PARA CRM
+    // ========================================
+    private String nif;
+    private String direccion;
+    private String codigoPostal;
+    private String ciudad;
+    private String provincia;
+    private String matricula;
+    private String marca;
+    private String modelo;
+    private String color;
+    private String notas;
+
     // Constructores
     public ClienteDTO() {
     }
@@ -134,6 +148,90 @@ public class ClienteDTO {
         this.vehiculoHabitual = vehiculoHabitual;
     }
 
+    // ========================================
+    // GETTERS Y SETTERS CAMPOS CRM
+    // ========================================
+    
+    public String getNif() {
+        return nif;
+    }
+
+    public void setNif(String nif) {
+        this.nif = nif;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public String getCodigoPostal() {
+        return codigoPostal;
+    }
+
+    public void setCodigoPostal(String codigoPostal) {
+        this.codigoPostal = codigoPostal;
+    }
+
+    public String getCiudad() {
+        return ciudad;
+    }
+
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
+    }
+
+    public String getProvincia() {
+        return provincia;
+    }
+
+    public void setProvincia(String provincia) {
+        this.provincia = provincia;
+    }
+
+    public String getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(String matricula) {
+        this.matricula = matricula;
+    }
+
+    public String getMarca() {
+        return marca;
+    }
+
+    public void setMarca(String marca) {
+        this.marca = marca;
+    }
+
+    public String getModelo() {
+        return modelo;
+    }
+
+    public void setModelo(String modelo) {
+        this.modelo = modelo;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public String getNotas() {
+        return notas;
+    }
+
+    public void setNotas(String notas) {
+        this.notas = notas;
+    }
+
     @Override
     public String toString() {
         return "ClienteDTO{" +
@@ -142,6 +240,7 @@ public class ClienteDTO {
                 ", apellidos='" + apellidos + '\'' +
                 ", telefono='" + telefono + '\'' +
                 ", email='" + email + '\'' +
+                ", nif='" + nif + '\'' +
                 ", activo=" + activo +
                 ", totalCitas=" + totalCitas +
                 ", citasCompletadas=" + citasCompletadas +
@@ -149,6 +248,9 @@ public class ClienteDTO {
                 ", citasNoPresentadas=" + citasNoPresentadas +
                 ", totalFacturado=" + totalFacturado +
                 ", vehiculoHabitual='" + vehiculoHabitual + '\'' +
+                ", matricula='" + matricula + '\'' +
+                ", marca='" + marca + '\'' +
+                ", modelo='" + modelo + '\'' +
                 '}';
     }
 }
