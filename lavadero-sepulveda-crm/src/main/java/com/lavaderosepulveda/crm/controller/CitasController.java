@@ -1,27 +1,37 @@
 package com.lavaderosepulveda.crm.controller;
 
 import com.lavaderosepulveda.crm.api.dto.CitaDTO;
+import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
+import com.lavaderosepulveda.crm.api.dto.ServicioDTO;
 import com.lavaderosepulveda.crm.api.service.CitaApiService;
 import com.lavaderosepulveda.crm.model.EstadoCita;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CitasController {
 
     private static final Logger log = LoggerFactory.getLogger(CitasController.class);
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @FXML private DatePicker dpFecha;
     @FXML private ComboBox<String> cmbEstado;
@@ -44,69 +54,51 @@ public class CitasController {
     @FXML
     public void initialize() {
         log.info("Inicializando CitasController...");
-        configurarComboEstado();
         configurarTabla();
+        configurarComboEstado();
         cargarCitas();
     }
 
-    private void configurarComboEstado() {
-        ObservableList<String> estados = FXCollections.observableArrayList(
-            "Todos",
-            "PENDIENTE",
-            "CONFIRMADA",
-            "COMPLETADA",
-            "CANCELADA",
-            "NO_PRESENTADO"
-        );
-        cmbEstado.setItems(estados);
-        cmbEstado.setValue("Todos");
-    }
-
     private void configurarTabla() {
-        // Configurar columnas
+        // Configurar columnas básicas
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         
+        // Fecha y hora formateada
         colFechaHora.setCellValueFactory(cellData -> {
-            CitaDTO cita = cellData.getValue();
-            if (cita.getFechaHora() != null) {
-                String fechaFormateada = cita.getFechaHora().format(DATE_TIME_FORMATTER);
-                return javafx.beans.binding.Bindings.createStringBinding(() -> fechaFormateada);
-            }
-            return javafx.beans.binding.Bindings.createStringBinding(() -> "");
+            LocalDateTime fechaHora = cellData.getValue().getFechaHora();
+            String formatted = fechaHora != null ? 
+                fechaHora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : "";
+            return javafx.beans.binding.Bindings.createStringBinding(() -> formatted);
         });
 
+        // Cliente (nombre del primer cliente)
         colCliente.setCellValueFactory(cellData -> {
             CitaDTO cita = cellData.getValue();
-            String nombreCliente = "";
-            if (cita.getCliente() != null) {
-                nombreCliente = cita.getCliente().getNombre() + " " + 
-                               (cita.getCliente().getApellidos() != null ? cita.getCliente().getApellidos() : "");
-            }
-            String finalNombre = nombreCliente;
-            return javafx.beans.binding.Bindings.createStringBinding(() -> finalNombre);
+            String cliente = cita.getCliente() != null ? 
+                cita.getCliente().getNombre() : "Sin cliente";
+            return javafx.beans.binding.Bindings.createStringBinding(() -> cliente);
         });
 
+        // Servicios (nombre del primer servicio)
         colServicios.setCellValueFactory(cellData -> {
             CitaDTO cita = cellData.getValue();
-            String servicios = "";
+            String servicio = "";
             if (cita.getServicios() != null && !cita.getServicios().isEmpty()) {
-                servicios = cita.getServicios().stream()
-                    .map(s -> s.getNombre())
-                    .collect(Collectors.joining(", "));
+                servicio = cita.getServicios().get(0).getNombre();
             }
-            String finalServicios = servicios;
-            return javafx.beans.binding.Bindings.createStringBinding(() -> finalServicios);
+            String finalServicio = servicio;
+            return javafx.beans.binding.Bindings.createStringBinding(() -> finalServicio);
         });
 
+        // Estado
         colEstado.setCellValueFactory(cellData -> {
-            CitaDTO cita = cellData.getValue();
-            String estado = cita.getEstado() != null ? cita.getEstado().name() : "";
-            return javafx.beans.binding.Bindings.createStringBinding(() -> estado);
+            EstadoCita estado = cellData.getValue().getEstado();
+            String estadoStr = estado != null ? formatearEstado(estado) : "";
+            return javafx.beans.binding.Bindings.createStringBinding(() -> estadoStr);
         });
 
+        // Importe formateado
         colImporte.setCellValueFactory(new PropertyValueFactory<>("importeTotal"));
-        
-        // Formatear columna de importe
         colImporte.setCellFactory(column -> new TableCell<CitaDTO, Double>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
@@ -119,15 +111,17 @@ public class CitasController {
             }
         });
 
-        // Configurar columna de acciones
+        // Columna de acciones
         colAcciones.setCellFactory(column -> new TableCell<CitaDTO, Void>() {
-            private final Button btnVer = new Button("Ver");
-            private final HBox hbox = new HBox(5, btnVer);
+            private final Button btnCambiarEstado = new Button("Cambiar Estado");
+            private final HBox hbox = new HBox(5, btnCambiarEstado);
 
             {
-                btnVer.setOnAction(event -> {
+                btnCambiarEstado.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+                
+                btnCambiarEstado.setOnAction(event -> {
                     CitaDTO cita = getTableView().getItems().get(getIndex());
-                    verDetalleCita(cita);
+                    cambiarEstadoCita(cita);
                 });
             }
 
@@ -143,16 +137,26 @@ public class CitasController {
         });
     }
 
+    private void configurarComboEstado() {
+        cmbEstado.setItems(FXCollections.observableArrayList(
+            "Todos",
+            "Pendiente",
+            "Confirmada",
+            "Completada",
+            "Cancelada",
+            "No Presentado"
+        ));
+        cmbEstado.setValue("Todos");
+    }
+
     private void cargarCitas() {
         log.info("Cargando citas desde la API...");
         
-        // Ejecutar en hilo separado para no bloquear UI
         new Thread(() -> {
             try {
                 todasLasCitas = citaApiService.findAll();
                 log.info("Citas cargadas: {}", todasLasCitas.size());
                 
-                // Actualizar UI en el hilo de JavaFX
                 Platform.runLater(() -> {
                     actualizarTabla(todasLasCitas);
                 });
@@ -167,65 +171,297 @@ public class CitasController {
 
     @FXML
     private void filtrarCitas() {
-        log.info("Filtrando citas...");
+        LocalDate fecha = dpFecha.getValue();
+        String estado = cmbEstado.getValue();
         
-        if (todasLasCitas == null || todasLasCitas.isEmpty()) {
-            log.warn("No hay citas para filtrar");
-            return;
-        }
-
         List<CitaDTO> citasFiltradas = todasLasCitas;
-
+        
         // Filtrar por fecha
-        LocalDate fechaSeleccionada = dpFecha.getValue();
-        if (fechaSeleccionada != null) {
-            log.info("Filtrando por fecha: {}", fechaSeleccionada);
+        if (fecha != null) {
             citasFiltradas = citasFiltradas.stream()
                 .filter(cita -> cita.getFechaHora() != null && 
-                               cita.getFechaHora().toLocalDate().equals(fechaSeleccionada))
+                               cita.getFechaHora().toLocalDate().equals(fecha))
                 .collect(Collectors.toList());
         }
-
+        
         // Filtrar por estado
-        String estadoSeleccionado = cmbEstado.getValue();
-        if (estadoSeleccionado != null && !estadoSeleccionado.equals("Todos")) {
-            log.info("Filtrando por estado: {}", estadoSeleccionado);
-            EstadoCita estado = EstadoCita.valueOf(estadoSeleccionado);
+        if (estado != null && !estado.equals("Todos")) {
+            EstadoCita estadoEnum = convertirEstado(estado);
             citasFiltradas = citasFiltradas.stream()
-                .filter(cita -> cita.getEstado() == estado)
+                .filter(cita -> cita.getEstado() == estadoEnum)
                 .collect(Collectors.toList());
         }
-
-        log.info("Citas después de filtrar: {}", citasFiltradas.size());
+        
         actualizarTabla(citasFiltradas);
-    }
-
-    private void actualizarTabla(List<CitaDTO> citas) {
-        ObservableList<CitaDTO> data = FXCollections.observableArrayList(citas);
-        tblCitas.setItems(data);
-        log.info("Tabla actualizada con {} citas", citas.size());
+        log.info("Citas filtradas: {}", citasFiltradas.size());
     }
 
     @FXML
     private void nuevaCita() {
         log.info("Abriendo formulario de nueva cita...");
-        mostrarInfo("Funcionalidad en desarrollo", "La creación de citas estará disponible próximamente.");
+        
+        Dialog<CitaDTO> dialog = crearDialogoNuevaCita();
+        Optional<CitaDTO> resultado = dialog.showAndWait();
+        
+        resultado.ifPresent(cita -> {
+            log.info("Creando nueva cita en la API...");
+            
+            new Thread(() -> {
+                try {
+                    // Llamar al endpoint POST /api/citas
+                    CitaDTO citaCreada = citaApiService.create(cita);
+                    
+                    Platform.runLater(() -> {
+                        mostrarInfo("Cita Creada", 
+                            "La cita ha sido creada exitosamente.\n" +
+                            "ID: " + citaCreada.getId());
+                        cargarCitas(); // Recargar tabla
+                    });
+                    
+                } catch (Exception e) {
+                    log.error("Error al crear cita", e);
+                    Platform.runLater(() -> {
+                        mostrarError("Error al crear la cita: " + e.getMessage());
+                    });
+                }
+            }).start();
+        });
     }
 
     @FXML
     private void abrirCalendario() {
         log.info("Abriendo calendario...");
-        mostrarInfo("Funcionalidad en desarrollo", "El calendario estará disponible próximamente.");
+        
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/calendario.fxml"));
+            Parent root = loader.load();
+            
+            CalendarioController controller = loader.getController();
+            
+            Stage stage = new Stage();
+            stage.setTitle("Calendario de Citas");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root, 900, 700));
+            stage.show();
+            
+        } catch (Exception e) {
+            log.error("Error al abrir calendario", e);
+            mostrarError("Error al abrir el calendario: " + e.getMessage());
+        }
     }
 
-    private void verDetalleCita(CitaDTO cita) {
-        log.info("Viendo detalle de cita: {}", cita.getId());
-        mostrarInfo("Detalle de Cita", 
-            "ID: " + cita.getId() + "\n" +
-            "Fecha: " + (cita.getFechaHora() != null ? cita.getFechaHora().format(DATE_TIME_FORMATTER) : "") + "\n" +
-            "Estado: " + (cita.getEstado() != null ? cita.getEstado().name() : "") + "\n" +
-            "Importe: " + String.format("%.2f €", cita.getImporteTotal())
-        );
+    private void cambiarEstadoCita(CitaDTO cita) {
+        log.info("Cambiando estado de cita: {}", cita.getId());
+        
+        Dialog<EstadoCita> dialog = new Dialog<>();
+        dialog.setTitle("Cambiar Estado de Cita");
+        dialog.setHeaderText("Cita #" + cita.getId() + " - " + 
+            cita.getCliente().getNombre() + "\n" +
+            "Estado actual: " + formatearEstado(cita.getEstado()));
+
+        ButtonType cambiarButtonType = new ButtonType("Cambiar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(cambiarButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        ComboBox<String> cmbNuevoEstado = new ComboBox<>();
+        cmbNuevoEstado.setItems(FXCollections.observableArrayList(
+            "Pendiente",
+            "Confirmada",
+            "Completada",
+            "Cancelada",
+            "No Presentado"
+        ));
+        cmbNuevoEstado.setValue(formatearEstado(cita.getEstado()));
+
+        TextArea txtNotas = new TextArea();
+        txtNotas.setPromptText("Notas adicionales (opcional)");
+        txtNotas.setPrefRowCount(3);
+
+        grid.add(new Label("Nuevo Estado:"), 0, 0);
+        grid.add(cmbNuevoEstado, 1, 0);
+        grid.add(new Label("Notas:"), 0, 1);
+        grid.add(txtNotas, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == cambiarButtonType) {
+                return convertirEstado(cmbNuevoEstado.getValue());
+            }
+            return null;
+        });
+
+        Optional<EstadoCita> resultado = dialog.showAndWait();
+        
+        resultado.ifPresent(nuevoEstado -> {
+            log.info("Cambiando estado de {} a {}", cita.getEstado(), nuevoEstado);
+            
+            new Thread(() -> {
+                try {
+                    // Actualizar estado en el DTO
+                    cita.setEstado(nuevoEstado);
+                    
+                    // Llamar al endpoint PUT /api/citas/{id}
+                    CitaDTO citaActualizada = citaApiService.update(cita.getId(), cita);
+                    
+                    Platform.runLater(() -> {
+                        mostrarInfo("Estado Actualizado", 
+                            "El estado de la cita ha sido actualizado a: " + formatearEstado(nuevoEstado));
+                        cargarCitas(); // Recargar tabla
+                    });
+                    
+                } catch (Exception e) {
+                    log.error("Error al actualizar estado de cita", e);
+                    Platform.runLater(() -> {
+                        mostrarError("Error al actualizar el estado: " + e.getMessage());
+                    });
+                }
+            }).start();
+        });
+    }
+
+    private Dialog<CitaDTO> crearDialogoNuevaCita() {
+        Dialog<CitaDTO> dialog = new Dialog<>();
+        dialog.setTitle("Nueva Cita");
+        dialog.setHeaderText("Registrar nueva cita");
+
+        ButtonType crearButtonType = new ButtonType("Crear", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(crearButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        // Campos del formulario
+        TextField txtNombre = new TextField();
+        txtNombre.setPromptText("Nombre del cliente");
+        
+        TextField txtTelefono = new TextField();
+        txtTelefono.setPromptText("Teléfono");
+        
+        TextField txtEmail = new TextField();
+        txtEmail.setPromptText("Email");
+        
+        DatePicker dpFechaCita = new DatePicker();
+        dpFechaCita.setValue(LocalDate.now().plusDays(1));
+        
+        ComboBox<String> cmbHora = new ComboBox<>();
+        cmbHora.setItems(FXCollections.observableArrayList(
+            "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
+            "16:00", "16:30", "17:00", "17:30", "18:00", "18:30",
+            "19:00", "19:30", "20:00"
+        ));
+        cmbHora.setValue("10:00");
+        
+        ComboBox<String> cmbServicio = new ComboBox<>();
+        cmbServicio.setItems(FXCollections.observableArrayList(
+            "LAVADO_COMPLETO_TURISMO",
+            "LAVADO_INTERIOR_TURISMO",
+            "LAVADO_EXTERIOR_TURISMO",
+            "LAVADO_COMPLETO_FURGONETA_PEQUEÑA",
+            "LAVADO_COMPLETO_TODOTERRENO",
+            "TRATAMIENTO_OZONO",
+            "ENCERADO"
+        ));
+        cmbServicio.setValue("LAVADO_COMPLETO_TURISMO");
+        
+        TextField txtVehiculo = new TextField();
+        txtVehiculo.setPromptText("Modelo de vehículo");
+
+        // Agregar campos al grid
+        grid.add(new Label("Nombre:"), 0, 0);
+        grid.add(txtNombre, 1, 0);
+        grid.add(new Label("Teléfono:"), 0, 1);
+        grid.add(txtTelefono, 1, 1);
+        grid.add(new Label("Email:"), 0, 2);
+        grid.add(txtEmail, 1, 2);
+        grid.add(new Label("Fecha:"), 0, 3);
+        grid.add(dpFechaCita, 1, 3);
+        grid.add(new Label("Hora:"), 0, 4);
+        grid.add(cmbHora, 1, 4);
+        grid.add(new Label("Servicio:"), 0, 5);
+        grid.add(cmbServicio, 1, 5);
+        grid.add(new Label("Vehículo:"), 0, 6);
+        grid.add(txtVehiculo, 1, 6);
+
+        dialog.getDialogPane().setContent(grid);
+
+        Platform.runLater(() -> txtNombre.requestFocus());
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == crearButtonType) {
+                // Construir CitaDTO
+                CitaDTO cita = new CitaDTO();
+                
+                // Cliente
+                ClienteDTO cliente = new ClienteDTO();
+                cliente.setNombre(txtNombre.getText());
+                cliente.setTelefono(txtTelefono.getText());
+                cliente.setEmail(txtEmail.getText());
+                cita.setCliente(cliente);
+                
+                // Fecha y hora
+                LocalDate fecha = dpFechaCita.getValue();
+                LocalTime hora = LocalTime.parse(cmbHora.getValue());
+                cita.setFechaHora(LocalDateTime.of(fecha, hora));
+                
+                // Servicio
+                ServicioDTO servicio = new ServicioDTO();
+                servicio.setNombre(formatearNombreServicio(cmbServicio.getValue()));
+                cita.setServicios(Arrays.asList(servicio));
+                
+                // Estado inicial
+                cita.setEstado(EstadoCita.PENDIENTE);
+                
+                // Vehículo
+                // TODO: Agregar modeloVehiculo al CitaDTO si es necesario
+                
+                return cita;
+            }
+            return null;
+        });
+
+        return dialog;
+    }
+
+    private String formatearNombreServicio(String servicio) {
+        return Arrays.stream(servicio.split("_"))
+            .map(palabra -> palabra.substring(0, 1).toUpperCase() + palabra.substring(1).toLowerCase())
+            .collect(Collectors.joining(" "));
+    }
+
+    private void actualizarTabla(List<CitaDTO> citas) {
+        ObservableList<CitaDTO> data = FXCollections.observableArrayList(citas);
+        tblCitas.setItems(data);
+    }
+
+    private String formatearEstado(EstadoCita estado) {
+        if (estado == null) return "";
+        switch (estado) {
+            case PENDIENTE: return "Pendiente";
+            case CONFIRMADA: return "Confirmada";
+            case COMPLETADA: return "Completada";
+            case CANCELADA: return "Cancelada";
+            case NO_PRESENTADO: return "No Presentado";
+            default: return estado.name();
+        }
+    }
+
+    private EstadoCita convertirEstado(String estado) {
+        switch (estado) {
+            case "Pendiente": return EstadoCita.PENDIENTE;
+            case "Confirmada": return EstadoCita.CONFIRMADA;
+            case "Completada": return EstadoCita.COMPLETADA;
+            case "Cancelada": return EstadoCita.CANCELADA;
+            case "No Presentado": return EstadoCita.NO_PRESENTADO;
+            default: return EstadoCita.PENDIENTE;
+        }
     }
 
     private void mostrarError(String mensaje) {
