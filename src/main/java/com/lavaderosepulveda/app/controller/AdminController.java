@@ -133,13 +133,15 @@ public class AdminController {
                     .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
 
             EstadoCita estadoAnterior = cita.getEstado();
-            cita.setEstado(estado);
 
+            // Cambiar estado sin validar horarios
+            citaService.cambiarEstado(id, estado);
+
+            // Actualizar observaciones si se proporcionaron
             if (observaciones != null && !observaciones.trim().isEmpty()) {
                 cita.setObservaciones(observaciones);
+                citaService.actualizarCita(id, cita);
             }
-
-            citaService.actualizarCita(id, cita);
 
             logger.info("Estado de cita {} actualizado de {} a {}", id, estadoAnterior, estado);
 
