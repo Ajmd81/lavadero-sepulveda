@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="com.lavaderosepulveda.crm.controller.CalendarioController"
+            prefWidth="950" prefHeight="600"
+            style="-fx-background-color: #f5f5f5;">
+    
+    <!-- Header con navegación -->
+    <top>
+        <HBox alignment="CENTER" spacing="20" style="-fx-background-color: #2196F3; -fx-padding: 15;">
+            <Button fx:id="btnMesAnterior" text="◀ Anterior" onAction="#mesAnterior" 
+                    style="-fx-background-color: white; -fx-font-size: 13px; -fx-cursor: hand;"/>
+            <Label fx:id="lblMesAnio" text="Diciembre 2025" 
+                   style="-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;"/>
+            <Button fx:id="btnMesSiguiente" text="Siguiente ▶" onAction="#mesSiguiente"
+                    style="-fx-background-color: white; -fx-font-size: 13px; -fx-cursor: hand;"/>
+        </HBox>
+    </top>
+    
+    <!-- Contenido principal -->
+    <center>
+        <HBox spacing="15" style="-fx-padding: 15;">
+            <!-- Grid del calendario -->
+            <VBox HBox.hgrow="ALWAYS">
+                <GridPane fx:id="gridCalendario" 
+                          style="-fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-width: 1;"
+                          VBox.vgrow="ALWAYS">
+                </GridPane>
+            </VBox>
+            
+            <!-- Panel lateral con citas del día -->
+            <VBox prefWidth="280" spacing="10" 
+                  style="-fx-background-color: white; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1;">
+                <Label fx:id="lblCitasSeleccionadas" text="Selecciona un día" 
+                       style="-fx-font-size: 15px; -fx-font-weight: bold;"/>
+                <Separator/>
+                <ListView fx:id="listCitasDia" VBox.vgrow="ALWAYS" 
+                          style="-fx-background-color: transparent;"/>
+            </VBox>
+        </HBox>
+    </center>
+    
+    <!-- Leyenda -->
+    <bottom>
+        <HBox alignment="CENTER" spacing="25" style="-fx-background-color: #fafafa; -fx-padding: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;">
+            <HBox spacing="5" alignment="CENTER">
+                <Label style="-fx-background-color: #E3F2FD; -fx-border-color: #2196F3; -fx-border-width: 2; -fx-min-width: 18; -fx-min-height: 18;"/>
+                <Label text="Hoy"/>
+            </HBox>
+            <HBox spacing="5" alignment="CENTER">
+                <Label style="-fx-background-color: #FFEBEE; -fx-min-width: 18; -fx-min-height: 18; -fx-border-color: #ccc; -fx-border-width: 1;"/>
+                <Label text="Festivo"/>
+            </HBox>
+            <HBox spacing="5" alignment="CENTER">
+                <Label style="-fx-background-color: #4CAF50; -fx-min-width: 18; -fx-min-height: 18; -fx-background-radius: 3;"/>
+                <Label text="Con citas"/>
+            </HBox>
+        </HBox>
+    </bottom>
+</BorderPane>
