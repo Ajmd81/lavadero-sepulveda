@@ -305,11 +305,34 @@ public class ClientesController {
         Optional<ClienteDTO> resultado = dialog.showAndWait();
         
         resultado.ifPresent(cliente -> {
-            log.info("Nuevo cliente: {}", cliente.getNombre());
-            mostrarInfo("Funcionalidad en desarrollo", 
-                "Para guardar clientes nuevos, necesitas implementar el endpoint:\n" +
-                "POST /api/clientes\n\n" +
-                "en tu API de Spring Boot.");
+            log.info("Guardando nuevo cliente: {}", cliente.getNombre());
+            
+            // Llamar a la API para crear el cliente
+            new Thread(() -> {
+                try {
+                    ClienteDTO clienteCreado = clienteApiService.crear(cliente);
+                    
+                    Platform.runLater(() -> {
+                        if (clienteCreado != null && clienteCreado.getId() != null) {
+                            log.info("Cliente creado exitosamente con ID: {}", clienteCreado.getId());
+                            mostrarInfo("Cliente Creado", 
+                                "El cliente se ha guardado correctamente.\n\n" +
+                                "ID: " + clienteCreado.getId() + "\n" +
+                                "Nombre: " + clienteCreado.getNombre());
+                            
+                            // Recargar la lista de clientes
+                            cargarClientes();
+                        } else {
+                            mostrarError("No se pudo crear el cliente. Verifica que el servidor esté funcionando.");
+                        }
+                    });
+                } catch (Exception e) {
+                    log.error("Error al crear cliente", e);
+                    Platform.runLater(() -> {
+                        mostrarError("Error al crear el cliente: " + e.getMessage());
+                    });
+                }
+            }).start();
         });
     }
 
@@ -320,18 +343,32 @@ public class ClientesController {
         Optional<ClienteDTO> resultado = dialog.showAndWait();
         
         resultado.ifPresent(clienteEditado -> {
-            log.info("Cliente editado: {}", clienteEditado.getNombre());
-            mostrarInfo("Funcionalidad en desarrollo", 
-                "Para actualizar clientes, necesitas implementar el endpoint:\n" +
-                "PUT /api/clientes/{id}\n\n" +
-                "en tu API de Spring Boot.");
+            log.info("Guardando cambios del cliente: {}", clienteEditado.getNombre());
             
-            // Actualizar en la lista local (no se guarda en DB todavía)
-            int index = todosLosClientes.indexOf(cliente);
-            if (index >= 0) {
-                todosLosClientes.set(index, clienteEditado);
-                actualizarTabla(todosLosClientes);
-            }
+            // Llamar a la API para actualizar el cliente
+            new Thread(() -> {
+                try {
+                    ClienteDTO clienteActualizado = clienteApiService.actualizar(cliente.getId(), clienteEditado);
+                    
+                    Platform.runLater(() -> {
+                        if (clienteActualizado != null) {
+                            log.info("Cliente actualizado exitosamente: {}", clienteActualizado.getId());
+                            mostrarInfo("Cliente Actualizado", 
+                                "Los cambios se han guardado correctamente.");
+                            
+                            // Recargar la lista de clientes
+                            cargarClientes();
+                        } else {
+                            mostrarError("No se pudo actualizar el cliente. Verifica que el servidor esté funcionando.");
+                        }
+                    });
+                } catch (Exception e) {
+                    log.error("Error al actualizar cliente", e);
+                    Platform.runLater(() -> {
+                        mostrarError("Error al actualizar el cliente: " + e.getMessage());
+                    });
+                }
+            }).start();
         });
     }
 
@@ -352,15 +389,30 @@ public class ClientesController {
         if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
             log.info("Confirmada eliminación de cliente: {}", cliente.getId());
             
-            mostrarInfo("Funcionalidad en desarrollo", 
-                "Para eliminar clientes, necesitas implementar el endpoint:\n" +
-                "DELETE /api/clientes/{id}\n\n" +
-                "en tu API de Spring Boot.");
-            
-            // Eliminar de la lista local (no se elimina de DB todavía)
-            todosLosClientes.remove(cliente);
-            actualizarTabla(todosLosClientes);
-            actualizarEstadisticas();
+            // Llamar a la API para eliminar el cliente
+            new Thread(() -> {
+                try {
+                    boolean eliminado = clienteApiService.eliminar(cliente.getId());
+                    
+                    Platform.runLater(() -> {
+                        if (eliminado) {
+                            log.info("Cliente eliminado exitosamente: {}", cliente.getId());
+                            mostrarInfo("Cliente Eliminado", 
+                                "El cliente se ha eliminado correctamente.");
+                            
+                            // Recargar la lista de clientes
+                            cargarClientes();
+                        } else {
+                            mostrarError("No se pudo eliminar el cliente. Puede que tenga citas asociadas.");
+                        }
+                    });
+                } catch (Exception e) {
+                    log.error("Error al eliminar cliente", e);
+                    Platform.runLater(() -> {
+                        mostrarError("Error al eliminar el cliente: " + e.getMessage());
+                    });
+                }
+            }).start();
         }
     }
 

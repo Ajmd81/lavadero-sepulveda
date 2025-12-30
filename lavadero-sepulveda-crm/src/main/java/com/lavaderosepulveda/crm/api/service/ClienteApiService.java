@@ -158,9 +158,28 @@ public class ClienteApiService {
     }
     
     /**
-     * Obtener clientes con más facturación (filtrado local)
+     * Obtener clientes con más facturación - USANDO ENDPOINT DEL BACKEND
      */
     public List<ClienteDTO> obtenerTopClientesPorFacturacion(int limite) {
+        try {
+            String response = apiClient.getRaw(baseUrl + "/top-facturacion?limit=" + limite);
+            
+            Type listType = new TypeToken<ArrayList<ClienteDTO>>(){}.getType();
+            List<ClienteDTO> clientes = apiClient.getGson().fromJson(response, listType);
+            
+            log.info("Obtenidos {} top clientes por facturación desde API", clientes != null ? clientes.size() : 0);
+            return clientes != null ? clientes : new ArrayList<>();
+        } catch (IOException e) {
+            log.error("Error al obtener top clientes por facturación", e);
+            // Fallback: filtrado local
+            return obtenerTopClientesPorFacturacionLocal(limite);
+        }
+    }
+    
+    /**
+     * Fallback: Obtener top clientes por facturación (filtrado local)
+     */
+    private List<ClienteDTO> obtenerTopClientesPorFacturacionLocal(int limite) {
         try {
             List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
             return todosLosClientes.stream()
@@ -172,15 +191,34 @@ public class ClienteApiService {
                 .limit(limite)
                 .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Error al obtener top clientes por facturación", e);
+            log.error("Error en fallback de top clientes por facturación", e);
             return new ArrayList<>();
         }
     }
     
     /**
-     * Obtener clientes con más no presentaciones (filtrado local)
+     * Obtener clientes con más no presentaciones - USANDO ENDPOINT DEL BACKEND
      */
     public List<ClienteDTO> obtenerClientesConMasNoPresentaciones(int limite) {
+        try {
+            String response = apiClient.getRaw(baseUrl + "/no-presentaciones?limit=" + limite);
+            
+            Type listType = new TypeToken<ArrayList<ClienteDTO>>(){}.getType();
+            List<ClienteDTO> clientes = apiClient.getGson().fromJson(response, listType);
+            
+            log.info("Obtenidos {} clientes con más no presentaciones desde API", clientes != null ? clientes.size() : 0);
+            return clientes != null ? clientes : new ArrayList<>();
+        } catch (IOException e) {
+            log.error("Error al obtener clientes con más no presentaciones", e);
+            // Fallback: filtrado local
+            return obtenerClientesConMasNoPresentacionesLocal(limite);
+        }
+    }
+    
+    /**
+     * Fallback: Obtener clientes con más no presentaciones (filtrado local)
+     */
+    private List<ClienteDTO> obtenerClientesConMasNoPresentacionesLocal(int limite) {
         try {
             List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
             return todosLosClientes.stream()
@@ -193,7 +231,7 @@ public class ClienteApiService {
                 .limit(limite)
                 .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Error al obtener clientes con más no presentaciones", e);
+            log.error("Error en fallback de clientes con más no presentaciones", e);
             return new ArrayList<>();
         }
     }

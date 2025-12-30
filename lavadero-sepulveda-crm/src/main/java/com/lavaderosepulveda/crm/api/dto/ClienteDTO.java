@@ -14,7 +14,7 @@ public class ClienteDTO {
     private String apellidos;
     private String telefono;
     private String email;
-    private Boolean activo;
+    private Boolean activo = true;  // Por defecto activo
     
     // Estadísticas
     private Integer totalCitas;
@@ -25,6 +25,20 @@ public class ClienteDTO {
     
     // Vehículo habitual (el más usado)
     private String vehiculoHabitual;
+    
+    // ========================================
+    // CAMPOS ADICIONALES PARA SINCRONIZACIÓN
+    // ========================================
+    private String nif;
+    private String direccion;
+    private String codigoPostal;
+    private String ciudad;
+    private String provincia;
+    private String matricula;
+    private String marca;
+    private String modelo;
+    private String color;
+    private String notas;
     
     /**
      * Obtiene el nombre completo (nombre + apellidos)
