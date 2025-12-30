@@ -271,6 +271,7 @@ public class CitasController {
         cmbNuevoEstado.setItems(FXCollections.observableArrayList(
             "Pendiente",
             "Confirmada",
+            "En Proceso",
             "Completada",
             "Cancelada",
             "No Presentado"
@@ -514,6 +515,7 @@ public class CitasController {
         switch (estado) {
             case PENDIENTE: return "Pendiente";
             case CONFIRMADA: return "Confirmada";
+            case EN_PROCESO: return "En Proceso";
             case COMPLETADA: return "Completada";
             case CANCELADA: return "Cancelada";
             case NO_PRESENTADO: return "No Presentado";
@@ -525,6 +527,7 @@ public class CitasController {
         switch (estado) {
             case "Pendiente": return EstadoCita.PENDIENTE;
             case "Confirmada": return EstadoCita.CONFIRMADA;
+            case "En Proceso": return EstadoCita.EN_PROCESO;
             case "Completada": return EstadoCita.COMPLETADA;
             case "Cancelada": return EstadoCita.CANCELADA;
             case "No Presentado": return EstadoCita.NO_PRESENTADO;
