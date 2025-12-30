@@ -1,6 +1,11 @@
 package com.lavaderosepulveda.app.controller;
 
 import com.lavaderosepulveda.app.dto.FacturaDTO;
+import com.lavaderosepulveda.app.model.Factura;
+import com.lavaderosepulveda.app.model.LineaFactura;
+import com.lavaderosepulveda.app.model.TipoFactura;
+import com.lavaderosepulveda.app.model.EstadoFactura;
+import com.lavaderosepulveda.app.model.MetodoPago;
 import com.lavaderosepulveda.app.service.FacturaService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import org.slf4j.Logger;
