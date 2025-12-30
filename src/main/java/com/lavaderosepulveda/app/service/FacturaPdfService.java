@@ -5,6 +5,7 @@ import com.lavaderosepulveda.app.model.LineaFactura;
 import com.lavaderosepulveda.app.model.TipoFactura;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
+import com.lowagie.text.pdf.draw.LineSeparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
