@@ -302,11 +302,8 @@ public class CitasController {
             
             new Thread(() -> {
                 try {
-                    // Actualizar estado en el DTO
-                    cita.setEstado(nuevoEstado);
-                    
-                    // Llamar al endpoint PUT /api/citas/{id}
-                    CitaDTO citaActualizada = citaApiService.update(cita.getId(), cita);
+                    // Usar endpoint específico PUT /api/citas/{id}/estado/{estado}
+                    CitaDTO citaActualizada = citaApiService.cambiarEstado(cita.getId(), nuevoEstado);
                     
                     Platform.runLater(() -> {
                         mostrarInfo("Estado Actualizado", 
@@ -351,23 +348,87 @@ public class CitasController {
         dpFechaCita.setValue(LocalDate.now().plusDays(1));
         
         ComboBox<String> cmbHora = new ComboBox<>();
-        cmbHora.setItems(FXCollections.observableArrayList(
-            "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-            "16:00", "16:30", "17:00", "17:30", "18:00", "18:30",
-            "19:00", "19:30", "20:00"
-        ));
-        cmbHora.setValue("10:00");
+        cmbHora.setPromptText("Selecciona fecha primero");
+        
+        // Label para mostrar estado de carga
+        Label lblHorariosStatus = new Label("Selecciona una fecha para ver horarios disponibles");
+        lblHorariosStatus.setStyle("-fx-text-fill: #666666; -fx-font-size: 10px;");
+        
+        // Listener para cargar horarios cuando cambie la fecha
+        dpFechaCita.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                lblHorariosStatus.setText("Cargando horarios...");
+                lblHorariosStatus.setStyle("-fx-text-fill: #2196F3; -fx-font-size: 10px;");
+                cmbHora.setDisable(true);
+                cmbHora.getItems().clear();
+                
+                // Cargar horarios en hilo separado
+                new Thread(() -> {
+                    List<String> horarios = citaApiService.obtenerHorariosDisponibles(newValue);
+                    
+                    Platform.runLater(() -> {
+                        if (horarios != null && !horarios.isEmpty()) {
+                            cmbHora.setItems(FXCollections.observableArrayList(horarios));
+                            cmbHora.setValue(horarios.get(0));
+                            cmbHora.setDisable(false);
+                            lblHorariosStatus.setText(horarios.size() + " horarios disponibles");
+                            lblHorariosStatus.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 10px;");
+                        } else {
+                            cmbHora.setItems(FXCollections.observableArrayList());
+                            cmbHora.setDisable(true);
+                            lblHorariosStatus.setText("No hay horarios disponibles para esta fecha");
+                            lblHorariosStatus.setStyle("-fx-text-fill: #f44336; -fx-font-size: 10px;");
+                        }
+                    });
+                }).start();
+            }
+        });
+        
+        // Disparar carga inicial de horarios
+        Platform.runLater(() -> {
+            dpFechaCita.fireEvent(new javafx.event.ActionEvent());
+            // Forzar actualización de horarios para la fecha inicial
+            LocalDate fechaInicial = dpFechaCita.getValue();
+            if (fechaInicial != null) {
+                new Thread(() -> {
+                    List<String> horarios = citaApiService.obtenerHorariosDisponibles(fechaInicial);
+                    Platform.runLater(() -> {
+                        if (horarios != null && !horarios.isEmpty()) {
+                            cmbHora.setItems(FXCollections.observableArrayList(horarios));
+                            cmbHora.setValue(horarios.get(0));
+                            cmbHora.setDisable(false);
+                            lblHorariosStatus.setText(horarios.size() + " horarios disponibles");
+                            lblHorariosStatus.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 10px;");
+                        }
+                    });
+                }).start();
+            }
+        });
         
         ComboBox<String> cmbServicio = new ComboBox<>();
         cmbServicio.setItems(FXCollections.observableArrayList(
             "LAVADO_COMPLETO_TURISMO",
             "LAVADO_INTERIOR_TURISMO",
             "LAVADO_EXTERIOR_TURISMO",
-            "LAVADO_COMPLETO_FURGONETA_PEQUEÑA",
+            "LAVADO_COMPLETO_RANCHERA",
+            "LAVADO_INTERIOR_RANCHERA",
+            "LAVADO_EXTERIOR_RANCHERA",
+            "LAVADO_COMPLETO_MONOVOLUMEN",
+            "LAVADO_INTERIOR_MONOVOLUMEN",
+            "LAVADO_EXTERIOR_MONOVOLUMEN",
             "LAVADO_COMPLETO_TODOTERRENO",
+            "LAVADO_INTERIOR_TODOTERRENO",
+            "LAVADO_EXTERIOR_TODOTERRENO",
+            "LAVADO_COMPLETO_FURGONETA_PEQUEÑA",
+            "LAVADO_INTERIOR_FURGONETA_PEQUEÑA",
+            "LAVADO_EXTERIOR_FURGONETA_PEQUEÑA",
+            "LAVADO_COMPLETO_FURGONETA_GRANDE",
+            "LAVADO_INTERIOR_FURGONETA_GRANDE",
+            "LAVADO_EXTERIOR_FURGONETA_GRANDE",
             "TRATAMIENTO_OZONO",
-            "ENCERADO"
+            "ENCERADO",
+            "TAPICERIA_SIN_DESMONTAR",
+            "TAPICERIA_DESMONTANDO"
         ));
         cmbServicio.setValue("LAVADO_COMPLETO_TURISMO");
         
@@ -385,10 +446,11 @@ public class CitasController {
         grid.add(dpFechaCita, 1, 3);
         grid.add(new Label("Hora:"), 0, 4);
         grid.add(cmbHora, 1, 4);
-        grid.add(new Label("Servicio:"), 0, 5);
-        grid.add(cmbServicio, 1, 5);
-        grid.add(new Label("Vehículo:"), 0, 6);
-        grid.add(txtVehiculo, 1, 6);
+        grid.add(lblHorariosStatus, 1, 5);
+        grid.add(new Label("Servicio:"), 0, 6);
+        grid.add(cmbServicio, 1, 6);
+        grid.add(new Label("Vehículo:"), 0, 7);
+        grid.add(txtVehiculo, 1, 7);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -396,6 +458,12 @@ public class CitasController {
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == crearButtonType) {
+                // Validar que haya un horario seleccionado
+                if (cmbHora.getValue() == null || cmbHora.getValue().isEmpty()) {
+                    mostrarError("Debes seleccionar un horario disponible");
+                    return null;
+                }
+                
                 // Construir CitaDTO
                 CitaDTO cita = new CitaDTO();
                 

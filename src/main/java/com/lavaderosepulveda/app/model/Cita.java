@@ -5,10 +5,16 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "citas")
+@Table(name = "citas", indexes = {
+        @Index(name = "idx_citas_fecha", columnList = "fecha"),
+        @Index(name = "idx_citas_estado", columnList = "estado"),
+        @Index(name = "idx_citas_telefono", columnList = "telefono"),
+        @Index(name = "idx_citas_cliente_id", columnList = "cliente_id")
+})
 public class Cita {
 
     @Id
@@ -59,6 +65,46 @@ public class Cita {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    // ========================================
+    // CAMPOS ADICIONALES PARA CRM
+    // ========================================
+
+    @Column(name = "cliente_id")
+    private Long clienteId;
+
+    @Column(name = "duracion_estimada")
+    private Integer duracionEstimada; // en minutos
+
+    @Column(name = "hora_llegada")
+    private LocalTime horaLlegada;
+
+    @Column(name = "hora_inicio")
+    private LocalTime horaInicio;
+
+    @Column(name = "hora_fin")
+    private LocalTime horaFin;
+
+    @Column(name = "recordatorio_enviado")
+    private Boolean recordatorioEnviado = false;
+
+    @Column(name = "confirmacion_enviada")
+    private Boolean confirmacionEnviada = false;
+
+    @Column(name = "facturada")
+    private Boolean facturada = false;
+
+    @Column(name = "factura_id")
+    private Long facturaId;
+
+    // Matrícula del vehículo (separada del modelo)
+    private String matricula;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     // Constructores
     public Cita() {
     }
@@ -73,6 +119,21 @@ public class Cita {
         this.hora = hora;
         this.estado = EstadoCita.PENDIENTE; // Por defecto
         this.pagoAdelantado = false; // Por defecto
+    }
+
+    // Callbacks JPA
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (duracionEstimada == null) {
+            duracionEstimada = 60; // 1 hora por defecto
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     // Getters y Setters existentes
@@ -173,6 +234,106 @@ public class Cita {
         this.observaciones = observaciones;
     }
 
+    // ========================================
+    // GETTERS Y SETTERS CAMPOS CRM
+    // ========================================
+
+    public Long getClienteId() {
+        return clienteId;
+    }
+
+    public void setClienteId(Long clienteId) {
+        this.clienteId = clienteId;
+    }
+
+    public Integer getDuracionEstimada() {
+        return duracionEstimada;
+    }
+
+    public void setDuracionEstimada(Integer duracionEstimada) {
+        this.duracionEstimada = duracionEstimada;
+    }
+
+    public LocalTime getHoraLlegada() {
+        return horaLlegada;
+    }
+
+    public void setHoraLlegada(LocalTime horaLlegada) {
+        this.horaLlegada = horaLlegada;
+    }
+
+    public LocalTime getHoraInicio() {
+        return horaInicio;
+    }
+
+    public void setHoraInicio(LocalTime horaInicio) {
+        this.horaInicio = horaInicio;
+    }
+
+    public LocalTime getHoraFin() {
+        return horaFin;
+    }
+
+    public void setHoraFin(LocalTime horaFin) {
+        this.horaFin = horaFin;
+    }
+
+    public Boolean getRecordatorioEnviado() {
+        return recordatorioEnviado;
+    }
+
+    public void setRecordatorioEnviado(Boolean recordatorioEnviado) {
+        this.recordatorioEnviado = recordatorioEnviado;
+    }
+
+    public Boolean getConfirmacionEnviada() {
+        return confirmacionEnviada;
+    }
+
+    public void setConfirmacionEnviada(Boolean confirmacionEnviada) {
+        this.confirmacionEnviada = confirmacionEnviada;
+    }
+
+    public Boolean getFacturada() {
+        return facturada;
+    }
+
+    public void setFacturada(Boolean facturada) {
+        this.facturada = facturada;
+    }
+
+    public Long getFacturaId() {
+        return facturaId;
+    }
+
+    public void setFacturaId(Long facturaId) {
+        this.facturaId = facturaId;
+    }
+
+    public String getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(String matricula) {
+        this.matricula = matricula;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     @Override
     public String toString() {
         return "Cita{" +
@@ -186,7 +347,8 @@ public class Cita {
                 ", hora=" + hora +
                 ", estado=" + estado +
                 ", pagoAdelantado=" + pagoAdelantado +
-                ", referenciaPago='" + referenciaPago + '\'' +
+                ", clienteId=" + clienteId +
+                ", facturada=" + facturada +
                 ", observaciones='" + observaciones + '\'' +
                 '}';
     }

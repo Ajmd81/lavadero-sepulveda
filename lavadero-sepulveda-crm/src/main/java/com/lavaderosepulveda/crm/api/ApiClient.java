@@ -163,7 +163,7 @@ public class ApiClient {
      * PUT request
      */
     public <T, R> R put(String url, T body, Class<R> responseType) throws IOException {
-        String jsonBody = gson.toJson(body);
+        String jsonBody = body != null ? gson.toJson(body) : "{}";
         log.debug("PUT Body: {}", jsonBody);
 
         RequestBody requestBody = RequestBody.create(jsonBody, JSON);

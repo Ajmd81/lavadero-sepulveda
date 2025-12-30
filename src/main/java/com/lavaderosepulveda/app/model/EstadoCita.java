@@ -3,6 +3,7 @@ package com.lavaderosepulveda.app.model;
 public enum EstadoCita {
     PENDIENTE("Pendiente"),
     CONFIRMADA("Confirmada"),
+    EN_PROCESO("En proceso"),
     COMPLETADA("Completada"),
     NO_PRESENTADO("No presentado"),
     CANCELADA("Cancelada");

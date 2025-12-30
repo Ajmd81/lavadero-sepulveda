@@ -151,4 +151,43 @@ public class CitaApiService {
     public List<CitaDTO> findCitasConfirmadas() {
         return findByEstado(EstadoCita.CONFIRMADA);
     }
+
+    /**
+     * Cambiar estado de una cita usando el endpoint específico
+     */
+    public CitaDTO cambiarEstado(Long id, EstadoCita nuevoEstado) throws IOException {
+        String estadoStr = nuevoEstado.name();
+        String url = baseUrl + "/" + id + "/estado/" + estadoStr;
+        
+        log.info("Cambiando estado de cita {} a {}", id, estadoStr);
+        
+        // PUT sin body - el estado va en la URL
+        CitaDTO citaActualizada = apiClient.put(url, null, CitaDTO.class);
+        log.info("Estado de cita {} cambiado exitosamente a {}", id, estadoStr);
+        
+        return citaActualizada;
+    }
+
+    /**
+     * Obtener horarios disponibles para una fecha desde la API
+     */
+    public List<String> obtenerHorariosDisponibles(LocalDate fecha) {
+        try {
+            // Formato dd/MM/yyyy que espera el backend
+            String fechaStr = fecha.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String url = baseUrl + "/horarios-disponibles?fecha=" + fechaStr;
+            
+            log.info("Obteniendo horarios disponibles para: {}", fechaStr);
+            String response = apiClient.getRaw(url);
+            
+            Type listType = new TypeToken<ArrayList<String>>(){}.getType();
+            List<String> horarios = apiClient.getGson().fromJson(response, listType);
+            
+            log.info("Horarios disponibles obtenidos: {}", horarios != null ? horarios.size() : 0);
+            return horarios != null ? horarios : new ArrayList<>();
+        } catch (IOException e) {
+            log.error("Error al obtener horarios disponibles para: " + fecha, e);
+            return new ArrayList<>();
+        }
+    }
 }
