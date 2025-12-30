@@ -527,6 +527,43 @@ public class CitaApiController {
         return ResponseEntity.ok(resumen);
     }
 
+    // ========================================
+    // ENDPOINT DE MIGRACIÓN
+    // ========================================
+
+    @Autowired
+    private javax.sql.DataSource dataSource;
+
+    /**
+     * POST /api/citas/migrar-estado
+     * Migrar columna estado de ENUM a VARCHAR para permitir nuevos valores
+     */
+    @PostMapping("/citas/migrar-estado")
+    public ResponseEntity<Map<String, String>> migrarColumnaEstado() {
+        try (java.sql.Connection connection = dataSource.getConnection();
+             java.sql.Statement statement = connection.createStatement()) {
+
+            // Cambiar la columna de ENUM a VARCHAR(20)
+            String sql = "ALTER TABLE citas MODIFY COLUMN estado VARCHAR(20)";
+            statement.executeUpdate(sql);
+
+            logger.info("Migración de columna estado completada exitosamente");
+
+            Map<String, String> response = new HashMap<>();
+            response.put("mensaje", "Migración completada");
+            response.put("detalle", "Columna 'estado' cambiada a VARCHAR(20)");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error en migración de columna estado: {}", e.getMessage());
+
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     /**
      * Método privado para enviar email de confirmación
      */
