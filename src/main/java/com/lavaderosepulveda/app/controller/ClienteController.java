@@ -73,22 +73,20 @@ public class ClienteController {
     /**
      * POST /api/clientes
      * Crear nuevo cliente
+     * ACTUALIZADO: Solo nombre es obligatorio (para importación de contabilidad)
      */
     @PostMapping
     public ResponseEntity<?> crearCliente(@RequestBody ClienteDTO clienteDTO) {
         try {
-            // Validaciones
+            // Validación mínima: solo nombre obligatorio
             if (clienteDTO.getNombre() == null || clienteDTO.getNombre().trim().isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "El nombre es obligatorio"));
             }
-            if (clienteDTO.getTelefono() == null || clienteDTO.getTelefono().trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "El teléfono es obligatorio"));
-            }
 
             ClienteDTO clienteCreado = clienteService.crearCliente(clienteDTO);
-            log.info("Cliente creado: {} - {}", clienteCreado.getId(), clienteCreado.getNombre());
+            log.info("Cliente creado: {} - {} {}", clienteCreado.getId(),
+                    clienteCreado.getNif(), clienteCreado.getNombre());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(clienteCreado);
 
@@ -99,7 +97,7 @@ public class ClienteController {
         } catch (Exception e) {
             log.error("Error al crear cliente", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error interno del servidor"));
+                    .body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
         }
     }
 
@@ -112,14 +110,10 @@ public class ClienteController {
             @PathVariable Long id,
             @RequestBody ClienteDTO clienteDTO) {
         try {
-            // Validaciones
+            // Validación mínima
             if (clienteDTO.getNombre() == null || clienteDTO.getNombre().trim().isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "El nombre es obligatorio"));
-            }
-            if (clienteDTO.getTelefono() == null || clienteDTO.getTelefono().trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "El teléfono es obligatorio"));
             }
 
             ClienteDTO clienteActualizado = clienteService.actualizarCliente(id, clienteDTO);
@@ -183,7 +177,7 @@ public class ClienteController {
     }
 
     // ========================================
-    // NUEVOS ENDPOINTS PARA INTEGRACIÓN CRM
+    // ENDPOINTS PARA INTEGRACIÓN CRM
     // ========================================
 
     /**
@@ -213,7 +207,7 @@ public class ClienteController {
             if (nombre == null || nombre.trim().isEmpty()) {
                 return ResponseEntity.ok(clienteService.obtenerTodosLosClientes());
             }
-            
+
             List<ClienteDTO> clientes = clienteService.buscarPorNombre(nombre);
             log.info("Encontrados {} clientes con nombre que contiene '{}'", clientes.size(), nombre);
             return ResponseEntity.ok(clientes);
@@ -232,13 +226,13 @@ public class ClienteController {
         try {
             long total = clienteService.contarClientes();
             long activos = clienteService.contarClientesActivos();
-            
+
             Map<String, Long> counts = Map.of(
                     "total", total,
                     "activos", activos,
                     "inactivos", total - activos
             );
-            
+
             return ResponseEntity.ok(counts);
         } catch (Exception e) {
             log.error("Error al contar clientes", e);
