@@ -34,13 +34,17 @@
     <TableView fx:id="tblClientes" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
-            <TableColumn fx:id="colNombreCompleto" text="Nombre Completo" prefWidth="200"/>
-            <TableColumn fx:id="colTelefono" text="Teléfono" prefWidth="120"/>
-            <TableColumn fx:id="colEmail" text="Email" prefWidth="200"/>
-            <TableColumn fx:id="colVehiculo" text="Vehículo Habitual" prefWidth="150"/>
-            <TableColumn fx:id="colTotalCitas" text="Total Citas" prefWidth="100"/>
-            <TableColumn fx:id="colFacturado" text="Facturado" prefWidth="120"/>
-            <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="200"/>
+            <TableColumn fx:id="colNif" text="NIF/CIF" prefWidth="100"/>
+            <TableColumn fx:id="colNombreCompleto" text="Nombre / Razón Social" prefWidth="200"/>
+            <TableColumn fx:id="colTelefono" text="Teléfono" prefWidth="100"/>
+            <TableColumn fx:id="colEmail" text="Email" prefWidth="180"/>
+            <TableColumn fx:id="colDireccion" text="Dirección" prefWidth="200"/>
+            <TableColumn fx:id="colCodigoPostal" text="C.P." prefWidth="60"/>
+            <TableColumn fx:id="colPoblacion" text="Población" prefWidth="100"/>
+            <TableColumn fx:id="colProvincia" text="Provincia" prefWidth="90"/>
+            <TableColumn fx:id="colTotalCitas" text="Citas" prefWidth="50"/>
+            <TableColumn fx:id="colFacturado" text="Facturado" prefWidth="90"/>
+            <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="180"/>
         </columns>
     </TableView>
     

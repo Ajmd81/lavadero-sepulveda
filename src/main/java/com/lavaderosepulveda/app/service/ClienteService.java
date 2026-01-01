@@ -57,12 +57,27 @@ public class ClienteService {
 
     /**
      * Crear nuevo cliente
+     * ACTUALIZADO: Permite clientes sin teléfono y busca por NIF para evitar duplicados
      */
     @Transactional
     public ClienteDTO crearCliente(ClienteDTO clienteDTO) {
-        // Validar que no exista un cliente con ese teléfono
-        if (clienteRepository.existsByTelefono(clienteDTO.getTelefono())) {
-            throw new IllegalArgumentException("Ya existe un cliente con ese teléfono: " + clienteDTO.getTelefono());
+        // Si tiene NIF, verificar si ya existe y actualizar en lugar de crear duplicado
+        if (clienteDTO.getNif() != null && !clienteDTO.getNif().trim().isEmpty()) {
+            Optional<Cliente> existentePorNif = clienteRepository.findByNif(clienteDTO.getNif().trim());
+            if (existentePorNif.isPresent()) {
+                log.info("Cliente con NIF {} ya existe (ID: {}), actualizando...",
+                        clienteDTO.getNif(), existentePorNif.get().getId());
+                return actualizarCliente(existentePorNif.get().getId(), clienteDTO);
+            }
+        }
+
+        // Validar teléfono duplicado SOLO si se proporciona teléfono
+        if (clienteDTO.getTelefono() != null && !clienteDTO.getTelefono().trim().isEmpty()) {
+            if (clienteRepository.existsByTelefono(clienteDTO.getTelefono().trim())) {
+                // En lugar de error, solo log warning (permite mismo teléfono para centralitas)
+                log.warn("Ya existe un cliente con teléfono: {}. Creando de todos modos.",
+                        clienteDTO.getTelefono());
+            }
         }
 
         Cliente cliente = new Cliente();
@@ -72,7 +87,7 @@ public class ClienteService {
         cliente.setEmail(clienteDTO.getEmail());
         cliente.setVehiculoHabitual(clienteDTO.getVehiculoHabitual());
         cliente.setActivo(clienteDTO.getActivo() != null ? clienteDTO.getActivo() : true);
-        
+
         // Campos adicionales CRM
         cliente.setNif(clienteDTO.getNif());
         cliente.setDireccion(clienteDTO.getDireccion());
@@ -86,7 +101,8 @@ public class ClienteService {
         cliente.setNotas(clienteDTO.getNotas());
 
         Cliente clienteGuardado = clienteRepository.save(cliente);
-        log.info("Cliente creado: {} - {}", clienteGuardado.getId(), clienteGuardado.getNombre());
+        log.info("Cliente creado: {} - {} - {}", clienteGuardado.getId(),
+                clienteGuardado.getNif(), clienteGuardado.getNombre());
 
         return convertirADTO(clienteGuardado);
     }
@@ -99,20 +115,17 @@ public class ClienteService {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado con ID: " + id));
 
-        // Validar que el teléfono no esté en uso por otro cliente
-        if (!cliente.getTelefono().equals(clienteDTO.getTelefono())) {
-            if (clienteRepository.existsByTelefono(clienteDTO.getTelefono())) {
-                throw new IllegalArgumentException("Ya existe otro cliente con ese teléfono: " + clienteDTO.getTelefono());
-            }
-        }
+        // Ya no validamos teléfono duplicado (permitimos centralitas compartidas)
 
         cliente.setNombre(clienteDTO.getNombre());
         cliente.setApellidos(clienteDTO.getApellidos());
         cliente.setTelefono(clienteDTO.getTelefono());
         cliente.setEmail(clienteDTO.getEmail());
         cliente.setVehiculoHabitual(clienteDTO.getVehiculoHabitual());
-        cliente.setActivo(clienteDTO.getActivo());
-        
+        if (clienteDTO.getActivo() != null) {
+            cliente.setActivo(clienteDTO.getActivo());
+        }
+
         // Campos adicionales CRM
         cliente.setNif(clienteDTO.getNif());
         cliente.setDireccion(clienteDTO.getDireccion());
@@ -139,17 +152,20 @@ public class ClienteService {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado con ID: " + id));
 
-        // Verificar si tiene citas asociadas
-        List<Cita> citasCliente = citaRepository.findByTelefono(cliente.getTelefono());
-        if (!citasCliente.isEmpty()) {
-            log.warn("Cliente {} tiene {} citas asociadas. Marcando como inactivo en lugar de eliminar.",
-                    id, citasCliente.size());
-            cliente.setActivo(false);
-            clienteRepository.save(cliente);
-        } else {
-            clienteRepository.deleteById(id);
-            log.info("Cliente eliminado: {} - {}", id, cliente.getNombre());
+        // Verificar si tiene citas asociadas (solo si tiene teléfono)
+        if (cliente.getTelefono() != null && !cliente.getTelefono().isEmpty()) {
+            List<Cita> citasCliente = citaRepository.findByTelefono(cliente.getTelefono());
+            if (!citasCliente.isEmpty()) {
+                log.warn("Cliente {} tiene {} citas asociadas. Marcando como inactivo en lugar de eliminar.",
+                        id, citasCliente.size());
+                cliente.setActivo(false);
+                clienteRepository.save(cliente);
+                return;
+            }
         }
+
+        clienteRepository.deleteById(id);
+        log.info("Cliente eliminado: {} - {}", id, cliente.getNombre());
     }
 
     /**
@@ -161,6 +177,7 @@ public class ClienteService {
 
         // Agrupar citas por teléfono
         Map<String, List<Cita>> citasPorTelefono = todasLasCitas.stream()
+                .filter(c -> c.getTelefono() != null && !c.getTelefono().isEmpty())
                 .collect(Collectors.groupingBy(Cita::getTelefono));
 
         int clientesMigrados = 0;
@@ -189,6 +206,7 @@ public class ClienteService {
 
             // Vehículo habitual
             Map<String, Long> vehiculosFrecuencia = citas.stream()
+                    .filter(c -> c.getModeloVehiculo() != null)
                     .collect(Collectors.groupingBy(Cita::getModeloVehiculo, Collectors.counting()));
 
             String vehiculoHabitual = vehiculosFrecuencia.entrySet().stream()
@@ -252,7 +270,7 @@ public class ClienteService {
      */
     public List<ClienteDTO> obtenerTopClientesPorFacturacion(int limit) {
         List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
-        
+
         return todosLosClientes.stream()
                 .filter(c -> c.getTotalFacturado() != null && c.getTotalFacturado() > 0)
                 .sorted(Comparator.comparing(ClienteDTO::getTotalFacturado).reversed())
@@ -265,7 +283,7 @@ public class ClienteService {
      */
     public List<ClienteDTO> obtenerClientesConMasNoPresentaciones(int limit) {
         List<ClienteDTO> todosLosClientes = obtenerTodosLosClientes();
-        
+
         return todosLosClientes.stream()
                 .filter(c -> c.getCitasNoPresentadas() != null && c.getCitasNoPresentadas() > 0)
                 .sorted(Comparator.comparing(ClienteDTO::getCitasNoPresentadas).reversed())
@@ -278,28 +296,28 @@ public class ClienteService {
      */
     public Map<String, Object> obtenerEstadisticasClientes() {
         List<ClienteDTO> clientes = obtenerTodosLosClientes();
-        
+
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalClientes", clientes.size());
         stats.put("clientesActivos", clientes.stream().filter(c -> Boolean.TRUE.equals(c.getActivo())).count());
         stats.put("clientesInactivos", clientes.stream().filter(c -> !Boolean.TRUE.equals(c.getActivo())).count());
-        
+
         // Total facturado global
         double totalFacturadoGlobal = clientes.stream()
                 .mapToDouble(c -> c.getTotalFacturado() != null ? c.getTotalFacturado() : 0)
                 .sum();
         stats.put("totalFacturadoGlobal", totalFacturadoGlobal);
-        
+
         // Promedio de facturación por cliente
         double promedioFacturacion = clientes.isEmpty() ? 0 : totalFacturadoGlobal / clientes.size();
         stats.put("promedioFacturacionPorCliente", promedioFacturacion);
-        
+
         // Total de no presentaciones
         int totalNoPresentaciones = clientes.stream()
                 .mapToInt(c -> c.getCitasNoPresentadas() != null ? c.getCitasNoPresentadas() : 0)
                 .sum();
         stats.put("totalNoPresentaciones", totalNoPresentaciones);
-        
+
         return stats;
     }
 
@@ -316,7 +334,7 @@ public class ClienteService {
         dto.setEmail(cliente.getEmail());
         dto.setVehiculoHabitual(cliente.getVehiculoHabitual());
         dto.setActivo(cliente.getActivo());
-        
+
         // Campos adicionales CRM
         dto.setNif(cliente.getNif());
         dto.setDireccion(cliente.getDireccion());
@@ -329,26 +347,35 @@ public class ClienteService {
         dto.setColor(cliente.getColor());
         dto.setNotas(cliente.getNotas());
 
-        // Obtener estadísticas de las citas del cliente
-        List<Cita> citas = citaRepository.findByTelefono(cliente.getTelefono());
+        // Obtener estadísticas de las citas del cliente (solo si tiene teléfono)
+        if (cliente.getTelefono() != null && !cliente.getTelefono().isEmpty()) {
+            List<Cita> citas = citaRepository.findByTelefono(cliente.getTelefono());
 
-        dto.setTotalCitas(citas.size());
-        dto.setCitasCompletadas((int) citas.stream()
-                .filter(c -> c.getEstado() == EstadoCita.COMPLETADA)
-                .count());
-        dto.setCitasCanceladas((int) citas.stream()
-                .filter(c -> c.getEstado() == EstadoCita.CANCELADA)
-                .count());
-        dto.setCitasNoPresentadas((int) citas.stream()
-                .filter(c -> c.getEstado() == EstadoCita.NO_PRESENTADO)
-                .count());
+            dto.setTotalCitas(citas.size());
+            dto.setCitasCompletadas((int) citas.stream()
+                    .filter(c -> c.getEstado() == EstadoCita.COMPLETADA)
+                    .count());
+            dto.setCitasCanceladas((int) citas.stream()
+                    .filter(c -> c.getEstado() == EstadoCita.CANCELADA)
+                    .count());
+            dto.setCitasNoPresentadas((int) citas.stream()
+                    .filter(c -> c.getEstado() == EstadoCita.NO_PRESENTADO)
+                    .count());
 
-        // Total facturado (solo citas completadas)
-        double totalFacturado = citas.stream()
-                .filter(c -> c.getEstado() == EstadoCita.COMPLETADA)
-                .mapToDouble(c -> c.getTipoLavado().getPrecio())
-                .sum();
-        dto.setTotalFacturado(totalFacturado);
+            // Total facturado (solo citas completadas)
+            double totalFacturado = citas.stream()
+                    .filter(c -> c.getEstado() == EstadoCita.COMPLETADA && c.getTipoLavado() != null)
+                    .mapToDouble(c -> c.getTipoLavado().getPrecio())
+                    .sum();
+            dto.setTotalFacturado(totalFacturado);
+        } else {
+            // Cliente sin teléfono (importado de contabilidad)
+            dto.setTotalCitas(0);
+            dto.setCitasCompletadas(0);
+            dto.setCitasCanceladas(0);
+            dto.setCitasNoPresentadas(0);
+            dto.setTotalFacturado(0.0);
+        }
 
         return dto;
     }

@@ -6,60 +6,76 @@
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      spacing="20">
+      fx:controller="com.lavaderosepulveda.crm.controller.FacturacionController"
+      spacing="15">
 
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
+    <!-- Cabecera -->
     <HBox alignment="CENTER_LEFT" spacing="20">
-        <Label text="Facturación" styleClass="title-label"/>
+        <Label text="Facturación" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Nueva Factura" styleClass="primary-button"/>
-        <Button text="Exportar"/>
+        <Button text="+ Nueva Factura" onAction="#nuevaFactura" 
+                style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-cursor: hand;"/>
+        <Button text="Exportar" onAction="#exportar"
+                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 10 20; -fx-cursor: hand;"/>
     </HBox>
 
-    <!-- Filtros y estadísticas -->
-    <HBox spacing="20">
-        <VBox spacing="5" styleClass="metric-card-small" HBox.hgrow="ALWAYS">
-            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-            <Label text="Total Facturado"/>
-            <Label text="0.00 €" styleClass="metric-value-small"/>
+    <!-- Tarjetas de resumen -->
+    <HBox spacing="15">
+        <VBox spacing="5" HBox.hgrow="ALWAYS" 
+              style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);">
+            <Label text="Total Facturado (mes)" style="-fx-text-fill: #666666;"/>
+            <Label fx:id="lblTotalFacturado" text="0,00 €" 
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2196F3;"/>
         </VBox>
-        <VBox spacing="5" styleClass="metric-card-small" HBox.hgrow="ALWAYS">
-            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-            <Label text="Pendiente Cobro"/>
-            <Label text="0.00 €" styleClass="metric-value-small"/>
+        <VBox spacing="5" HBox.hgrow="ALWAYS"
+              style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);">
+            <Label text="Pendiente de Cobro" style="-fx-text-fill: #666666;"/>
+            <Label fx:id="lblPendienteCobro" text="0,00 €" 
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #FF9800;"/>
         </VBox>
-        <VBox spacing="5" styleClass="metric-card-small" HBox.hgrow="ALWAYS">
-            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-            <Label text="Facturas Vencidas"/>
-            <Label text="0" styleClass="metric-value-small"/>
+        <VBox spacing="5" HBox.hgrow="ALWAYS"
+              style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);">
+            <Label text="Facturas Pendientes" style="-fx-text-fill: #666666;"/>
+            <Label fx:id="lblFacturasPendientes" text="0" 
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #f44336;"/>
         </VBox>
     </HBox>
 
     <!-- Filtros de búsqueda -->
-    <HBox spacing="10" alignment="CENTER_LEFT">
+    <HBox spacing="15" alignment="CENTER_LEFT" 
+          style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8;">
         <Label text="Desde:"/>
-        <DatePicker prefWidth="130"/>
+        <DatePicker fx:id="dpDesde" prefWidth="130"/>
         <Label text="Hasta:"/>
-        <DatePicker prefWidth="130"/>
-        <CheckBox text="Solo pendientes"/>
-        <Button text="Filtrar"/>
+        <DatePicker fx:id="dpHasta" prefWidth="130"/>
+        <CheckBox fx:id="chkSoloPendientes" text="Solo pendientes"/>
+        <Button text="Filtrar" onAction="#filtrar"
+                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-cursor: hand;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <TextField fx:id="txtBuscar" promptText="Buscar por número o cliente..." prefWidth="200"/>
     </HBox>
 
     <!-- Tabla de facturas -->
-    <TableView VBox.vgrow="ALWAYS">
+    <TableView fx:id="tblFacturas" VBox.vgrow="ALWAYS"
+               style="-fx-background-color: white; -fx-background-radius: 8;">
         <columns>
-            <TableColumn text="Número" prefWidth="120"/>
-            <TableColumn text="Fecha" prefWidth="100"/>
-            <TableColumn text="Cliente" prefWidth="200"/>
-            <TableColumn text="Base" prefWidth="100"/>
-            <TableColumn text="IVA" prefWidth="80"/>
-            <TableColumn text="Total" prefWidth="100"/>
-            <TableColumn text="Estado" prefWidth="100"/>
-            <TableColumn text="Acciones" prefWidth="200"/>
+            <TableColumn fx:id="colNumero" text="Número" prefWidth="100"/>
+            <TableColumn fx:id="colFecha" text="Fecha" prefWidth="90"/>
+            <TableColumn fx:id="colCliente" text="Cliente" prefWidth="180"/>
+            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="90"/>
+            <TableColumn fx:id="colBase" text="Base" prefWidth="90"/>
+            <TableColumn fx:id="colIva" text="IVA" prefWidth="70"/>
+            <TableColumn fx:id="colTotal" text="Total" prefWidth="100"/>
+            <TableColumn fx:id="colEstado" text="Estado" prefWidth="90"/>
+            <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="180"/>
         </columns>
+        <placeholder>
+            <Label text="No hay facturas para mostrar" style="-fx-text-fill: #999999;"/>
+        </placeholder>
     </TableView>
 
 </VBox>
