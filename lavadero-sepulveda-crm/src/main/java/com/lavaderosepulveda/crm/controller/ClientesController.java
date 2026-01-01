@@ -34,10 +34,14 @@ public class ClientesController {
 
     @FXML private TableView<ClienteDTO> tblClientes;
     @FXML private TableColumn<ClienteDTO, Long> colId;
+    @FXML private TableColumn<ClienteDTO, String> colNif;
     @FXML private TableColumn<ClienteDTO, String> colNombreCompleto;
     @FXML private TableColumn<ClienteDTO, String> colTelefono;
     @FXML private TableColumn<ClienteDTO, String> colEmail;
-    @FXML private TableColumn<ClienteDTO, String> colVehiculo;
+    @FXML private TableColumn<ClienteDTO, String> colDireccion;
+    @FXML private TableColumn<ClienteDTO, String> colCodigoPostal;
+    @FXML private TableColumn<ClienteDTO, String> colPoblacion;
+    @FXML private TableColumn<ClienteDTO, String> colProvincia;
     @FXML private TableColumn<ClienteDTO, Integer> colTotalCitas;
     @FXML private TableColumn<ClienteDTO, Double> colFacturado;
     @FXML private TableColumn<ClienteDTO, Void> colAcciones;
@@ -58,6 +62,7 @@ public class ClientesController {
     private void configurarTabla() {
         // Configurar columnas
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colNif.setCellValueFactory(new PropertyValueFactory<>("nif"));
         
         // Nombre completo (nombre + apellidos)
         colNombreCompleto.setCellValueFactory(cellData -> {
@@ -72,7 +77,10 @@ public class ClientesController {
 
         colTelefono.setCellValueFactory(new PropertyValueFactory<>("telefono"));
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
-        colVehiculo.setCellValueFactory(new PropertyValueFactory<>("vehiculoHabitual"));
+        colDireccion.setCellValueFactory(new PropertyValueFactory<>("direccion"));
+        colCodigoPostal.setCellValueFactory(new PropertyValueFactory<>("codigoPostal"));
+        colPoblacion.setCellValueFactory(new PropertyValueFactory<>("ciudad"));
+        colProvincia.setCellValueFactory(new PropertyValueFactory<>("provincia"));
         colTotalCitas.setCellValueFactory(new PropertyValueFactory<>("totalCitas"));
         colFacturado.setCellValueFactory(new PropertyValueFactory<>("totalFacturado"));
         
@@ -218,18 +226,39 @@ public class ClientesController {
                 try {
                     List<ClienteDTO> clientesImportados = ExcelClienteHandler.importarDesdeExcel(archivo);
                     
+                    // Guardar cada cliente en la API
+                    int guardados = 0;
+                    int errores = 0;
+                    
+                    for (ClienteDTO cliente : clientesImportados) {
+                        try {
+                            ClienteDTO clienteGuardado = clienteApiService.crear(cliente);
+                            if (clienteGuardado != null) {
+                                guardados++;
+                            } else {
+                                errores++;
+                            }
+                        } catch (Exception e) {
+                            log.error("Error al guardar cliente: {}", cliente.getNombre(), e);
+                            errores++;
+                        }
+                    }
+                    
+                    final int totalGuardados = guardados;
+                    final int totalErrores = errores;
+                    
                     Platform.runLater(() -> {
-                        mostrarInfo("Importación Exitosa", 
-                            "Se han importado " + clientesImportados.size() + " clientes.\n\n" +
-                            "NOTA: Los clientes importados se muestran en la tabla pero NO se han " +
-                            "guardado en la base de datos.\n\n" +
-                            "Para guardarlos, necesitas implementar el endpoint POST /api/clientes " +
-                            "en tu API de Spring Boot.");
+                        if (totalErrores == 0) {
+                            mostrarInfo("Importación Exitosa", 
+                                "Se han importado y guardado " + totalGuardados + " clientes correctamente.");
+                        } else {
+                            mostrarInfo("Importación Parcial", 
+                                "Clientes guardados: " + totalGuardados + "\n" +
+                                "Errores: " + totalErrores);
+                        }
                         
-                        // Agregar a la lista local (no se guardan en DB todavía)
-                        todosLosClientes.addAll(clientesImportados);
-                        actualizarTabla(todosLosClientes);
-                        actualizarEstadisticas();
+                        // Recargar clientes desde la API
+                        cargarClientes();
                     });
                     
                 } catch (Exception e) {

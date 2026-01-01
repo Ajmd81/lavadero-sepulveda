@@ -160,6 +160,31 @@ public class ApiClient {
     }
 
     /**
+     * POST request que devuelve el JSON raw como String
+     */
+    public <T> String postRaw(String url, T body) throws IOException {
+        String jsonBody = gson.toJson(body);
+        log.debug("POST Body: {}", jsonBody);
+
+        RequestBody requestBody = RequestBody.create(jsonBody, JSON);
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                String errorBody = response.body() != null ? response.body().string() : "Sin cuerpo";
+                throw new IOException("Error en POST: " + response.code() + " - " + errorBody);
+            }
+
+            String responseBody = response.body().string();
+            log.debug("POST Response: {}", responseBody);
+            return responseBody;
+        }
+    }
+
+    /**
      * PUT request
      */
     public <T, R> R put(String url, T body, Class<R> responseType) throws IOException {
@@ -231,5 +256,48 @@ public class ApiClient {
 
     public Gson getGson() {
         return gson;
+    }
+
+    /**
+     * PUT request que devuelve el JSON raw como String
+     */
+    public <T> String putRaw(String url, T body) throws IOException {
+        String jsonBody = gson.toJson(body);
+        log.debug("PUT Body: {}", jsonBody);
+
+        RequestBody requestBody = RequestBody.create(jsonBody, JSON);
+        Request request = new Request.Builder()
+                .url(url)
+                .put(requestBody)
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                String errorBody = response.body() != null ? response.body().string() : "Sin cuerpo";
+                throw new IOException("Error en PUT: " + response.code() + " - " + errorBody);
+            }
+
+            String responseBody = response.body().string();
+            log.debug("PUT Response: {}", responseBody);
+            return responseBody;
+        }
+    }
+
+    /**
+     * GET request que devuelve bytes (para descargar archivos)
+     */
+    public byte[] getBytes(String url) throws IOException {
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Error en GET: " + response.code() + " - " + response.message());
+            }
+
+            return response.body().bytes();
+        }
     }
 }
