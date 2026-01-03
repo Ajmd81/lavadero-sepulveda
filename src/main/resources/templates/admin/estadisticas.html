@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estadísticas - Lavadero Sepúlveda</title>
     <script>
-        (function() {
+        (function () {
             'use strict';
             const darkMode = localStorage.getItem('darkMode') === 'true';
             if (darkMode) {
@@ -20,7 +21,7 @@
         })();
     </script>
     <link rel="stylesheet" th:href="@{/css/admin-menu.css}">
-    <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+    <link rel="icon" type="image/x-icon" th:href="@{/images/favicon.ico}">
     <style>
         * {
             margin: 0;
@@ -258,7 +259,8 @@
                 font-size: 0.85rem;
             }
 
-            th, td {
+            th,
+            td {
                 padding: 10px 8px;
             }
 
@@ -268,6 +270,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Menú de navegación -->
     <div th:replace="~{admin/menu :: menu}"></div>
@@ -304,7 +307,8 @@
 
             <div class="stat-card">
                 <div class="stat-icon">🏆</div>
-                <div class="stat-value" th:text="${estadisticas.servicioMasPopular}" style="font-size: 1.3rem;">N/A</div>
+                <div class="stat-value" th:text="${estadisticas.servicioMasPopular}" style="font-size: 1.3rem;">N/A
+                </div>
                 <div class="stat-label">Servicio Más Popular</div>
             </div>
         </div>
@@ -346,11 +350,12 @@
                                 <span class="badge badge-reservas" th:text="${cliente.totalReservas}">0</span>
                             </td>
                             <td style="text-align: right;">
-                                <span class="badge badge-dinero" 
-                                      th:text="${#numbers.formatDecimal(cliente.totalGastado, 1, 2)} + ' €'">0 €</span>
+                                <span class="badge badge-dinero"
+                                    th:text="${#numbers.formatDecimal(cliente.totalGastado, 1, 2)} + ' €'">0 €</span>
                             </td>
                             <td>
-                                <span class="badge badge-servicio" th:text="${cliente.servicioMasFrecuente}">Servicio</span>
+                                <span class="badge badge-servicio"
+                                    th:text="${cliente.servicioMasFrecuente}">Servicio</span>
                             </td>
                         </tr>
                     </tbody>
@@ -366,4 +371,5 @@
         </div>
     </div>
 </body>
+
 </html>

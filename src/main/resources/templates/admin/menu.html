@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
 
     <!-- MODO OSCURO - Script INLINE para ejecución inmediata -->
     <script>
-        (function() {
+        (function () {
             'use strict';
             const darkMode = localStorage.getItem('darkMode') === 'true';
             if (darkMode) {
@@ -22,119 +23,125 @@
 
     <link rel="stylesheet" th:href="@{/css/admin-menu.css}">
     <link rel="stylesheet" th:href="@{/css/dark-theme.css}">
-    <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+    <link rel="icon" type="image/x-icon" th:href="@{/images/favicon.ico}">
 </head>
+
 <body>
-<!-- Fragmento de menú horizontal mejorado -->
-<nav th:fragment="menu" class="admin-navbar">
-    <div class="nav-container">
-        <div class="logo-container">
-            <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
-            <div class="logo-text">Lavadero Sepúlveda</div>
-        </div>
-
-        <!-- Botón hamburguesa para móvil -->
-        <button class="mobile-toggle" id="mobileToggle" onclick="toggleMobileMenu()">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-
-        <!-- Menú de navegación -->
-        <ul class="nav-menu" id="navMenu">
-            <li class="nav-item">
-                <a th:href="@{/admin/listado-citas}"
-                   class="nav-link"
-                   data-page="listado-citas">
-                    <span class="nav-icon">📋</span>
-                    <span>Listado de Citas</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a th:href="@{/admin/estadisticas}"
-                   class="nav-link"
-                   data-page="estadisticas">
-                    <span class="nav-icon">📊</span>
-                    <span>Estadísticas</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a th:href="@{/admin/configuracion}"
-                   class="nav-link"
-                   data-page="configuracion">
-                    <span class="nav-icon">⚙️</span>
-                    <span>Configuración</span>
-                </a>
-            </li>
-        </ul>
-
-        <!-- Usuario y logout -->
-        <div class="nav-user">
-            <div class="user-info">
-                <span class="user-avatar">A</span>
-                <span class="user-name">admin</span>
+    <!-- Fragmento de menú horizontal mejorado -->
+    <nav th:fragment="menu" class="admin-navbar">
+        <div class="nav-container">
+            <div class="logo-container">
+                <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
+                <div class="logo-text">Lavadero Sepúlveda</div>
             </div>
-            <form th:action="@{/admin/logout}" method="post" class="logout-form">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <button type="submit" class="logout-btn">
-                    <span class="logout-icon">🚪</span>
-                    <span>Cerrar Sesión</span>
-                </button>
-            </form>
+
+            <!-- Botón hamburguesa para móvil -->
+            <button class="mobile-toggle" id="mobileToggle" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <!-- Menú de navegación -->
+            <ul class="nav-menu" id="navMenu">
+                <li class="nav-item">
+                    <a th:href="@{/admin/listado-citas}" class="nav-link" data-page="listado-citas">
+                        <span class="nav-icon">📋</span>
+                        <span>Listado de Citas</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/estadisticas}" class="nav-link" data-page="estadisticas">
+                        <span class="nav-icon">📊</span>
+                        <span>Estadísticas</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/configuracion}" class="nav-link" data-page="configuracion">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Configuración</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Usuario y logout -->
+            <div class="nav-user">
+                <div class="user-info">
+                    <span class="user-avatar">A</span>
+                    <span class="user-name">admin</span>
+                </div>
+                <form th:action="@{/admin/logout}" method="post" class="logout-form">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button type="submit" class="logout-btn">
+                        <span class="logout-icon">🚪</span>
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </form>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<script>
-    // Aplicar tema también al body cuando esté disponible
-    (function() {
-        function applyThemeToBody() {
-            const darkMode = localStorage.getItem('darkMode') === 'true';
-            if (darkMode) {
-                document.body.classList.add('dark-theme');
+    <script>
+        // Aplicar tema también al body cuando esté disponible
+        (function () {
+            function applyThemeToBody() {
+                const darkMode = localStorage.getItem('darkMode') === 'true';
+                if (darkMode) {
+                    document.body.classList.add('dark-theme');
+                }
+                const fontSize = localStorage.getItem('fontSize') || 'medium';
+                document.body.classList.add('font-' + fontSize);
+                const compactView = localStorage.getItem('compactView') === 'true';
+                if (compactView) {
+                    document.body.classList.add('compact-view');
+                }
             }
-            const fontSize = localStorage.getItem('fontSize') || 'medium';
-            document.body.classList.add('font-' + fontSize);
-            const compactView = localStorage.getItem('compactView') === 'true';
-            if (compactView) {
-                document.body.classList.add('compact-view');
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', applyThemeToBody);
+            } else {
+                applyThemeToBody();
             }
-        }
+        })();
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', applyThemeToBody);
-        } else {
-            applyThemeToBody();
-        }
-    })();
+        // Marcar página activa según la URL actual
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
 
-    // Marcar página activa según la URL actual
-    document.addEventListener('DOMContentLoaded', function() {
-        const currentPath = window.location.pathname;
-        const navLinks = document.querySelectorAll('.nav-link');
-
-        navLinks.forEach(link => {
-            const page = link.getAttribute('data-page');
-            if (currentPath.includes(page)) {
-                link.classList.add('active');
-            }
+            navLinks.forEach(link => {
+                const page = link.getAttribute('data-page');
+                if (currentPath.includes(page)) {
+                    link.classList.add('active');
+                }
+            });
         });
-    });
 
-    // Toggle menú móvil
-    function toggleMobileMenu() {
-        const navMenu = document.getElementById('navMenu');
-        const mobileToggle = document.getElementById('mobileToggle');
-        navMenu.classList.toggle('active');
-        mobileToggle.classList.toggle('active');
-    }
+        // Toggle menú móvil
+        function toggleMobileMenu() {
+            const navMenu = document.getElementById('navMenu');
+            const mobileToggle = document.getElementById('mobileToggle');
+            navMenu.classList.toggle('active');
+            mobileToggle.classList.toggle('active');
+        }
 
-    // Cerrar menú al hacer clic en un enlace (móvil)
-    document.addEventListener('DOMContentLoaded', function() {
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth <= 768) {
+        // Cerrar menú al hacer clic en un enlace (móvil)
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function () {
+                    if (window.innerWidth <= 768) {
+                        const navMenu = document.getElementById('navMenu');
+                        const mobileToggle = document.getElementById('mobileToggle');
+                        navMenu.classList.remove('active');
+                        mobileToggle.classList.remove('active');
+                    }
+                });
+            });
+
+            // Cerrar menú al cambiar tamaño de ventana
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) {
                     const navMenu = document.getElementById('navMenu');
                     const mobileToggle = document.getElementById('mobileToggle');
                     navMenu.classList.remove('active');
@@ -142,17 +149,7 @@
                 }
             });
         });
-
-        // Cerrar menú al cambiar tamaño de ventana
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                const navMenu = document.getElementById('navMenu');
-                const mobileToggle = document.getElementById('mobileToggle');
-                navMenu.classList.remove('active');
-                mobileToggle.classList.remove('active');
-            }
-        });
-    });
-</script>
+    </script>
 </body>
+
 </html>

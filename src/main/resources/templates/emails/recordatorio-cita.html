@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Recordatorio de Cita</title>
-    <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+    <link rel="icon" type="image/x-icon" th:href="@{/images/favicon.ico}">
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -13,11 +14,13 @@
             margin: 0;
             padding: 0;
         }
+
         .container {
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
         }
+
         .header {
             background-color: #0099ff;
             padding: 20px;
@@ -25,12 +28,14 @@
             color: white;
             border-radius: 5px 5px 0 0;
         }
+
         .content {
             background-color: #f5f7fa;
             padding: 20px;
             border-left: 1px solid #ddd;
             border-right: 1px solid #ddd;
         }
+
         .details {
             background-color: white;
             padding: 15px;
@@ -38,9 +43,11 @@
             border-radius: 5px;
             border-left: 4px solid #0099ff;
         }
+
         .details p {
             margin: 5px 0;
         }
+
         .footer {
             background-color: #0d47a1;
             padding: 15px;
@@ -49,14 +56,17 @@
             font-size: 0.9em;
             border-radius: 0 0 5px 5px;
         }
+
         h1 {
             margin: 0;
             font-size: 24px;
         }
+
         h2 {
             color: #0099ff;
             font-size: 20px;
         }
+
         .button {
             display: inline-block;
             background-color: #0099ff;
@@ -66,6 +76,7 @@
             border-radius: 5px;
             margin-top: 20px;
         }
+
         .highlight {
             background-color: #FFFDE7;
             padding: 10px;
@@ -74,61 +85,69 @@
             border-left: 4px solid #FFC107;
             margin: 20px 0;
         }
+
         .price {
             font-weight: bold;
             color: #0d47a1;
         }
     </style>
 </head>
+
 <body>
-<div class="container">
-    <div class="header">
-        <h1>Lavadero Sepúlveda</h1>
-    </div>
-
-    <div class="content">
-        <h2>¡Recordatorio de Cita para Mañana!</h2>
-
-        <p>Estimado/a <strong th:text="${cita.nombre}">Cliente</strong>,</p>
-
-        <p>Le recordamos que tiene una cita programada con nosotros para mañana:</p>
-
-        <div class="highlight">
-            <p>Su cita está programada para mañana <strong th:text="${fechaFormateada}">01/01/2025</strong> a las <strong th:text="${horaFormateada}">10:00</strong>.</p>
+    <div class="container">
+        <div class="header">
+            <h1>Lavadero Sepúlveda</h1>
         </div>
 
-        <div class="details">
-            <p><strong>Fecha:</strong> <span th:text="${fechaFormateada}">01/01/2025</span></p>
-            <p><strong>Hora:</strong> <span th:text="${horaFormateada}">10:00</span></p>
-            <p><strong>Tipo de servicio:</strong> <span th:text="${cita.tipoLavado.descripcion}">Lavado Completo</span></p>
-            <p><strong>Precio:</strong> <span class="price" th:text="${cita.tipoLavado.precio + '€'}">23€</span></p>
-            <p><strong>Vehículo:</strong> <span th:text="${cita.modeloVehiculo}">Toyota Corolla 2020</span></p>
+        <div class="content">
+            <h2>¡Recordatorio de Cita para Mañana!</h2>
+
+            <p>Estimado/a <strong th:text="${cita.nombre}">Cliente</strong>,</p>
+
+            <p>Le recordamos que tiene una cita programada con nosotros para mañana:</p>
+
+            <div class="highlight">
+                <p>Su cita está programada para mañana <strong th:text="${fechaFormateada}">01/01/2025</strong> a las
+                    <strong th:text="${horaFormateada}">10:00</strong>.</p>
+            </div>
+
+            <div class="details">
+                <p><strong>Fecha:</strong> <span th:text="${fechaFormateada}">01/01/2025</span></p>
+                <p><strong>Hora:</strong> <span th:text="${horaFormateada}">10:00</span></p>
+                <p><strong>Tipo de servicio:</strong> <span th:text="${cita.tipoLavado.descripcion}">Lavado
+                        Completo</span></p>
+                <p><strong>Precio:</strong> <span class="price" th:text="${cita.tipoLavado.precio + '€'}">23€</span></p>
+                <p><strong>Vehículo:</strong> <span th:text="${cita.modeloVehiculo}">Toyota Corolla 2020</span></p>
+            </div>
+
+            <h3>Recordatorio importante:</h3>
+            <ul>
+                <li>Por favor, llegue 10 minutos antes de su hora programada.</li>
+                <li>Nuestra dirección es: C/Ingeniero Ruiz de Azua s/n Local 8, esquina con C/Sor Angela de la Cruz,
+                    frente al campo de Fútbol del Deportivo Córdoba.</li>
+                <li>El precio puede incrementarse entre 3€ y 5€ por exceso de suciedad o pelos de animal.</li>
+                <li>Si no puede asistir, por favor, contacte con nosotros lo antes posible.</li>
+            </ul>
+
+            <p>Si necesita reprogramar o cancelar su cita, por favor contacte con nosotros al <strong>658 527
+                    186</strong> o respondiendo a este email.</p>
+
+            <p>¡Esperamos atenderle mañana!</p>
+
+            <p>Atentamente,<br>El equipo de Lavadero Sepúlveda</p>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="https://www.lavaderosepulveda.es/contacto" class="button">Contactar</a>
+                <a href="https://www.lavaderosepulveda.es/mis-citas" class="button"
+                    style="margin-left: 10px; background-color: #0d47a1;">Gestionar mi cita</a>
+            </div>
         </div>
 
-        <h3>Recordatorio importante:</h3>
-        <ul>
-            <li>Por favor, llegue 10 minutos antes de su hora programada.</li>
-            <li>Nuestra dirección es: C/Ingeniero Ruiz de Azua s/n Local 8, esquina con C/Sor Angela de la Cruz, frente al campo de Fútbol del Deportivo Córdoba.</li>
-            <li>El precio puede incrementarse entre 3€ y 5€ por exceso de suciedad o pelos de animal.</li>
-            <li>Si no puede asistir, por favor, contacte con nosotros lo antes posible.</li>
-        </ul>
-
-        <p>Si necesita reprogramar o cancelar su cita, por favor contacte con nosotros al <strong>658 527 186</strong> o respondiendo a este email.</p>
-
-        <p>¡Esperamos atenderle mañana!</p>
-
-        <p>Atentamente,<br>El equipo de Lavadero Sepúlveda</p>
-
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="https://www.lavaderosepulveda.es/contacto" class="button">Contactar</a>
-            <a href="https://www.lavaderosepulveda.es/mis-citas" class="button" style="margin-left: 10px; background-color: #0d47a1;">Gestionar mi cita</a>
+        <div class="footer">
+            <p>&copy; 2025 Lavadero Sepúlveda. Todos los derechos reservados.</p>
+            <p>C/Ingeniero Ruiz de Azua s/n Local 8 - Córdoba</p>
         </div>
     </div>
-
-    <div class="footer">
-        <p>&copy; 2025 Lavadero Sepúlveda. Todos los derechos reservados.</p>
-        <p>C/Ingeniero Ruiz de Azua s/n Local 8 - Córdoba</p>
-    </div>
-</div>
 </body>
+
 </html>
