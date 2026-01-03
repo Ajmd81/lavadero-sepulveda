@@ -2,6 +2,7 @@ package com.lavaderosepulveda.app.service;
 
 import com.lavaderosepulveda.app.model.Factura;
 import com.lavaderosepulveda.app.model.LineaFactura;
+import com.lavaderosepulveda.app.model.MetodoPago;
 import com.lavaderosepulveda.app.model.PlantillaFacturaConfig;
 import com.lavaderosepulveda.app.repository.PlantillaFacturaConfigRepository;
 import com.lowagie.text.*;
@@ -307,15 +308,14 @@ public class FacturaPdfService {
         }
 
         // Método de pago (si existe en la factura)
-        if (factura.getMetodoPago() != null && !factura.getMetodoPago().isEmpty()) {
+        if (factura.getMetodoPago() != null) {
             String metodoPagoFormateado = formatearMetodoPago(factura.getMetodoPago());
             pPie.add(new Chunk("Forma de pago: " + metodoPagoFormateado + "\n", fuenteNormal));
         }
 
         // Condiciones de pago de la plantilla (solo si no hay método de pago específico)
         if (config.getMostrarCondicionesPago() && config.getCondicionesPago() != null &&
-                !config.getCondicionesPago().isEmpty() &&
-                (factura.getMetodoPago() == null || factura.getMetodoPago().isEmpty())) {
+                !config.getCondicionesPago().isEmpty() && factura.getMetodoPago() == null) {
             pPie.add(new Chunk(config.getCondicionesPago() + "\n", fuentePequena));
         }
 
@@ -356,22 +356,22 @@ public class FacturaPdfService {
     /**
      * Formatear método de pago para mostrar en el PDF
      */
-    private String formatearMetodoPago(String metodoPago) {
-        if (metodoPago == null || metodoPago.isEmpty()) {
+    private String formatearMetodoPago(MetodoPago metodoPago) {
+        if (metodoPago == null) {
             return "Pendiente";
         }
 
-        switch (metodoPago.toUpperCase()) {
-            case "EFECTIVO":
+        switch (metodoPago) {
+            case EFECTIVO:
                 return "Efectivo";
-            case "TARJETA":
+            case TARJETA:
                 return "Tarjeta";
-            case "BIZUM":
+            case BIZUM:
                 return "Bizum";
-            case "TRANSFERENCIA":
+            case TRANSFERENCIA:
                 return "Transferencia";
             default:
-                return metodoPago;
+                return metodoPago.name();
         }
     }
 
