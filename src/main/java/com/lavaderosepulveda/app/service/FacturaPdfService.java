@@ -96,10 +96,10 @@ public class FacturaPdfService {
         celdaTitulo.setHorizontalAlignment(Element.ALIGN_RIGHT);
         celdaTitulo.setVerticalAlignment(Element.ALIGN_TOP);
 
-        String titulo = factura.getTipo() != null && factura.getTipo().name().equals("SIMPLIFICADA") 
-                ? config.getTituloFacturaSimplificada() 
+        String titulo = factura.getTipo() != null && factura.getTipo().name().equals("SIMPLIFICADA")
+                ? config.getTituloFacturaSimplificada()
                 : config.getTituloFactura();
-        
+
         Paragraph pTitulo = new Paragraph(titulo, fuenteTitulo);
         pTitulo.setAlignment(Element.ALIGN_RIGHT);
         celdaTitulo.addElement(pTitulo);
@@ -137,7 +137,7 @@ public class FacturaPdfService {
         pEmisor.add(new Chunk(config.getEmisorNombre() + "\n", fuenteNegrita));
         pEmisor.add(new Chunk("NIF: " + config.getEmisorNif() + "\n", fuentePequena));
         pEmisor.add(new Chunk(config.getDireccionCompleta() + "\n", fuentePequena));
-        
+
         if (config.getMostrarDatosContacto()) {
             if (config.getEmisorTelefono() != null && !config.getEmisorTelefono().isEmpty()) {
                 pEmisor.add(new Chunk("Tel: " + config.getEmisorTelefono() + "\n", fuentePequena));
@@ -200,7 +200,7 @@ public class FacturaPdfService {
         int fila = 0;
         for (LineaFactura linea : factura.getLineas()) {
             Color fondoFila = (config.getUsarFilasAlternas() && fila % 2 == 1) ? colorFondoAlt : Color.WHITE;
-            
+
             // Concepto
             PdfPCell celdaConcepto = new PdfPCell(new Phrase(linea.getConcepto(), fuenteNormal));
             celdaConcepto.setPadding(8);
@@ -248,7 +248,7 @@ public class FacturaPdfService {
 
         // Base imponible
         agregarFilaTotal(tablaTotales, "Base Imponible:", formatoMoneda.format(factura.getBaseImponible()), fuenteNormal, colorBorde);
-        
+
         // IVA
         String textoIva = "IVA (" + factura.getTipoIva().intValue() + "%):";
         agregarFilaTotal(tablaTotales, textoIva, formatoMoneda.format(factura.getImporteIva()), fuenteNormal, colorBorde);
@@ -275,20 +275,20 @@ public class FacturaPdfService {
         // ========================================
         // MARCA DE AGUA "PAGADA" (si aplica)
         // ========================================
-        if (config.getMostrarMarcaAgua() && factura.getEstado() != null && 
-            factura.getEstado().name().equals("PAGADA")) {
-            
+        if (config.getMostrarMarcaAgua() && factura.getEstado() != null &&
+                factura.getEstado().name().equals("PAGADA")) {
+
             PdfContentByte canvas = writer.getDirectContentUnder();
             canvas.saveState();
             PdfGState gs = new PdfGState();
             gs.setFillOpacity(0.1f);
             canvas.setGState(gs);
-            
+
             BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
             canvas.beginText();
             canvas.setFontAndSize(bf, 80);
             canvas.setColorFill(hexToColor(config.getColorExito()));
-            canvas.showTextAligned(Element.ALIGN_CENTER, "PAGADA", 
+            canvas.showTextAligned(Element.ALIGN_CENTER, "PAGADA",
                     PageSize.A4.getWidth() / 2, PageSize.A4.getHeight() / 2, 45);
             canvas.endText();
             canvas.restoreState();
@@ -301,16 +301,33 @@ public class FacturaPdfService {
         pPie.setSpacingBefore(30);
         pPie.setAlignment(Element.ALIGN_CENTER);
 
-        if (config.getMostrarCondicionesPago() && config.getCondicionesPago() != null && !config.getCondicionesPago().isEmpty()) {
+        // Pie de factura personalizado
+        if (config.getPieFactura() != null && !config.getPieFactura().isEmpty()) {
+            pPie.add(new Chunk(config.getPieFactura() + "\n\n", fuentePequena));
+        }
+
+        // Método de pago (si existe en la factura)
+        if (factura.getMetodoPago() != null && !factura.getMetodoPago().isEmpty()) {
+            String metodoPagoFormateado = formatearMetodoPago(factura.getMetodoPago());
+            pPie.add(new Chunk("Forma de pago: " + metodoPagoFormateado + "\n", fuenteNormal));
+        }
+
+        // Condiciones de pago de la plantilla (solo si no hay método de pago específico)
+        if (config.getMostrarCondicionesPago() && config.getCondicionesPago() != null &&
+                !config.getCondicionesPago().isEmpty() &&
+                (factura.getMetodoPago() == null || factura.getMetodoPago().isEmpty())) {
             pPie.add(new Chunk(config.getCondicionesPago() + "\n", fuentePequena));
         }
 
-        if (config.getMostrarCuentaBancaria() && config.getCuentaBancaria() != null && !config.getCuentaBancaria().isEmpty()) {
+        if (config.getMostrarCuentaBancaria() && config.getCuentaBancaria() != null &&
+                !config.getCuentaBancaria().isEmpty()) {
             pPie.add(new Chunk("Cuenta: " + config.getCuentaBancaria() + "\n", fuentePequena));
         }
 
-        if (config.getMostrarTextoGracias() && config.getTextoGracias() != null && !config.getTextoGracias().isEmpty()) {
-            pPie.add(new Chunk("\n" + config.getTextoGracias(), new Font(Font.HELVETICA, 9, Font.ITALIC, Color.GRAY)));
+        if (config.getMostrarTextoGracias() && config.getTextoGracias() != null &&
+                !config.getTextoGracias().isEmpty()) {
+            pPie.add(new Chunk("\n" + config.getTextoGracias(),
+                    new Font(Font.HELVETICA, 9, Font.ITALIC, Color.GRAY)));
         }
 
         document.add(pPie);
@@ -334,6 +351,28 @@ public class FacturaPdfService {
         celdaValor.setPadding(5);
         celdaValor.setHorizontalAlignment(Element.ALIGN_RIGHT);
         tabla.addCell(celdaValor);
+    }
+
+    /**
+     * Formatear método de pago para mostrar en el PDF
+     */
+    private String formatearMetodoPago(String metodoPago) {
+        if (metodoPago == null || metodoPago.isEmpty()) {
+            return "Pendiente";
+        }
+
+        switch (metodoPago.toUpperCase()) {
+            case "EFECTIVO":
+                return "Efectivo";
+            case "TARJETA":
+                return "Tarjeta";
+            case "BIZUM":
+                return "Bizum";
+            case "TRANSFERENCIA":
+                return "Transferencia";
+            default:
+                return metodoPago;
+        }
     }
 
     /**
