@@ -47,6 +47,11 @@ public class MainController {
     }
 
     @FXML
+    private void cargarPlantillaFactura() {
+        cargarVista("/fxml/plantilla_factura.fxml");
+    }
+
+    @FXML
     private void abrirConfiguracion() {
         // TODO: Implementar ventana de configuración
         log.info("Abriendo configuración...");

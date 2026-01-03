@@ -2,274 +2,332 @@ package com.lavaderosepulveda.app.service;
 
 import com.lavaderosepulveda.app.model.Factura;
 import com.lavaderosepulveda.app.model.LineaFactura;
-import com.lavaderosepulveda.app.model.TipoFactura;
+import com.lavaderosepulveda.app.model.PlantillaFacturaConfig;
+import com.lavaderosepulveda.app.repository.PlantillaFacturaConfigRepository;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
-import com.lowagie.text.pdf.draw.LineSeparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.Locale;
 
+/**
+ * Servicio para generar PDFs de facturas usando la plantilla configurable
+ */
 @Service
 public class FacturaPdfService {
 
     private static final Logger log = LoggerFactory.getLogger(FacturaPdfService.class);
 
-    // Datos del emisor
-    private static final String EMISOR_NOMBRE = "ANTONIO JESUS MARTINEZ DÍAZ";
-    private static final String EMISOR_NIF = "44372838L";
-    private static final String EMISOR_DIRECCION = "C/ Ingeniero Ruiz de Azua s/n Local 8";
-    private static final String EMISOR_CP_CIUDAD = "14006 Córdoba";
-    private static final String NOMBRE_COMERCIAL = "LAVADERO SEPÚLVEDA";
+    @Autowired
+    private PlantillaFacturaConfigRepository configRepository;
 
-    // Colores corporativos
-    private static final Color COLOR_PRIMARIO = new Color(33, 150, 243); // Azul
-    private static final Color COLOR_GRIS = new Color(158, 158, 158);
-    private static final Color COLOR_LINEA = new Color(224, 224, 224);
-
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private final NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "ES"));
+    private final DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     /**
-     * Generar PDF de factura
+     * Generar PDF de una factura
      */
-    public byte[] generarPdf(Factura factura) throws DocumentException {
+    public byte[] generarPdf(Factura factura) throws Exception {
+        // Obtener configuración de plantilla
+        PlantillaFacturaConfig config = configRepository.findById(1L)
+                .orElseGet(PlantillaFacturaConfig::new);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        
-        // Crear documento A4
         Document document = new Document(PageSize.A4, 40, 40, 40, 40);
         PdfWriter writer = PdfWriter.getInstance(document, baos);
-        
+
         document.open();
 
-        // Fuentes
-        Font fuenteTitulo = new Font(Font.HELVETICA, 24, Font.BOLD, COLOR_PRIMARIO);
-        Font fuenteSubtitulo = new Font(Font.HELVETICA, 12, Font.NORMAL, COLOR_GRIS);
-        Font fuenteNormal = new Font(Font.HELVETICA, 10, Font.NORMAL, Color.BLACK);
-        Font fuenteNegrita = new Font(Font.HELVETICA, 10, Font.BOLD, Color.BLACK);
-        Font fuentePequena = new Font(Font.HELVETICA, 8, Font.NORMAL, COLOR_GRIS);
-        Font fuenteTotal = new Font(Font.HELVETICA, 14, Font.BOLD, COLOR_PRIMARIO);
+        // Colores desde configuración
+        Color colorPrimario = hexToColor(config.getColorPrimario());
+        Color colorTexto = hexToColor(config.getColorTexto());
+        Color colorBorde = hexToColor(config.getColorBorde());
 
-        // ========== CABECERA ==========
+        // Fuentes
+        Font fuenteTitulo = new Font(Font.HELVETICA, 18, Font.BOLD, colorPrimario);
+        Font fuenteSubtitulo = new Font(Font.HELVETICA, 12, Font.BOLD, colorTexto);
+        Font fuenteNormal = new Font(Font.HELVETICA, 10, Font.NORMAL, colorTexto);
+        Font fuentePequena = new Font(Font.HELVETICA, 9, Font.NORMAL, Color.GRAY);
+        Font fuenteNegrita = new Font(Font.HELVETICA, 10, Font.BOLD, colorTexto);
+        Font fuenteTotal = new Font(Font.HELVETICA, 12, Font.BOLD, colorPrimario);
+
+        // ========================================
+        // CABECERA
+        // ========================================
         PdfPTable tablaCabecera = new PdfPTable(2);
         tablaCabecera.setWidthPercentage(100);
-        tablaCabecera.setWidths(new float[]{60, 40});
+        tablaCabecera.setWidths(new float[]{1, 1});
 
-        // Logo / Nombre comercial
+        // Logo o nombre
         PdfPCell celdaLogo = new PdfPCell();
         celdaLogo.setBorder(Rectangle.NO_BORDER);
-        celdaLogo.setPaddingBottom(20);
-        
-        Paragraph nombreEmpresa = new Paragraph(NOMBRE_COMERCIAL, fuenteTitulo);
-        celdaLogo.addElement(nombreEmpresa);
-        
-        Paragraph datosEmpresa = new Paragraph();
-        datosEmpresa.add(new Chunk(EMISOR_NOMBRE + "\n", fuenteNormal));
-        datosEmpresa.add(new Chunk("NIF: " + EMISOR_NIF + "\n", fuenteNormal));
-        datosEmpresa.add(new Chunk(EMISOR_DIRECCION + "\n", fuenteNormal));
-        datosEmpresa.add(new Chunk(EMISOR_CP_CIUDAD, fuenteNormal));
-        celdaLogo.addElement(datosEmpresa);
+        celdaLogo.setVerticalAlignment(Element.ALIGN_TOP);
+
+        if (config.getMostrarLogo() && config.getLogoBase64() != null && !config.getLogoBase64().isEmpty()) {
+            try {
+                String base64Data = config.getLogoBase64();
+                if (base64Data.contains(",")) {
+                    base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+                }
+                byte[] logoBytes = Base64.getDecoder().decode(base64Data);
+                Image logo = Image.getInstance(logoBytes);
+                logo.scaleToFit(config.getLogoAncho(), config.getLogoAlto());
+                celdaLogo.addElement(logo);
+            } catch (Exception e) {
+                log.warn("Error cargando logo, usando texto", e);
+                celdaLogo.addElement(new Paragraph(config.getEmisorNombre(), fuenteTitulo));
+            }
+        } else {
+            celdaLogo.addElement(new Paragraph(config.getEmisorNombre(), fuenteTitulo));
+        }
         tablaCabecera.addCell(celdaLogo);
 
-        // Datos de la factura
-        PdfPCell celdaFactura = new PdfPCell();
-        celdaFactura.setBorder(Rectangle.NO_BORDER);
-        celdaFactura.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        celdaFactura.setPaddingBottom(20);
+        // Título y número de factura
+        PdfPCell celdaTitulo = new PdfPCell();
+        celdaTitulo.setBorder(Rectangle.NO_BORDER);
+        celdaTitulo.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        celdaTitulo.setVerticalAlignment(Element.ALIGN_TOP);
 
-        String tipoFactura = factura.getTipo() == TipoFactura.SIMPLIFICADA ? 
-            "FACTURA SIMPLIFICADA" : "FACTURA";
+        String titulo = factura.getTipo() != null && factura.getTipo().name().equals("SIMPLIFICADA") 
+                ? config.getTituloFacturaSimplificada() 
+                : config.getTituloFactura();
         
-        Paragraph tituloFactura = new Paragraph(tipoFactura, fuenteSubtitulo);
-        tituloFactura.setAlignment(Element.ALIGN_RIGHT);
-        celdaFactura.addElement(tituloFactura);
+        Paragraph pTitulo = new Paragraph(titulo, fuenteTitulo);
+        pTitulo.setAlignment(Element.ALIGN_RIGHT);
+        celdaTitulo.addElement(pTitulo);
 
-        Paragraph numFactura = new Paragraph("Nº " + factura.getNumero(), fuenteTitulo);
-        numFactura.setAlignment(Element.ALIGN_RIGHT);
-        celdaFactura.addElement(numFactura);
+        Paragraph pNumero = new Paragraph("Nº: " + factura.getNumero(), fuenteSubtitulo);
+        pNumero.setAlignment(Element.ALIGN_RIGHT);
+        celdaTitulo.addElement(pNumero);
 
-        Paragraph fechaFactura = new Paragraph("Fecha: " + factura.getFecha().format(DATE_FORMATTER), fuenteNormal);
-        fechaFactura.setAlignment(Element.ALIGN_RIGHT);
-        celdaFactura.addElement(fechaFactura);
+        Paragraph pFecha = new Paragraph("Fecha: " + factura.getFecha().format(formatoFecha), fuenteNormal);
+        pFecha.setAlignment(Element.ALIGN_RIGHT);
+        celdaTitulo.addElement(pFecha);
 
-        tablaCabecera.addCell(celdaFactura);
+        tablaCabecera.addCell(celdaTitulo);
         document.add(tablaCabecera);
 
         // Línea separadora
-        document.add(crearLineaSeparadora());
+        PdfPTable lineaSeparadora = new PdfPTable(1);
+        lineaSeparadora.setWidthPercentage(100);
+        lineaSeparadora.setSpacingBefore(10);
+        PdfPCell celdaLinea = new PdfPCell();
+        celdaLinea.setBorderWidthTop(2);
+        celdaLinea.setBorderColorTop(colorPrimario);
+        celdaLinea.setBorderWidthBottom(0);
+        celdaLinea.setBorderWidthLeft(0);
+        celdaLinea.setBorderWidthRight(0);
+        celdaLinea.setFixedHeight(5);
+        lineaSeparadora.addCell(celdaLinea);
+        document.add(lineaSeparadora);
 
-        // ========== DATOS DEL CLIENTE ==========
-        if (factura.getTipo() == TipoFactura.COMPLETA) {
-            PdfPTable tablaCliente = new PdfPTable(1);
-            tablaCliente.setWidthPercentage(50);
-            tablaCliente.setHorizontalAlignment(Element.ALIGN_LEFT);
-            tablaCliente.setSpacingBefore(15);
-            tablaCliente.setSpacingAfter(15);
-
-            PdfPCell celdaCliente = new PdfPCell();
-            celdaCliente.setBackgroundColor(new Color(245, 245, 245));
-            celdaCliente.setPadding(10);
-            celdaCliente.setBorder(Rectangle.NO_BORDER);
-
-            Paragraph tituloCliente = new Paragraph("DATOS DEL CLIENTE", fuenteNegrita);
-            celdaCliente.addElement(tituloCliente);
-
-            Paragraph datosCliente = new Paragraph();
-            datosCliente.setSpacingBefore(5);
-            if (factura.getClienteNombre() != null) {
-                datosCliente.add(new Chunk(factura.getClienteNombre() + "\n", fuenteNormal));
+        // ========================================
+        // DATOS DEL EMISOR
+        // ========================================
+        Paragraph pEmisor = new Paragraph();
+        pEmisor.setSpacingBefore(15);
+        pEmisor.add(new Chunk(config.getEmisorNombre() + "\n", fuenteNegrita));
+        pEmisor.add(new Chunk("NIF: " + config.getEmisorNif() + "\n", fuentePequena));
+        pEmisor.add(new Chunk(config.getDireccionCompleta() + "\n", fuentePequena));
+        
+        if (config.getMostrarDatosContacto()) {
+            if (config.getEmisorTelefono() != null && !config.getEmisorTelefono().isEmpty()) {
+                pEmisor.add(new Chunk("Tel: " + config.getEmisorTelefono() + "\n", fuentePequena));
             }
-            if (factura.getClienteNif() != null && !factura.getClienteNif().isEmpty()) {
-                datosCliente.add(new Chunk("NIF: " + factura.getClienteNif() + "\n", fuenteNormal));
-            }
-            if (factura.getClienteDireccion() != null && !factura.getClienteDireccion().isEmpty()) {
-                datosCliente.add(new Chunk(factura.getClienteDireccion() + "\n", fuenteNormal));
-            }
-            if (factura.getClienteTelefono() != null) {
-                datosCliente.add(new Chunk("Tel: " + factura.getClienteTelefono(), fuenteNormal));
-            }
-            celdaCliente.addElement(datosCliente);
-
-            tablaCliente.addCell(celdaCliente);
-            document.add(tablaCliente);
-        } else {
-            // Para factura simplificada, solo mostrar nombre si existe
-            if (factura.getClienteNombre() != null && !factura.getClienteNombre().isEmpty()) {
-                Paragraph clienteSimple = new Paragraph("Cliente: " + factura.getClienteNombre(), fuenteNormal);
-                clienteSimple.setSpacingBefore(15);
-                clienteSimple.setSpacingAfter(15);
-                document.add(clienteSimple);
+            if (config.getEmisorEmail() != null && !config.getEmisorEmail().isEmpty()) {
+                pEmisor.add(new Chunk(config.getEmisorEmail() + "\n", fuentePequena));
             }
         }
+        document.add(pEmisor);
 
-        // ========== TABLA DE CONCEPTOS ==========
+        // ========================================
+        // DATOS DEL CLIENTE
+        // ========================================
+        PdfPTable tablaCliente = new PdfPTable(1);
+        tablaCliente.setWidthPercentage(60);
+        tablaCliente.setHorizontalAlignment(Element.ALIGN_LEFT);
+        tablaCliente.setSpacingBefore(15);
+
+        PdfPCell celdaCliente = new PdfPCell();
+        celdaCliente.setBackgroundColor(new Color(249, 249, 249));
+        celdaCliente.setBorderWidth(0);
+        celdaCliente.setBorderWidthLeft(3);
+        celdaCliente.setBorderColorLeft(colorPrimario);
+        celdaCliente.setPadding(10);
+
+        Paragraph pCliente = new Paragraph();
+        pCliente.add(new Chunk("CLIENTE\n", fuentePequena));
+        pCliente.add(new Chunk(factura.getClienteNombre() + "\n", fuenteNegrita));
+        if (factura.getClienteNif() != null && !factura.getClienteNif().isEmpty()) {
+            pCliente.add(new Chunk(factura.getClienteNif() + "\n", fuenteNormal));
+        }
+        if (factura.getClienteDireccion() != null && !factura.getClienteDireccion().isEmpty()) {
+            pCliente.add(new Chunk(factura.getClienteDireccion() + "\n", fuenteNormal));
+        }
+        celdaCliente.addElement(pCliente);
+        tablaCliente.addCell(celdaCliente);
+        document.add(tablaCliente);
+
+        // ========================================
+        // TABLA DE CONCEPTOS
+        // ========================================
         PdfPTable tablaConceptos = new PdfPTable(4);
         tablaConceptos.setWidthPercentage(100);
-        tablaConceptos.setWidths(new float[]{50, 10, 20, 20});
-        tablaConceptos.setSpacingBefore(10);
+        tablaConceptos.setSpacingBefore(20);
+        tablaConceptos.setWidths(new float[]{5, 1, 1.5f, 1.5f});
 
-        // Cabecera de la tabla
-        agregarCeldaCabecera(tablaConceptos, "CONCEPTO", fuenteNegrita);
-        agregarCeldaCabecera(tablaConceptos, "CANT.", fuenteNegrita);
-        agregarCeldaCabecera(tablaConceptos, "PRECIO", fuenteNegrita);
-        agregarCeldaCabecera(tablaConceptos, "IMPORTE", fuenteNegrita);
+        // Cabecera de tabla
+        Font fuenteCabeceraTabla = new Font(Font.HELVETICA, 9, Font.BOLD, Color.WHITE);
+        String[] cabeceras = {"Concepto", "Cant.", "Precio", "Importe"};
+        for (String cabecera : cabeceras) {
+            PdfPCell celda = new PdfPCell(new Phrase(cabecera, fuenteCabeceraTabla));
+            celda.setBackgroundColor(colorPrimario);
+            celda.setPadding(8);
+            celda.setHorizontalAlignment(cabecera.equals("Concepto") ? Element.ALIGN_LEFT : Element.ALIGN_RIGHT);
+            tablaConceptos.addCell(celda);
+        }
 
-        // Líneas de la factura
+        // Filas de conceptos
+        Color colorFondoAlt = hexToColor(config.getColorFondoAlt());
+        int fila = 0;
         for (LineaFactura linea : factura.getLineas()) {
-            agregarCeldaConcepto(tablaConceptos, linea.getConcepto(), fuenteNormal);
-            agregarCeldaCentrada(tablaConceptos, String.valueOf(linea.getCantidad()), fuenteNormal);
-            agregarCeldaDerecha(tablaConceptos, formatearImporte(linea.getPrecioUnitario()), fuenteNormal);
-            agregarCeldaDerecha(tablaConceptos, formatearImporte(linea.getSubtotal()), fuenteNormal);
+            Color fondoFila = (config.getUsarFilasAlternas() && fila % 2 == 1) ? colorFondoAlt : Color.WHITE;
+            
+            // Concepto
+            PdfPCell celdaConcepto = new PdfPCell(new Phrase(linea.getConcepto(), fuenteNormal));
+            celdaConcepto.setPadding(8);
+            celdaConcepto.setBackgroundColor(fondoFila);
+            celdaConcepto.setBorderColor(colorBorde);
+            tablaConceptos.addCell(celdaConcepto);
+
+            // Cantidad
+            PdfPCell celdaCantidad = new PdfPCell(new Phrase(String.valueOf(linea.getCantidad()), fuenteNormal));
+            celdaCantidad.setPadding(8);
+            celdaCantidad.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            celdaCantidad.setBackgroundColor(fondoFila);
+            celdaCantidad.setBorderColor(colorBorde);
+            tablaConceptos.addCell(celdaCantidad);
+
+            // Precio unitario
+            PdfPCell celdaPrecio = new PdfPCell(new Phrase(formatoMoneda.format(linea.getPrecioUnitario()), fuenteNormal));
+            celdaPrecio.setPadding(8);
+            celdaPrecio.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            celdaPrecio.setBackgroundColor(fondoFila);
+            celdaPrecio.setBorderColor(colorBorde);
+            tablaConceptos.addCell(celdaPrecio);
+
+            // Subtotal
+            PdfPCell celdaSubtotal = new PdfPCell(new Phrase(formatoMoneda.format(linea.getSubtotal()), fuenteNormal));
+            celdaSubtotal.setPadding(8);
+            celdaSubtotal.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            celdaSubtotal.setBackgroundColor(fondoFila);
+            celdaSubtotal.setBorderColor(colorBorde);
+            tablaConceptos.addCell(celdaSubtotal);
+
+            fila++;
         }
 
         document.add(tablaConceptos);
 
-        // ========== TOTALES ==========
+        // ========================================
+        // TOTALES
+        // ========================================
         PdfPTable tablaTotales = new PdfPTable(2);
         tablaTotales.setWidthPercentage(40);
         tablaTotales.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        tablaTotales.setSpacingBefore(20);
+        tablaTotales.setSpacingBefore(15);
+        tablaTotales.setWidths(new float[]{1, 1});
 
         // Base imponible
-        agregarFilaTotal(tablaTotales, "Base Imponible:", formatearImporte(factura.getBaseImponible()), fuenteNormal);
+        agregarFilaTotal(tablaTotales, "Base Imponible:", formatoMoneda.format(factura.getBaseImponible()), fuenteNormal, colorBorde);
         
         // IVA
-        agregarFilaTotal(tablaTotales, "IVA (" + factura.getTipoIva().intValue() + "%):", 
-            formatearImporte(factura.getImporteIva()), fuenteNormal);
-        
+        String textoIva = "IVA (" + factura.getTipoIva().intValue() + "%):";
+        agregarFilaTotal(tablaTotales, textoIva, formatoMoneda.format(factura.getImporteIva()), fuenteNormal, colorBorde);
+
         // Total
-        agregarFilaTotal(tablaTotales, "TOTAL:", formatearImporte(factura.getTotal()), fuenteTotal);
+        PdfPCell celdaTotalLabel = new PdfPCell(new Phrase("TOTAL:", fuenteTotal));
+        celdaTotalLabel.setBorder(Rectangle.TOP);
+        celdaTotalLabel.setBorderColorTop(colorPrimario);
+        celdaTotalLabel.setBorderWidthTop(2);
+        celdaTotalLabel.setPaddingTop(8);
+        celdaTotalLabel.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        tablaTotales.addCell(celdaTotalLabel);
+
+        PdfPCell celdaTotalValor = new PdfPCell(new Phrase(formatoMoneda.format(factura.getTotal()), fuenteTotal));
+        celdaTotalValor.setBorder(Rectangle.TOP);
+        celdaTotalValor.setBorderColorTop(colorPrimario);
+        celdaTotalValor.setBorderWidthTop(2);
+        celdaTotalValor.setPaddingTop(8);
+        celdaTotalValor.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        tablaTotales.addCell(celdaTotalValor);
 
         document.add(tablaTotales);
 
-        // ========== INFORMACIÓN DE PAGO ==========
-        if (factura.getEstado().name().equals("PAGADA") && factura.getMetodoPago() != null) {
-            Paragraph pagado = new Paragraph();
-            pagado.setSpacingBefore(30);
-            pagado.add(new Chunk("✓ PAGADO", new Font(Font.HELVETICA, 12, Font.BOLD, new Color(76, 175, 80))));
-            pagado.add(new Chunk(" - " + factura.getMetodoPago().getDescripcion(), fuenteNormal));
-            if (factura.getFechaPago() != null) {
-                pagado.add(new Chunk(" (" + factura.getFechaPago().format(DATE_FORMATTER) + ")", fuentePequena));
-            }
-            document.add(pagado);
+        // ========================================
+        // MARCA DE AGUA "PAGADA" (si aplica)
+        // ========================================
+        if (config.getMostrarMarcaAgua() && factura.getEstado() != null && 
+            factura.getEstado().name().equals("PAGADA")) {
+            
+            PdfContentByte canvas = writer.getDirectContentUnder();
+            canvas.saveState();
+            PdfGState gs = new PdfGState();
+            gs.setFillOpacity(0.1f);
+            canvas.setGState(gs);
+            
+            BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
+            canvas.beginText();
+            canvas.setFontAndSize(bf, 80);
+            canvas.setColorFill(hexToColor(config.getColorExito()));
+            canvas.showTextAligned(Element.ALIGN_CENTER, "PAGADA", 
+                    PageSize.A4.getWidth() / 2, PageSize.A4.getHeight() / 2, 45);
+            canvas.endText();
+            canvas.restoreState();
         }
 
-        // ========== OBSERVACIONES ==========
-        if (factura.getObservaciones() != null && !factura.getObservaciones().isEmpty()) {
-            Paragraph obs = new Paragraph();
-            obs.setSpacingBefore(20);
-            obs.add(new Chunk("Observaciones: ", fuenteNegrita));
-            obs.add(new Chunk(factura.getObservaciones(), fuenteNormal));
-            document.add(obs);
+        // ========================================
+        // PIE DE FACTURA
+        // ========================================
+        Paragraph pPie = new Paragraph();
+        pPie.setSpacingBefore(30);
+        pPie.setAlignment(Element.ALIGN_CENTER);
+
+        if (config.getMostrarCondicionesPago() && config.getCondicionesPago() != null && !config.getCondicionesPago().isEmpty()) {
+            pPie.add(new Chunk(config.getCondicionesPago() + "\n", fuentePequena));
         }
 
-        // ========== PIE DE PÁGINA ==========
-        Paragraph pie = new Paragraph();
-        pie.setSpacingBefore(40);
-        pie.setAlignment(Element.ALIGN_CENTER);
-        pie.add(new Chunk("Gracias por su confianza", fuentePequena));
-        document.add(pie);
+        if (config.getMostrarCuentaBancaria() && config.getCuentaBancaria() != null && !config.getCuentaBancaria().isEmpty()) {
+            pPie.add(new Chunk("Cuenta: " + config.getCuentaBancaria() + "\n", fuentePequena));
+        }
+
+        if (config.getMostrarTextoGracias() && config.getTextoGracias() != null && !config.getTextoGracias().isEmpty()) {
+            pPie.add(new Chunk("\n" + config.getTextoGracias(), new Font(Font.HELVETICA, 9, Font.ITALIC, Color.GRAY)));
+        }
+
+        document.add(pPie);
 
         document.close();
-        
-        log.info("PDF generado para factura {}", factura.getNumero());
         return baos.toByteArray();
     }
 
-    // ========== MÉTODOS AUXILIARES ==========
-
-    private Paragraph crearLineaSeparadora() {
-        Paragraph linea = new Paragraph();
-        linea.setSpacingBefore(10);
-        linea.setSpacingAfter(10);
-        
-        LineSeparator ls = new LineSeparator();
-        ls.setLineColor(COLOR_LINEA);
-        linea.add(ls);
-        
-        return linea;
-    }
-
-    private void agregarCeldaCabecera(PdfPTable tabla, String texto, Font fuente) {
-        PdfPCell celda = new PdfPCell(new Phrase(texto, fuente));
-        celda.setBackgroundColor(new Color(245, 245, 245));
-        celda.setPadding(8);
-        celda.setBorderColor(COLOR_LINEA);
-        tabla.addCell(celda);
-    }
-
-    private void agregarCeldaConcepto(PdfPTable tabla, String texto, Font fuente) {
-        PdfPCell celda = new PdfPCell(new Phrase(texto, fuente));
-        celda.setPadding(8);
-        celda.setBorderColor(COLOR_LINEA);
-        tabla.addCell(celda);
-    }
-
-    private void agregarCeldaCentrada(PdfPTable tabla, String texto, Font fuente) {
-        PdfPCell celda = new PdfPCell(new Phrase(texto, fuente));
-        celda.setPadding(8);
-        celda.setHorizontalAlignment(Element.ALIGN_CENTER);
-        celda.setBorderColor(COLOR_LINEA);
-        tabla.addCell(celda);
-    }
-
-    private void agregarCeldaDerecha(PdfPTable tabla, String texto, Font fuente) {
-        PdfPCell celda = new PdfPCell(new Phrase(texto, fuente));
-        celda.setPadding(8);
-        celda.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        celda.setBorderColor(COLOR_LINEA);
-        tabla.addCell(celda);
-    }
-
-    private void agregarFilaTotal(PdfPTable tabla, String etiqueta, String valor, Font fuente) {
-        PdfPCell celdaEtiqueta = new PdfPCell(new Phrase(etiqueta, fuente));
-        celdaEtiqueta.setBorder(Rectangle.NO_BORDER);
-        celdaEtiqueta.setPadding(5);
-        celdaEtiqueta.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        tabla.addCell(celdaEtiqueta);
+    /**
+     * Agregar fila a tabla de totales
+     */
+    private void agregarFilaTotal(PdfPTable tabla, String label, String valor, Font fuente, Color colorBorde) {
+        PdfPCell celdaLabel = new PdfPCell(new Phrase(label, fuente));
+        celdaLabel.setBorder(Rectangle.NO_BORDER);
+        celdaLabel.setPadding(5);
+        celdaLabel.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        tabla.addCell(celdaLabel);
 
         PdfPCell celdaValor = new PdfPCell(new Phrase(valor, fuente));
         celdaValor.setBorder(Rectangle.NO_BORDER);
@@ -278,8 +336,18 @@ public class FacturaPdfService {
         tabla.addCell(celdaValor);
     }
 
-    private String formatearImporte(java.math.BigDecimal importe) {
-        if (importe == null) return "0,00 €";
-        return String.format("%,.2f €", importe).replace(",", "X").replace(".", ",").replace("X", ".");
+    /**
+     * Convertir color hexadecimal a Color
+     */
+    private Color hexToColor(String hex) {
+        if (hex == null || hex.isEmpty()) {
+            return Color.BLACK;
+        }
+        hex = hex.replace("#", "");
+        return new Color(
+                Integer.parseInt(hex.substring(0, 2), 16),
+                Integer.parseInt(hex.substring(2, 4), 16),
+                Integer.parseInt(hex.substring(4, 6), 16)
+        );
     }
 }

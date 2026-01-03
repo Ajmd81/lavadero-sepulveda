@@ -15,6 +15,7 @@
             <MenuBar>
                 <Menu text="Archivo">
                     <MenuItem text="Configuración" onAction="#abrirConfiguracion"/>
+                    <MenuItem text="Plantilla Factura" onAction="#cargarPlantillaFactura"/>
                     <SeparatorMenuItem/>
                     <MenuItem text="Salir" onAction="#salir"/>
                 </Menu>
