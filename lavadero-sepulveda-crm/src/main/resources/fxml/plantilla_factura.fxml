@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.web.*?>
+<?import javafx.geometry.Insets?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.lavaderosepulveda.crm.controller.PlantillaFacturaController"
+      spacing="20" fx:id="panelPrincipal">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+    
+    <!-- Panel izquierdo: Formulario de configuración -->
+    <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" prefWidth="500">
+        <VBox spacing="15" style="-fx-padding: 10;">
+            
+            <!-- Título -->
+            <Label text="Editor de Plantilla de Facturas" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+            
+            <!-- ================================ -->
+            <!-- DATOS DEL EMISOR -->
+            <!-- ================================ -->
+            <TitledPane text="Datos del Emisor" expanded="true">
+                <VBox spacing="10" style="-fx-padding: 10;">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Nombre/Razón Social:" prefWidth="130"/>
+                        <TextField fx:id="txtEmisorNombre" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="NIF/CIF:" prefWidth="130"/>
+                        <TextField fx:id="txtEmisorNif" prefWidth="120"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Dirección:" prefWidth="130"/>
+                        <TextField fx:id="txtEmisorDireccion" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Código Postal:" prefWidth="130"/>
+                        <TextField fx:id="txtEmisorCodigoPostal" prefWidth="80"/>
+                        <Label text="Ciudad:" />
+                        <TextField fx:id="txtEmisorCiudad" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Provincia:" prefWidth="130"/>
+                        <TextField fx:id="txtEmisorProvincia" prefWidth="150"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Teléfono:" prefWidth="130"/>
+                        <TextField fx:id="txtEmisorTelefono" prefWidth="120"/>
+                        <Label text="Email:" />
+                        <TextField fx:id="txtEmisorEmail" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Web:" prefWidth="130"/>
+                        <TextField fx:id="txtEmisorWeb" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+            
+            <!-- ================================ -->
+            <!-- LOGO -->
+            <!-- ================================ -->
+            <TitledPane text="Logo" expanded="true">
+                <VBox spacing="10" style="-fx-padding: 10;">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <VBox spacing="5">
+                            <ImageView fx:id="imgLogo" fitWidth="150" fitHeight="60" preserveRatio="true"
+                                       style="-fx-border-color: #ccc; -fx-border-width: 1;"/>
+                            <HBox spacing="5">
+                                <Button fx:id="btnCargarLogo" text="Cargar Logo" onAction="#cargarLogo"/>
+                                <Button fx:id="btnEliminarLogo" text="Eliminar" onAction="#eliminarLogo" 
+                                        style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+                            </HBox>
+                        </VBox>
+                        <VBox spacing="5">
+                            <CheckBox fx:id="chkMostrarLogo" text="Mostrar logo en factura" selected="true"/>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Label text="Ancho:"/>
+                                <Spinner fx:id="spnLogoAncho" prefWidth="80"/>
+                                <Label text="px"/>
+                            </HBox>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Label text="Alto:"/>
+                                <Spinner fx:id="spnLogoAlto" prefWidth="80"/>
+                                <Label text="px"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+            
+            <!-- ================================ -->
+            <!-- COLORES -->
+            <!-- ================================ -->
+            <TitledPane text="Colores" expanded="true">
+                <VBox spacing="10" style="-fx-padding: 10;">
+                    <HBox spacing="20">
+                        <VBox spacing="5">
+                            <Label text="Color Principal"/>
+                            <ColorPicker fx:id="cpColorPrimario"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="Color Secundario"/>
+                            <ColorPicker fx:id="cpColorSecundario"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="Color Texto"/>
+                            <ColorPicker fx:id="cpColorTexto"/>
+                        </VBox>
+                    </HBox>
+                    <HBox spacing="20">
+                        <VBox spacing="5">
+                            <Label text="Color Fondo"/>
+                            <ColorPicker fx:id="cpColorFondo"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="Color Bordes"/>
+                            <ColorPicker fx:id="cpColorBorde"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+            
+            <!-- ================================ -->
+            <!-- TEXTOS -->
+            <!-- ================================ -->
+            <TitledPane text="Textos Personalizados" expanded="true">
+                <VBox spacing="10" style="-fx-padding: 10;">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Título Factura:" prefWidth="130"/>
+                        <TextField fx:id="txtTituloFactura" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Condiciones Pago:" prefWidth="130"/>
+                        <TextField fx:id="txtCondicionesPago" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Cuenta Bancaria:" prefWidth="130"/>
+                        <TextField fx:id="txtCuentaBancaria" HBox.hgrow="ALWAYS" promptText="ES00 0000 0000 00 0000000000"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Texto Gracias:" prefWidth="130"/>
+                        <TextField fx:id="txtTextoGracias" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <VBox spacing="5">
+                        <Label text="Pie de Factura:"/>
+                        <TextArea fx:id="txtPieFactura" prefRowCount="3" wrapText="true"/>
+                    </VBox>
+                </VBox>
+            </TitledPane>
+            
+            <!-- ================================ -->
+            <!-- OPCIONES -->
+            <!-- ================================ -->
+            <TitledPane text="Opciones de Visualización" expanded="true">
+                <VBox spacing="8" style="-fx-padding: 10;">
+                    <CheckBox fx:id="chkMostrarDatosContacto" text="Mostrar datos de contacto (teléfono, email)"/>
+                    <CheckBox fx:id="chkMostrarCondicionesPago" text="Mostrar condiciones de pago"/>
+                    <CheckBox fx:id="chkMostrarCuentaBancaria" text="Mostrar cuenta bancaria"/>
+                    <CheckBox fx:id="chkMostrarTextoGracias" text="Mostrar mensaje de agradecimiento"/>
+                    <CheckBox fx:id="chkMostrarMarcaAgua" text="Mostrar marca de agua 'PAGADA'"/>
+                    <CheckBox fx:id="chkFilasAlternas" text="Usar colores alternos en tabla"/>
+                </VBox>
+            </TitledPane>
+            
+            <!-- ================================ -->
+            <!-- BOTONES -->
+            <!-- ================================ -->
+            <HBox spacing="10" alignment="CENTER">
+                <Button fx:id="btnGuardar" text="Guardar Configuración" 
+                        style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;"
+                        onAction="#guardarConfiguracion"/>
+                <Button fx:id="btnRestablecer" text="Restablecer" 
+                        style="-fx-background-color: #FF9800; -fx-text-fill: white;"
+                        onAction="#restablecerPorDefecto"/>
+                <Button fx:id="btnExportar" text="Exportar" onAction="#exportarConfiguracion"/>
+                <Button fx:id="btnImportar" text="Importar" onAction="#importarConfiguracion"/>
+            </HBox>
+            
+        </VBox>
+    </ScrollPane>
+    
+    <!-- Panel derecho: Vista previa -->
+    <VBox spacing="10" HBox.hgrow="ALWAYS" prefWidth="550">
+        <Label text="Vista Previa" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+        <WebView fx:id="webVistaPrevia" VBox.vgrow="ALWAYS" prefHeight="700"/>
+    </VBox>
+    
+</HBox>
