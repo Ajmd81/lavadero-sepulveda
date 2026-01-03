@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clientes No Presentados - Lavadero Sepúlveda</title>
   <script>
-    (function() {
+    (function () {
       'use strict';
       const darkMode = localStorage.getItem('darkMode') === 'true';
       if (darkMode) {
@@ -23,66 +24,70 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/css/admin.css}">
   <link rel="stylesheet" th:href="@{/css/admin-menu.css}">
-  <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+  <link rel="icon" type="image/x-icon" th:href="@{/images/favicon.ico}">
 </head>
+
 <body>
-<!-- Menú de navegación -->
-<div th:replace="~{admin/menu :: menu}"></div>
+  <!-- Menú de navegación -->
+  <div th:replace="~{admin/menu :: menu}"></div>
 
-<div class="container">
-  <h1>Clientes No Presentados</h1>
+  <div class="container">
+    <h1>Clientes No Presentados</h1>
 
-  <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
-  <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-  <div class="card mb-4">
-    <div class="card-body">
-      <p class="card-text">En este listado se muestran los clientes que no se presentaron a sus citas programadas. Es importante llevar un registro de estos casos para poder tomar medidas como solicitar un pago por adelantado en futuras reservas.</p>
+    <div class="card mb-4">
+      <div class="card-body">
+        <p class="card-text">En este listado se muestran los clientes que no se presentaron a sus citas programadas. Es
+          importante llevar un registro de estos casos para poder tomar medidas como solicitar un pago por adelantado en
+          futuras reservas.</p>
+      </div>
     </div>
+
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Email</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Servicio</th>
+            <th>Pago Adelantado</th>
+            <th>Observaciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="cita : ${citas}">
+            <td th:text="${cita.id}"></td>
+            <td th:text="${cita.nombre}"></td>
+            <td th:text="${cita.telefono}"></td>
+            <td th:text="${cita.email}"></td>
+            <td th:text="${#temporals.format(cita.fecha, 'dd/MM/yyyy')}"></td>
+            <td th:text="${#temporals.format(cita.hora, 'HH:mm')}"></td>
+            <td th:text="${cita.tipoLavado.descripcion}"></td>
+            <td>
+              <span th:if="${cita.pagoAdelantado}" class="badge bg-success"
+                th:title="${'Ref: ' + cita.referenciaPago}">Sí</span>
+              <span th:unless="${cita.pagoAdelantado}" class="badge bg-danger">No</span>
+            </td>
+            <td th:text="${cita.observaciones}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div th:if="${citas.isEmpty()}" class="alert alert-info">
+      No hay clientes registrados como "No Presentados" en el sistema.
+    </div>
+
+    <a href="/admin/listado-citas" class="btn btn-primary">Volver al Listado</a>
   </div>
 
-  <div class="table-responsive">
-    <table class="table table-striped table-bordered">
-      <thead class="table-dark">
-      <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Teléfono</th>
-        <th>Email</th>
-        <th>Fecha</th>
-        <th>Hora</th>
-        <th>Servicio</th>
-        <th>Pago Adelantado</th>
-        <th>Observaciones</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="cita : ${citas}">
-        <td th:text="${cita.id}"></td>
-        <td th:text="${cita.nombre}"></td>
-        <td th:text="${cita.telefono}"></td>
-        <td th:text="${cita.email}"></td>
-        <td th:text="${#temporals.format(cita.fecha, 'dd/MM/yyyy')}"></td>
-        <td th:text="${#temporals.format(cita.hora, 'HH:mm')}"></td>
-        <td th:text="${cita.tipoLavado.descripcion}"></td>
-        <td>
-                    <span th:if="${cita.pagoAdelantado}" class="badge bg-success"
-                          th:title="${'Ref: ' + cita.referenciaPago}">Sí</span>
-          <span th:unless="${cita.pagoAdelantado}" class="badge bg-danger">No</span>
-        </td>
-        <td th:text="${cita.observaciones}"></td>
-      </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div th:if="${citas.isEmpty()}" class="alert alert-info">
-    No hay clientes registrados como "No Presentados" en el sistema.
-  </div>
-
-  <a href="/admin/listado-citas" class="btn btn-primary">Volver al Listado</a>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

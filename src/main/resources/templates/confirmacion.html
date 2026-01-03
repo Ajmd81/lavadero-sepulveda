@@ -1,116 +1,121 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Confirmación de Cita - Lavadero Sepúlveda</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/css/styles.css}">
-  <link rel="icon" type="image/x-icon" th:href="@{images/favicon.ico}">
+  <link rel="icon" type="image/x-icon" th:href="@{/images/favicon.ico}">
 </head>
+
 <body>
-<!-- Versión del header con logotipo -->
-<header>
-  <div class="container">
-    <div class="logo-container">
-      <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
-      <div class="logo-text">Lavadero Sepúlveda</div>
+  <!-- Versión del header con logotipo -->
+  <header>
+    <div class="container">
+      <div class="logo-container">
+        <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
+        <div class="logo-text">Lavadero Sepúlveda</div>
+      </div>
+      <button class="menu-toggle" id="menuToggle">
+        <i class="fa fa-bars"></i>
+      </button>
+      <nav id="mainNav">
+        <a href="/" class="btn btn-white">Inicio</a>
+        <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+        <a href="/horario" class="btn btn-white">Horario</a>
+        <a href="/galeria" class="btn btn-white">Galería</a>
+        <a href="/productos" class="btn btn-white">Productos</a>
+        <a href="/tarifas" class="btn btn-white">Tarifas</a>
+      </nav>
     </div>
-    <button class="menu-toggle" id="menuToggle">
-      <i class="fa fa-bars"></i>
-    </button>
-    <nav id="mainNav">
-      <a href="/" class="btn btn-white">Inicio</a>
-      <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
-      <a href="/horario" class="btn btn-white">Horario</a>
-      <a href="/galeria" class="btn btn-white">Galería</a>
-      <a href="/productos" class="btn btn-white">Productos</a>
-      <a href="/tarifas" class="btn btn-white">Tarifas</a>
-    </nav>
-  </div>
-</header>
+  </header>
 
-<section class="container">
-  <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
+  <section class="container">
+    <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
 
-  <div class="card">
-    <h2 class="card-title">¡Confirmación de Reserva!</h2>
+    <div class="card">
+      <h2 class="card-title">¡Confirmación de Reserva!</h2>
 
-    <div th:if="${cita}" class="confirmation-details">
-      <p><strong>Nombre:</strong> <span th:text="${cita.nombre}"></span></p>
-      <p><strong>Email:</strong> <span th:text="${cita.email}"></span></p>
-      <p><strong>Teléfono:</strong> <span th:text="${cita.telefono}"></span></p>
-      <p><strong>Modelo del vehículo:</strong> <span th:text="${cita.modeloVehiculo}"></span></p>
-      <p><strong>Tipo de servicio:</strong> <span th:text="${cita.tipoLavado.descripcion}"></span></p>
-      <p><strong>Precio:</strong> <span th:text="${cita.tipoLavado.precio + '€'}"></span></p>
-      <p><strong>Fecha:</strong> <span th:text="${#temporals.format(cita.fecha, 'dd/MM/yyyy')}"></span></p>
-      <p><strong>Hora:</strong> <span th:text="${#temporals.format(cita.hora, 'HH:mm')}"></span></p>
+      <div th:if="${cita}" class="confirmation-details">
+        <p><strong>Nombre:</strong> <span th:text="${cita.nombre}"></span></p>
+        <p><strong>Email:</strong> <span th:text="${cita.email}"></span></p>
+        <p><strong>Teléfono:</strong> <span th:text="${cita.telefono}"></span></p>
+        <p><strong>Modelo del vehículo:</strong> <span th:text="${cita.modeloVehiculo}"></span></p>
+        <p><strong>Tipo de servicio:</strong> <span th:text="${cita.tipoLavado.descripcion}"></span></p>
+        <p><strong>Precio:</strong> <span th:text="${cita.tipoLavado.precio + '€'}"></span></p>
+        <p><strong>Fecha:</strong> <span th:text="${#temporals.format(cita.fecha, 'dd/MM/yyyy')}"></span></p>
+        <p><strong>Hora:</strong> <span th:text="${#temporals.format(cita.hora, 'HH:mm')}"></span></p>
+      </div>
+
+      <p>Hemos enviado un email con los detalles de tu reserva a la dirección proporcionada. Por favor, asegúrate de
+        llegar 10 minutos antes de la hora programada.</p>
+
+      <div class="important-note">
+        <h3>Información importante:</h3>
+        <ul>
+          <li>Te esperamos en C/Ingeniero Ruiz de Azua s/n Local 8, esquina con C/Sor Angela de la Cruz.</li>
+          <li>Si necesitas modificar o cancelar tu cita, por favor contáctanos al 658 527 186 con al menos 24 horas de
+            antelación.</li>
+          <li>El precio puede incrementarse entre 3€ y 5€ por exceso de suciedad o pelos de animal.</li>
+        </ul>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <a href="/" class="btn">Volver al Inicio</a>
+        <a href="/nueva-cita" class="btn">Realizar Otra Reserva</a>
+      </div>
     </div>
+  </section>
 
-    <p>Hemos enviado un email con los detalles de tu reserva a la dirección proporcionada. Por favor, asegúrate de llegar 10 minutos antes de la hora programada.</p>
-
-    <div class="important-note">
-      <h3>Información importante:</h3>
-      <ul>
-        <li>Te esperamos en C/Ingeniero Ruiz de Azua s/n Local 8, esquina con C/Sor Angela de la Cruz.</li>
-        <li>Si necesitas modificar o cancelar tu cita, por favor contáctanos al 658 527 186 con al menos 24 horas de antelación.</li>
-        <li>El precio puede incrementarse entre 3€ y 5€ por exceso de suciedad o pelos de animal.</li>
-      </ul>
+  <footer>
+    <div class="container">
+      <div class="contact-info">
+        <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
+        <p>Teléfono: 658 527 186</p>
+        <p>Email: contacto@lavaderosepulveda.es</p>
+      </div>
+      <div class="social-links">
+        <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank">Facebook</a>
+        <a href="https://www.twitter.com/LavaSepulveda" target="_blank">Twitter</a>
+        <a href="http://www.instagram.com/lavaderosepulveda" target="_blank">Instagram</a>
+      </div>
+      <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
     </div>
+  </footer>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const menuToggle = document.getElementById('menuToggle');
+      const mainNav = document.getElementById('mainNav');
 
-    <div style="margin-top: 20px;">
-      <a href="/" class="btn">Volver al Inicio</a>
-      <a href="/nueva-cita" class="btn">Realizar Otra Reserva</a>
-    </div>
-  </div>
-</section>
+      if (menuToggle && mainNav) {
+        // Inicialmente, ocultar menú en móviles
+        if (window.innerWidth <= 768) {
+          mainNav.style.display = 'none';
+        }
 
-<footer>
-  <div class="container">
-    <div class="contact-info">
-      <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
-      <p>Teléfono: 658 527 186</p>
-      <p>Email: contacto@lavaderosepulveda.es</p>
-    </div>
-    <div class="social-links">
-      <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank">Facebook</a>
-      <a href="https://www.twitter.com/LavaSepulveda" target="_blank">Twitter</a>
-      <a href="http://www.instagram.com/lavaderosepulveda" target="_blank">Instagram</a>
-    </div>
-    <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
-  </div>
-</footer>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const menuToggle = document.getElementById('menuToggle');
-    const mainNav = document.getElementById('mainNav');
+        menuToggle.addEventListener('click', function () {
+          if (mainNav.style.display === 'none' || mainNav.style.display === '') {
+            mainNav.style.display = 'flex';
+            mainNav.style.flexDirection = 'column';
+          } else {
+            mainNav.style.display = 'none';
+          }
+        });
 
-    if (menuToggle && mainNav) {
-      // Inicialmente, ocultar menú en móviles
-      if (window.innerWidth <= 768) {
-        mainNav.style.display = 'none';
+        // Ajustar menú en cambio de tamaño de ventana
+        window.addEventListener('resize', function () {
+          if (window.innerWidth > 768) {
+            mainNav.style.display = 'flex';
+            mainNav.style.flexDirection = 'row';
+          } else {
+            mainNav.style.display = 'none';
+          }
+        });
       }
-
-      menuToggle.addEventListener('click', function() {
-        if (mainNav.style.display === 'none' || mainNav.style.display === '') {
-          mainNav.style.display = 'flex';
-          mainNav.style.flexDirection = 'column';
-        } else {
-          mainNav.style.display = 'none';
-        }
-      });
-
-      // Ajustar menú en cambio de tamaño de ventana
-      window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
-          mainNav.style.display = 'flex';
-          mainNav.style.flexDirection = 'row';
-        } else {
-          mainNav.style.display = 'none';
-        }
-      });
-    }
-  });
-</script>
+    });
+  </script>
 </body>
+
 </html>
