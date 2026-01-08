@@ -1,81 +1,167 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.*?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.lavaderosepulveda.crm.controller.FacturacionController"
-      spacing="15">
-
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-
-    <!-- Cabecera -->
-    <HBox alignment="CENTER_LEFT" spacing="20">
-        <Label text="Facturación" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button text="+ Nueva Factura" onAction="#nuevaFactura" 
-                style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-cursor: hand;"/>
-        <Button text="Exportar" onAction="#exportar"
-                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 10 20; -fx-cursor: hand;"/>
-    </HBox>
-
-    <!-- Tarjetas de resumen -->
-    <HBox spacing="15">
-        <VBox spacing="5" HBox.hgrow="ALWAYS" 
-              style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);">
-            <Label text="Total Facturado (mes)" style="-fx-text-fill: #666666;"/>
-            <Label fx:id="lblTotalFacturado" text="0,00 €" 
-                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2196F3;"/>
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="com.lavaderosepulveda.crm.controller.FacturacionController"
+            styleClass="main-container">
+    
+    <top>
+        <VBox spacing="10">
+            <padding><Insets top="15" right="20" bottom="10" left="20"/></padding>
+            
+            <!-- Título -->
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Label text="💰 Facturación" styleClass="titulo-seccion">
+                    <font><Font size="24" name="System Bold"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnResumenFinanciero" text="📊 Resumen Financiero" styleClass="btn-secundario" onAction="#mostrarResumenFinanciero"/>
+            </HBox>
         </VBox>
-        <VBox spacing="5" HBox.hgrow="ALWAYS"
-              style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);">
-            <Label text="Pendiente de Cobro" style="-fx-text-fill: #666666;"/>
-            <Label fx:id="lblPendienteCobro" text="0,00 €" 
-                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #FF9800;"/>
-        </VBox>
-        <VBox spacing="5" HBox.hgrow="ALWAYS"
-              style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);">
-            <Label text="Facturas Pendientes" style="-fx-text-fill: #666666;"/>
-            <Label fx:id="lblFacturasPendientes" text="0" 
-                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #f44336;"/>
-        </VBox>
-    </HBox>
-
-    <!-- Filtros de búsqueda -->
-    <HBox spacing="15" alignment="CENTER_LEFT" 
-          style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8;">
-        <Label text="Desde:"/>
-        <DatePicker fx:id="dpDesde" prefWidth="130"/>
-        <Label text="Hasta:"/>
-        <DatePicker fx:id="dpHasta" prefWidth="130"/>
-        <CheckBox fx:id="chkSoloPendientes" text="Solo pendientes"/>
-        <Button text="Filtrar" onAction="#filtrar"
-                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-cursor: hand;"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <TextField fx:id="txtBuscar" promptText="Buscar por número o cliente..." prefWidth="200"/>
-    </HBox>
-
-    <!-- Tabla de facturas -->
-    <TableView fx:id="tblFacturas" VBox.vgrow="ALWAYS"
-               style="-fx-background-color: white; -fx-background-radius: 8;">
-        <columns>
-            <TableColumn fx:id="colNumero" text="Número" prefWidth="100"/>
-            <TableColumn fx:id="colFecha" text="Fecha" prefWidth="90"/>
-            <TableColumn fx:id="colCliente" text="Cliente" prefWidth="180"/>
-            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="90"/>
-            <TableColumn fx:id="colBase" text="Base" prefWidth="90"/>
-            <TableColumn fx:id="colIva" text="IVA" prefWidth="70"/>
-            <TableColumn fx:id="colTotal" text="Total" prefWidth="100"/>
-            <TableColumn fx:id="colEstado" text="Estado" prefWidth="90"/>
-            <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="180"/>
-        </columns>
-        <placeholder>
-            <Label text="No hay facturas para mostrar" style="-fx-text-fill: #999999;"/>
-        </placeholder>
-    </TableView>
-
-</VBox>
+    </top>
+    
+    <center>
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
+            
+            <!-- TAB: Facturas Emitidas -->
+            <Tab text="📤 Facturas Emitidas" fx:id="tabEmitidas">
+                <VBox spacing="10">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                    
+                    <!-- Barra de herramientas -->
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <TextField fx:id="txtBuscarEmitida" promptText="Buscar por número, cliente..." prefWidth="250"/>
+                        <Button text="🔍" onAction="#buscarFacturaEmitida" styleClass="btn-icono"/>
+                        <ComboBox fx:id="cmbEstadoEmitida" promptText="Estado" prefWidth="120"/>
+                        <DatePicker fx:id="dpDesdeEmitida" promptText="Desde" prefWidth="130"/>
+                        <DatePicker fx:id="dpHastaEmitida" promptText="Hasta" prefWidth="130"/>
+                        <Button text="Filtrar" onAction="#filtrarFacturasEmitidas" styleClass="btn-secundario"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="btnNuevaEmitida" text="➕ Nueva Factura" onAction="#nuevaFacturaEmitida" styleClass="btn-primario"/>
+                    </HBox>
+                    
+                    <!-- Tabla -->
+                    <TableView fx:id="tablaEmitidas" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colNumeroEmitida" text="Número" prefWidth="100"/>
+                            <TableColumn fx:id="colFechaEmitida" text="Fecha" prefWidth="100"/>
+                            <TableColumn fx:id="colClienteEmitida" text="Cliente" prefWidth="200"/>
+                            <TableColumn fx:id="colConceptoEmitida" text="Concepto" prefWidth="200"/>
+                            <TableColumn fx:id="colBaseEmitida" text="Base" prefWidth="90"/>
+                            <TableColumn fx:id="colIvaEmitida" text="IVA" prefWidth="80"/>
+                            <TableColumn fx:id="colTotalEmitida" text="Total" prefWidth="100"/>
+                            <TableColumn fx:id="colEstadoEmitida" text="Estado" prefWidth="100"/>
+                            <TableColumn fx:id="colAccionesEmitida" text="Acciones" prefWidth="150"/>
+                        </columns>
+                        <placeholder><Label text="No hay facturas emitidas"/></placeholder>
+                    </TableView>
+                    
+                    <!-- Totales -->
+                    <HBox spacing="30" alignment="CENTER_RIGHT" styleClass="barra-totales">
+                        <Label fx:id="lblTotalBaseEmitidas" text="Base: 0,00 €"/>
+                        <Label fx:id="lblTotalIvaEmitidas" text="IVA: 0,00 €"/>
+                        <Label fx:id="lblTotalEmitidas" text="Total: 0,00 €" styleClass="total-destacado"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+            
+            <!-- TAB: Facturas Recibidas -->
+            <Tab text="📥 Facturas Recibidas" fx:id="tabRecibidas">
+                <VBox spacing="10">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                    
+                    <!-- Barra de herramientas -->
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <TextField fx:id="txtBuscarRecibida" promptText="Buscar por número, proveedor..." prefWidth="250"/>
+                        <Button text="🔍" onAction="#buscarFacturaRecibida" styleClass="btn-icono"/>
+                        <ComboBox fx:id="cmbCategoriaRecibida" promptText="Categoría" prefWidth="150"/>
+                        <ComboBox fx:id="cmbEstadoRecibida" promptText="Estado" prefWidth="120"/>
+                        <DatePicker fx:id="dpDesdeRecibida" promptText="Desde" prefWidth="130"/>
+                        <DatePicker fx:id="dpHastaRecibida" promptText="Hasta" prefWidth="130"/>
+                        <Button text="Filtrar" onAction="#filtrarFacturasRecibidas" styleClass="btn-secundario"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="📋 Proveedores" onAction="#gestionarProveedores" styleClass="btn-secundario"/>
+                        <Button fx:id="btnNuevaRecibida" text="➕ Nueva Factura" onAction="#nuevaFacturaRecibida" styleClass="btn-primario"/>
+                    </HBox>
+                    
+                    <!-- Tabla -->
+                    <TableView fx:id="tablaRecibidas" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colNumeroRecibida" text="Nº Factura" prefWidth="120"/>
+                            <TableColumn fx:id="colFechaRecibida" text="Fecha" prefWidth="100"/>
+                            <TableColumn fx:id="colProveedorRecibida" text="Proveedor" prefWidth="180"/>
+                            <TableColumn fx:id="colCategoriaRecibida" text="Categoría" prefWidth="130"/>
+                            <TableColumn fx:id="colConceptoRecibida" text="Concepto" prefWidth="180"/>
+                            <TableColumn fx:id="colBaseRecibida" text="Base" prefWidth="90"/>
+                            <TableColumn fx:id="colIvaRecibida" text="IVA" prefWidth="80"/>
+                            <TableColumn fx:id="colTotalRecibida" text="Total" prefWidth="100"/>
+                            <TableColumn fx:id="colEstadoRecibida" text="Estado" prefWidth="100"/>
+                            <TableColumn fx:id="colVencimientoRecibida" text="Vencimiento" prefWidth="100"/>
+                            <TableColumn fx:id="colAccionesRecibida" text="Acciones" prefWidth="150"/>
+                        </columns>
+                        <placeholder><Label text="No hay facturas recibidas"/></placeholder>
+                    </TableView>
+                    
+                    <!-- Totales -->
+                    <HBox spacing="30" alignment="CENTER_RIGHT" styleClass="barra-totales">
+                        <Label fx:id="lblPendientesRecibidas" text="Pendientes: 0" styleClass="alerta-pendiente"/>
+                        <Label fx:id="lblTotalBaseRecibidas" text="Base: 0,00 €"/>
+                        <Label fx:id="lblTotalIvaRecibidas" text="IVA Soportado: 0,00 €"/>
+                        <Label fx:id="lblTotalRecibidas" text="Total: 0,00 €" styleClass="total-destacado"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+            
+            <!-- TAB: Gastos -->
+            <Tab text="💸 Gastos" fx:id="tabGastos">
+                <VBox spacing="10">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                    
+                    <!-- Barra de herramientas -->
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <TextField fx:id="txtBuscarGasto" promptText="Buscar por concepto..." prefWidth="250"/>
+                        <Button text="🔍" onAction="#buscarGasto" styleClass="btn-icono"/>
+                        <ComboBox fx:id="cmbCategoriaGasto" promptText="Categoría" prefWidth="150"/>
+                        <DatePicker fx:id="dpDesdeGasto" promptText="Desde" prefWidth="130"/>
+                        <DatePicker fx:id="dpHastaGasto" promptText="Hasta" prefWidth="130"/>
+                        <Button text="Filtrar" onAction="#filtrarGastos" styleClass="btn-secundario"/>
+                        <CheckBox fx:id="chkSoloRecurrentes" text="Solo recurrentes"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="btnNuevoGasto" text="➕ Nuevo Gasto" onAction="#nuevoGasto" styleClass="btn-primario"/>
+                    </HBox>
+                    
+                    <!-- Tabla -->
+                    <TableView fx:id="tablaGastos" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colFechaGasto" text="Fecha" prefWidth="100"/>
+                            <TableColumn fx:id="colConceptoGasto" text="Concepto" prefWidth="250"/>
+                            <TableColumn fx:id="colCategoriaGasto" text="Categoría" prefWidth="150"/>
+                            <TableColumn fx:id="colImporteGasto" text="Importe" prefWidth="100"/>
+                            <TableColumn fx:id="colBaseGasto" text="Base" prefWidth="90"/>
+                            <TableColumn fx:id="colIvaGasto" text="IVA" prefWidth="80"/>
+                            <TableColumn fx:id="colMetodoPagoGasto" text="Método Pago" prefWidth="100"/>
+                            <TableColumn fx:id="colRecurrenteGasto" text="Recurrente" prefWidth="80"/>
+                            <TableColumn fx:id="colPagadoGasto" text="Pagado" prefWidth="80"/>
+                            <TableColumn fx:id="colAccionesGasto" text="Acciones" prefWidth="150"/>
+                        </columns>
+                        <placeholder><Label text="No hay gastos registrados"/></placeholder>
+                    </TableView>
+                    
+                    <!-- Totales -->
+                    <HBox spacing="30" alignment="CENTER_RIGHT" styleClass="barra-totales">
+                        <Label fx:id="lblNumGastos" text="Gastos: 0"/>
+                        <Label fx:id="lblTotalBaseGastos" text="Base: 0,00 €"/>
+                        <Label fx:id="lblTotalIvaGastos" text="IVA Soportado: 0,00 €"/>
+                        <Label fx:id="lblTotalGastos" text="Total: 0,00 €" styleClass="total-destacado"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+            
+        </TabPane>
+    </center>
+    
+</BorderPane>

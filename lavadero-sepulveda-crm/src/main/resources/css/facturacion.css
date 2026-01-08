@@ -1,0 +1,187 @@
+/* Estilos específicos para el módulo de Facturación */
+/* Compatible con JavaFX 21 - valores explícitos con unidades */
+
+/* Contenedor principal */
+.facturacion-container {
+    -fx-background-color: -fx-app-background-color;
+    -fx-padding: 15;
+}
+
+/* Encabezado */
+.header {
+    -fx-background-color: -fx-surface-color;
+    -fx-padding: 15;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+}
+
+.header .title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-color;
+}
+
+.header .subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -fx-secondary-text;
+}
+
+/* TabPane personalizado */
+.tab-pane>.tab-header-area>.tab-header-background {
+    -fx-background-color: -fx-surface-color;
+}
+
+/* Barra de herramientas */
+.toolbar {
+    -fx-background-color: -fx-surface-color;
+    -fx-padding: 10;
+    -fx-border-color: -fx-app-border-color;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* Campos de búsqueda */
+.search-field {
+    -fx-pref-width: 250;
+}
+
+/* Filtros */
+.filter-combo {
+    -fx-pref-width: 150;
+}
+
+.date-picker {
+    -fx-pref-width: 130;
+}
+
+/* Celdas de estado */
+.estado-pendiente {
+    -fx-background-color: #fff3e0;
+    -fx-text-fill: #FF9800;
+    -fx-padding: 3 8;
+    -fx-background-radius: 3px;
+    -fx-font-weight: bold;
+}
+
+.estado-pagada {
+    -fx-background-color: #e8f5e9;
+    -fx-text-fill: #4CAF50;
+    -fx-padding: 3 8;
+    -fx-background-radius: 3px;
+    -fx-font-weight: bold;
+}
+
+.estado-vencida {
+    -fx-background-color: #ffebee;
+    -fx-text-fill: #F44336;
+    -fx-padding: 3 8;
+    -fx-background-radius: 3px;
+    -fx-font-weight: bold;
+}
+
+/* Barra de totales */
+.totales-bar {
+    -fx-background-color: -fx-surface-color;
+    -fx-padding: 10 15;
+    -fx-border-color: -fx-app-border-color;
+    -fx-border-width: 1 0 0 0;
+}
+
+.total-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: -fx-secondary-text;
+}
+
+.total-value {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-color;
+}
+
+.total-highlight {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-primary-color;
+}
+
+/* Indicadores */
+.indicator-pendiente {
+    -fx-background-color: #FF9800;
+    -fx-background-radius: 10px;
+    -fx-padding: 2 8;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.indicator-vencida {
+    -fx-background-color: #F44336;
+    -fx-background-radius: 10px;
+    -fx-padding: 2 8;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+/* Formularios modales */
+.form-container {
+    -fx-background-color: -fx-surface-color;
+    -fx-padding: 20;
+}
+
+.form-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: -fx-text-color;
+}
+
+.form-field-error {
+    -fx-border-color: #F44336;
+}
+
+.form-error-text {
+    -fx-text-fill: #F44336;
+    -fx-font-size: 11px;
+}
+
+/* Sección de formulario */
+.form-section {
+    -fx-background-color: -fx-app-background-color;
+    -fx-padding: 15;
+    -fx-background-radius: 4px;
+    -fx-border-color: -fx-app-border-color;
+    -fx-border-radius: 4px;
+}
+
+.form-section-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-color;
+}
+
+/* Alerts Específicos */
+.alert-info {
+    -fx-background-color: -fx-primary-light;
+    -fx-border-color: -fx-primary-color;
+    -fx-border-radius: 4px;
+    -fx-padding: 10;
+}
+
+.alert-warning {
+    -fx-background-color: #fff3e0;
+    -fx-border-color: #FF9800;
+    -fx-border-radius: 4px;
+    -fx-padding: 10;
+}
+
+.alert-error {
+    -fx-background-color: #ffebee;
+    -fx-border-color: #F44336;
+    -fx-border-radius: 4px;
+    -fx-padding: 10;
+}
+
+.alert-success {
+    -fx-background-color: #e8f5e9;
+    -fx-border-color: #4CAF50;
+    -fx-border-radius: 4px;
+    -fx-padding: 10;
+}

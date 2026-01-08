@@ -1,931 +1,837 @@
 package com.lavaderosepulveda.crm.controller;
 
-import com.lavaderosepulveda.crm.api.dto.CitaDTO;
-import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
-import com.lavaderosepulveda.crm.api.dto.FacturaDTO;
-import com.lavaderosepulveda.crm.api.service.CitaApiService;
-import com.lavaderosepulveda.crm.api.service.ClienteApiService;
-import com.lavaderosepulveda.crm.api.service.FacturaApiService;
-import javafx.application.Platform;
+import com.lavaderosepulveda.crm.api.service.FacturacionApiService;
+import com.lavaderosepulveda.crm.model.*;
+
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
-import javafx.util.StringConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
-import java.awt.Desktop;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class FacturacionController {
 
-    private static final Logger log = LoggerFactory.getLogger(FacturacionController.class);
+    // Componentes generales
+    @FXML
+    private TabPane tabPane;
+    @FXML
+    private Tab tabEmitidas;
+    @FXML
+    private Tab tabRecibidas;
+    @FXML
+    private Tab tabGastos;
 
-    // Componentes de la cabecera
+    // === FACTURAS EMITIDAS ===
     @FXML
-    private Label lblTotalFacturado;
+    private TextField txtBuscarEmitida;
     @FXML
-    private Label lblPendienteCobro;
+    private ComboBox<String> cmbEstadoEmitida;
     @FXML
-    private Label lblFacturasPendientes;
+    private DatePicker dpDesdeEmitida;
+    @FXML
+    private DatePicker dpHastaEmitida;
+    @FXML
+    private TableView<FacturaEmitidaDTO> tablaEmitidas;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, String> colNumeroEmitida;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, String> colFechaEmitida;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, String> colClienteEmitida;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, String> colConceptoEmitida;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, String> colBaseEmitida;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, String> colIvaEmitida;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, String> colTotalEmitida;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, String> colEstadoEmitida;
+    @FXML
+    private TableColumn<FacturaEmitidaDTO, Void> colAccionesEmitida;
+    @FXML
+    private Label lblTotalBaseEmitidas;
+    @FXML
+    private Label lblTotalIvaEmitidas;
+    @FXML
+    private Label lblTotalEmitidas;
 
-    // Filtros
+    // === FACTURAS RECIBIDAS ===
     @FXML
-    private DatePicker dpDesde;
+    private TextField txtBuscarRecibida;
     @FXML
-    private DatePicker dpHasta;
+    private ComboBox<String> cmbCategoriaRecibida;
     @FXML
-    private CheckBox chkSoloPendientes;
+    private ComboBox<String> cmbEstadoRecibida;
     @FXML
-    private TextField txtBuscar;
+    private DatePicker dpDesdeRecibida;
+    @FXML
+    private DatePicker dpHastaRecibida;
+    @FXML
+    private TableView<FacturaRecibidaDTO> tablaRecibidas;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colNumeroRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colFechaRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colProveedorRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colCategoriaRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colConceptoRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colBaseRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colIvaRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colTotalRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colEstadoRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, String> colVencimientoRecibida;
+    @FXML
+    private TableColumn<FacturaRecibidaDTO, Void> colAccionesRecibida;
+    @FXML
+    private Label lblPendientesRecibidas;
+    @FXML
+    private Label lblTotalBaseRecibidas;
+    @FXML
+    private Label lblTotalIvaRecibidas;
+    @FXML
+    private Label lblTotalRecibidas;
 
-    // Tabla de facturas
+    // === GASTOS ===
     @FXML
-    private TableView<FacturaDTO> tblFacturas;
+    private TextField txtBuscarGasto;
     @FXML
-    private TableColumn<FacturaDTO, String> colNumero;
+    private ComboBox<String> cmbCategoriaGasto;
     @FXML
-    private TableColumn<FacturaDTO, String> colFecha;
+    private DatePicker dpDesdeGasto;
     @FXML
-    private TableColumn<FacturaDTO, String> colCliente;
+    private DatePicker dpHastaGasto;
     @FXML
-    private TableColumn<FacturaDTO, String> colTipo;
+    private CheckBox chkSoloRecurrentes;
     @FXML
-    private TableColumn<FacturaDTO, String> colBase;
+    private TableView<GastoDTO> tablaGastos;
     @FXML
-    private TableColumn<FacturaDTO, String> colIva;
+    private TableColumn<GastoDTO, String> colFechaGasto;
     @FXML
-    private TableColumn<FacturaDTO, String> colTotal;
+    private TableColumn<GastoDTO, String> colConceptoGasto;
     @FXML
-    private TableColumn<FacturaDTO, String> colEstado;
+    private TableColumn<GastoDTO, String> colCategoriaGasto;
     @FXML
-    private TableColumn<FacturaDTO, Void> colAcciones;
+    private TableColumn<GastoDTO, String> colImporteGasto;
+    @FXML
+    private TableColumn<GastoDTO, String> colBaseGasto;
+    @FXML
+    private TableColumn<GastoDTO, String> colIvaGasto;
+    @FXML
+    private TableColumn<GastoDTO, String> colMetodoPagoGasto;
+    @FXML
+    private TableColumn<GastoDTO, String> colRecurrenteGasto;
+    @FXML
+    private TableColumn<GastoDTO, String> colPagadoGasto;
+    @FXML
+    private TableColumn<GastoDTO, Void> colAccionesGasto;
+    @FXML
+    private Label lblNumGastos;
+    @FXML
+    private Label lblTotalBaseGastos;
+    @FXML
+    private Label lblTotalIvaGastos;
+    @FXML
+    private Label lblTotalGastos;
 
-    private final FacturaApiService facturaApiService = FacturaApiService.getInstance();
-    private final CitaApiService citaApiService = CitaApiService.getInstance();
-    private final ClienteApiService clienteApiService = ClienteApiService.getInstance();
+    private FacturacionApiService apiService;
+    private ObservableList<FacturaEmitidaDTO> listaEmitidas = FXCollections.observableArrayList();
+    private ObservableList<FacturaRecibidaDTO> listaRecibidas = FXCollections.observableArrayList();
+    private ObservableList<GastoDTO> listaGastos = FXCollections.observableArrayList();
+
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final NumberFormat FORMATO_MONEDA = NumberFormat.getCurrencyInstance(new Locale("es", "ES"));
 
     @FXML
     public void initialize() {
-        log.info("Inicializando FacturacionController...");
+        apiService = FacturacionApiService.getInstance();
 
-        configurarFiltros();
-        configurarTabla();
-        cargarResumen();
-        cargarFacturas();
+        configurarCombos();
+        configurarTablaEmitidas();
+        configurarTablaRecibidas();
+        configurarTablaGastos();
+
+        // Cargar datos iniciales
+        cargarFacturasEmitidas();
+        cargarFacturasRecibidas();
+        cargarGastos();
     }
 
-    private void configurarFiltros() {
-        // Fechas por defecto: mes actual
-        dpDesde.setValue(LocalDate.now().withDayOfMonth(1));
-        dpHasta.setValue(LocalDate.now());
+    private void configurarCombos() {
+        // Estados de factura
+        cmbEstadoEmitida.setItems(FXCollections.observableArrayList("Todos", "PENDIENTE", "PAGADA"));
+        cmbEstadoEmitida.setValue("Todos");
 
-        // Listener para búsqueda en tiempo real
-        if (txtBuscar != null) {
-            txtBuscar.textProperty().addListener((obs, oldVal, newVal) -> {
-                if (newVal != null && newVal.length() >= 2) {
-                    buscarFacturas(newVal);
-                } else if (newVal == null || newVal.isEmpty()) {
-                    cargarFacturas();
-                }
-            });
-        }
+        cmbEstadoRecibida.setItems(FXCollections.observableArrayList("Todos", "PENDIENTE", "PAGADA"));
+        cmbEstadoRecibida.setValue("Todos");
+
+        // Categorías de gasto
+        ObservableList<String> categorias = FXCollections.observableArrayList(
+                "Todas", "AGUA", "LUZ", "GAS", "ALQUILER", "SEGUROS", "SUMINISTROS",
+                "PRODUCTOS", "MANTENIMIENTO", "REPARACIONES", "COMBUSTIBLE", "PERSONAL",
+                "SEGURIDAD_SOCIAL", "IMPUESTOS", "TELEFONIA", "PUBLICIDAD",
+                "MATERIAL_OFICINA", "GESTORIA", "BANCARIOS", "VEHICULOS", "MAQUINARIA", "OTROS");
+        cmbCategoriaRecibida.setItems(categorias);
+        cmbCategoriaRecibida.setValue("Todas");
+        cmbCategoriaGasto.setItems(categorias);
+        cmbCategoriaGasto.setValue("Todas");
     }
 
-    private void configurarTabla() {
-        // Configurar columnas
-        colNumero.setCellValueFactory(new PropertyValueFactory<>("numero"));
-        colFecha.setCellValueFactory(new PropertyValueFactory<>("fecha"));
-        colCliente.setCellValueFactory(new PropertyValueFactory<>("clienteNombre"));
-        colTipo.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTipoFormateado()));
-        colBase.setCellValueFactory(
-                cellData -> new SimpleStringProperty(cellData.getValue().getBaseImponibleFormateada()));
-        colIva.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getImporteIvaFormateado()));
-        colTotal.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTotalFormateado()));
-        colEstado.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getEstadoFormateado()));
+    // === CONFIGURACIÓN TABLAS ===
 
-        // Estilo para columna de estado
-        colEstado.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(item);
-                    if ("Pendiente".equals(item)) {
-                        setStyle("-fx-background-color: #FFF3E0; -fx-text-fill: #E65100; -fx-font-weight: bold;");
-                    } else {
-                        setStyle("-fx-background-color: #E8F5E9; -fx-text-fill: #2E7D32; -fx-font-weight: bold;");
-                    }
-                }
-            }
-        });
+    private void configurarTablaEmitidas() {
+        // CORREGIDO: Usar lambdas con los nombres correctos del DTO
+        colNumeroEmitida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getNumeroFactura()));
+        colFechaEmitida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getFechaEmision()));
+        colClienteEmitida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getClienteNombre()));
+        colConceptoEmitida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getConcepto()));
+        colBaseEmitida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getBaseImponible())));
+        colIvaEmitida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getCuotaIva())));
+        colTotalEmitida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getTotal())));
+        colEstadoEmitida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getEstado()));
 
-        // Columna de acciones
-        colAcciones.setCellFactory(column -> new TableCell<>() {
-            private final Button btnPagar = new Button("Cobrar");
-            private final Button btnPdf = new Button("PDF");
-            private final Button btnEliminar = new Button("🗑");
-            private final HBox hbox = new HBox(5, btnPagar, btnPdf, btnEliminar);
+        configurarAccionesEmitidas();
+        tablaEmitidas.setItems(listaEmitidas);
+    }
+
+    private void configurarTablaRecibidas() {
+        colNumeroRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getNumeroFactura()));
+        colFechaRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getFechaFactura()));
+        colProveedorRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getProveedorNombre()));
+        colCategoriaRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(obtenerDescripcionCategoria(cellData.getValue().getCategoria())));
+        colConceptoRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getConcepto()));
+        colBaseRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getBaseImponible())));
+        colIvaRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getCuotaIva())));
+        colTotalRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getTotal())));
+        colEstadoRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getEstado()));
+        colVencimientoRecibida.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getFechaVencimiento()));
+
+        configurarAccionesRecibidas();
+        tablaRecibidas.setItems(listaRecibidas);
+    }
+
+    private void configurarTablaGastos() {
+        colFechaGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getFecha()));
+        colConceptoGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getConcepto()));
+        colCategoriaGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(obtenerDescripcionCategoria(cellData.getValue().getCategoria())));
+        colImporteGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getImporte())));
+        colBaseGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getBaseImponible())));
+        colIvaGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(formatearMoneda(cellData.getValue().getCuotaIva())));
+        colMetodoPagoGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(cellData.getValue().getMetodoPago()));
+        colRecurrenteGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(
+                        cellData.getValue().getRecurrente() != null && cellData.getValue().getRecurrente() ? "Sí"
+                                : "No"));
+        colPagadoGasto.setCellValueFactory(
+                cellData -> new SimpleStringProperty(
+                        cellData.getValue().getPagado() != null && cellData.getValue().getPagado() ? "✅" : "⏳"));
+
+        configurarAccionesGastos();
+        tablaGastos.setItems(listaGastos);
+    }
+
+    private void configurarAccionesEmitidas() {
+        colAccionesEmitida.setCellFactory(param -> new TableCell<>() {
+            private final Button btnVer = new Button("👁");
+            private final Button btnPdf = new Button("📄");
+            private final Button btnPagar = new Button("💰");
+            private final HBox contenedor = new HBox(5, btnVer, btnPdf, btnPagar);
 
             {
-                btnPagar.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-cursor: hand;");
-                btnPdf.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-cursor: hand;");
-                btnEliminar.setStyle("-fx-background-color: #f44336; -fx-text-fill: white; -fx-cursor: hand;");
-
-                btnPagar.setOnAction(e -> {
-                    FacturaDTO factura = getTableView().getItems().get(getIndex());
-                    cobrarFactura(factura);
-                });
-
-                btnPdf.setOnAction(e -> {
-                    FacturaDTO factura = getTableView().getItems().get(getIndex());
-                    descargarPdf(factura);
-                });
-
-                btnEliminar.setOnAction(e -> {
-                    FacturaDTO factura = getTableView().getItems().get(getIndex());
-                    eliminarFactura(factura);
-                });
+                btnVer.setOnAction(e -> verFacturaEmitida(getTableView().getItems().get(getIndex())));
+                btnPdf.setOnAction(e -> descargarPdfEmitida(getTableView().getItems().get(getIndex())));
+                btnPagar.setOnAction(e -> marcarPagadaEmitida(getTableView().getItems().get(getIndex())));
             }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    FacturaDTO factura = getTableView().getItems().get(getIndex());
-                    // Ocultar botón cobrar si ya está pagada
-                    btnPagar.setVisible("PENDIENTE".equals(factura.getEstado()));
-                    // No permitir eliminar facturas pagadas
-                    btnEliminar.setDisable("PAGADA".equals(factura.getEstado()));
-                    setGraphic(hbox);
-                }
-            }
-        });
-
-        // Doble clic para ver detalles
-        tblFacturas.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                FacturaDTO factura = tblFacturas.getSelectionModel().getSelectedItem();
-                if (factura != null) {
-                    mostrarDetalleFactura(factura);
-                }
+                setGraphic(empty ? null : contenedor);
             }
         });
     }
 
-    private void cargarResumen() {
-        new Thread(() -> {
-            Map<String, Object> resumen = facturaApiService.getResumen();
+    private void configurarAccionesRecibidas() {
+        colAccionesRecibida.setCellFactory(param -> new TableCell<>() {
+            private final Button btnEditar = new Button("✏️");
+            private final Button btnPagar = new Button("💰");
+            private final Button btnEliminar = new Button("🗑️");
+            private final HBox contenedor = new HBox(5, btnEditar, btnPagar, btnEliminar);
 
-            Platform.runLater(() -> {
-                // Total facturado este mes
-                Object totalMes = resumen.get("totalMes");
-                lblTotalFacturado.setText(formatearImporte(totalMes));
-
-                // Pendiente de cobro
-                Object totalPendiente = resumen.get("totalPendiente");
-                lblPendienteCobro.setText(formatearImporte(totalPendiente));
-
-                // Facturas pendientes
-                Object facturasPendientes = resumen.get("facturasPendientes");
-                lblFacturasPendientes.setText(
-                        facturasPendientes != null ? String.valueOf(((Number) facturasPendientes).intValue()) : "0");
-            });
-        }).start();
-    }
-
-    private void cargarFacturas() {
-        log.info("Cargando facturas...");
-
-        new Thread(() -> {
-            List<FacturaDTO> facturas;
-
-            if (chkSoloPendientes != null && chkSoloPendientes.isSelected()) {
-                facturas = facturaApiService.findPendientes();
-            } else {
-                facturas = facturaApiService.findAll();
+            {
+                btnEditar.setOnAction(e -> editarFacturaRecibida(getTableView().getItems().get(getIndex())));
+                btnPagar.setOnAction(e -> marcarPagadaRecibida(getTableView().getItems().get(getIndex())));
+                btnEliminar.setOnAction(e -> eliminarFacturaRecibida(getTableView().getItems().get(getIndex())));
             }
 
-            log.info("Facturas obtenidas: {}", facturas.size());
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : contenedor);
+            }
+        });
+    }
 
-            Platform.runLater(() -> {
-                ObservableList<FacturaDTO> data = FXCollections.observableArrayList(facturas);
-                tblFacturas.setItems(data);
-            });
-        }).start();
+    private void configurarAccionesGastos() {
+        colAccionesGasto.setCellFactory(param -> new TableCell<>() {
+            private final Button btnEditar = new Button("✏️");
+            private final Button btnPagar = new Button("💰");
+            private final Button btnEliminar = new Button("🗑️");
+            private final HBox contenedor = new HBox(5, btnEditar, btnPagar, btnEliminar);
+
+            {
+                btnEditar.setOnAction(e -> editarGasto(getTableView().getItems().get(getIndex())));
+                btnPagar.setOnAction(e -> marcarPagadoGasto(getTableView().getItems().get(getIndex())));
+                btnEliminar.setOnAction(e -> eliminarGasto(getTableView().getItems().get(getIndex())));
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : contenedor);
+            }
+        });
+    }
+
+    // === CARGA DE DATOS ===
+
+    private void cargarFacturasEmitidas() {
+        try {
+            List<FacturaEmitidaDTO> facturas = apiService.obtenerFacturasEmitidas();
+            // Debug: imprimir datos recibidos
+            System.out.println("=== DEBUG: Facturas emitidas cargadas: " + facturas.size() + " ===");
+            if (!facturas.isEmpty()) {
+                FacturaEmitidaDTO primera = facturas.get(0);
+                System.out.println("Primera factura - Número: " + primera.getNumeroFactura()
+                        + ", Fecha: " + primera.getFechaEmision()
+                        + ", Cliente: " + primera.getClienteNombre()
+                        + ", Concepto: " + primera.getConcepto()
+                        + ", Total: " + primera.getTotal());
+            }
+            listaEmitidas.setAll(facturas);
+            actualizarTotalesEmitidas();
+        } catch (Exception e) {
+            System.err.println("Error cargando facturas: " + e.getMessage());
+            e.printStackTrace();
+            mostrarError("Error al cargar facturas emitidas", e.getMessage());
+        }
+    }
+
+    private void cargarFacturasRecibidas() {
+        try {
+            List<FacturaRecibidaDTO> facturas = apiService.obtenerFacturasRecibidas();
+            listaRecibidas.setAll(facturas);
+            actualizarTotalesRecibidas();
+        } catch (Exception e) {
+            mostrarError("Error al cargar facturas recibidas", e.getMessage());
+        }
+    }
+
+    private void cargarGastos() {
+        try {
+            List<GastoDTO> gastos = apiService.obtenerGastos();
+            listaGastos.setAll(gastos);
+            actualizarTotalesGastos();
+        } catch (Exception e) {
+            mostrarError("Error al cargar gastos", e.getMessage());
+        }
+    }
+
+    // === ACCIONES FACTURAS EMITIDAS ===
+
+    @FXML
+    private void buscarFacturaEmitida() {
+        String termino = txtBuscarEmitida.getText();
+        if (termino == null || termino.isEmpty()) {
+            cargarFacturasEmitidas();
+        } else {
+            try {
+                List<FacturaEmitidaDTO> resultado = apiService.buscarFacturasEmitidas(termino);
+                listaEmitidas.setAll(resultado);
+                actualizarTotalesEmitidas();
+            } catch (Exception e) {
+                mostrarError("Error en búsqueda", e.getMessage());
+            }
+        }
     }
 
     @FXML
-    private void filtrar() {
-        log.info("Aplicando filtros...");
+    private void filtrarFacturasEmitidas() {
+        String estado = cmbEstadoEmitida.getValue();
+        LocalDate desde = dpDesdeEmitida.getValue();
+        LocalDate hasta = dpHastaEmitida.getValue();
 
-        LocalDate desde = dpDesde.getValue();
-        LocalDate hasta = dpHasta.getValue();
+        try {
+            List<FacturaEmitidaDTO> resultado = apiService.filtrarFacturasEmitidas(estado, desde, hasta);
+            listaEmitidas.setAll(resultado);
+            actualizarTotalesEmitidas();
+        } catch (Exception e) {
+            mostrarError("Error al filtrar", e.getMessage());
+        }
+    }
 
-        if (desde == null || hasta == null) {
-            mostrarError("Debes seleccionar ambas fechas");
+    @FXML
+    private void nuevaFacturaEmitida() {
+        // TODO: Abrir diálogo de nueva factura emitida
+        mostrarInfo("Nueva Factura", "Funcionalidad en desarrollo");
+    }
+
+    private void verFacturaEmitida(FacturaEmitidaDTO factura) {
+        // TODO: Mostrar detalle de factura
+    }
+
+    private void descargarPdfEmitida(FacturaEmitidaDTO factura) {
+        try {
+            apiService.descargarPdfFacturaEmitida(factura.getId());
+            mostrarInfo("PDF Generado", "La factura se ha descargado correctamente");
+        } catch (Exception e) {
+            mostrarError("Error al generar PDF", e.getMessage());
+        }
+    }
+
+    private void marcarPagadaEmitida(FacturaEmitidaDTO factura) {
+        if ("PAGADA".equals(factura.getEstado())) {
+            mostrarInfo("Factura Pagada", "Esta factura ya está marcada como pagada");
             return;
         }
 
-        new Thread(() -> {
-            List<FacturaDTO> facturas = facturaApiService.findByFechas(desde, hasta);
-
-            // Filtrar por pendientes si está marcado
-            if (chkSoloPendientes != null && chkSoloPendientes.isSelected()) {
-                facturas = facturas.stream()
-                        .filter(f -> "PENDIENTE".equals(f.getEstado()))
-                        .collect(Collectors.toList());
-            }
-
-            List<FacturaDTO> facturasFinal = facturas;
-            Platform.runLater(() -> {
-                tblFacturas.setItems(FXCollections.observableArrayList(facturasFinal));
-            });
-        }).start();
-    }
-
-    private void buscarFacturas(String texto) {
-        new Thread(() -> {
-            List<FacturaDTO> facturas = facturaApiService.buscar(texto);
-            Platform.runLater(() -> {
-                tblFacturas.setItems(FXCollections.observableArrayList(facturas));
-            });
-        }).start();
-    }
-
-    @FXML
-    private void nuevaFactura() {
-        log.info("Abriendo diálogo de nueva factura...");
-
-        // Crear diálogo para elegir tipo de factura
-        ChoiceDialog<String> tipoDialog = new ChoiceDialog<>("Desde cita completada",
-                "Desde cita completada", "Factura manual simplificada", "Factura manual completa");
-        tipoDialog.setTitle("Nueva Factura");
-        tipoDialog.setHeaderText("¿Qué tipo de factura deseas crear?");
-        tipoDialog.setContentText("Tipo:");
-
-        Optional<String> tipoResult = tipoDialog.showAndWait();
-
-        tipoResult.ifPresent(tipo -> {
-            switch (tipo) {
-                case "Desde cita completada":
-                    crearFacturaDesdeCita();
-                    break;
-                case "Factura manual simplificada":
-                    crearFacturaManual("SIMPLIFICADA");
-                    break;
-                case "Factura manual completa":
-                    crearFacturaManual("COMPLETA");
-                    break;
-            }
-        });
-    }
-
-    private void crearFacturaDesdeCita() {
-        // Cargar citas completadas sin facturar
-        new Thread(() -> {
-            List<CitaDTO> todasCitas = citaApiService.findAll();
-            List<CitaDTO> citasSinFacturar = todasCitas.stream()
-                    .filter(c -> "COMPLETADA".equals(c.getEstado().name()))
-                    .filter(c -> !Boolean.TRUE.equals(c.getFacturada()))
-                    .collect(Collectors.toList());
-
-            Platform.runLater(() -> {
-                if (citasSinFacturar.isEmpty()) {
-                    mostrarInfo("Sin citas", "No hay citas completadas pendientes de facturar");
-                    return;
-                }
-
-                // Diálogo para seleccionar cita
-                Dialog<CitaDTO> dialog = new Dialog<>();
-                dialog.setTitle("Seleccionar Cita");
-                dialog.setHeaderText("Selecciona la cita a facturar");
-
-                ButtonType crearButtonType = new ButtonType("Crear Factura", ButtonBar.ButtonData.OK_DONE);
-                dialog.getDialogPane().getButtonTypes().addAll(crearButtonType, ButtonType.CANCEL);
-
-                VBox content = new VBox(15);
-                content.setPadding(new Insets(10));
-
-                ListView<CitaDTO> listView = new ListView<>();
-                listView.setItems(FXCollections.observableArrayList(citasSinFacturar));
-                listView.setCellFactory(lv -> new ListCell<>() {
-                    @Override
-                    protected void updateItem(CitaDTO cita, boolean empty) {
-                        super.updateItem(cita, empty);
-                        if (empty || cita == null) {
-                            setText(null);
-                        } else {
-                            String cliente = cita.getCliente() != null ? cita.getCliente().getNombre() : "Sin nombre";
-                            String servicio = cita.getServicios() != null && !cita.getServicios().isEmpty()
-                                    ? cita.getServicios().get(0).getNombre()
-                                    : "";
-                            setText(String.format("#%d - %s - %s - %s",
-                                    cita.getId(), cliente, servicio, cita.getFechaHora().toLocalDate()));
-                        }
-                    }
-                });
-                listView.setPrefHeight(250);
-
-                // Selector de método de pago
-                Label lblMetodoPago = new Label("Método de pago:");
-                lblMetodoPago.setStyle("-fx-font-weight: bold;");
-                ComboBox<String> cmbMetodoPago = new ComboBox<>();
-                cmbMetodoPago.setItems(FXCollections.observableArrayList(
-                        "PENDIENTE", "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA"));
-                cmbMetodoPago.setValue("PENDIENTE");
-                cmbMetodoPago.setPrefWidth(200);
-
-                HBox hboxPago = new HBox(10, lblMetodoPago, cmbMetodoPago);
-                hboxPago.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-
-                content.getChildren().addAll(
-                        new Label("Selecciona la cita:"),
-                        listView,
-                        new Separator(),
-                        hboxPago);
-
-                dialog.getDialogPane().setContent(content);
-                dialog.getDialogPane().setPrefWidth(500);
-
-                dialog.setResultConverter(dialogButton -> {
-                    if (dialogButton == crearButtonType) {
-                        return listView.getSelectionModel().getSelectedItem();
-                    }
-                    return null;
-                });
-
-                Optional<CitaDTO> result = dialog.showAndWait();
-
-                result.ifPresent(cita -> {
-                    String metodoPago = cmbMetodoPago.getValue();
-                    new Thread(() -> {
-                        try {
-                            FacturaDTO factura = facturaApiService.crearSimplificadaDesdeCita(cita.getId());
-
-                            // Si se seleccionó un método de pago distinto de PENDIENTE, marcar como pagada
-                            if (!"PENDIENTE".equals(metodoPago)) {
-                                facturaApiService.marcarComoPagada(factura.getId(), metodoPago);
-                            }
-
-                            Platform.runLater(() -> {
-                                String estado = "PENDIENTE".equals(metodoPago) ? "pendiente de cobro"
-                                        : "pagada con " + metodoPago;
-                                mostrarInfo("Factura Creada",
-                                        "Factura " + factura.getNumero() + " creada correctamente\n" +
-                                                "Total: " + factura.getTotalFormateado() + "\n" +
-                                                "Estado: " + estado);
-                                cargarFacturas();
-                                cargarResumen();
-                            });
-                        } catch (Exception e) {
-                            log.error("Error al crear factura", e);
-                            Platform.runLater(() -> mostrarError("Error al crear factura: " + e.getMessage()));
-                        }
-                    }).start();
-                });
-            });
-        }).start();
-    }
-
-    private void crearFacturaManual(String tipo) {
-        Dialog<FacturaDTO> dialog = new Dialog<>();
-        dialog.setTitle("Nueva Factura " + ("COMPLETA".equals(tipo) ? "Completa" : "Simplificada"));
-        dialog.setHeaderText("Introduce los datos de la factura");
-        dialog.getDialogPane().setPrefWidth(550);
-
-        ButtonType crearButtonType = new ButtonType("Crear", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(crearButtonType, ButtonType.CANCEL);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 20, 10, 10));
-
-        // ========================================
-        // SELECTOR DE CLIENTE EXISTENTE
-        // ========================================
-        ComboBox<ClienteDTO> cmbClientes = new ComboBox<>();
-        cmbClientes.setPromptText("Buscar cliente existente...");
-        cmbClientes.setPrefWidth(350);
-        cmbClientes.setEditable(true);
-
-        // Cargar clientes en segundo plano
-        new Thread(() -> {
+        Optional<String> metodo = mostrarDialogoMetodoPago();
+        metodo.ifPresent(m -> {
             try {
-                List<ClienteDTO> clientes = clienteApiService.obtenerTodosLosClientes();
-                Platform.runLater(() -> {
-                    cmbClientes.setItems(FXCollections.observableArrayList(clientes));
-                });
+                apiService.marcarFacturaEmitidaPagada(factura.getId(), m);
+                cargarFacturasEmitidas();
+                mostrarInfo("Éxito", "Factura marcada como pagada");
             } catch (Exception e) {
-                log.error("Error cargando clientes", e);
+                mostrarError("Error", e.getMessage());
             }
-        }).start();
-
-        // Convertidor para mostrar nombre del cliente
-        cmbClientes.setConverter(new StringConverter<ClienteDTO>() {
-            @Override
-            public String toString(ClienteDTO cliente) {
-                if (cliente == null)
-                    return "";
-                String display = cliente.getNombreCompleto();
-                if (cliente.getNif() != null && !cliente.getNif().isEmpty()) {
-                    display += " (" + cliente.getNif() + ")";
-                }
-                return display;
-            }
-
-            @Override
-            public ClienteDTO fromString(String string) {
-                // Buscar cliente por texto
-                if (string == null || string.isEmpty())
-                    return null;
-                return cmbClientes.getItems().stream()
-                        .filter(c -> toString(c).toLowerCase().contains(string.toLowerCase()))
-                        .findFirst()
-                        .orElse(null);
-            }
-        });
-
-        // Filtro de búsqueda mientras escribe
-        cmbClientes.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null && !newVal.isEmpty() && cmbClientes.getItems() != null) {
-                // No filtrar si ya se seleccionó un cliente
-                if (cmbClientes.getValue() != null)
-                    return;
-
-                Platform.runLater(() -> {
-                    if (!cmbClientes.isShowing()) {
-                        cmbClientes.show();
-                    }
-                });
-            }
-        });
-
-        // ========================================
-        // CAMPOS DEL CLIENTE
-        // ========================================
-        TextField txtNombre = new TextField();
-        txtNombre.setPromptText("Nombre del cliente");
-        txtNombre.setPrefWidth(350);
-
-        TextField txtNif = new TextField();
-        txtNif.setPromptText("NIF/CIF");
-
-        TextField txtDireccion = new TextField();
-        txtDireccion.setPromptText("Dirección completa");
-        txtDireccion.setPrefWidth(350);
-
-        TextField txtTelefono = new TextField();
-        txtTelefono.setPromptText("Teléfono");
-
-        TextField txtEmail = new TextField();
-        txtEmail.setPromptText("Email");
-
-        // Auto-rellenar campos cuando se selecciona un cliente
-        cmbClientes.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
-                txtNombre.setText(newVal.getNombreCompleto());
-                txtNif.setText(newVal.getNif() != null ? newVal.getNif() : "");
-
-                // Construir dirección completa
-                StringBuilder direccion = new StringBuilder();
-                if (newVal.getDireccion() != null && !newVal.getDireccion().isEmpty()) {
-                    direccion.append(newVal.getDireccion());
-                }
-                if (newVal.getCodigoPostal() != null && !newVal.getCodigoPostal().isEmpty()) {
-                    if (direccion.length() > 0)
-                        direccion.append(", ");
-                    direccion.append(newVal.getCodigoPostal());
-                }
-                if (newVal.getCiudad() != null && !newVal.getCiudad().isEmpty()) {
-                    if (direccion.length() > 0)
-                        direccion.append(" ");
-                    direccion.append(newVal.getCiudad());
-                }
-                if (newVal.getProvincia() != null && !newVal.getProvincia().isEmpty()
-                        && !newVal.getProvincia().equals(newVal.getCiudad())) {
-                    direccion.append(" (").append(newVal.getProvincia()).append(")");
-                }
-                txtDireccion.setText(direccion.toString());
-
-                txtTelefono.setText(newVal.getTelefono() != null ? newVal.getTelefono() : "");
-                txtEmail.setText(newVal.getEmail() != null ? newVal.getEmail() : "");
-
-                log.info("Cliente seleccionado: {} - {}", newVal.getId(), newVal.getNombreCompleto());
-            }
-        });
-
-        // Botón para limpiar selección
-        Button btnLimpiar = new Button("Limpiar");
-        btnLimpiar.setOnAction(e -> {
-            cmbClientes.setValue(null);
-            cmbClientes.getEditor().clear();
-            txtNombre.clear();
-            txtNif.clear();
-            txtDireccion.clear();
-            txtTelefono.clear();
-            txtEmail.clear();
-        });
-
-        // ========================================
-        // DATOS DE LA FACTURA
-        // ========================================
-        TextField txtConcepto = new TextField();
-        txtConcepto.setPromptText("Concepto del servicio");
-        txtConcepto.setPrefWidth(350);
-
-        TextField txtPrecio = new TextField();
-        txtPrecio.setPromptText("Precio sin IVA (ej: 19.01)");
-
-        // Selector de método de pago
-        ComboBox<String> cmbMetodoPago = new ComboBox<>();
-        cmbMetodoPago.setItems(FXCollections.observableArrayList(
-                "PENDIENTE", "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA"));
-        cmbMetodoPago.setValue("PENDIENTE");
-        cmbMetodoPago.setPrefWidth(200);
-
-        // ========================================
-        // CONSTRUIR LAYOUT
-        // ========================================
-        int row = 0;
-
-        // Selector de cliente
-        Label lblSelector = new Label("Buscar cliente:");
-        lblSelector.setStyle("-fx-font-weight: bold;");
-        grid.add(lblSelector, 0, row);
-        HBox hboxSelector = new HBox(10, cmbClientes, btnLimpiar);
-        grid.add(hboxSelector, 1, row++);
-
-        // Separador
-        Separator sep1 = new Separator();
-        sep1.setPadding(new Insets(5, 0, 5, 0));
-        grid.add(sep1, 0, row++, 2, 1);
-
-        // Datos del cliente
-        Label lblDatosCliente = new Label("Datos del cliente:");
-        lblDatosCliente.setStyle("-fx-font-weight: bold; -fx-text-fill: #1976D2;");
-        grid.add(lblDatosCliente, 0, row++, 2, 1);
-
-        grid.add(new Label("Nombre:"), 0, row);
-        grid.add(txtNombre, 1, row++);
-
-        if ("COMPLETA".equals(tipo)) {
-            grid.add(new Label("NIF/CIF:"), 0, row);
-            grid.add(txtNif, 1, row++);
-            grid.add(new Label("Dirección:"), 0, row);
-            grid.add(txtDireccion, 1, row++);
-        }
-
-        grid.add(new Label("Teléfono:"), 0, row);
-        grid.add(txtTelefono, 1, row++);
-        grid.add(new Label("Email:"), 0, row);
-        grid.add(txtEmail, 1, row++);
-
-        // Separador
-        Separator sep2 = new Separator();
-        sep2.setPadding(new Insets(5, 0, 5, 0));
-        grid.add(sep2, 0, row++, 2, 1);
-
-        // Datos de la factura
-        Label lblDatosFactura = new Label("Datos de la factura:");
-        lblDatosFactura.setStyle("-fx-font-weight: bold; -fx-text-fill: #1976D2;");
-        grid.add(lblDatosFactura, 0, row++, 2, 1);
-
-        grid.add(new Label("Concepto:"), 0, row);
-        grid.add(txtConcepto, 1, row++);
-        grid.add(new Label("Precio (sin IVA):"), 0, row);
-        grid.add(txtPrecio, 1, row++);
-        grid.add(new Label("Método de pago:"), 0, row);
-        grid.add(cmbMetodoPago, 1, row++);
-
-        dialog.getDialogPane().setContent(grid);
-
-        // Validación antes de crear
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == crearButtonType) {
-                // Validar campos obligatorios
-                if (txtNombre.getText() == null || txtNombre.getText().trim().isEmpty()) {
-                    mostrarError("El nombre del cliente es obligatorio");
-                    return null;
-                }
-                if (txtConcepto.getText() == null || txtConcepto.getText().trim().isEmpty()) {
-                    mostrarError("El concepto es obligatorio");
-                    return null;
-                }
-                if (txtPrecio.getText() == null || txtPrecio.getText().trim().isEmpty()) {
-                    mostrarError("El precio es obligatorio");
-                    return null;
-                }
-                if ("COMPLETA".equals(tipo) && (txtNif.getText() == null || txtNif.getText().trim().isEmpty())) {
-                    mostrarError("El NIF/CIF es obligatorio para facturas completas");
-                    return null;
-                }
-
-                try {
-                    FacturaDTO factura = new FacturaDTO();
-                    factura.setTipo(tipo);
-                    factura.setClienteNombre(txtNombre.getText().trim());
-                    factura.setClienteNif(txtNif.getText() != null ? txtNif.getText().trim() : "");
-                    factura.setClienteDireccion(txtDireccion.getText() != null ? txtDireccion.getText().trim() : "");
-                    factura.setClienteTelefono(txtTelefono.getText() != null ? txtTelefono.getText().trim() : "");
-                    factura.setClienteEmail(txtEmail.getText() != null ? txtEmail.getText().trim() : "");
-
-                    // Si se seleccionó un cliente existente, guardar su ID
-                    if (cmbClientes.getValue() != null) {
-                        factura.setClienteId(cmbClientes.getValue().getId());
-                    }
-
-                    // Crear línea de factura
-                    FacturaDTO.LineaFacturaDTO linea = new FacturaDTO.LineaFacturaDTO();
-                    linea.setConcepto(txtConcepto.getText().trim());
-                    linea.setCantidad(1);
-                    linea.setPrecioUnitario(new BigDecimal(txtPrecio.getText().trim().replace(",", ".")));
-                    factura.setLineas(List.of(linea));
-
-                    return factura;
-                } catch (NumberFormatException e) {
-                    mostrarError("El precio debe ser un número válido (ej: 19.01)");
-                    return null;
-                } catch (Exception e) {
-                    mostrarError("Error en los datos: " + e.getMessage());
-                    return null;
-                }
-            }
-            return null;
-        });
-
-        Optional<FacturaDTO> result = dialog.showAndWait();
-
-        // Capturar el método de pago seleccionado
-        String metodoPagoSeleccionado = cmbMetodoPago.getValue();
-
-        result.ifPresent(facturaDTO -> {
-            new Thread(() -> {
-                try {
-                    FacturaDTO factura = facturaApiService.crearManual(facturaDTO);
-
-                    // Si se seleccionó un método de pago distinto de PENDIENTE, marcar como pagada
-                    if (!"PENDIENTE".equals(metodoPagoSeleccionado)) {
-                        facturaApiService.marcarComoPagada(factura.getId(), metodoPagoSeleccionado);
-                    }
-
-                    Platform.runLater(() -> {
-                        String estado = "PENDIENTE".equals(metodoPagoSeleccionado) ? "pendiente de cobro"
-                                : "pagada con " + metodoPagoSeleccionado;
-                        mostrarInfo("Factura Creada",
-                                "Factura " + factura.getNumero() + " creada correctamente\n" +
-                                        "Total: " + factura.getTotalFormateado() + "\n" +
-                                        "Estado: " + estado);
-                        cargarFacturas();
-                        cargarResumen();
-                    });
-                } catch (Exception e) {
-                    log.error("Error al crear factura", e);
-                    Platform.runLater(() -> mostrarError("Error al crear factura: " + e.getMessage()));
-                }
-            }).start();
         });
     }
 
-    private void cobrarFactura(FacturaDTO factura) {
-        ChoiceDialog<String> dialog = new ChoiceDialog<>("EFECTIVO",
-                "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA");
-        dialog.setTitle("Cobrar Factura");
-        dialog.setHeaderText("Factura " + factura.getNumero() + " - " + factura.getTotalFormateado());
-        dialog.setContentText("Método de pago:");
+    // === ACCIONES FACTURAS RECIBIDAS ===
 
-        Optional<String> result = dialog.showAndWait();
-
-        result.ifPresent(metodoPago -> {
-            new Thread(() -> {
-                try {
-                    facturaApiService.marcarComoPagada(factura.getId(), metodoPago);
-                    Platform.runLater(() -> {
-                        mostrarInfo("Factura Cobrada",
-                                "Factura " + factura.getNumero() + " marcada como pagada");
-                        cargarFacturas();
-                        cargarResumen();
-                    });
-                } catch (Exception e) {
-                    log.error("Error al cobrar factura", e);
-                    Platform.runLater(() -> mostrarError("Error al cobrar factura: " + e.getMessage()));
-                }
-            }).start();
-        });
-    }
-
-    private void descargarPdf(FacturaDTO factura) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Guardar Factura PDF");
-        fileChooser.setInitialFileName("Factura_" + factura.getNumero().replace("/", "-") + ".pdf");
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-
-        File file = fileChooser.showSaveDialog(tblFacturas.getScene().getWindow());
-
-        if (file != null) {
-            new Thread(() -> {
-                try {
-                    byte[] pdfBytes = facturaApiService.descargarPdf(factura.getId());
-
-                    try (FileOutputStream fos = new FileOutputStream(file)) {
-                        fos.write(pdfBytes);
-                    }
-
-                    Platform.runLater(() -> {
-                        mostrarInfo("PDF Guardado", "Factura guardada en:\n" + file.getAbsolutePath());
-
-                        // Preguntar si abrir el PDF
-                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                        alert.setTitle("Abrir PDF");
-                        alert.setHeaderText("¿Deseas abrir el PDF?");
-                        alert.setContentText(file.getName());
-
-                        Optional<ButtonType> result = alert.showAndWait();
-                        if (result.isPresent() && result.get() == ButtonType.OK) {
-                            try {
-                                Desktop.getDesktop().open(file);
-                            } catch (Exception e) {
-                                log.error("Error al abrir PDF", e);
-                            }
-                        }
-                    });
-                } catch (Exception e) {
-                    log.error("Error al descargar PDF", e);
-                    Platform.runLater(() -> mostrarError("Error al descargar PDF: " + e.getMessage()));
-                }
-            }).start();
-        }
-    }
-
-    private void eliminarFactura(FacturaDTO factura) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Eliminar Factura");
-        alert.setHeaderText("¿Estás seguro de eliminar la factura " + factura.getNumero() + "?");
-        alert.setContentText("Esta acción no se puede deshacer.");
-
-        Optional<ButtonType> result = alert.showAndWait();
-
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            new Thread(() -> {
-                try {
-                    facturaApiService.delete(factura.getId());
-                    Platform.runLater(() -> {
-                        mostrarInfo("Factura Eliminada", "Factura " + factura.getNumero() + " eliminada");
-                        cargarFacturas();
-                        cargarResumen();
-                    });
-                } catch (Exception e) {
-                    log.error("Error al eliminar factura", e);
-                    Platform.runLater(() -> mostrarError("Error al eliminar factura: " + e.getMessage()));
-                }
-            }).start();
-        }
-    }
-
-    private void mostrarDetalleFactura(FacturaDTO factura) {
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Detalle de Factura");
-        dialog.setHeaderText("Factura " + factura.getNumero());
-
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-
-        VBox content = new VBox(10);
-        content.setPadding(new Insets(20));
-
-        // Datos generales
-        GridPane grid = new GridPane();
-        grid.setHgap(15);
-        grid.setVgap(8);
-
-        int row = 0;
-        grid.add(new Label("Fecha:"), 0, row);
-        grid.add(new Label(factura.getFecha()), 1, row++);
-
-        grid.add(new Label("Tipo:"), 0, row);
-        grid.add(new Label(factura.getTipoFormateado()), 1, row++);
-
-        grid.add(new Label("Estado:"), 0, row);
-        Label lblEstado = new Label(factura.getEstadoFormateado());
-        lblEstado.setStyle("PENDIENTE".equals(factura.getEstado()) ? "-fx-text-fill: #E65100; -fx-font-weight: bold;"
-                : "-fx-text-fill: #2E7D32; -fx-font-weight: bold;");
-        grid.add(lblEstado, 1, row++);
-
-        if (factura.getMetodoPago() != null) {
-            grid.add(new Label("Método de pago:"), 0, row);
-            grid.add(new Label(factura.getMetodoPagoFormateado()), 1, row++);
-        }
-
-        grid.add(new Label("Cliente:"), 0, row);
-        grid.add(new Label(factura.getClienteNombre()), 1, row++);
-
-        if (factura.getClienteNif() != null && !factura.getClienteNif().isEmpty()) {
-            grid.add(new Label("NIF:"), 0, row);
-            grid.add(new Label(factura.getClienteNif()), 1, row++);
-        }
-
-        content.getChildren().add(grid);
-
-        // Separador
-        content.getChildren().add(new Separator());
-
-        // Líneas
-        if (factura.getLineas() != null && !factura.getLineas().isEmpty()) {
-            Label lblLineas = new Label("Conceptos:");
-            lblLineas.setStyle("-fx-font-weight: bold;");
-            content.getChildren().add(lblLineas);
-
-            for (FacturaDTO.LineaFacturaDTO linea : factura.getLineas()) {
-                HBox lineaBox = new HBox(10);
-                lineaBox.getChildren().addAll(
-                        new Label(linea.getConcepto()),
-                        new Label("x" + linea.getCantidad()),
-                        new Label(linea.getSubtotalFormateado()));
-                content.getChildren().add(lineaBox);
+    @FXML
+    private void buscarFacturaRecibida() {
+        String termino = txtBuscarRecibida.getText();
+        if (termino == null || termino.isEmpty()) {
+            cargarFacturasRecibidas();
+        } else {
+            try {
+                List<FacturaRecibidaDTO> resultado = apiService.buscarFacturasRecibidas(termino);
+                listaRecibidas.setAll(resultado);
+                actualizarTotalesRecibidas();
+            } catch (Exception e) {
+                mostrarError("Error en búsqueda", e.getMessage());
             }
         }
-
-        // Separador
-        content.getChildren().add(new Separator());
-
-        // Totales
-        GridPane totales = new GridPane();
-        totales.setHgap(20);
-        totales.setVgap(5);
-
-        totales.add(new Label("Base Imponible:"), 0, 0);
-        totales.add(new Label(factura.getBaseImponibleFormateada()), 1, 0);
-
-        totales.add(new Label("IVA (21%):"), 0, 1);
-        totales.add(new Label(factura.getImporteIvaFormateado()), 1, 1);
-
-        Label lblTotal = new Label("TOTAL:");
-        lblTotal.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-        Label lblTotalValor = new Label(factura.getTotalFormateado());
-        lblTotalValor.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #2196F3;");
-
-        totales.add(lblTotal, 0, 2);
-        totales.add(lblTotalValor, 1, 2);
-
-        content.getChildren().add(totales);
-
-        // Pie de factura - Observaciones
-        if (factura.getObservaciones() != null && !factura.getObservaciones().trim().isEmpty()) {
-            content.getChildren().add(new Separator());
-
-            Label lblObservacionesTitulo = new Label("Observaciones:");
-            lblObservacionesTitulo.setStyle("-fx-font-weight: bold; -fx-font-size: 11px;");
-            content.getChildren().add(lblObservacionesTitulo);
-
-            Label lblObservaciones = new Label(factura.getObservaciones());
-            lblObservaciones.setWrapText(true);
-            lblObservaciones.setStyle("-fx-text-fill: #666666; -fx-font-size: 10px;");
-            lblObservaciones.setMaxWidth(360);
-            content.getChildren().add(lblObservaciones);
-        }
-
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(400);
-
-        dialog.showAndWait();
     }
 
     @FXML
-    private void exportar() {
-        mostrarInfo("Exportar", "Funcionalidad de exportación en desarrollo");
+    private void filtrarFacturasRecibidas() {
+        String categoria = cmbCategoriaRecibida.getValue();
+        String estado = cmbEstadoRecibida.getValue();
+        LocalDate desde = dpDesdeRecibida.getValue();
+        LocalDate hasta = dpHastaRecibida.getValue();
+
+        try {
+            List<FacturaRecibidaDTO> resultado = apiService.filtrarFacturasRecibidas(categoria, estado, desde, hasta);
+            listaRecibidas.setAll(resultado);
+            actualizarTotalesRecibidas();
+        } catch (Exception e) {
+            mostrarError("Error al filtrar", e.getMessage());
+        }
     }
 
-    private String formatearImporte(Object valor) {
-        if (valor == null)
+    @FXML
+    private void nuevaFacturaRecibida() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/formulario-factura-recibida.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Nueva Factura Recibida");
+            stage.setScene(new Scene(loader.load()));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            cargarFacturasRecibidas();
+        } catch (Exception e) {
+            mostrarError("Error", "No se pudo abrir el formulario: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void gestionarProveedores() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/proveedores.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Gestión de Proveedores");
+            stage.setScene(new Scene(loader.load()));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+        } catch (Exception e) {
+            mostrarError("Error", "No se pudo abrir la gestión de proveedores: " + e.getMessage());
+        }
+    }
+
+    private void editarFacturaRecibida(FacturaRecibidaDTO factura) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/formulario-factura-recibida.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Editar Factura Recibida");
+            stage.setScene(new Scene(loader.load()));
+
+            FormularioFacturaRecibidaController controller = loader.getController();
+            controller.setFactura(factura);
+
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            cargarFacturasRecibidas();
+        } catch (Exception e) {
+            mostrarError("Error", "No se pudo abrir el formulario: " + e.getMessage());
+        }
+    }
+
+    private void marcarPagadaRecibida(FacturaRecibidaDTO factura) {
+        if ("PAGADA".equals(factura.getEstado())) {
+            mostrarInfo("Factura Pagada", "Esta factura ya está marcada como pagada");
+            return;
+        }
+
+        Optional<String> metodo = mostrarDialogoMetodoPago();
+        metodo.ifPresent(m -> {
+            try {
+                apiService.marcarFacturaRecibidaPagada(factura.getId(), m);
+                cargarFacturasRecibidas();
+                mostrarInfo("Éxito", "Factura marcada como pagada");
+            } catch (Exception e) {
+                mostrarError("Error", e.getMessage());
+            }
+        });
+    }
+
+    private void eliminarFacturaRecibida(FacturaRecibidaDTO factura) {
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacion.setTitle("Confirmar eliminación");
+        confirmacion.setHeaderText("¿Eliminar factura " + factura.getNumeroFactura() + "?");
+        confirmacion.setContentText("Esta acción no se puede deshacer.");
+
+        confirmacion.showAndWait().ifPresent(respuesta -> {
+            if (respuesta == ButtonType.OK) {
+                try {
+                    apiService.eliminarFacturaRecibida(factura.getId());
+                    cargarFacturasRecibidas();
+                    mostrarInfo("Éxito", "Factura eliminada correctamente");
+                } catch (Exception e) {
+                    mostrarError("Error", e.getMessage());
+                }
+            }
+        });
+    }
+
+    // === ACCIONES GASTOS ===
+
+    @FXML
+    private void buscarGasto() {
+        String termino = txtBuscarGasto.getText();
+        if (termino == null || termino.isEmpty()) {
+            cargarGastos();
+        } else {
+            try {
+                List<GastoDTO> resultado = apiService.buscarGastos(termino);
+                listaGastos.setAll(resultado);
+                actualizarTotalesGastos();
+            } catch (Exception e) {
+                mostrarError("Error en búsqueda", e.getMessage());
+            }
+        }
+    }
+
+    @FXML
+    private void filtrarGastos() {
+        String categoria = cmbCategoriaGasto.getValue();
+        LocalDate desde = dpDesdeGasto.getValue();
+        LocalDate hasta = dpHastaGasto.getValue();
+        boolean soloRecurrentes = chkSoloRecurrentes.isSelected();
+
+        try {
+            List<GastoDTO> resultado = apiService.filtrarGastos(categoria, desde, hasta, soloRecurrentes);
+            listaGastos.setAll(resultado);
+            actualizarTotalesGastos();
+        } catch (Exception e) {
+            mostrarError("Error al filtrar", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void nuevoGasto() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/formulario-gasto.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Nuevo Gasto");
+            stage.setScene(new Scene(loader.load()));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            cargarGastos();
+        } catch (Exception e) {
+            mostrarError("Error", "No se pudo abrir el formulario: " + e.getMessage());
+        }
+    }
+
+    private void editarGasto(GastoDTO gasto) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/formulario-gasto.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Editar Gasto");
+            stage.setScene(new Scene(loader.load()));
+
+            FormularioGastoController controller = loader.getController();
+            controller.setGasto(gasto);
+
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            cargarGastos();
+        } catch (Exception e) {
+            mostrarError("Error", "No se pudo abrir el formulario: " + e.getMessage());
+        }
+    }
+
+    private void marcarPagadoGasto(GastoDTO gasto) {
+        if (gasto.getPagado() != null && gasto.getPagado()) {
+            mostrarInfo("Gasto Pagado", "Este gasto ya está marcado como pagado");
+            return;
+        }
+
+        Optional<String> metodo = mostrarDialogoMetodoPago();
+        metodo.ifPresent(m -> {
+            try {
+                apiService.marcarGastoPagado(gasto.getId(), m);
+                cargarGastos();
+                mostrarInfo("Éxito", "Gasto marcado como pagado");
+            } catch (Exception e) {
+                mostrarError("Error", e.getMessage());
+            }
+        });
+    }
+
+    private void eliminarGasto(GastoDTO gasto) {
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacion.setTitle("Confirmar eliminación");
+        confirmacion.setHeaderText("¿Eliminar gasto: " + gasto.getConcepto() + "?");
+        confirmacion.setContentText("Esta acción no se puede deshacer.");
+
+        confirmacion.showAndWait().ifPresent(respuesta -> {
+            if (respuesta == ButtonType.OK) {
+                try {
+                    apiService.eliminarGasto(gasto.getId());
+                    cargarGastos();
+                    mostrarInfo("Éxito", "Gasto eliminado correctamente");
+                } catch (Exception e) {
+                    mostrarError("Error", e.getMessage());
+                }
+            }
+        });
+    }
+
+    // === RESUMEN FINANCIERO ===
+
+    @FXML
+    private void mostrarResumenFinanciero() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/resumen-financiero.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Resumen Financiero");
+            stage.setScene(new Scene(loader.load()));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.show();
+        } catch (Exception e) {
+            mostrarError("Error", "No se pudo abrir el resumen: " + e.getMessage());
+        }
+    }
+
+    // === TOTALES ===
+
+    private void actualizarTotalesEmitidas() {
+        BigDecimal base = listaEmitidas.stream()
+                .map(FacturaEmitidaDTO::getBaseImponible)
+                .filter(b -> b != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal iva = listaEmitidas.stream()
+                .map(FacturaEmitidaDTO::getCuotaIva)
+                .filter(i -> i != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal total = listaEmitidas.stream()
+                .map(FacturaEmitidaDTO::getTotal)
+                .filter(t -> t != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        lblTotalBaseEmitidas.setText("Base: " + formatearMoneda(base));
+        lblTotalIvaEmitidas.setText("IVA: " + formatearMoneda(iva));
+        lblTotalEmitidas.setText("Total: " + formatearMoneda(total));
+    }
+
+    private void actualizarTotalesRecibidas() {
+        long pendientes = listaRecibidas.stream()
+                .filter(f -> "PENDIENTE".equals(f.getEstado()))
+                .count();
+
+        BigDecimal base = listaRecibidas.stream()
+                .map(FacturaRecibidaDTO::getBaseImponible)
+                .filter(b -> b != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal iva = listaRecibidas.stream()
+                .map(FacturaRecibidaDTO::getCuotaIva)
+                .filter(i -> i != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal total = listaRecibidas.stream()
+                .map(FacturaRecibidaDTO::getTotal)
+                .filter(t -> t != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        lblPendientesRecibidas.setText("Pendientes: " + pendientes);
+        lblTotalBaseRecibidas.setText("Base: " + formatearMoneda(base));
+        lblTotalIvaRecibidas.setText("IVA Soportado: " + formatearMoneda(iva));
+        lblTotalRecibidas.setText("Total: " + formatearMoneda(total));
+    }
+
+    private void actualizarTotalesGastos() {
+        lblNumGastos.setText("Gastos: " + listaGastos.size());
+
+        BigDecimal base = listaGastos.stream()
+                .map(GastoDTO::getBaseImponible)
+                .filter(b -> b != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal iva = listaGastos.stream()
+                .map(GastoDTO::getCuotaIva)
+                .filter(i -> i != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal total = listaGastos.stream()
+                .map(GastoDTO::getImporte)
+                .filter(t -> t != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        lblTotalBaseGastos.setText("Base: " + formatearMoneda(base));
+        lblTotalIvaGastos.setText("IVA Soportado: " + formatearMoneda(iva));
+        lblTotalGastos.setText("Total: " + formatearMoneda(total));
+    }
+
+    // === UTILIDADES ===
+
+    private String formatearMoneda(BigDecimal cantidad) {
+        if (cantidad == null)
             return "0,00 €";
-        double importe = ((Number) valor).doubleValue();
-        return String.format("%,.2f €", importe).replace(",", "X").replace(".", ",").replace("X", ".");
+        return FORMATO_MONEDA.format(cantidad);
     }
 
-    private void mostrarError(String mensaje) {
+    private String obtenerDescripcionCategoria(String categoria) {
+        if (categoria == null)
+            return "";
+        switch (categoria) {
+            case "AGUA":
+                return "Agua";
+            case "LUZ":
+                return "Electricidad";
+            case "GAS":
+                return "Gas";
+            case "ALQUILER":
+                return "Alquiler";
+            case "SEGUROS":
+                return "Seguros";
+            case "SUMINISTROS":
+                return "Suministros";
+            case "PRODUCTOS":
+                return "Productos químicos";
+            case "MANTENIMIENTO":
+                return "Mantenimiento";
+            case "REPARACIONES":
+                return "Reparaciones";
+            case "COMBUSTIBLE":
+                return "Combustible";
+            case "PERSONAL":
+                return "Personal";
+            case "SEGURIDAD_SOCIAL":
+                return "Seg. Social";
+            case "IMPUESTOS":
+                return "Impuestos";
+            case "TELEFONIA":
+                return "Telefonía";
+            case "PUBLICIDAD":
+                return "Publicidad";
+            case "MATERIAL_OFICINA":
+                return "Material oficina";
+            case "GESTORIA":
+                return "Gestoría";
+            case "BANCARIOS":
+                return "Gastos bancarios";
+            case "VEHICULOS":
+                return "Vehículos";
+            case "MAQUINARIA":
+                return "Maquinaria";
+            default:
+                return "Otros";
+        }
+    }
+
+    private Optional<String> mostrarDialogoMetodoPago() {
+        ChoiceDialog<String> dialogo = new ChoiceDialog<>("EFECTIVO", "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA");
+        dialogo.setTitle("Método de Pago");
+        dialogo.setHeaderText("Selecciona el método de pago");
+        dialogo.setContentText("Método:");
+        return dialogo.showAndWait();
+    }
+
+    private void mostrarError(String titulo, String mensaje) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
+        alert.setTitle(titulo);
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
         alert.showAndWait();

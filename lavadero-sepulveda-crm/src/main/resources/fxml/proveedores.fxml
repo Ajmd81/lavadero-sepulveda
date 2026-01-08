@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.lavaderosepulveda.crm.controller.ProveedoresController"
+            prefWidth="900" prefHeight="600" styleClass="ventana-modal">
+    
+    <top>
+        <VBox spacing="10">
+            <padding><Insets top="15" right="20" bottom="10" left="20"/></padding>
+            
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Label text="📋 Gestión de Proveedores" styleClass="titulo-seccion">
+                    <font><Font size="20" name="System Bold"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="✕ Cerrar" onAction="#cerrar" styleClass="btn-cancelar"/>
+            </HBox>
+            
+            <!-- Barra de herramientas -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="txtBuscar" promptText="Buscar por nombre o NIF..." prefWidth="300"/>
+                <Button text="🔍" onAction="#buscar" styleClass="btn-icono"/>
+                <CheckBox fx:id="chkMostrarInactivos" text="Mostrar inactivos"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="➕ Nuevo Proveedor" onAction="#nuevoProveedor" styleClass="btn-primario"/>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <center>
+        <SplitPane dividerPositions="0.5">
+            <!-- Lista de Proveedores -->
+            <VBox spacing="10">
+                <padding><Insets top="10" right="10" bottom="10" left="15"/></padding>
+                
+                <TableView fx:id="tablaProveedores" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colNombre" text="Nombre" prefWidth="200"/>
+                        <TableColumn fx:id="colNif" text="NIF" prefWidth="100"/>
+                        <TableColumn fx:id="colTelefono" text="Teléfono" prefWidth="100"/>
+                        <TableColumn fx:id="colEmail" text="Email" prefWidth="180"/>
+                        <TableColumn fx:id="colActivo" text="Estado" prefWidth="80"/>
+                    </columns>
+                    <placeholder><Label text="No hay proveedores registrados"/></placeholder>
+                </TableView>
+            </VBox>
+            
+            <!-- Formulario de edición -->
+            <VBox spacing="15" fx:id="panelEdicion">
+                <padding><Insets top="10" right="15" bottom="10" left="10"/></padding>
+                
+                <Label fx:id="lblTituloEdicion" text="Datos del Proveedor" styleClass="subtitulo">
+                    <font><Font size="16" name="System Bold"/></font>
+                </Label>
+                
+                <GridPane hgap="10" vgap="10">
+                    <Label text="Nombre:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="txtNombre" promptText="Nombre del proveedor" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    
+                    <Label text="NIF/CIF:*" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtNif" promptText="NIF o CIF" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    
+                    <Label text="Dirección:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <TextField fx:id="txtDireccion" promptText="Dirección completa" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    
+                    <Label text="Teléfono:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <TextField fx:id="txtTelefono" promptText="Teléfono" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    
+                    <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                    <TextField fx:id="txtEmail" promptText="correo@ejemplo.com" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                    
+                    <Label text="Contacto:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                    <TextField fx:id="txtContacto" promptText="Persona de contacto" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                    
+                    <Label text="IBAN:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                    <TextField fx:id="txtIban" promptText="ES00 0000 0000 0000 0000 0000" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+                    
+                    <Label text="Notas:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+                    <TextArea fx:id="txtNotas" promptText="Notas..." prefRowCount="3" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+                    
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="80"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                </GridPane>
+                
+                <Region VBox.vgrow="ALWAYS"/>
+                
+                <!-- Botones de acción -->
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button fx:id="btnDesactivar" text="🚫 Desactivar" onAction="#toggleActivar" styleClass="btn-warning"/>
+                    <Button text="🗑️ Eliminar" onAction="#eliminar" styleClass="btn-danger"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Cancelar" onAction="#cancelarEdicion" styleClass="btn-cancelar"/>
+                    <Button text="Guardar" onAction="#guardar" styleClass="btn-primario"/>
+                </HBox>
+            </VBox>
+        </SplitPane>
+    </center>
+    
+</BorderPane>

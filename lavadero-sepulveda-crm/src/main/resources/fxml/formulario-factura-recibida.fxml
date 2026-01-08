@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.lavaderosepulveda.crm.controller.FormularioFacturaRecibidaController"
+      spacing="15" prefWidth="600" styleClass="formulario-modal">
+    
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    
+    <!-- Título -->
+    <Label fx:id="lblTitulo" text="Nueva Factura Recibida" styleClass="titulo-formulario">
+        <font><Font size="18" name="System Bold"/></font>
+    </Label>
+    
+    <Separator/>
+    
+    <!-- Datos del Proveedor -->
+    <TitledPane text="Datos del Proveedor" expanded="true" collapsible="false">
+        <GridPane hgap="10" vgap="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            
+            <Label text="Proveedor:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="3">
+                <ComboBox fx:id="cmbProveedor" promptText="Seleccionar proveedor..." prefWidth="300"/>
+                <Button text="+ Nuevo" onAction="#nuevoProveedor" styleClass="btn-secundario"/>
+            </HBox>
+            
+            <Label text="O introducir manualmente:" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="4" styleClass="label-secundario"/>
+            
+            <Label text="Nombre:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <TextField fx:id="txtProveedorNombre" promptText="Nombre del proveedor" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="200"/>
+            
+            <Label text="NIF:" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+            <TextField fx:id="txtProveedorNif" promptText="NIF/CIF" GridPane.columnIndex="3" GridPane.rowIndex="2" prefWidth="150"/>
+            
+            <columnConstraints>
+                <ColumnConstraints minWidth="80"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+                <ColumnConstraints minWidth="50"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+        </GridPane>
+    </TitledPane>
+    
+    <!-- Datos de la Factura -->
+    <TitledPane text="Datos de la Factura" expanded="true" collapsible="false">
+        <GridPane hgap="10" vgap="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            
+            <Label text="Nº Factura:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="txtNumeroFactura" promptText="Número de factura" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            
+            <Label text="Fecha Factura:*" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <DatePicker fx:id="dpFechaFactura" GridPane.columnIndex="3" GridPane.rowIndex="0" prefWidth="150"/>
+            
+            <Label text="Categoría:*" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cmbCategoria" promptText="Seleccionar..." GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="200"/>
+            
+            <Label text="Vencimiento:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+            <DatePicker fx:id="dpFechaVencimiento" GridPane.columnIndex="3" GridPane.rowIndex="1" prefWidth="150"/>
+            
+            <Label text="Concepto:*" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <TextField fx:id="txtConcepto" promptText="Descripción del concepto" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="3"/>
+            
+            <columnConstraints>
+                <ColumnConstraints minWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+                <ColumnConstraints minWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+        </GridPane>
+    </TitledPane>
+    
+    <!-- Importes -->
+    <TitledPane text="Importes" expanded="true" collapsible="false">
+        <GridPane hgap="10" vgap="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            
+            <Label text="Base Imponible:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="txtBaseImponible" promptText="0,00" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="120"/>
+            <Label text="€" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            
+            <Label text="% IVA:" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="cmbTipoIva" GridPane.columnIndex="4" GridPane.rowIndex="0" prefWidth="80"/>
+            
+            <Label text="Cuota IVA:" GridPane.columnIndex="5" GridPane.rowIndex="0"/>
+            <Label fx:id="lblCuotaIva" text="0,00 €" GridPane.columnIndex="6" GridPane.rowIndex="0" styleClass="label-calculado"/>
+            
+            <Label text="% IRPF:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cmbTipoIrpf" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="80"/>
+            
+            <Label text="Retención:" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+            <Label fx:id="lblCuotaIrpf" text="0,00 €" GridPane.columnIndex="4" GridPane.rowIndex="1" styleClass="label-calculado"/>
+            
+            <Separator GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="7"/>
+            
+            <Label text="TOTAL:" GridPane.columnIndex="5" GridPane.rowIndex="3" styleClass="label-total"/>
+            <Label fx:id="lblTotal" text="0,00 €" GridPane.columnIndex="6" GridPane.rowIndex="3" styleClass="valor-total"/>
+            
+            <columnConstraints>
+                <ColumnConstraints minWidth="100"/>
+                <ColumnConstraints/>
+                <ColumnConstraints minWidth="20"/>
+                <ColumnConstraints minWidth="60"/>
+                <ColumnConstraints/>
+                <ColumnConstraints minWidth="80"/>
+                <ColumnConstraints minWidth="100"/>
+            </columnConstraints>
+        </GridPane>
+    </TitledPane>
+    
+    <!-- Estado y Pago -->
+    <HBox spacing="20">
+        <VBox spacing="5">
+            <Label text="Estado:"/>
+            <ComboBox fx:id="cmbEstado" prefWidth="120"/>
+        </VBox>
+        <VBox spacing="5">
+            <Label text="Método de Pago:"/>
+            <ComboBox fx:id="cmbMetodoPago" prefWidth="150"/>
+        </VBox>
+    </HBox>
+    
+    <!-- Notas -->
+    <VBox spacing="5">
+        <Label text="Notas:"/>
+        <TextArea fx:id="txtNotas" promptText="Notas adicionales..." prefRowCount="3"/>
+    </VBox>
+    
+    <Separator/>
+    
+    <!-- Botones -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="btn-cancelar" prefWidth="100"/>
+        <Button text="Guardar" onAction="#guardar" styleClass="btn-primario" prefWidth="100"/>
+    </HBox>
+    
+</VBox>

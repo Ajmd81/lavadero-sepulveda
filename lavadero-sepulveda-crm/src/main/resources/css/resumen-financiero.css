@@ -1,0 +1,82 @@
+/* Estilos para el Resumen Financiero */
+/* Compatible con JavaFX 21 - valores explícitos con unidades */
+
+/* Tarjetas principales */
+.card-ingresos,
+.card-gastos,
+.card-beneficio {
+    -fx-padding: 15;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+}
+
+.card-ingresos {
+    -fx-background-color: #e8f5e9;
+    -fx-border-color: #c8e6c9;
+    -fx-border-width: 1;
+}
+
+.card-gastos {
+    -fx-background-color: #ffebee;
+    -fx-border-color: #ffcdd2;
+    -fx-border-width: 1;
+}
+
+.card-beneficio {
+    -fx-background-color: #e3f2fd;
+    -fx-border-color: #bbdefb;
+    -fx-border-width: 1;
+}
+
+/* Gráficos */
+.chart {
+    -fx-background-color: -fx-surface-color;
+    -fx-padding: 10;
+}
+
+.chart-pie-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-color;
+}
+
+.chart-legend {
+    -fx-background-color: transparent;
+}
+
+/* Series del gráfico de líneas - usando colores directos */
+.default-color0.chart-series-line {
+    -fx-stroke: #4CAF50;
+    -fx-stroke-width: 2;
+}
+
+.default-color0.chart-line-symbol {
+    -fx-background-color: #4CAF50, white;
+}
+
+.default-color1.chart-series-line {
+    -fx-stroke: #F44336;
+    -fx-stroke-width: 2;
+}
+
+.default-color1.chart-line-symbol {
+    -fx-background-color: #F44336, white;
+}
+
+.default-color2.chart-series-line {
+    -fx-stroke: #2196F3;
+    -fx-stroke-width: 2;
+}
+
+.default-color2.chart-line-symbol {
+    -fx-background-color: #2196F3, white;
+}
+
+/* Alertas de vencimiento */
+.vencida {
+    -fx-background-color: #ffebee;
+}
+
+.proxima-vencer {
+    -fx-background-color: #fff3e0;
+}
