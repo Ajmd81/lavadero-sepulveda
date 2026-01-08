@@ -497,8 +497,13 @@
                                     // Deshabilitar domingos siempre
                                     if (date.getDay() === 0) return true;
 
-                                    // Convertir fecha a string YYYY-MM-DD para comparar
-                                    const dateString = date.toISOString().split('T')[0];
+                                    // Convertir fecha a string YYYY-MM-DD local para comparar
+                                    // NO usar toISOString() porque convierte a UTC y puede cambiar el día
+                                    const year = date.getFullYear();
+                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                    const day = String(date.getDate()).padStart(2, '0');
+                                    const dateString = `${year}-${month}-${day}`;
+
                                     return diasNoDisponibles.includes(dateString);
                                 }
                             ]);
@@ -511,6 +516,34 @@
             tipoLavadoSelect.addEventListener('change', function () {
                 const paymentInfo = document.getElementById('paymentInfo');
                 const paymentAmount = document.getElementById('paymentAmount');
+                function validarRestriccionesTapiceria() {
+                    // 1. Mostrar mensaje de advertencia info
+                    let warningDiv = document.getElementById('tapiceriaWarning');
+                    if (!warningDiv) {
+                        warningDiv = document.createElement('div');
+                        warningDiv.id = 'tapiceriaWarning';
+                        warningDiv.className = 'alert alert-info';
+                        warningDiv.style.marginTop = '10px';
+                        warningDiv.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Aviso:</strong> La limpieza de tapicería solo se realiza de <strong>Lunes a Jueves a las 08:00</strong> y tiene una duración estimada de 24 horas.';
+                        tipoLavadoSelect.parentNode.appendChild(warningDiv);
+                    }
+
+                    // 2. Validar día de la semana si ya hay fecha
+                    if (fechaInput.value) {
+                        const date = new Date(fechaInput.value);
+                        const day = date.getDay(); // 0=Domingo, 1=Lunes, ..., 5=Viernes, 6=Sábado
+
+                        if (day === 0 || day === 5 || day === 6) { // Domingo, Viernes, Sábado
+                            alert('La limpieza de tapicería solo está disponible de Lunes a Jueves.');
+                            fechaInput.value = '';
+                            horaSelect.innerHTML = '<option value="">-- Seleccione una hora --</option>';
+                        } else {
+                            // Forzar recarga de horarios para filtrar
+                            fechaInput.dispatchEvent(new Event('change'));
+                        }
+                    }
+                }
+
                 const selectedService = this.value;
 
                 // Validación de reglas para Tapicería y actualización de calendario
@@ -534,8 +567,25 @@
                         paymentAmount.textContent = cincuentaPorciento + '€';
                         paymentInfo.style.display = 'block';
                     }
+
+                    // Si es servicio de tapicería, aplicar restricciones
+                    if (selectedService === SERVICIO_TAPICERIA_SIN || selectedService === SERVICIO_TAPICERIA_CON) {
+                        validarRestriccionesTapiceria();
+                    } else {
+                        // Ocultar advertencia si no es tapicería
+                        const warningDiv = document.getElementById('tapiceriaWarning');
+                        if (warningDiv) {
+                            warningDiv.remove();
+                        }
+                    }
+
                 } else {
                     paymentInfo.style.display = 'none';
+                    // Ocultar advertencia si no hay servicio seleccionado
+                    const warningDiv = document.getElementById('tapiceriaWarning');
+                    if (warningDiv) {
+                        warningDiv.remove();
+                    }
                 }
             });
 

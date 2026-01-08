@@ -271,7 +271,6 @@ public class HorarioService {
                 continue;
             }
 
-            // 2. Reglas de Tapicería: Bloquear Viernes y Sábados
             if (esTapiceria) {
                 if (fecha.getDayOfWeek() == DayOfWeek.FRIDAY || fecha.getDayOfWeek() == DayOfWeek.SATURDAY) {
                     diasNoDisponibles.add(fecha.toString());
