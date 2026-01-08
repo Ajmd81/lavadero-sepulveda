@@ -10,8 +10,12 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.lavaderosepulveda.app.model.TipoLavado;
 
 /**
  * Servicio especializado en la gestión de horarios disponibles
@@ -236,5 +240,93 @@ public class HorarioService {
         estadisticas.put("porcentajeOcupacion", Math.round(porcentajeOcupacion * 100.0) / 100.0);
 
         return estadisticas;
+    }
+
+    /**
+     * Obtiene la disponibilidad para todo un mes, devoviendo las fechas que NO
+     * están disponibles
+     * Filtra según el tipo de servicio (reglas especiales para tapicería)
+     */
+    public List<String> obtenerDiasNoDisponibles(YearMonth mes, TipoLavado tipoServicio) {
+        List<String> diasNoDisponibles = new ArrayList<>();
+        LocalDate fechaInicio = mes.atDay(1);
+        LocalDate fechaFin = mes.atEndOfMonth();
+
+        // Si el mes es el actual, empezar desde hoy
+        if (mes.equals(YearMonth.now())) {
+            LocalDate hoy = LocalDate.now();
+            if (hoy.isAfter(fechaInicio)) {
+                fechaInicio = hoy;
+            }
+        }
+
+        // Reglas específicas para tapicería: Solo Lunes-Jueves
+        boolean esTapiceria = (tipoServicio == TipoLavado.TAPICERIA_SIN_DESMONTAR ||
+                tipoServicio == TipoLavado.TAPICERIA_DESMONTANDO);
+
+        for (LocalDate fecha = fechaInicio; !fecha.isAfter(fechaFin); fecha = fecha.plusDays(1)) {
+            // 1. Verificar si el negocio está cerrado (Domingos)
+            if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                diasNoDisponibles.add(fecha.toString());
+                continue;
+            }
+
+            // 2. Reglas de Tapicería: Bloquear Viernes y Sábados
+            if (esTapiceria) {
+                if (fecha.getDayOfWeek() == DayOfWeek.FRIDAY || fecha.getDayOfWeek() == DayOfWeek.SATURDAY) {
+                    diasNoDisponibles.add(fecha.toString());
+                    continue;
+                }
+            }
+
+            // 3. Verificar disponibilidad real de horarios
+            if (!hayHorarioDisponible(fecha, tipoServicio)) {
+                diasNoDisponibles.add(fecha.toString());
+            }
+        }
+
+        // Añadir días pasados del mes si empezamos a mitad
+        LocalDate primerDiaMes = mes.atDay(1);
+        for (LocalDate d = primerDiaMes; d.isBefore(fechaInicio); d = d.plusDays(1)) {
+            diasNoDisponibles.add(d.toString());
+        }
+
+        return diasNoDisponibles;
+    }
+
+    /**
+     * Verifica si hay AL MENOS UN horario disponible para la fecha y servicio dados
+     */
+    private boolean hayHorarioDisponible(LocalDate fecha, TipoLavado tipoServicio) {
+        // Generar todos los horarios posibles para el día
+        List<LocalTime> todosLosHorarios = generarHorariosPorDia(fecha);
+        Set<LocalTime> horariosOcupados = obtenerHorariosOcupados(fecha);
+
+        // Si es tapicería, necesitamos verificar bloques específicos (08:00 + 3 horas)
+        if (tipoServicio == TipoLavado.TAPICERIA_SIN_DESMONTAR || tipoServicio == TipoLavado.TAPICERIA_DESMONTANDO) {
+            LocalTime horaInicio = LocalTime.of(8, 0);
+
+            // Solo se permite reserva a las 08:00
+            if (!todosLosHorarios.contains(horaInicio)) {
+                return false;
+            }
+
+            // Verificar que 08:00, 09:00 y 10:00 estén libres
+            boolean horario08Libre = !horariosOcupados.contains(horaInicio);
+            boolean horario09Libre = !horariosOcupados.contains(horaInicio.plusHours(1))
+                    && esHorarioValido(fecha, horaInicio.plusHours(1));
+            boolean horario10Libre = !horariosOcupados.contains(horaInicio.plusHours(2))
+                    && esHorarioValido(fecha, horaInicio.plusHours(2));
+
+            return horario08Libre && horario09Libre && horario10Libre;
+        }
+
+        // Para otros servicios, basta con que haya un hueco libre
+        return todosLosHorarios.stream().anyMatch(h -> !horariosOcupados.contains(h));
+    }
+
+    private boolean esHorarioValido(LocalDate fecha, LocalTime hora) {
+        List<LocalTime> horariosValidos = generarHorariosPorDia(fecha);
+        return horariosValidos.contains(hora);
     }
 }

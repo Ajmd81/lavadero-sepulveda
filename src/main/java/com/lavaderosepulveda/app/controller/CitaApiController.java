@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -121,6 +122,27 @@ public class CitaApiController {
         return ResponseEntity.ok(horariosFormateados);
     }
 
+    /**
+     * Obtener días NO disponibles para un mes y servicio específico
+     */
+    @GetMapping("/citas/disponibilidad-mensual")
+    public ResponseEntity<List<String>> obtenerDisponibilidadMensual(
+            @RequestParam("mes") int mes,
+            @RequestParam("anio") int anio,
+            @RequestParam("tipoLavado") String tipoLavadoStr) {
+
+        try {
+            YearMonth yearMonth = YearMonth.of(anio, mes);
+            TipoLavado tipoLavado = TipoLavado.valueOf(tipoLavadoStr);
+
+            List<String> diasNoDisponibles = horarioService.obtenerDiasNoDisponibles(yearMonth, tipoLavado);
+            return ResponseEntity.ok(diasNoDisponibles);
+        } catch (Exception e) {
+            logger.error("Error obteniendo disponibilidad mensual: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/tipos-lavado")
     public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
         List<Map<String, Object>> tiposLavado = Arrays.stream(TipoLavado.values())
@@ -158,7 +180,7 @@ public class CitaApiController {
         LocalTime hora = DateTimeFormatUtils.parsearHoraCorta(horaStr);
         boolean disponible = horarioService.esHorarioDisponible(fecha, hora);
 
-        return ResponseEntity.ok(!disponible);  // ← Devolver solo el boolean
+        return ResponseEntity.ok(!disponible); // ← Devolver solo el boolean
     }
 
     /**
@@ -541,7 +563,7 @@ public class CitaApiController {
     @PostMapping("/citas/migrar-estado")
     public ResponseEntity<Map<String, String>> migrarColumnaEstado() {
         try (java.sql.Connection connection = dataSource.getConnection();
-             java.sql.Statement statement = connection.createStatement()) {
+                java.sql.Statement statement = connection.createStatement()) {
 
             // Cambiar la columna de ENUM a VARCHAR(20)
             String sql = "ALTER TABLE citas MODIFY COLUMN estado VARCHAR(20)";
