@@ -229,6 +229,10 @@
             let classificationTimeout = null;
             let availableServicesData = null;
 
+            // Constantes para Tapicería
+            const SERVICIO_TAPICERIA_SIN = 'TAPICERIA_SIN_DESMONTAR';
+            const SERVICIO_TAPICERIA_CON = 'TAPICERIA_DESMONTANDO';
+
             // Establecer fecha mínima como hoy
             const hoy = new Date().toISOString().split('T')[0];
             fechaInput.min = hoy;
@@ -442,6 +446,9 @@
                     tipoLavadoSelect.appendChild(option);
                     console.log('Añadido:', option.textContent);
                 });
+
+                // Si había un servicio seleccionado, intentar mantenerlo si existe en la nueva lista
+                // O si estamos cambiando entre tipos de lavados compatibles
             }
 
             function showAllServices() {
@@ -476,8 +483,23 @@
             tipoLavadoSelect.addEventListener('change', function () {
                 const paymentInfo = document.getElementById('paymentInfo');
                 const paymentAmount = document.getElementById('paymentAmount');
+                const selectedService = this.value;
 
-                if (this.value) {
+                // Validación de reglas para Tapicería
+                if (selectedService === SERVICIO_TAPICERIA_SIN || selectedService === SERVICIO_TAPICERIA_CON) {
+                    validarRestriccionesTapiceria();
+                } else {
+                    // Limpiar mensaje de restricción si existiera
+                    const warningDiv = document.getElementById('tapiceriaWarning');
+                    if (warningDiv) warningDiv.remove();
+
+                    // Si hay fecha, recargar horarios normales
+                    if (fechaInput.value) {
+                        fechaInput.dispatchEvent(new Event('change'));
+                    }
+                }
+
+                if (selectedService) {
                     // Extraer el precio del texto de la opción seleccionada
                     const selectedOption = this.options[this.selectedIndex];
                     const text = selectedOption.textContent;
@@ -497,17 +519,76 @@
                 }
             });
 
+            function validarRestriccionesTapiceria() {
+                // 1. Mostrar mensaje de advertencia info
+                let warningDiv = document.getElementById('tapiceriaWarning');
+                if (!warningDiv) {
+                    warningDiv = document.createElement('div');
+                    warningDiv.id = 'tapiceriaWarning';
+                    warningDiv.className = 'alert alert-info';
+                    warningDiv.style.marginTop = '10px';
+                    warningDiv.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Aviso:</strong> La limpieza de tapicería solo se realiza de <strong>Lunes a Jueves a las 08:00</strong> y tiene una duración estimada de 3 horas.';
+                    tipoLavadoSelect.parentNode.appendChild(warningDiv);
+                }
+
+                // 2. Validar día de la semana si ya hay fecha
+                if (fechaInput.value) {
+                    const date = new Date(fechaInput.value);
+                    const day = date.getDay(); // 0=Domingo, 1=Lunes, ..., 5=Viernes, 6=Sábado
+
+                    if (day === 0 || day === 5 || day === 6) { // Domingo, Viernes, Sábado
+                        alert('La limpieza de tapicería solo está disponible de Lunes a Jueves.');
+                        fechaInput.value = '';
+                        horaSelect.innerHTML = '<option value="">-- Seleccione una hora --</option>';
+                    } else {
+                        // Forzar recarga de horarios para filtrar
+                        fechaInput.dispatchEvent(new Event('change'));
+                    }
+                }
+            }
+
             // Cargar horarios disponibles cuando cambie la fecha
             fechaInput.addEventListener('change', function () {
                 if (this.value) {
+                    const selectedService = tipoLavadoSelect.value;
+                    const isTapiceria = (selectedService === SERVICIO_TAPICERIA_SIN || selectedService === SERVICIO_TAPICERIA_CON);
+
+                    // Validar día para tapicería antes de llamar
+                    if (isTapiceria) {
+                        const date = new Date(this.value);
+                        const day = date.getDay(); // 0=Sun, 5=Fri, 6=Sat
+                        if (day === 0 || day === 5 || day === 6) {
+                            alert('La limpieza de tapicería solo está disponible de Lunes a Jueves.');
+                            this.value = '';
+                            horaSelect.innerHTML = '<option value="">-- Seleccione una hora --</option>';
+                            return;
+                        }
+                    }
+
                     fetch(`/horarios-disponibles?fecha=${this.value}`)
                         .then(response => response.json())
                         .then(horarios => {
                             // Limpiar opciones actuales
                             horaSelect.innerHTML = '<option value="">-- Seleccione una hora --</option>';
 
+                            // Filtrar horarios si es tapicería
+                            let horariosMostrar = horarios;
+                            if (isTapiceria) {
+                                // Buscar si existe 08, 09 y 10.
+                                // Formato esperado "08:00", "09:00:00" etc.
+                                const has08 = horarios.some(h => h.startsWith('08:00'));
+                                const has09 = horarios.some(h => h.startsWith('09:00'));
+                                const has10 = horarios.some(h => h.startsWith('10:00'));
+
+                                if (has08 && has09 && has10) {
+                                    horariosMostrar = horarios.filter(h => h.startsWith('08:00'));
+                                } else {
+                                    horariosMostrar = []; // No disponible el bloque de 3h
+                                }
+                            }
+
                             // Agregar nuevas opciones
-                            horarios.forEach(hora => {
+                            horariosMostrar.forEach(hora => {
                                 const option = document.createElement('option');
                                 option.value = hora;
                                 option.textContent = hora.substring(0, 5); // Mostrar solo HH:MM
@@ -515,10 +596,14 @@
                             });
 
                             // Si no hay horarios disponibles, mostrar mensaje
-                            if (horarios.length === 0) {
+                            if (horariosMostrar.length === 0) {
                                 const option = document.createElement('option');
                                 option.value = "";
-                                option.textContent = "No hay horarios disponibles para esta fecha";
+                                if (isTapiceria && horarios.length > 0) {
+                                    option.textContent = "No hay hueco de 3 horas a las 08:00 disponible";
+                                } else {
+                                    option.textContent = "No hay horarios disponibles para esta fecha";
+                                }
                                 option.disabled = true;
                                 horaSelect.appendChild(option);
                             }

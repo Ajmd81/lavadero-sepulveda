@@ -41,8 +41,9 @@ public class CitaService {
             throw new IllegalArgumentException("La cita no puede ser nula");
         }
 
-        // Validar disponibilidad del horario
-        validarDisponibilidadHorario(cita.getFecha(), cita.getHora());
+        // Validar disponibilidad del horario (pasamos la cita completa para validar
+        // tipo)
+        validarDisponibilidadHorario(cita);
 
         // Validar que la fecha no sea en el pasado
         validarFechaFutura(cita.getFecha());
@@ -91,7 +92,7 @@ public class CitaService {
                             !citaExistente.getHora().equals(citaActualizada.getHora());
 
                     if (cambioFechaHora) {
-                        validarDisponibilidadHorario(citaActualizada.getFecha(), citaActualizada.getHora());
+                        validarDisponibilidadHorario(citaActualizada);
                         validarFechaFutura(citaActualizada.getFecha());
 
                         citaExistente.setFecha(citaActualizada.getFecha());
@@ -161,9 +162,7 @@ public class CitaService {
                                 lista -> {
                                     lista.sort(Comparator.comparing(Cita::getHora));
                                     return lista;
-                                }
-                        )
-                ));
+                                })));
 
         // Convertir a formato con fechas formateadas usando utility
         Map<String, List<Cita>> citasFormateadas = new LinkedHashMap<>();
@@ -492,10 +491,10 @@ public class CitaService {
         // Convertir Object[] a ClienteEstadisticaDTO
         List<ClienteEstadisticaDTO> clientes = resultados.stream()
                 .map(row -> new ClienteEstadisticaDTO(
-                        (String) row[0],  // nombre
-                        (String) row[1],  // telefono
-                        (String) row[2],  // email
-                        ((Number) row[3]).longValue(),  // totalReservas
+                        (String) row[0], // nombre
+                        (String) row[1], // telefono
+                        (String) row[2], // email
+                        ((Number) row[3]).longValue(), // totalReservas
                         ((Number) row[4]).doubleValue() // totalGastado
                 ))
                 .collect(Collectors.toList());
@@ -507,8 +506,7 @@ public class CitaService {
 
             if (servicioMasFrecuente != null) {
                 cliente.setServicioMasFrecuente(
-                        formatearNombreServicio(servicioMasFrecuente)
-                );
+                        formatearNombreServicio(servicioMasFrecuente));
             } else {
                 cliente.setServicioMasFrecuente("Variado");
             }
@@ -555,7 +553,8 @@ public class CitaService {
      * Usa directamente el enum TipoLavado para obtener la descripción
      */
     private String formatearNombreServicio(String tipoLavado) {
-        if (tipoLavado == null) return "N/A";
+        if (tipoLavado == null)
+            return "N/A";
 
         // Intentar obtener directamente del enum
         try {
@@ -596,7 +595,43 @@ public class CitaService {
     /**
      * Validar disponibilidad del horario
      */
-    private void validarDisponibilidadHorario(LocalDate fecha, LocalTime hora) {
+    /**
+     * Validar disponibilidad del horario y reglas de negocio
+     */
+    private void validarDisponibilidadHorario(Cita cita) {
+        LocalDate fecha = cita.getFecha();
+        LocalTime hora = cita.getHora();
+        TipoLavado tipo = cita.getTipoLavado();
+
+        // Reglas específicas para Tapicería
+        if (tipo == TipoLavado.TAPICERIA_SIN_DESMONTAR || tipo == TipoLavado.TAPICERIA_DESMONTANDO) {
+            // 1. Solo Lunes a Jueves
+            DayOfWeek dia = fecha.getDayOfWeek();
+            if (dia == DayOfWeek.FRIDAY || dia == DayOfWeek.SATURDAY || dia == DayOfWeek.SUNDAY) {
+                throw new RuntimeException(
+                        "Las citas de Limpieza de Tapicería solo están disponibles de Lunes a Jueves.");
+            }
+
+            // 2. Solo a las 08:00
+            if (!hora.equals(LocalTime.of(8, 0))) {
+                throw new RuntimeException(
+                        "Las citas de Limpieza de Tapicería solo se pueden reservar a las 08:00 (duración de 3 horas).");
+            }
+
+            // 3. Verificar bloque de 3 horas (08:00, 09:00, 10:00)
+            // Verificar si 09:00 está libre
+            if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(1))) {
+                throw new RuntimeException(
+                        "No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 09:00 está ocupado.");
+            }
+            // Verificar si 10:00 está libre
+            if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(2))) {
+                throw new RuntimeException(
+                        "No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 10:00 está ocupado.");
+            }
+        }
+
+        // Validación estándar de disponibilidad
         if (!horarioService.esHorarioDisponible(fecha, hora)) {
             throw new RuntimeException("El horario seleccionado no está disponible. " +
                     "Por favor, elija otro horario.");
