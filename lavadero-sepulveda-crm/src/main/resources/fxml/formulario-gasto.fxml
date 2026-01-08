@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.lavaderosepulveda.crm.controller.FormularioGastoController"
+      spacing="15" prefWidth="500" styleClass="formulario-modal">
+    
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    
+    <!-- Título -->
+    <Label fx:id="lblTitulo" text="Nuevo Gasto" styleClass="titulo-formulario">
+        <font><Font size="18" name="System Bold"/></font>
+    </Label>
+    
+    <Separator/>
+    
+    <!-- Datos del Gasto -->
+    <GridPane hgap="10" vgap="15">
+        <Label text="Concepto:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="txtConcepto" promptText="Descripción del gasto" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
+        
+        <Label text="Fecha:*" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <DatePicker fx:id="dpFecha" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="150"/>
+        
+        <Label text="Categoría:*" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+        <ComboBox fx:id="cmbCategoria" promptText="Seleccionar..." GridPane.columnIndex="3" GridPane.rowIndex="1" prefWidth="180"/>
+        
+        <columnConstraints>
+            <ColumnConstraints minWidth="80"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+            <ColumnConstraints minWidth="80"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+    </GridPane>
+    
+    <!-- Importes -->
+    <TitledPane text="Importe" expanded="true" collapsible="false">
+        <GridPane hgap="10" vgap="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            
+            <Label text="Importe:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="txtImporte" promptText="0,00" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="120"/>
+            <Label text="€" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            
+            <CheckBox fx:id="chkIvaIncluido" text="IVA incluido en el importe" GridPane.columnIndex="3" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
+            
+            <Separator GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="5"/>
+            
+            <Label text="Base:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <Label fx:id="lblBase" text="0,00 €" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="label-calculado"/>
+            
+            <Label text="IVA (21%):" GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+            <Label fx:id="lblIva" text="0,00 €" GridPane.columnIndex="4" GridPane.rowIndex="2" styleClass="label-calculado"/>
+            
+            <columnConstraints>
+                <ColumnConstraints minWidth="60"/>
+                <ColumnConstraints minWidth="100"/>
+                <ColumnConstraints minWidth="20"/>
+                <ColumnConstraints minWidth="80"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+        </GridPane>
+    </TitledPane>
+    
+    <!-- Pago y Recurrencia -->
+    <HBox spacing="30">
+        <VBox spacing="5">
+            <Label text="Método de Pago:"/>
+            <ComboBox fx:id="cmbMetodoPago" prefWidth="150"/>
+        </VBox>
+        <VBox spacing="5">
+            <CheckBox fx:id="chkPagado" text="Ya pagado"/>
+        </VBox>
+    </HBox>
+    
+    <!-- Recurrencia -->
+    <TitledPane text="Gasto Recurrente" expanded="false">
+        <HBox spacing="20" alignment="CENTER_LEFT">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            <CheckBox fx:id="chkRecurrente" text="Es un gasto recurrente mensual"/>
+            <Label text="Día del mes:"/>
+            <Spinner fx:id="spnDiaRecurrencia" prefWidth="80"/>
+        </HBox>
+    </TitledPane>
+    
+    <!-- Notas -->
+    <VBox spacing="5">
+        <Label text="Notas:"/>
+        <TextArea fx:id="txtNotas" promptText="Notas adicionales..." prefRowCount="2"/>
+    </VBox>
+    
+    <Separator/>
+    
+    <!-- Botones -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancelar" onAction="#cancelar" styleClass="btn-cancelar" prefWidth="100"/>
+        <Button text="Guardar" onAction="#guardar" styleClass="btn-primario" prefWidth="100"/>
+    </HBox>
+    
+</VBox>

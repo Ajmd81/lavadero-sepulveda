@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.lavaderosepulveda.crm.controller.ResumenFinancieroController"
+      spacing="20" prefWidth="900" prefHeight="700" styleClass="facturacion-container">
+    
+    <!-- Encabezado -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <VBox>
+            <Label text="Resumen Financiero" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+            <Label fx:id="lblPeriodo" text="Período: 01/01/2025 - 31/12/2025" style="-fx-text-fill: #666;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <VBox spacing="5">
+            <HBox spacing="10" alignment="CENTER_RIGHT">
+                <Label text="Desde:"/>
+                <DatePicker fx:id="dpDesde" prefWidth="130"/>
+                <Label text="Hasta:"/>
+                <DatePicker fx:id="dpHasta" prefWidth="130"/>
+                <Button text="Actualizar" onAction="#actualizarResumen" styleClass="btn-primary"/>
+            </HBox>
+            <HBox spacing="10" alignment="CENTER_RIGHT">
+                <Button text="Este mes" onAction="#filtrarEsteMes" styleClass="btn-secondary"/>
+                <Button text="Este trimestre" onAction="#filtrarEsteTrimestre" styleClass="btn-secondary"/>
+                <Button text="Este año" onAction="#filtrarEsteAnio" styleClass="btn-secondary"/>
+            </HBox>
+        </VBox>
+    </HBox>
+    
+    <Separator/>
+    
+    <!-- Tarjetas de resumen principal -->
+    <HBox spacing="15" alignment="CENTER">
+        <!-- Ingresos -->
+        <VBox styleClass="card-ingresos" spacing="5" alignment="CENTER" HBox.hgrow="ALWAYS">
+            <Label text="INGRESOS" style="-fx-font-weight: bold; -fx-text-fill: #2e7d32;"/>
+            <Label fx:id="lblTotalIngresos" text="0,00 €" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #2e7d32;"/>
+            <Label fx:id="lblFacturasEmitidas" text="0 facturas emitidas" style="-fx-text-fill: #666;"/>
+            <Separator/>
+            <HBox spacing="20" alignment="CENTER">
+                <VBox alignment="CENTER">
+                    <Label text="Base imponible" style="-fx-font-size: 10; -fx-text-fill: #888;"/>
+                    <Label fx:id="lblBaseIngresos" text="0,00 €" style="-fx-font-weight: bold;"/>
+                </VBox>
+                <VBox alignment="CENTER">
+                    <Label text="IVA repercutido" style="-fx-font-size: 10; -fx-text-fill: #888;"/>
+                    <Label fx:id="lblIvaRepercutido" text="0,00 €" style="-fx-font-weight: bold;"/>
+                </VBox>
+            </HBox>
+        </VBox>
+        
+        <!-- Gastos totales -->
+        <VBox styleClass="card-gastos" spacing="5" alignment="CENTER" HBox.hgrow="ALWAYS">
+            <Label text="GASTOS TOTALES" style="-fx-font-weight: bold; -fx-text-fill: #c62828;"/>
+            <Label fx:id="lblTotalGastos" text="0,00 €" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #c62828;"/>
+            <Label fx:id="lblNumGastos" text="0 facturas + 0 gastos" style="-fx-text-fill: #666;"/>
+            <Separator/>
+            <HBox spacing="20" alignment="CENTER">
+                <VBox alignment="CENTER">
+                    <Label text="Base imponible" style="-fx-font-size: 10; -fx-text-fill: #888;"/>
+                    <Label fx:id="lblBaseGastos" text="0,00 €" style="-fx-font-weight: bold;"/>
+                </VBox>
+                <VBox alignment="CENTER">
+                    <Label text="IVA soportado" style="-fx-font-size: 10; -fx-text-fill: #888;"/>
+                    <Label fx:id="lblIvaSoportado" text="0,00 €" style="-fx-font-weight: bold;"/>
+                </VBox>
+            </HBox>
+        </VBox>
+        
+        <!-- Beneficio -->
+        <VBox styleClass="card-beneficio" spacing="5" alignment="CENTER" HBox.hgrow="ALWAYS">
+            <Label text="BENEFICIO BRUTO" style="-fx-font-weight: bold; -fx-text-fill: #1565c0;"/>
+            <Label fx:id="lblBeneficio" text="0,00 €" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #1565c0;"/>
+            <Label fx:id="lblMargen" text="Margen: 0%" style="-fx-text-fill: #666;"/>
+            <Separator/>
+            <HBox spacing="20" alignment="CENTER">
+                <VBox alignment="CENTER">
+                    <Label text="Liquidación IVA" style="-fx-font-size: 10; -fx-text-fill: #888;"/>
+                    <Label fx:id="lblLiquidacionIva" text="0,00 €" style="-fx-font-weight: bold;"/>
+                </VBox>
+                <VBox alignment="CENTER">
+                    <Label text="(Repercutido - Soportado)" style="-fx-font-size: 9; -fx-text-fill: #aaa;"/>
+                </VBox>
+            </HBox>
+        </VBox>
+    </HBox>
+    
+    <!-- Pestañas de detalles -->
+    <TabPane VBox.vgrow="ALWAYS">
+        <!-- Desglose por categoría -->
+        <Tab text="Por Categoría" closable="false">
+            <HBox spacing="15" style="-fx-padding: 15;">
+                <!-- Tabla de categorías -->
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <Label text="Desglose de gastos por categoría" style="-fx-font-weight: bold;"/>
+                    <TableView fx:id="tablaCategorias" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colCategoria" text="Categoría" prefWidth="200"/>
+                            <TableColumn fx:id="colCategoriaImporte" text="Importe" prefWidth="120"/>
+                            <TableColumn fx:id="colCategoriaPorcentaje" text="Porcentaje" prefWidth="80"/>
+                            <TableColumn fx:id="colCategoriaNumero" text="Nº" prefWidth="60"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+                <!-- Gráfico de pastel -->
+                <VBox spacing="10" prefWidth="350">
+                    <Label text="Distribución de gastos" style="-fx-font-weight: bold;"/>
+                    <PieChart fx:id="chartCategorias" prefHeight="300" legendSide="BOTTOM"/>
+                </VBox>
+            </HBox>
+        </Tab>
+        
+        <!-- Evolución mensual -->
+        <Tab text="Evolución Mensual" closable="false">
+            <VBox spacing="15" style="-fx-padding: 15;">
+                <Label text="Evolución de ingresos y gastos" style="-fx-font-weight: bold;"/>
+                <LineChart fx:id="chartEvolucion" VBox.vgrow="ALWAYS">
+                    <xAxis>
+                        <CategoryAxis fx:id="ejeX" label="Mes"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis fx:id="ejeY" label="Importe (€)"/>
+                    </yAxis>
+                </LineChart>
+            </VBox>
+        </Tab>
+        
+        <!-- Facturas pendientes -->
+        <Tab text="Pendientes de Cobro/Pago" closable="false">
+            <HBox spacing="15" style="-fx-padding: 15;">
+                <!-- Pendientes de cobro -->
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Pendientes de cobro" style="-fx-font-weight: bold; -fx-text-fill: #2e7d32;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblTotalPendienteCobro" text="Total: 0,00 €" style="-fx-font-weight: bold;"/>
+                    </HBox>
+                    <TableView fx:id="tablaPendientesCobro" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colCobroNumero" text="Nº Factura" prefWidth="100"/>
+                            <TableColumn fx:id="colCobroCliente" text="Cliente" prefWidth="150"/>
+                            <TableColumn fx:id="colCobroFecha" text="Fecha" prefWidth="90"/>
+                            <TableColumn fx:id="colCobroImporte" text="Importe" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+                
+                <!-- Pendientes de pago -->
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Pendientes de pago" style="-fx-font-weight: bold; -fx-text-fill: #c62828;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblTotalPendientePago" text="Total: 0,00 €" style="-fx-font-weight: bold;"/>
+                    </HBox>
+                    <TableView fx:id="tablaPendientesPago" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colPagoNumero" text="Nº Factura" prefWidth="100"/>
+                            <TableColumn fx:id="colPagoProveedor" text="Proveedor" prefWidth="150"/>
+                            <TableColumn fx:id="colPagoVencimiento" text="Vencimiento" prefWidth="90"/>
+                            <TableColumn fx:id="colPagoImporte" text="Importe" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </HBox>
+        </Tab>
+        
+        <!-- IVA trimestral -->
+        <Tab text="Liquidación IVA" closable="false">
+            <VBox spacing="15" style="-fx-padding: 15;">
+                <Label text="Resumen IVA por trimestres" style="-fx-font-weight: bold;"/>
+                <TableView fx:id="tablaIvaTrimestral" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colTrimestre" text="Trimestre" prefWidth="120"/>
+                        <TableColumn fx:id="colIvaRepercutidoTrim" text="IVA Repercutido" prefWidth="150"/>
+                        <TableColumn fx:id="colIvaSoportadoTrim" text="IVA Soportado" prefWidth="150"/>
+                        <TableColumn fx:id="colLiquidacionTrim" text="A Ingresar/Compensar" prefWidth="180"/>
+                    </columns>
+                </TableView>
+                <HBox spacing="20" alignment="CENTER" style="-fx-padding: 10; -fx-background-color: #e3f2fd; -fx-background-radius: 5;">
+                    <Label text="TOTAL ANUAL:" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                    <VBox alignment="CENTER">
+                        <Label text="IVA Repercutido" style="-fx-font-size: 10;"/>
+                        <Label fx:id="lblIvaRepercutidoAnual" text="0,00 €" style="-fx-font-weight: bold;"/>
+                    </VBox>
+                    <Label text="-" style="-fx-font-size: 18;"/>
+                    <VBox alignment="CENTER">
+                        <Label text="IVA Soportado" style="-fx-font-size: 10;"/>
+                        <Label fx:id="lblIvaSoportadoAnual" text="0,00 €" style="-fx-font-weight: bold;"/>
+                    </VBox>
+                    <Label text="=" style="-fx-font-size: 18;"/>
+                    <VBox alignment="CENTER">
+                        <Label text="Liquidación" style="-fx-font-size: 10;"/>
+                        <Label fx:id="lblLiquidacionAnual" text="0,00 €" style="-fx-font-weight: bold; -fx-font-size: 16;"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+        </Tab>
+    </TabPane>
+    
+    <!-- Botones de acción -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Exportar a Excel" onAction="#exportarExcel" styleClass="btn-secondary"/>
+        <Button text="Imprimir" onAction="#imprimir" styleClass="btn-secondary"/>
+        <Button text="Cerrar" onAction="#cerrar" styleClass="btn-primary"/>
+    </HBox>
+</VBox>
