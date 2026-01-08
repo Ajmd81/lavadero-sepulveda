@@ -1,224 +1,245 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Lavadero Sepúlveda - Córdoba - Centro de lavado de coches a mano</title>
-    <meta name="description" content="Lavadero de coches a mano en Córdoba. Realizamos limpieza interior, exterior y limpieza de tapicería. Limpiamos todo tipo de vehículos tanto particulares como de empresa.">
+    <meta name="description"
+        content="Lavadero de coches a mano en Córdoba. Realizamos limpieza interior, exterior y limpieza de tapicería. Limpiamos todo tipo de vehículos tanto particulares como de empresa.">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="icon" type="image/png" th:href="@{/images/favicon.png?v=2}">
 </head>
+
 <body>
-<header>
-    <div class="container">
-        <div class="logo-container">
-            <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
-            <div class="logo-text">Lavadero Sepúlveda</div>
+    <header>
+        <div class="container">
+            <div class="logo-container">
+                <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
+                <div class="logo-text">Lavadero Sepúlveda</div>
+            </div>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fa fa-bars"></i>
+            </button>
+            <nav id="mainNav">
+                <a href="/" class="btn btn-white">Inicio</a>
+                <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+                <a href="/horario" class="btn btn-white">Horario</a>
+                <a href="/galeria" class="btn btn-white">Galería</a>
+                <a href="/productos" class="btn btn-white">Productos</a>
+                <a href="/tarifas" class="btn btn-white">Tarifas</a>
+            </nav>
         </div>
-        <button class="menu-toggle" id="menuToggle">
-            <i class="fa fa-bars"></i>
-        </button>
-        <nav id="mainNav">
-            <a href="/" class="btn btn-white">Inicio</a>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Reserva tu cita para lavado de vehículo</h1>
             <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
-            <a href="/horario" class="btn btn-white">Horario</a>
-            <a href="/galeria" class="btn btn-white">Galería</a>
-            <a href="/productos" class="btn btn-white">Productos</a>
-            <a href="/tarifas" class="btn btn-white">Tarifas</a>
-        </nav>
-    </div>
-</header>
-
-<section class="hero">
-    <div class="container">
-        <h1>Reserva tu cita para lavado de vehículo</h1>
-        <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
-    </div>
-</section>
-
-<section class="container" id="servicios">
-    <h2>Quiénes Somos</h2>
-    <div class="about-us">
-        <p>Somos una empresa cordobesa con más de 25 años dedicados al lavado manual y al mantenimiento integral de vehículos, utilizando las últimas tecnologías.</p>
-        <p>Desde Lavadero Sepúlveda sabemos la importancia que tiene su vehículo, por eso puede confiar plenamente que se encontrará en las mejores manos hasta su entrega.</p>
-        <p>Con nuestro sistema de lavado iónico, no necesitamos utilizar ningún producto; así ayudamos a proteger el medio ambiente y además no dañar ningún componente tanto interior como exterior de su vehículo, prolongando la conservación y aspecto original de su vehículo.</p>
-    </div>
-    <br>
-    <h2>Nuestros Servicios</h2>
-    <div class="card">
-        <h3 class="card-title">Lavado Completo</h3>
-        <p>Incluye lavado exterior e interior completo, aspirado, limpieza de salpicadero, marcos y cristales.</p>
-    </div>
-
-    <div class="card">
-        <h3 class="card-title">Lavado Interior</h3>
-        <p>Aspirado, limpieza de salpicadero, marcos y cristales interiores.</p>
-    </div>
-
-    <div class="card">
-        <h3 class="card-title">Lavado Exterior</h3>
-        <p>Limpieza de carrocería, llantas, marcos y cristales exteriores.</p>
-    </div>
-
-    <div class="card">
-        <h3 class="card-title">Tapicería</h3>
-        <p>Limpieza especializada de la tapicería de tu vehículo para eliminar manchas y malos olores.</p>
-    </div>
-
-    <div class="card">
-        <h3 class="card-title">Encerado</h3>
-        <p>Aplicación de cera de alta calidad para proteger la pintura y darle brillo a tu vehículo.</p>
-    </div>
-
-    <div class="card">
-        <h3 class="card-title">Tratamiento de Ozono</h3>
-        <p>Desinfección completa del interior del vehículo eliminando bacterias, virus y malos olores.</p>
-    </div>
-
-    <div class="location">
-        <h2>Dónde Encontrarnos</h2>
-        <p>Puede encontrarnos en C/Ingeniero Ruiz de Azua s/n Local 8, <br>Esquina con C/Sor Angela de la Cruz, <br>Frente al campo de Fútbol del Deportivo Córdoba y el Parque de la Asomadillas.</p>
-        <div class="map-container">
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3149.6890072278087!2d-4.7767345234971525!3d37.90208297188561!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDU0JzA3LjYiTiA0wrA0NicyNi45Ilc!5e0!3m2!1ses!2ses!4v1619144531373!5m2!1ses!2ses" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
         </div>
-    </div>
-</section>
+    </section>
 
-<footer>
-    <div class="container">
-        <div class="contact-info">
-            <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
-            <p>Teléfono: 658 527 186</p>
-            <p>Email: contacto@lavaderosepulveda.es</p>
+    <section class="container" id="servicios">
+        <h2>Quiénes Somos</h2>
+        <div class="about-us">
+            <p>Somos una empresa cordobesa con más de 25 años dedicados al lavado manual y al mantenimiento integral de
+                vehículos, utilizando las últimas tecnologías.</p>
+            <p>Desde Lavadero Sepúlveda sabemos la importancia que tiene su vehículo, por eso puede confiar plenamente
+                que se encontrará en las mejores manos hasta su entrega.</p>
+            <p>Con nuestro sistema de lavado con Ozono, no necesitamos utilizar ningún producto; así ayudamos a proteger
+                el medio ambiente y además no dañar ningún componente tanto interior como exterior de su vehículo,
+                prolongando la conservación y aspecto original de su vehículo.</p>
+            <p>Además, nuestro sistema de lavado con Ozono es más rápido que el lavado con productos químicos, ya que no
+                necesitamos esperar a que se seque el vehículo.</p>
+            <p>Para evitar colas innecesarias, reservamos citas con un mínimo de 24 horas de antelación.</p>
+            <p>Siempre estamos dispuestos a atender a nuestros clientes con la mayor calidad y profesionalismo posible.
+            </p>
+            <p>Si necesita más información, no dude en contactarnos.</p>
         </div>
-        <div class="social-links">
-            <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank"><i class="fab fa-facebook-f"></i> Facebook</a>
-            <a href="https://www.twitter.com/LavaSepulveda" target="_blank"><i class="fab fa-twitter"></i> Twitter</a>
-            <a href="http://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i> Instagram</a>
+        <br>
+        <h2>Nuestros Servicios</h2>
+        <div class="card">
+            <h3 class="card-title">Lavado Completo</h3>
+            <p>Incluye lavado exterior e interior completo, aspirado, limpieza de salpicadero, marcos y cristales.</p>
         </div>
-        <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
-        <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
-    </div>
-</footer>
 
-<!-- ============================================================ -->
-<!-- CHATBOT WIDGET -->
-<!-- ============================================================ -->
+        <div class="card">
+            <h3 class="card-title">Lavado Interior</h3>
+            <p>Aspirado, limpieza de salpicadero, marcos y cristales interiores.</p>
+        </div>
 
-<!-- CSS del chatbot -->
-<link rel="stylesheet" th:href="@{/css/chatbot.css}">
+        <div class="card">
+            <h3 class="card-title">Lavado Exterior</h3>
+            <p>Limpieza de carrocería, llantas, marcos y cristales exteriores.</p>
+        </div>
 
-<div id="chatbot-widget">
-    <!-- Botón flotante -->
-    <div id="chatbot-button" onclick="toggleChat()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-        <span id="notification-badge">1</span>
-    </div>
+        <div class="card">
+            <h3 class="card-title">Tapicería</h3>
+            <p>Limpieza especializada de la tapicería de tu vehículo para eliminar manchas y malos olores.</p>
+        </div>
 
-    <!-- Ventana del chat -->
-    <div id="chatbot-window" style="display: none;">
-        <!-- Header -->
-        <div id="chatbot-header">
-            <div class="header-info">
-                <div class="avatar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
+        <div class="card">
+            <h3 class="card-title">Encerado</h3>
+            <p>Aplicación de cera de alta calidad para proteger la pintura y darle brillo a tu vehículo.</p>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Tratamiento de Ozono</h3>
+            <p>Desinfección completa del interior del vehículo eliminando bacterias, virus y malos olores.</p>
+        </div>
+
+        <div class="location">
+            <h2>Dónde Encontrarnos</h2>
+            <p>Puede encontrarnos en C/Ingeniero Ruiz de Azua s/n Local 8, <br>Esquina con C/Sor Angela de la Cruz,
+                <br>Frente al campo de Fútbol del Deportivo Córdoba y el Parque de la Asomadillas.</p>
+            <div class="map-container">
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3149.6890072278087!2d-4.7767345234971525!3d37.90208297188561!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDU0JzA3LjYiTiA0wrA0NicyNi45Ilc!5e0!3m2!1ses!2ses!4v1619144531373!5m2!1ses!2ses"
+                    width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="contact-info">
+                <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
+                <p>Teléfono: 658 527 186</p>
+                <p>Email: contacto@lavaderosepulveda.es</p>
+            </div>
+            <div class="social-links">
+                <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank"><i
+                        class="fab fa-facebook-f"></i> Facebook</a>
+                <a href="https://www.twitter.com/LavaSepulveda" target="_blank"><i class="fab fa-twitter"></i>
+                    Twitter</a>
+                <a href="http://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i>
+                    Instagram</a>
+            </div>
+            <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
+            <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
+        </div>
+    </footer>
+
+    <!-- ============================================================ -->
+    <!-- CHATBOT WIDGET -->
+    <!-- ============================================================ -->
+
+    <!-- CSS del chatbot -->
+    <link rel="stylesheet" th:href="@{/css/chatbot.css}">
+
+    <div id="chatbot-widget">
+        <!-- Botón flotante -->
+        <div id="chatbot-button" onclick="toggleChat()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span id="notification-badge">1</span>
+        </div>
+
+        <!-- Ventana del chat -->
+        <div id="chatbot-window" style="display: none;">
+            <!-- Header -->
+            <div id="chatbot-header">
+                <div class="header-info">
+                    <div class="avatar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z">
+                            </path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </div>
+                    <div class="header-text">
+                        <h3>Asistente Virtual</h3>
+                        <p class="status">
+                            <span class="status-dot"></span>
+                            En línea
+                        </p>
+                    </div>
+                </div>
+                <button onclick="toggleChat()" class="close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
-                </div>
-                <div class="header-text">
-                    <h3>Asistente Virtual</h3>
-                    <p class="status">
-                        <span class="status-dot"></span>
-                        En línea
-                    </p>
-                </div>
-            </div>
-            <button onclick="toggleChat()" class="close-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-
-        <!-- Mensajes -->
-        <div id="chatbot-messages">
-            <div class="message bot-message">
-                <div class="message-content">
-                    <p>👋 <strong>¡Hola! Bienvenido/a a Lavadero Sepúlveda</strong></p>
-                    <p>Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?</p>
-                </div>
-                <span class="message-time">Ahora</span>
+                </button>
             </div>
 
-            <div class="quick-options" id="initial-options">
-                <button class="option-btn" onclick="sendQuickOption('HORARIO')">🕒 Horario</button>
-                <button class="option-btn" onclick="sendQuickOption('TARIFAS')">📋 Ver tarifas</button>
-                <button class="option-btn" onclick="sendQuickOption('RESERVA')">📅 Reservar cita</button>
-                <button class="option-btn" onclick="sendQuickOption('UBICACION')">📍 Ubicación</button>
-            </div>
-        </div>
+            <!-- Mensajes -->
+            <div id="chatbot-messages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        <p>👋 <strong>¡Hola! Bienvenido/a a Lavadero Sepúlveda</strong></p>
+                        <p>Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?</p>
+                    </div>
+                    <span class="message-time">Ahora</span>
+                </div>
 
-        <!-- Input -->
-        <div id="chatbot-input">
-            <input
-                    type="text"
-                    id="user-input"
-                    placeholder="Escribe tu mensaje..."
-                    onkeypress="handleKeyPress(event)"
-            />
-            <button onclick="sendMessage()" class="send-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-            </button>
+                <div class="quick-options" id="initial-options">
+                    <button class="option-btn" onclick="sendQuickOption('HORARIO')">🕒 Horario</button>
+                    <button class="option-btn" onclick="sendQuickOption('TARIFAS')">📋 Ver tarifas</button>
+                    <button class="option-btn" onclick="sendQuickOption('RESERVA')">📅 Reservar cita</button>
+                    <button class="option-btn" onclick="sendQuickOption('UBICACION')">📍 Ubicación</button>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div id="chatbot-input">
+                <input type="text" id="user-input" placeholder="Escribe tu mensaje..."
+                    onkeypress="handleKeyPress(event)" />
+                <button onclick="sendMessage()" class="send-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- JavaScript del chatbot -->
-<script th:src="@{/js/chatbot-widget.js}"></script>
+    <!-- JavaScript del chatbot -->
+    <script th:src="@{/js/chatbot-widget.js}"></script>
 
-<!-- Script del menú responsive -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const menuToggle = document.getElementById('menuToggle');
-        const mainNav = document.getElementById('mainNav');
+    <!-- Script del menú responsive -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuToggle = document.getElementById('menuToggle');
+            const mainNav = document.getElementById('mainNav');
 
-        if (menuToggle && mainNav) {
-            // Inicialmente, ocultar menú en móviles
-            if (window.innerWidth <= 768) {
-                mainNav.style.display = 'none';
+            if (menuToggle && mainNav) {
+                // Inicialmente, ocultar menú en móviles
+                if (window.innerWidth <= 768) {
+                    mainNav.style.display = 'none';
+                }
+
+                menuToggle.addEventListener('click', function () {
+                    if (mainNav.style.display === 'none' || mainNav.style.display === '') {
+                        mainNav.style.display = 'flex';
+                        mainNav.style.flexDirection = 'column';
+                    } else {
+                        mainNav.style.display = 'none';
+                    }
+                });
+
+                // Ajustar menú en cambio de tamaño de ventana
+                window.addEventListener('resize', function () {
+                    if (window.innerWidth > 768) {
+                        mainNav.style.display = 'flex';
+                        mainNav.style.flexDirection = 'row';
+                    } else {
+                        mainNav.style.display = 'none';
+                    }
+                });
             }
-
-            menuToggle.addEventListener('click', function() {
-                if (mainNav.style.display === 'none' || mainNav.style.display === '') {
-                    mainNav.style.display = 'flex';
-                    mainNav.style.flexDirection = 'column';
-                } else {
-                    mainNav.style.display = 'none';
-                }
-            });
-
-            // Ajustar menú en cambio de tamaño de ventana
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768) {
-                    mainNav.style.display = 'flex';
-                    mainNav.style.flexDirection = 'row';
-                } else {
-                    mainNav.style.display = 'none';
-                }
-            });
-        }
-    });
-</script>
+        });
+    </script>
 
 </body>
+
 </html>
