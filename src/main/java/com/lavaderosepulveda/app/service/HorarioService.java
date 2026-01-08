@@ -15,7 +15,8 @@ import java.util.stream.Collectors;
 
 /**
  * Servicio especializado en la gestión de horarios disponibles
- * Separa la lógica de horarios de CitaService para mayor claridad y testabilidad
+ * Separa la lógica de horarios de CitaService para mayor claridad y
+ * testabilidad
  */
 @Service
 public class HorarioService {
@@ -122,10 +123,28 @@ public class HorarioService {
     /**
      * Obtiene los horarios ya ocupados por citas existentes
      */
+    /**
+     * Obtiene los horarios ya ocupados por citas existentes
+     * Considera la duración extendida de servicios de tapicería (3 horas)
+     */
     private Set<LocalTime> obtenerHorariosOcupados(LocalDate fecha) {
-        return citaRepository.findByFecha(fecha).stream()
-                .map(cita -> cita.getHora())
-                .collect(Collectors.toSet());
+        Set<LocalTime> horariosOcupados = new HashSet<>();
+        List<com.lavaderosepulveda.app.model.Cita> citas = citaRepository.findByFecha(fecha);
+
+        for (com.lavaderosepulveda.app.model.Cita cita : citas) {
+            horariosOcupados.add(cita.getHora());
+
+            // Si es tapicería, bloquear también las 2 horas siguientes (total 3 horas)
+            com.lavaderosepulveda.app.model.TipoLavado tipo = cita.getTipoLavado();
+            if (tipo == com.lavaderosepulveda.app.model.TipoLavado.TAPICERIA_SIN_DESMONTAR ||
+                    tipo == com.lavaderosepulveda.app.model.TipoLavado.TAPICERIA_DESMONTANDO) {
+
+                horariosOcupados.add(cita.getHora().plusHours(1));
+                horariosOcupados.add(cita.getHora().plusHours(2));
+            }
+        }
+
+        return horariosOcupados;
     }
 
     /**
@@ -207,8 +226,7 @@ public class HorarioService {
 
         int totalHorarios = todosLosHorarios.size();
         int horariosLibres = totalHorarios - horariosOcupados.size();
-        double porcentajeOcupacion = totalHorarios > 0 ?
-                (double) horariosOcupados.size() / totalHorarios * 100 : 0.0;
+        double porcentajeOcupacion = totalHorarios > 0 ? (double) horariosOcupados.size() / totalHorarios * 100 : 0.0;
 
         Map<String, Object> estadisticas = new HashMap<>();
         estadisticas.put("fecha", fecha);
