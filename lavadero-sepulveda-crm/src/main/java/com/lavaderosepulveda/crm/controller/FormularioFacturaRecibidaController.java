@@ -68,7 +68,7 @@ public class FormularioFacturaRecibidaController {
 
     @FXML
     public void initialize() {
-        apiService = new FacturacionApiService();
+        apiService = FacturacionApiService.getInstance();
 
         configurarCombos();
         configurarListeners();
@@ -163,7 +163,7 @@ public class FormularioFacturaRecibidaController {
 
     private void cargarProveedores() {
         try {
-            List<ProveedorDTO> proveedores = apiService.listarProveedores();
+            List<ProveedorDTO> proveedores = apiService.obtenerProveedores();
             cmbProveedor.setItems(FXCollections.observableArrayList(proveedores));
         } catch (Exception e) {
             mostrarError("Error", "No se pudieron cargar los proveedores: " + e.getMessage());
