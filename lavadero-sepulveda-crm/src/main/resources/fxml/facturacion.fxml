@@ -50,12 +50,12 @@
                             <TableColumn fx:id="colNumeroEmitida" text="Número" prefWidth="100"/>
                             <TableColumn fx:id="colFechaEmitida" text="Fecha" prefWidth="100"/>
                             <TableColumn fx:id="colClienteEmitida" text="Cliente" prefWidth="200"/>
-                            <TableColumn fx:id="colConceptoEmitida" text="Concepto" prefWidth="200"/>
+                            <TableColumn fx:id="colConceptoEmitida" text="Concepto" prefWidth="400"/>
                             <TableColumn fx:id="colBaseEmitida" text="Base" prefWidth="90"/>
                             <TableColumn fx:id="colIvaEmitida" text="IVA" prefWidth="80"/>
                             <TableColumn fx:id="colTotalEmitida" text="Total" prefWidth="100"/>
                             <TableColumn fx:id="colEstadoEmitida" text="Estado" prefWidth="100"/>
-                            <TableColumn fx:id="colAccionesEmitida" text="Acciones" prefWidth="150"/>
+                            <TableColumn fx:id="colAccionesEmitida" text="Acciones" prefWidth="200"/>
                         </columns>
                         <placeholder><Label text="No hay facturas emitidas"/></placeholder>
                     </TableView>
@@ -101,7 +101,7 @@
                             <TableColumn fx:id="colTotalRecibida" text="Total" prefWidth="100"/>
                             <TableColumn fx:id="colEstadoRecibida" text="Estado" prefWidth="100"/>
                             <TableColumn fx:id="colVencimientoRecibida" text="Vencimiento" prefWidth="100"/>
-                            <TableColumn fx:id="colAccionesRecibida" text="Acciones" prefWidth="150"/>
+                            <TableColumn fx:id="colAccionesRecibida" text="Acciones" prefWidth="200"/>
                         </columns>
                         <placeholder><Label text="No hay facturas recibidas"/></placeholder>
                     </TableView>

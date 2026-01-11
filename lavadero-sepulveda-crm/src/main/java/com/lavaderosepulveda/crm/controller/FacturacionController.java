@@ -8,13 +8,26 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+@Slf4j
 public class FacturacionController {
 
     // Componentes generales
@@ -202,7 +216,6 @@ public class FacturacionController {
     // === CONFIGURACIÓN TABLAS ===
 
     private void configurarTablaEmitidas() {
-        // CORREGIDO: Usar lambdas con los nombres correctos del DTO
         colNumeroEmitida.setCellValueFactory(
                 cellData -> new SimpleStringProperty(cellData.getValue().getNumeroFactura()));
         colFechaEmitida.setCellValueFactory(
@@ -345,20 +358,17 @@ public class FacturacionController {
     private void cargarFacturasEmitidas() {
         try {
             List<FacturaEmitidaDTO> facturas = apiService.obtenerFacturasEmitidas();
-            // Debug: imprimir datos recibidos
-            System.out.println("=== DEBUG: Facturas emitidas cargadas: " + facturas.size() + " ===");
+            log.info("=== DEBUG: Facturas emitidas cargadas: {} ===", facturas.size());
             if (!facturas.isEmpty()) {
                 FacturaEmitidaDTO primera = facturas.get(0);
-                System.out.println("Primera factura - Número: " + primera.getNumeroFactura()
-                        + ", Fecha: " + primera.getFechaEmision()
-                        + ", Cliente: " + primera.getClienteNombre()
-                        + ", Concepto: " + primera.getConcepto()
-                        + ", Total: " + primera.getTotal());
+                log.info("Primera factura - Número: {}, Fecha: {}, Cliente: {}, Concepto: {}, Total: {}",
+                        primera.getNumeroFactura(), primera.getFechaEmision(), primera.getClienteNombre(),
+                        primera.getConcepto(), primera.getTotal());
             }
             listaEmitidas.setAll(facturas);
             actualizarTotalesEmitidas();
         } catch (Exception e) {
-            System.err.println("Error cargando facturas: " + e.getMessage());
+            log.error("Error cargando facturas", e);
             e.printStackTrace();
             mostrarError("Error al cargar facturas emitidas", e.getMessage());
         }
@@ -419,19 +429,476 @@ public class FacturacionController {
 
     @FXML
     private void nuevaFacturaEmitida() {
-        // TODO: Abrir diálogo de nueva factura emitida
-        mostrarInfo("Nueva Factura", "Funcionalidad en desarrollo");
+        Dialog<FacturaEmitidaDTO> dialog = new Dialog<>();
+        dialog.setTitle("Nueva Factura Emitida");
+        dialog.setHeaderText("Crear nueva factura");
+
+        dialog.initOwner(tablaEmitidas.getScene().getWindow());
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        
+        ButtonType btnCrear = new ButtonType("Crear Factura", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(btnCrear, ButtonType.CANCEL);
+        
+        // Contenedor principal
+        VBox contenido = new VBox(15);
+        contenido.setPadding(new Insets(20));
+        
+        // === TIPO DE FACTURA ===
+        HBox boxTipo = new HBox(10);
+        boxTipo.setAlignment(Pos.CENTER_LEFT);
+        Label lblTipo = new Label("Tipo de Factura:");
+        lblTipo.setStyle("-fx-font-weight: bold;");
+        ComboBox<String> cmbTipo = new ComboBox<>();
+        cmbTipo.setItems(FXCollections.observableArrayList("SIMPLIFICADA", "COMPLETA"));
+        cmbTipo.setValue("SIMPLIFICADA");
+        cmbTipo.setPrefWidth(200);
+        boxTipo.getChildren().addAll(lblTipo, cmbTipo);
+        
+        // === DATOS DEL CLIENTE ===
+        TitledPane panelCliente = new TitledPane();
+        panelCliente.setText("Datos del Cliente");
+        panelCliente.setCollapsible(false);
+        
+        GridPane gridCliente = new GridPane();
+        gridCliente.setHgap(10);
+        gridCliente.setVgap(10);
+        gridCliente.setPadding(new Insets(10));
+        
+        TextField txtNombre = new TextField();
+        txtNombre.setPromptText("Nombre del cliente");
+        txtNombre.setPrefWidth(300);
+        
+        TextField txtNif = new TextField();
+        txtNif.setPromptText("NIF/CIF");
+        txtNif.setPrefWidth(150);
+        
+        TextField txtDireccion = new TextField();
+        txtDireccion.setPromptText("Dirección completa");
+        txtDireccion.setPrefWidth(300);
+        
+        TextField txtTelefono = new TextField();
+        txtTelefono.setPromptText("Teléfono");
+        txtTelefono.setPrefWidth(150);
+        
+        TextField txtEmail = new TextField();
+        txtEmail.setPromptText("Email");
+        txtEmail.setPrefWidth(200);
+        
+        gridCliente.add(new Label("Nombre:"), 0, 0);
+        gridCliente.add(txtNombre, 1, 0, 2, 1);
+        gridCliente.add(new Label("NIF:"), 0, 1);
+        gridCliente.add(txtNif, 1, 1);
+        gridCliente.add(new Label("Teléfono:"), 2, 1);
+        gridCliente.add(txtTelefono, 3, 1);
+        gridCliente.add(new Label("Dirección:"), 0, 2);
+        gridCliente.add(txtDireccion, 1, 2, 3, 1);
+        gridCliente.add(new Label("Email:"), 0, 3);
+        gridCliente.add(txtEmail, 1, 3, 2, 1);
+        
+        panelCliente.setContent(gridCliente);
+        
+        // Mostrar/ocultar campos según tipo
+        txtNif.setDisable(true);
+        txtDireccion.setDisable(true);
+        cmbTipo.setOnAction(e -> {
+            boolean esCompleta = "COMPLETA".equals(cmbTipo.getValue());
+            txtNif.setDisable(!esCompleta);
+            txtDireccion.setDisable(!esCompleta);
+            if (!esCompleta) {
+                txtNif.clear();
+                txtDireccion.clear();
+            }
+        });
+        
+        // === LÍNEAS DE FACTURA ===
+        TitledPane panelLineas = new TitledPane();
+        panelLineas.setText("Líneas de Factura");
+        panelLineas.setCollapsible(false);
+        
+        VBox boxLineas = new VBox(10);
+        boxLineas.setPadding(new Insets(10));
+        
+        // Tabla de líneas
+        TableView<LineaFacturaTemp> tablaLineas = new TableView<>();
+        tablaLineas.setPrefHeight(150);
+        
+        ObservableList<LineaFacturaTemp> lineas = FXCollections.observableArrayList();
+        
+        TableColumn<LineaFacturaTemp, String> colConceptoLinea = new TableColumn<>("Concepto");
+        colConceptoLinea.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getConcepto()));
+        colConceptoLinea.setPrefWidth(250);
+        
+        TableColumn<LineaFacturaTemp, String> colCantidadLinea = new TableColumn<>("Cant.");
+        colCantidadLinea.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getCantidad())));
+        colCantidadLinea.setPrefWidth(50);
+        
+        TableColumn<LineaFacturaTemp, String> colPrecioLinea = new TableColumn<>("Precio");
+        colPrecioLinea.setCellValueFactory(c -> new SimpleStringProperty(formatearMoneda(c.getValue().getPrecio())));
+        colPrecioLinea.setPrefWidth(80);
+        
+        TableColumn<LineaFacturaTemp, String> colSubtotalLinea = new TableColumn<>("Subtotal");
+        colSubtotalLinea.setCellValueFactory(c -> new SimpleStringProperty(formatearMoneda(c.getValue().getSubtotal())));
+        colSubtotalLinea.setPrefWidth(80);
+        
+        TableColumn<LineaFacturaTemp, Void> colEliminarLinea = new TableColumn<>("");
+        colEliminarLinea.setCellFactory(param -> new TableCell<>() {
+            private final Button btn = new Button("🗑");
+            {
+                btn.setOnAction(ev -> {
+                    lineas.remove(getIndex());
+                });
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : btn);
+            }
+        });
+        colEliminarLinea.setPrefWidth(40);
+        
+        tablaLineas.getColumns().addAll(colConceptoLinea, colCantidadLinea, colPrecioLinea, colSubtotalLinea, colEliminarLinea);
+        tablaLineas.setItems(lineas);
+        
+        // Formulario para añadir línea
+        HBox boxNuevaLinea = new HBox(10);
+        boxNuevaLinea.setAlignment(Pos.CENTER_LEFT);
+        
+        TextField txtConcepto = new TextField();
+        txtConcepto.setPromptText("Concepto");
+        txtConcepto.setPrefWidth(200);
+        
+        Spinner<Integer> spnCantidad = new Spinner<>(1, 100, 1);
+        spnCantidad.setPrefWidth(70);
+        spnCantidad.setEditable(true);
+        
+        TextField txtPrecio = new TextField();
+        txtPrecio.setPromptText("Precio");
+        txtPrecio.setPrefWidth(80);
+        
+        Button btnAnadir = new Button("+ Añadir");
+        btnAnadir.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        
+        boxNuevaLinea.getChildren().addAll(
+            new Label("Concepto:"), txtConcepto,
+            new Label("Cant:"), spnCantidad,
+            new Label("Precio:"), txtPrecio,
+            btnAnadir
+        );
+        
+        boxLineas.getChildren().addAll(tablaLineas, boxNuevaLinea);
+        panelLineas.setContent(boxLineas);
+        
+        // === TOTALES ===
+        TitledPane panelTotales = new TitledPane();
+        panelTotales.setText("Totales");
+        panelTotales.setCollapsible(false);
+        
+        GridPane gridTotales = new GridPane();
+        gridTotales.setHgap(20);
+        gridTotales.setVgap(8);
+        gridTotales.setPadding(new Insets(10));
+        
+        Label lblBase = new Label("0,00 €");
+        Label lblIva = new Label("0,00 €");
+        Label lblTotalDialog = new Label("0,00 €");
+        lblTotalDialog.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2e7d32;");
+        
+        gridTotales.add(new Label("Base Imponible:"), 0, 0);
+        gridTotales.add(lblBase, 1, 0);
+        gridTotales.add(new Label("IVA (21%):"), 0, 1);
+        gridTotales.add(lblIva, 1, 1);
+        gridTotales.add(new Label("TOTAL:"), 0, 2);
+        gridTotales.add(lblTotalDialog, 1, 2);
+        
+        panelTotales.setContent(gridTotales);
+        
+        // === MÉTODO DE PAGO ===
+        HBox boxPago = new HBox(10);
+        boxPago.setAlignment(Pos.CENTER_LEFT);
+        Label lblPago = new Label("Método de Pago:");
+        lblPago.setStyle("-fx-font-weight: bold;");
+        ComboBox<String> cmbMetodoPago = new ComboBox<>();
+        cmbMetodoPago.setItems(FXCollections.observableArrayList(
+            "PENDIENTE", "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA"));
+        cmbMetodoPago.setValue("PENDIENTE");
+        cmbMetodoPago.setPrefWidth(150);
+        boxPago.getChildren().addAll(lblPago, cmbMetodoPago);
+        
+        // Acción añadir línea
+        btnAnadir.setOnAction(e -> {
+            String concepto = txtConcepto.getText().trim();
+            String precioStr = txtPrecio.getText().trim().replace(",", ".");
+            
+            if (concepto.isEmpty()) {
+                mostrarError("Error", "El concepto es obligatorio");
+                return;
+            }
+            
+            try {
+                BigDecimal precio = new BigDecimal(precioStr);
+                int cantidad = spnCantidad.getValue();
+                
+                LineaFacturaTemp linea = new LineaFacturaTemp(concepto, cantidad, precio);
+                lineas.add(linea);
+                
+                // Limpiar campos
+                txtConcepto.clear();
+                txtPrecio.clear();
+                spnCantidad.getValueFactory().setValue(1);
+                
+                // Actualizar totales
+                actualizarTotalesDialog(lineas, lblBase, lblIva, lblTotalDialog);
+                
+            } catch (NumberFormatException ex) {
+                mostrarError("Error", "El precio debe ser un número válido");
+            }
+        });
+        
+        // Añadir todo al contenido
+        contenido.getChildren().addAll(boxTipo, panelCliente, panelLineas, panelTotales, boxPago);
+        
+        ScrollPane scroll = new ScrollPane(contenido);
+        scroll.setFitToWidth(true);
+        scroll.setPrefSize(600, 550);
+        
+        dialog.getDialogPane().setContent(scroll);
+        dialog.getDialogPane().setPrefSize(650, 600);
+        
+        // Convertir resultado
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == btnCrear) {
+                if (lineas.isEmpty()) {
+                    mostrarError("Error", "Debe añadir al menos una línea");
+                    return null;
+                }
+                
+                FacturaEmitidaDTO factura = new FacturaEmitidaDTO();
+                factura.setTipoFactura(cmbTipo.getValue());
+                factura.setClienteNombre(txtNombre.getText().trim().isEmpty() ? "Mostrador" : txtNombre.getText().trim());
+                factura.setClienteNif(txtNif.getText().trim());
+                factura.setClienteDireccion(txtDireccion.getText().trim());
+                factura.setMetodoPago(cmbMetodoPago.getValue());
+                
+                return factura;
+            }
+            return null;
+        });
+        
+        Optional<FacturaEmitidaDTO> result = dialog.showAndWait();
+        
+        result.ifPresent(facturaDTO -> {
+            try {
+                // Construir JSON
+                StringBuilder jsonBuilder = new StringBuilder();
+                jsonBuilder.append("{");
+                jsonBuilder.append("\"tipo\":\"").append(facturaDTO.getTipoFactura()).append("\",");
+                jsonBuilder.append("\"clienteNombre\":\"").append(escapeJson(facturaDTO.getClienteNombre())).append("\",");
+                jsonBuilder.append("\"clienteNif\":\"").append(escapeJson(facturaDTO.getClienteNif() != null ? facturaDTO.getClienteNif() : "")).append("\",");
+                jsonBuilder.append("\"clienteDireccion\":\"").append(escapeJson(facturaDTO.getClienteDireccion() != null ? facturaDTO.getClienteDireccion() : "")).append("\",");
+                jsonBuilder.append("\"lineas\":[");
+                
+                for (int i = 0; i < lineas.size(); i++) {
+                    LineaFacturaTemp l = lineas.get(i);
+                    if (i > 0) jsonBuilder.append(",");
+                    jsonBuilder.append("{");
+                    jsonBuilder.append("\"concepto\":\"").append(escapeJson(l.getConcepto())).append("\",");
+                    jsonBuilder.append("\"cantidad\":").append(l.getCantidad()).append(",");
+                    jsonBuilder.append("\"precioUnitario\":").append(l.getPrecio());
+                    jsonBuilder.append("}");
+                }
+                
+                jsonBuilder.append("]}");
+                
+                String json = jsonBuilder.toString();
+                log.info("Enviando factura: {}", json);
+                
+                // Llamar a la API
+                String response = enviarFacturaManual(json);
+                
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                FacturaEmitidaDTO nuevaFactura = mapper.readValue(response, FacturaEmitidaDTO.class);
+                
+                // Si no es pendiente, marcar como pagada
+                String metodoPago = facturaDTO.getMetodoPago();
+                if (!"PENDIENTE".equals(metodoPago)) {
+                    apiService.marcarFacturaEmitidaPagada(nuevaFactura.getId(), metodoPago);
+                }
+                
+                mostrarInfo("Factura Creada", 
+                    "Factura " + nuevaFactura.getNumeroFactura() + " creada correctamente\n" +
+                    "Estado: " + ("PENDIENTE".equals(metodoPago) ? "Pendiente de cobro" : "Pagada con " + metodoPago));
+                cargarFacturasEmitidas();
+                
+            } catch (Exception e) {
+                log.error("Error al crear factura", e);
+                mostrarError("Error", "No se pudo crear la factura: " + e.getMessage());
+            }
+        });
     }
 
     private void verFacturaEmitida(FacturaEmitidaDTO factura) {
-        // TODO: Mostrar detalle de factura
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Detalle de Factura");
+        dialog.setHeaderText("Factura " + factura.getNumeroFactura());
+
+        dialog.initOwner(tablaEmitidas.getScene().getWindow());
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        
+        // Contenedor principal
+        VBox contenido = new VBox(15);
+        contenido.setPadding(new Insets(20));
+        contenido.setStyle("-fx-background-color: white;");
+        
+        // === CABECERA ===
+        HBox cabecera = new HBox(20);
+        cabecera.setAlignment(Pos.CENTER_LEFT);
+        
+        // Info factura
+        VBox infoFactura = new VBox(5);
+        Label lblNumero = new Label("Factura: " + factura.getNumeroFactura());
+        lblNumero.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        Label lblFecha = new Label("Fecha: " + factura.getFechaEmision());
+        Label lblTipoFact = new Label("Tipo: " + (factura.getTipoFactura() != null ? factura.getTipoFactura() : "SIMPLIFICADA"));
+        infoFactura.getChildren().addAll(lblNumero, lblFecha, lblTipoFact);
+        
+        // Estado
+        Label lblEstado = new Label(factura.getEstado());
+        lblEstado.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 5 15; -fx-background-radius: 15; " +
+            ("PAGADA".equals(factura.getEstado()) ? 
+                "-fx-background-color: #d4edda; -fx-text-fill: #155724;" : 
+                "-fx-background-color: #fff3cd; -fx-text-fill: #856404;"));
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        cabecera.getChildren().addAll(infoFactura, spacer, lblEstado);
+        
+        // === DATOS CLIENTE ===
+        TitledPane panelCliente = new TitledPane();
+        panelCliente.setText("Datos del Cliente");
+        panelCliente.setCollapsible(false);
+        
+        GridPane gridCliente = new GridPane();
+        gridCliente.setHgap(15);
+        gridCliente.setVgap(8);
+        gridCliente.setPadding(new Insets(10));
+        
+        gridCliente.add(new Label("Nombre:"), 0, 0);
+        gridCliente.add(new Label(factura.getClienteNombre() != null ? factura.getClienteNombre() : "Mostrador"), 1, 0);
+        
+        gridCliente.add(new Label("NIF:"), 0, 1);
+        gridCliente.add(new Label(factura.getClienteNif() != null && !factura.getClienteNif().isEmpty() ? factura.getClienteNif() : "-"), 1, 1);
+        
+        gridCliente.add(new Label("Dirección:"), 0, 2);
+        gridCliente.add(new Label(factura.getClienteDireccion() != null && !factura.getClienteDireccion().isEmpty() ? factura.getClienteDireccion() : "-"), 1, 2);
+        
+        panelCliente.setContent(gridCliente);
+        
+        // === CONCEPTO / LÍNEAS ===
+        TitledPane panelConcepto = new TitledPane();
+        panelConcepto.setText("Concepto");
+        panelConcepto.setCollapsible(false);
+        
+        VBox contenidoConcepto = new VBox(10);
+        contenidoConcepto.setPadding(new Insets(10));
+        
+        String concepto = factura.getConcepto();
+        if (concepto != null && !concepto.isEmpty()) {
+            Label lblConcepto = new Label(concepto);
+            lblConcepto.setWrapText(true);
+            lblConcepto.setStyle("-fx-font-size: 13px;");
+            contenidoConcepto.getChildren().add(lblConcepto);
+        } else {
+            contenidoConcepto.getChildren().add(new Label("Sin concepto especificado"));
+        }
+        
+        panelConcepto.setContent(contenidoConcepto);
+        
+        // === IMPORTES ===
+        TitledPane panelImportes = new TitledPane();
+        panelImportes.setText("Importes");
+        panelImportes.setCollapsible(false);
+        
+        GridPane gridImportes = new GridPane();
+        gridImportes.setHgap(30);
+        gridImportes.setVgap(8);
+        gridImportes.setPadding(new Insets(10));
+        
+        gridImportes.add(new Label("Base Imponible:"), 0, 0);
+        Label lblBaseImp = new Label(formatearMoneda(factura.getBaseImponible()));
+        lblBaseImp.setStyle("-fx-font-weight: bold;");
+        gridImportes.add(lblBaseImp, 1, 0);
+        
+        String tipoIva = factura.getTipoIva() != null ? factura.getTipoIva().toString() + "%" : "21%";
+        gridImportes.add(new Label("IVA (" + tipoIva + "):"), 0, 1);
+        Label lblIvaImp = new Label(formatearMoneda(factura.getCuotaIva()));
+        gridImportes.add(lblIvaImp, 1, 1);
+        
+        Separator sep = new Separator();
+        gridImportes.add(sep, 0, 2, 2, 1);
+        
+        gridImportes.add(new Label("TOTAL:"), 0, 3);
+        Label lblTotalImp = new Label(formatearMoneda(factura.getTotal()));
+        lblTotalImp.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2e7d32;");
+        gridImportes.add(lblTotalImp, 1, 3);
+        
+        panelImportes.setContent(gridImportes);
+        
+        // === DATOS DE PAGO ===
+        TitledPane panelPago = new TitledPane();
+        panelPago.setText("Información de Pago");
+        panelPago.setCollapsible(false);
+        
+        GridPane gridPago = new GridPane();
+        gridPago.setHgap(15);
+        gridPago.setVgap(8);
+        gridPago.setPadding(new Insets(10));
+        
+        gridPago.add(new Label("Estado:"), 0, 0);
+        gridPago.add(new Label(factura.getEstado()), 1, 0);
+        
+        gridPago.add(new Label("Método de Pago:"), 0, 1);
+        gridPago.add(new Label(factura.getMetodoPago() != null ? factura.getMetodoPago() : "-"), 1, 1);
+        
+        gridPago.add(new Label("Fecha de Pago:"), 0, 2);
+        gridPago.add(new Label(factura.getFechaPago() != null && !factura.getFechaPago().isEmpty() ? factura.getFechaPago() : "-"), 1, 2);
+        
+        panelPago.setContent(gridPago);
+        
+        // Añadir todo al contenido
+        contenido.getChildren().addAll(cabecera, panelCliente, panelConcepto, panelImportes, panelPago);
+        
+        // Configurar scroll
+        ScrollPane scroll = new ScrollPane(contenido);
+        scroll.setFitToWidth(true);
+        scroll.setPrefSize(500, 500);
+        scroll.setStyle("-fx-background-color: white;");
+        
+        dialog.getDialogPane().setContent(scroll);
+        dialog.getDialogPane().setPrefSize(550, 550);
+        
+        dialog.showAndWait();
     }
 
     private void descargarPdfEmitida(FacturaEmitidaDTO factura) {
         try {
-            apiService.descargarPdfFacturaEmitida(factura.getId());
-            mostrarInfo("PDF Generado", "La factura se ha descargado correctamente");
+            byte[] pdfBytes = apiService.descargarPdfFacturaEmitida(factura.getId());
+            
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Guardar Factura PDF");
+            fileChooser.setInitialFileName("Factura_" + factura.getNumeroFactura().replace("/", "-") + ".pdf");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+            
+            File archivo = fileChooser.showSaveDialog(tablaEmitidas.getScene().getWindow());
+            if (archivo != null) {
+                try (FileOutputStream fos = new FileOutputStream(archivo)) {
+                    fos.write(pdfBytes);
+                }
+                mostrarInfo("PDF Generado", "La factura se ha guardado en:\n" + archivo.getAbsolutePath());
+            }
         } catch (Exception e) {
+            log.error("Error al descargar PDF", e);
             mostrarError("Error al generar PDF", e.getMessage());
         }
     }
@@ -764,7 +1231,65 @@ public class FacturacionController {
         lblTotalGastos.setText("Total: " + formatearMoneda(total));
     }
 
-    // === UTILIDADES ===
+    // === MÉTODOS AUXILIARES ===
+
+    private String enviarFacturaManual(String json) throws IOException {
+        java.net.URL url = new java.net.URL("https://lavadero-sepulveda-production.up.railway.app/api/facturas/manual");
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(15000);
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Accept", "application/json");
+        conn.setDoOutput(true);
+        
+        try (java.io.OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+        
+        int responseCode = conn.getResponseCode();
+        java.io.BufferedReader reader;
+        if (responseCode >= 400) {
+            reader = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getErrorStream(), java.nio.charset.StandardCharsets.UTF_8));
+        } else {
+            reader = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
+        }
+        reader.close();
+        
+        if (responseCode >= 400) {
+            throw new IOException("Error en la API (" + responseCode + "): " + response);
+        }
+        
+        return response.toString();
+    }
+    
+    private String escapeJson(String text) {
+        if (text == null) return "";
+        return text.replace("\\", "\\\\")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "\\r")
+                   .replace("\t", "\\t");
+    }
+    
+    private void actualizarTotalesDialog(ObservableList<LineaFacturaTemp> lineas, Label lblBase, Label lblIva, Label lblTotal) {
+        BigDecimal base = lineas.stream()
+            .map(LineaFacturaTemp::getSubtotal)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal iva = base.multiply(new BigDecimal("0.21")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = base.add(iva);
+        
+        if (lblBase != null) lblBase.setText(formatearMoneda(base));
+        if (lblIva != null) lblIva.setText(formatearMoneda(iva));
+        if (lblTotal != null) lblTotal.setText(formatearMoneda(total));
+    }
 
     private String formatearMoneda(BigDecimal cantidad) {
         if (cantidad == null)
@@ -843,5 +1368,26 @@ public class FacturacionController {
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
         alert.showAndWait();
+    }
+
+    // === CLASE INTERNA PARA LÍNEAS TEMPORALES ===
+    
+    public static class LineaFacturaTemp {
+        private String concepto;
+        private int cantidad;
+        private BigDecimal precio;
+        
+        public LineaFacturaTemp(String concepto, int cantidad, BigDecimal precio) {
+            this.concepto = concepto;
+            this.cantidad = cantidad;
+            this.precio = precio;
+        }
+        
+        public String getConcepto() { return concepto; }
+        public int getCantidad() { return cantidad; }
+        public BigDecimal getPrecio() { return precio; }
+        public BigDecimal getSubtotal() { 
+            return precio.multiply(new BigDecimal(cantidad)); 
+        }
     }
 }

@@ -3,14 +3,17 @@ package com.lavaderosepulveda.crm.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * DTO para Factura Emitida
- * Incluye @JsonAlias para compatibilidad con diferentes nombres de campos de la
- * API
- */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FacturaEmitidaDTO {
+
     private Long id;
 
     @JsonAlias({ "numero", "numeroFactura", "numero_factura" })
@@ -30,9 +33,6 @@ public class FacturaEmitidaDTO {
     @JsonAlias({ "clienteDireccion", "cliente_direccion", "direccionCliente" })
     private String clienteDireccion;
 
-    @JsonAlias({ "concepto", "descripcion" })
-    private String concepto;
-
     @JsonAlias({ "tipoFactura", "tipo_factura", "tipo" })
     private String tipoFactura;
 
@@ -42,7 +42,7 @@ public class FacturaEmitidaDTO {
     @JsonAlias({ "tipoIva", "tipo_iva", "porcentajeIva" })
     private BigDecimal tipoIva;
 
-    @JsonAlias({ "cuotaIva", "cuota_iva", "iva" })
+    @JsonAlias({ "cuotaIva", "cuota_iva", "importeIva", "iva" })
     private BigDecimal cuotaIva;
 
     private BigDecimal total;
@@ -57,141 +57,37 @@ public class FacturaEmitidaDTO {
     @JsonAlias({ "citaId", "cita_id" })
     private Long citaId;
 
-    // Getters y Setters
-    public Long getId() {
-        return id;
+    // ✅ NUEVO: Lista de líneas de factura
+    private List<LineaFactura> lineas;
+
+    // ✅ NUEVO: Clase interna para las líneas
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class LineaFactura {
+        private Long id;
+        private Long citaId;
+        private String concepto;
+        private Integer cantidad;
+        private BigDecimal precioUnitario;
+        private BigDecimal subtotal;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNumeroFactura() {
-        return numeroFactura;
-    }
-
-    public void setNumeroFactura(String numeroFactura) {
-        this.numeroFactura = numeroFactura;
-    }
-
-    public String getFechaEmision() {
-        return fechaEmision;
-    }
-
-    public void setFechaEmision(String fechaEmision) {
-        this.fechaEmision = fechaEmision;
-    }
-
-    public Long getClienteId() {
-        return clienteId;
-    }
-
-    public void setClienteId(Long clienteId) {
-        this.clienteId = clienteId;
-    }
-
-    public String getClienteNombre() {
-        return clienteNombre;
-    }
-
-    public void setClienteNombre(String clienteNombre) {
-        this.clienteNombre = clienteNombre;
-    }
-
-    public String getClienteNif() {
-        return clienteNif;
-    }
-
-    public void setClienteNif(String clienteNif) {
-        this.clienteNif = clienteNif;
-    }
-
-    public String getClienteDireccion() {
-        return clienteDireccion;
-    }
-
-    public void setClienteDireccion(String clienteDireccion) {
-        this.clienteDireccion = clienteDireccion;
-    }
-
+    // ✅ NUEVO: Método para obtener el concepto de las líneas
     public String getConcepto() {
-        return concepto;
-    }
-
-    public void setConcepto(String concepto) {
-        this.concepto = concepto;
-    }
-
-    public String getTipoFactura() {
-        return tipoFactura;
-    }
-
-    public void setTipoFactura(String tipoFactura) {
-        this.tipoFactura = tipoFactura;
-    }
-
-    public BigDecimal getBaseImponible() {
-        return baseImponible;
-    }
-
-    public void setBaseImponible(BigDecimal baseImponible) {
-        this.baseImponible = baseImponible;
-    }
-
-    public BigDecimal getTipoIva() {
-        return tipoIva;
-    }
-
-    public void setTipoIva(BigDecimal tipoIva) {
-        this.tipoIva = tipoIva;
-    }
-
-    public BigDecimal getCuotaIva() {
-        return cuotaIva;
-    }
-
-    public void setCuotaIva(BigDecimal cuotaIva) {
-        this.cuotaIva = cuotaIva;
-    }
-
-    public BigDecimal getTotal() {
-        return total;
-    }
-
-    public void setTotal(BigDecimal total) {
-        this.total = total;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
-
-    public String getMetodoPago() {
-        return metodoPago;
-    }
-
-    public void setMetodoPago(String metodoPago) {
-        this.metodoPago = metodoPago;
-    }
-
-    public String getFechaPago() {
-        return fechaPago;
-    }
-
-    public void setFechaPago(String fechaPago) {
-        this.fechaPago = fechaPago;
-    }
-
-    public Long getCitaId() {
-        return citaId;
-    }
-
-    public void setCitaId(Long citaId) {
-        this.citaId = citaId;
+        if (lineas == null || lineas.isEmpty()) {
+            return "";
+        }
+        if (lineas.size() == 1) {
+            return lineas.get(0).getConcepto() != null ? lineas.get(0).getConcepto() : "";
+        }
+        // Múltiples líneas: concatenar conceptos
+        return lineas.stream()
+                .map(LineaFactura::getConcepto)
+                .filter(c -> c != null && !c.isEmpty())
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("");
     }
 
     @Override
@@ -201,7 +97,7 @@ public class FacturaEmitidaDTO {
                 ", numeroFactura='" + numeroFactura + '\'' +
                 ", fechaEmision='" + fechaEmision + '\'' +
                 ", clienteNombre='" + clienteNombre + '\'' +
-                ", concepto='" + concepto + '\'' +
+                ", concepto='" + getConcepto() + '\'' +
                 ", total=" + total +
                 ", estado='" + estado + '\'' +
                 '}';

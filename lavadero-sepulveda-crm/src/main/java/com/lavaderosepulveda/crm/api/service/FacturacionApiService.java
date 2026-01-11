@@ -156,13 +156,13 @@ public class FacturacionApiService {
         // ==================== PROVEEDORES ====================
 
         public List<ProveedorDTO> obtenerProveedores() throws IOException {
-                String response = doGet("/api/proveedores");
+                String response = doGet("/api/proveedores/todos");
                 return objectMapper.readValue(response, new TypeReference<List<ProveedorDTO>>() {
                 });
         }
 
         public List<ProveedorDTO> obtenerProveedoresActivos() throws IOException {
-                String response = doGet("/api/proveedores/activos");
+                String response = doGet("/api/proveedores");
                 return objectMapper.readValue(response, new TypeReference<List<ProveedorDTO>>() {
                 });
         }
@@ -236,7 +236,8 @@ public class FacturacionApiService {
         }
 
         public FacturaEmitidaDTO marcarFacturaEmitidaPagada(Long id, String metodoPago) throws IOException {
-                String response = doPut("/api/facturas/" + id + "/pagar?metodoPago=" + metodoPago, null);
+                String json = "{\"metodoPago\":\"" + metodoPago + "\"}";
+                String response = doPut("/api/facturas/" + id + "/pagar", json);  
                 return objectMapper.readValue(response, FacturaEmitidaDTO.class);
         }
 

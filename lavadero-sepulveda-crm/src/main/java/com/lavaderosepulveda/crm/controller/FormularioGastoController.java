@@ -2,10 +2,12 @@ package com.lavaderosepulveda.crm.controller;
 
 import com.lavaderosepulveda.crm.api.service.FacturacionApiService;
 import com.lavaderosepulveda.crm.model.GastoDTO;
+
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -19,27 +21,29 @@ public class FormularioGastoController {
     @FXML
     private Label lblTitulo;
     @FXML
-    private TextField txtConcepto;
-    @FXML
     private DatePicker dpFecha;
     @FXML
     private ComboBox<String> cmbCategoria;
     @FXML
-    private TextField txtImporte;
+    private TextField txtConcepto;
     @FXML
-    private CheckBox chkIvaIncluido;
+    private TextField txtBaseImponible;
     @FXML
-    private Label lblBase;
+    private ComboBox<BigDecimal> cmbTipoIva;
     @FXML
-    private Label lblIva;
+    private Label lblCuotaIva;
     @FXML
-    private ComboBox<String> cmbMetodoPago;
+    private Label lblTotal;
     @FXML
     private CheckBox chkPagado;
     @FXML
+    private ComboBox<String> cmbMetodoPago;
+    @FXML
     private CheckBox chkRecurrente;
     @FXML
-    private Spinner<Integer> spnDiaRecurrencia;
+    private Label lblPeriodicidad;
+    @FXML
+    private ComboBox<String> cmbPeriodicidad;
     @FXML
     private TextArea txtNotas;
 
@@ -49,19 +53,18 @@ public class FormularioGastoController {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final NumberFormat FORMATO_MONEDA = NumberFormat.getCurrencyInstance(new Locale("es", "ES"));
-    private static final BigDecimal IVA = new BigDecimal("21");
 
     @FXML
     public void initialize() {
         apiService = FacturacionApiService.getInstance();
 
         configurarCombos();
-        configurarSpinner();
         configurarListeners();
 
         // Valores por defecto
         dpFecha.setValue(LocalDate.now());
-        chkIvaIncluido.setSelected(true);
+        cmbTipoIva.setValue(new BigDecimal("21"));
+        cmbMetodoPago.setDisable(true);
     }
 
     private void configurarCombos() {
@@ -73,54 +76,71 @@ public class FormularioGastoController {
                 "PUBLICIDAD", "MATERIAL_OFICINA", "GESTORIA", "BANCARIOS",
                 "VEHICULOS", "MAQUINARIA", "OTROS"));
 
+        // Tipos de IVA
+        cmbTipoIva.setItems(FXCollections.observableArrayList(
+                BigDecimal.ZERO, new BigDecimal("4"), new BigDecimal("10"), new BigDecimal("21")));
+        cmbTipoIva.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(BigDecimal value) {
+                return value == null ? "" : value.intValue() + "%";
+            }
+
+            @Override
+            public BigDecimal fromString(String string) {
+                return new BigDecimal(string.replace("%", ""));
+            }
+        });
+        cmbTipoIva.setValue(new BigDecimal("21"));
+
         // Métodos de pago
         cmbMetodoPago.setItems(FXCollections.observableArrayList(
-                "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA"));
-        cmbMetodoPago.setValue("EFECTIVO");
-    }
+                "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA", "DOMICILIACION"));
 
-    private void configurarSpinner() {
-        SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 31, 1);
-        spnDiaRecurrencia.setValueFactory(valueFactory);
-        spnDiaRecurrencia.setDisable(true);
+        // Periodicidad
+        cmbPeriodicidad.setItems(FXCollections.observableArrayList(
+                "MENSUAL", "BIMESTRAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"));
     }
 
     private void configurarListeners() {
-        // Calcular desglose al cambiar importe o checkbox IVA
-        txtImporte.textProperty().addListener((obs, old, nuevo) -> calcularDesglose());
-        chkIvaIncluido.selectedProperty().addListener((obs, old, nuevo) -> calcularDesglose());
+        // Calcular totales al cambiar valores
+        txtBaseImponible.textProperty().addListener((obs, old, nuevo) -> calcularTotales());
+        cmbTipoIva.valueProperty().addListener((obs, old, nuevo) -> calcularTotales());
 
-        // Habilitar/deshabilitar día recurrencia
+        // Habilitar método de pago si está pagado
+        chkPagado.selectedProperty().addListener((obs, old, nuevo) -> {
+            cmbMetodoPago.setDisable(!nuevo);
+            if (!nuevo) {
+                cmbMetodoPago.setValue(null);
+            }
+        });
+
+        // Mostrar periodicidad si es recurrente
         chkRecurrente.selectedProperty().addListener((obs, old, nuevo) -> {
-            spnDiaRecurrencia.setDisable(!nuevo);
+            lblPeriodicidad.setVisible(nuevo);
+            cmbPeriodicidad.setVisible(nuevo);
+            if (nuevo && cmbPeriodicidad.getValue() == null) {
+                cmbPeriodicidad.setValue("MENSUAL");
+            }
         });
     }
 
-    private void calcularDesglose() {
+    private void calcularTotales() {
         try {
-            String importeText = txtImporte.getText().replace(",", ".");
-            if (importeText.isEmpty()) {
-                lblBase.setText("0,00 €");
-                lblIva.setText("0,00 €");
+            String baseText = txtBaseImponible.getText().replace(",", ".");
+            if (baseText.isEmpty()) {
+                lblCuotaIva.setText("0,00 €");
+                lblTotal.setText("0,00 €");
                 return;
             }
 
-            BigDecimal importe = new BigDecimal(importeText);
-            BigDecimal base;
-            BigDecimal iva;
+            BigDecimal base = new BigDecimal(baseText);
+            BigDecimal tipoIva = cmbTipoIva.getValue() != null ? cmbTipoIva.getValue() : BigDecimal.ZERO;
 
-            if (chkIvaIncluido.isSelected()) {
-                // IVA incluido: Base = Importe / 1.21, IVA = Importe - Base
-                base = importe.divide(new BigDecimal("1.21"), 2, RoundingMode.HALF_UP);
-                iva = importe.subtract(base);
-            } else {
-                // IVA no incluido: Base = Importe, IVA = Base * 0.21
-                base = importe;
-                iva = base.multiply(IVA).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-            }
+            BigDecimal cuotaIva = base.multiply(tipoIva).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+            BigDecimal total = base.add(cuotaIva);
 
-            lblBase.setText(FORMATO_MONEDA.format(base));
-            lblIva.setText(FORMATO_MONEDA.format(iva));
+            lblCuotaIva.setText(FORMATO_MONEDA.format(cuotaIva));
+            lblTotal.setText(FORMATO_MONEDA.format(total));
         } catch (NumberFormatException e) {
             // Ignorar mientras se escribe
         }
@@ -132,78 +152,79 @@ public class FormularioGastoController {
         lblTitulo.setText("Editar Gasto");
 
         // Cargar datos
-        txtConcepto.setText(gasto.getConcepto());
-
-        if (gasto.getFecha() != null) {
-            dpFecha.setValue(LocalDate.parse(gasto.getFecha(), FORMATO_FECHA));
+        if (gasto.getFecha() != null && !gasto.getFecha().isEmpty()) {
+            try {
+                dpFecha.setValue(LocalDate.parse(gasto.getFecha(), FORMATO_FECHA));
+            } catch (Exception e) {
+                dpFecha.setValue(LocalDate.now());
+            }
         }
 
         cmbCategoria.setValue(gasto.getCategoria());
+        txtConcepto.setText(gasto.getConcepto());
 
-        if (gasto.getImporte() != null) {
-            txtImporte.setText(gasto.getImporte().toString());
+        if (gasto.getBaseImponible() != null) {
+            txtBaseImponible.setText(gasto.getBaseImponible().toString());
+        }
+        if (gasto.getTipoIva() != null) {
+            cmbTipoIva.setValue(gasto.getTipoIva());
         }
 
-        if (gasto.getIvaIncluido() != null) {
-            chkIvaIncluido.setSelected(gasto.getIvaIncluido());
-        }
-
+        chkPagado.setSelected(gasto.getPagado() != null && gasto.getPagado());
         cmbMetodoPago.setValue(gasto.getMetodoPago());
 
-        if (gasto.getPagado() != null) {
-            chkPagado.setSelected(gasto.getPagado());
-        }
-
-        if (gasto.getRecurrente() != null) {
-            chkRecurrente.setSelected(gasto.getRecurrente());
-        }
-
-        if (gasto.getDiaRecurrencia() != null) {
-            spnDiaRecurrencia.getValueFactory().setValue(gasto.getDiaRecurrencia());
-        }
+        chkRecurrente.setSelected(gasto.getRecurrente() != null && gasto.getRecurrente());
+        cmbPeriodicidad.setValue(gasto.getPeriodicidad());
 
         txtNotas.setText(gasto.getNotas());
 
-        calcularDesglose();
+        calcularTotales();
     }
 
     @FXML
     private void guardar() {
-        if (!validar())
+        if (!validar()) {
             return;
+        }
 
         try {
-            GastoDTO dto = new GastoDTO();
+            GastoDTO dto = modoEdicion ? gastoActual : new GastoDTO();
 
-            if (modoEdicion) {
-                dto.setId(gastoActual.getId());
-            }
-
-            dto.setConcepto(txtConcepto.getText());
             dto.setFecha(dpFecha.getValue().format(FORMATO_FECHA));
             dto.setCategoria(cmbCategoria.getValue());
+            dto.setConcepto(txtConcepto.getText().trim());
 
-            String importeText = txtImporte.getText().replace(",", ".");
-            dto.setImporte(new BigDecimal(importeText));
-            dto.setIvaIncluido(chkIvaIncluido.isSelected());
+            String baseText = txtBaseImponible.getText().replace(",", ".");
+            BigDecimal base = new BigDecimal(baseText);
+            BigDecimal tipoIva = cmbTipoIva.getValue() != null ? cmbTipoIva.getValue() : BigDecimal.ZERO;
+            BigDecimal cuotaIva = base.multiply(tipoIva).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+            BigDecimal total = base.add(cuotaIva);
 
-            dto.setMetodoPago(cmbMetodoPago.getValue());
+            dto.setBaseImponible(base);
+            dto.setTipoIva(tipoIva);
+            dto.setCuotaIva(cuotaIva);
+            dto.setImporte(total);
+
             dto.setPagado(chkPagado.isSelected());
-            dto.setRecurrente(chkRecurrente.isSelected());
+            dto.setMetodoPago(cmbMetodoPago.getValue());
 
+            dto.setRecurrente(chkRecurrente.isSelected());
             if (chkRecurrente.isSelected()) {
-                dto.setDiaRecurrencia(spnDiaRecurrencia.getValue());
+                dto.setPeriodicidad(cmbPeriodicidad.getValue());
             }
 
-            dto.setNotas(txtNotas.getText());
+            dto.setNotas(txtNotas.getText().trim());
 
             if (modoEdicion) {
                 apiService.actualizarGasto(dto.getId(), dto);
+                mostrarInfo("Éxito", "Gasto actualizado correctamente");
             } else {
                 apiService.crearGasto(dto);
+                mostrarInfo("Éxito", "Gasto registrado correctamente");
             }
 
             cerrarVentana();
+
         } catch (Exception e) {
             mostrarError("Error al guardar", e.getMessage());
         }
@@ -212,23 +233,36 @@ public class FormularioGastoController {
     private boolean validar() {
         StringBuilder errores = new StringBuilder();
 
-        if (txtConcepto.getText().trim().isEmpty()) {
-            errores.append("- El concepto es obligatorio\n");
-        }
         if (dpFecha.getValue() == null) {
             errores.append("- La fecha es obligatoria\n");
         }
         if (cmbCategoria.getValue() == null) {
             errores.append("- La categoría es obligatoria\n");
         }
-        if (txtImporte.getText().trim().isEmpty()) {
+        if (txtConcepto.getText().trim().isEmpty()) {
+            errores.append("- El concepto es obligatorio\n");
+        }
+        if (txtBaseImponible.getText().trim().isEmpty()) {
             errores.append("- El importe es obligatorio\n");
+        } else {
+            try {
+                new BigDecimal(txtBaseImponible.getText().replace(",", "."));
+            } catch (NumberFormatException e) {
+                errores.append("- El importe debe ser un número válido\n");
+            }
+        }
+        if (chkPagado.isSelected() && cmbMetodoPago.getValue() == null) {
+            errores.append("- Debe seleccionar un método de pago\n");
+        }
+        if (chkRecurrente.isSelected() && cmbPeriodicidad.getValue() == null) {
+            errores.append("- Debe seleccionar la periodicidad\n");
         }
 
         if (errores.length() > 0) {
             mostrarError("Datos incompletos", errores.toString());
             return false;
         }
+
         return true;
     }
 
@@ -247,6 +281,16 @@ public class FormularioGastoController {
         alert.setTitle(titulo);
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
+        alert.initOwner(txtConcepto.getScene().getWindow());
+        alert.showAndWait();
+    }
+
+    private void mostrarInfo(String titulo, String mensaje) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(titulo);
+        alert.setHeaderText(null);
+        alert.setContentText(mensaje);
+        alert.initOwner(txtConcepto.getScene().getWindow());
         alert.showAndWait();
     }
 }

@@ -3,11 +3,15 @@ package com.lavaderosepulveda.crm.controller;
 import com.lavaderosepulveda.crm.api.service.FacturacionApiService;
 import com.lavaderosepulveda.crm.model.FacturaRecibidaDTO;
 import com.lavaderosepulveda.crm.model.ProveedorDTO;
+
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -19,49 +23,46 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class FormularioFacturaRecibidaController {
 
-    @FXML
-    private Label lblTitulo;
-    @FXML
-    private ComboBox<ProveedorDTO> cmbProveedor;
-    @FXML
-    private TextField txtProveedorNombre;
-    @FXML
-    private TextField txtProveedorNif;
-    @FXML
-    private TextField txtNumeroFactura;
-    @FXML
-    private DatePicker dpFechaFactura;
-    @FXML
-    private ComboBox<String> cmbCategoria;
-    @FXML
-    private DatePicker dpFechaVencimiento;
-    @FXML
-    private TextField txtConcepto;
-    @FXML
-    private TextField txtBaseImponible;
-    @FXML
-    private ComboBox<BigDecimal> cmbTipoIva;
-    @FXML
-    private Label lblCuotaIva;
-    @FXML
-    private ComboBox<BigDecimal> cmbTipoIrpf;
-    @FXML
-    private Label lblCuotaIrpf;
-    @FXML
-    private Label lblTotal;
-    @FXML
-    private ComboBox<String> cmbEstado;
-    @FXML
-    private ComboBox<String> cmbMetodoPago;
-    @FXML
-    private TextArea txtNotas;
+    @FXML private Label lblTitulo;
+    @FXML private ComboBox<ProveedorDTO> cmbProveedor;
+    @FXML private TextField txtProveedorNombre;
+    @FXML private TextField txtProveedorNif;
+    @FXML private TextField txtNumeroFactura;
+    @FXML private DatePicker dpFechaFactura;
+    @FXML private ComboBox<String> cmbCategoria;
+    @FXML private DatePicker dpFechaVencimiento;
+    
+    // Líneas de factura
+    @FXML private TableView<LineaFactura> tablaLineas;
+    @FXML private TableColumn<LineaFactura, String> colConcepto;
+    @FXML private TableColumn<LineaFactura, String> colCantidad;
+    @FXML private TableColumn<LineaFactura, String> colPrecioUnitario;
+    @FXML private TableColumn<LineaFactura, String> colSubtotal;
+    @FXML private TableColumn<LineaFactura, Void> colEliminar;
+    @FXML private TextField txtConcepto;
+    @FXML private Spinner<Integer> spnCantidad;
+    @FXML private TextField txtPrecioUnitario;
+    
+    // Importes
+    @FXML private Label lblBaseImponible;
+    @FXML private ComboBox<BigDecimal> cmbTipoIva;
+    @FXML private Label lblCuotaIva;
+    @FXML private ComboBox<BigDecimal> cmbTipoIrpf;
+    @FXML private Label lblCuotaIrpf;
+    @FXML private Label lblTotal;
+    
+    @FXML private ComboBox<String> cmbEstado;
+    @FXML private ComboBox<String> cmbMetodoPago;
+    @FXML private TextArea txtNotas;
 
     private FacturacionApiService apiService;
     private FacturaRecibidaDTO facturaActual;
     private boolean modoEdicion = false;
+    private ObservableList<LineaFactura> lineas = FXCollections.observableArrayList();
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final NumberFormat FORMATO_MONEDA = NumberFormat.getCurrencyInstance(new Locale("es", "ES"));
@@ -71,14 +72,20 @@ public class FormularioFacturaRecibidaController {
         apiService = FacturacionApiService.getInstance();
 
         configurarCombos();
+        configurarTablaLineas();
         configurarListeners();
         cargarProveedores();
 
         // Valores por defecto
         dpFechaFactura.setValue(LocalDate.now());
+        dpFechaVencimiento.setValue(LocalDate.now().plusDays(30));
         cmbTipoIva.setValue(new BigDecimal("21"));
         cmbTipoIrpf.setValue(BigDecimal.ZERO);
         cmbEstado.setValue("PENDIENTE");
+        
+        // Configurar spinner
+        spnCantidad.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 9999, 1));
+        spnCantidad.setEditable(true);
     }
 
     private void configurarCombos() {
@@ -125,13 +132,16 @@ public class FormularioFacturaRecibidaController {
 
         // Métodos de pago
         cmbMetodoPago.setItems(FXCollections.observableArrayList(
-                "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA"));
+                "", "EFECTIVO", "TARJETA", "BIZUM", "TRANSFERENCIA", "DOMICILIACION"));
 
         // Converter para proveedores
         cmbProveedor.setConverter(new StringConverter<>() {
             @Override
             public String toString(ProveedorDTO proveedor) {
-                return proveedor == null ? "" : proveedor.getNombre() + " (" + proveedor.getNif() + ")";
+                if (proveedor == null) return "";
+                String nif = proveedor.getNif() != null && !proveedor.getNif().isEmpty() 
+                    ? " (" + proveedor.getNif() + ")" : "";
+                return proveedor.getNombre() + nif;
             }
 
             @Override
@@ -141,12 +151,40 @@ public class FormularioFacturaRecibidaController {
         });
     }
 
+    private void configurarTablaLineas() {
+        colConcepto.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getConcepto()));
+        colCantidad.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getCantidad())));
+        colPrecioUnitario.setCellValueFactory(c -> new SimpleStringProperty(
+                FORMATO_MONEDA.format(c.getValue().getPrecioUnitario())));
+        colSubtotal.setCellValueFactory(c -> new SimpleStringProperty(
+                FORMATO_MONEDA.format(c.getValue().getSubtotal())));
+        
+        // Botón eliminar
+        colEliminar.setCellFactory(param -> new TableCell<>() {
+            private final Button btn = new Button("🗑");
+            {
+                btn.setOnAction(e -> {
+                    LineaFactura linea = getTableView().getItems().get(getIndex());
+                    lineas.remove(linea);
+                    calcularTotales();
+                });
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : btn);
+            }
+        });
+        
+        tablaLineas.setItems(lineas);
+    }
+
     private void configurarListeners() {
         // Listener para proveedor seleccionado
         cmbProveedor.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 txtProveedorNombre.setText(newVal.getNombre());
-                txtProveedorNif.setText(newVal.getNif());
+                txtProveedorNif.setText(newVal.getNif() != null ? newVal.getNif() : "");
                 txtProveedorNombre.setDisable(true);
                 txtProveedorNif.setDisable(true);
             } else {
@@ -155,8 +193,7 @@ public class FormularioFacturaRecibidaController {
             }
         });
 
-        // Listeners para calcular totales
-        txtBaseImponible.textProperty().addListener((obs, old, nuevo) -> calcularTotales());
+        // Listeners para recalcular totales al cambiar IVA/IRPF
         cmbTipoIva.valueProperty().addListener((obs, old, nuevo) -> calcularTotales());
         cmbTipoIrpf.valueProperty().addListener((obs, old, nuevo) -> calcularTotales());
     }
@@ -170,30 +207,56 @@ public class FormularioFacturaRecibidaController {
         }
     }
 
-    private void calcularTotales() {
-        try {
-            String baseText = txtBaseImponible.getText().replace(",", ".");
-            if (baseText.isEmpty()) {
-                lblCuotaIva.setText("0,00 €");
-                lblCuotaIrpf.setText("0,00 €");
-                lblTotal.setText("0,00 €");
-                return;
-            }
-
-            BigDecimal base = new BigDecimal(baseText);
-            BigDecimal tipoIva = cmbTipoIva.getValue() != null ? cmbTipoIva.getValue() : BigDecimal.ZERO;
-            BigDecimal tipoIrpf = cmbTipoIrpf.getValue() != null ? cmbTipoIrpf.getValue() : BigDecimal.ZERO;
-
-            BigDecimal cuotaIva = base.multiply(tipoIva).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-            BigDecimal cuotaIrpf = base.multiply(tipoIrpf).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-            BigDecimal total = base.add(cuotaIva).subtract(cuotaIrpf);
-
-            lblCuotaIva.setText(FORMATO_MONEDA.format(cuotaIva));
-            lblCuotaIrpf.setText(FORMATO_MONEDA.format(cuotaIrpf));
-            lblTotal.setText(FORMATO_MONEDA.format(total));
-        } catch (NumberFormatException e) {
-            // Ignorar mientras se escribe
+    @FXML
+    private void agregarLinea() {
+        String concepto = txtConcepto.getText().trim();
+        String precioStr = txtPrecioUnitario.getText().trim().replace(",", ".");
+        
+        if (concepto.isEmpty()) {
+            mostrarError("Error", "El concepto es obligatorio");
+            return;
         }
+        
+        if (precioStr.isEmpty()) {
+            mostrarError("Error", "El precio es obligatorio");
+            return;
+        }
+        
+        try {
+            BigDecimal precio = new BigDecimal(precioStr);
+            int cantidad = spnCantidad.getValue();
+            
+            LineaFactura linea = new LineaFactura(concepto, cantidad, precio);
+            lineas.add(linea);
+            
+            // Limpiar campos
+            txtConcepto.clear();
+            txtPrecioUnitario.clear();
+            spnCantidad.getValueFactory().setValue(1);
+            
+            calcularTotales();
+            
+        } catch (NumberFormatException e) {
+            mostrarError("Error", "El precio debe ser un número válido");
+        }
+    }
+
+    private void calcularTotales() {
+        BigDecimal base = lineas.stream()
+                .map(LineaFactura::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal tipoIva = cmbTipoIva.getValue() != null ? cmbTipoIva.getValue() : BigDecimal.ZERO;
+        BigDecimal tipoIrpf = cmbTipoIrpf.getValue() != null ? cmbTipoIrpf.getValue() : BigDecimal.ZERO;
+
+        BigDecimal cuotaIva = base.multiply(tipoIva).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+        BigDecimal cuotaIrpf = base.multiply(tipoIrpf).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+        BigDecimal total = base.add(cuotaIva).subtract(cuotaIrpf);
+
+        lblBaseImponible.setText(FORMATO_MONEDA.format(base));
+        lblCuotaIva.setText(FORMATO_MONEDA.format(cuotaIva));
+        lblCuotaIrpf.setText(FORMATO_MONEDA.format(cuotaIrpf));
+        lblTotal.setText(FORMATO_MONEDA.format(total));
     }
 
     public void setFactura(FacturaRecibidaDTO factura) {
@@ -201,9 +264,8 @@ public class FormularioFacturaRecibidaController {
         this.modoEdicion = true;
         lblTitulo.setText("Editar Factura Recibida");
 
-        // Cargar datos
+        // Cargar datos básicos
         txtNumeroFactura.setText(factura.getNumeroFactura());
-        txtConcepto.setText(factura.getConcepto());
 
         if (factura.getProveedorId() != null) {
             cmbProveedor.getItems().stream()
@@ -215,18 +277,29 @@ public class FormularioFacturaRecibidaController {
             txtProveedorNif.setText(factura.getProveedorNif());
         }
 
-        if (factura.getFechaFactura() != null) {
-            dpFechaFactura.setValue(LocalDate.parse(factura.getFechaFactura(), FORMATO_FECHA));
+        if (factura.getFechaFactura() != null && !factura.getFechaFactura().isEmpty()) {
+            try {
+                dpFechaFactura.setValue(LocalDate.parse(factura.getFechaFactura(), FORMATO_FECHA));
+            } catch (Exception e) {
+                // Ignorar
+            }
         }
-        if (factura.getFechaVencimiento() != null) {
-            dpFechaVencimiento.setValue(LocalDate.parse(factura.getFechaVencimiento(), FORMATO_FECHA));
+        if (factura.getFechaVencimiento() != null && !factura.getFechaVencimiento().isEmpty()) {
+            try {
+                dpFechaVencimiento.setValue(LocalDate.parse(factura.getFechaVencimiento(), FORMATO_FECHA));
+            } catch (Exception e) {
+                // Ignorar
+            }
         }
 
         cmbCategoria.setValue(factura.getCategoria());
 
-        if (factura.getBaseImponible() != null) {
-            txtBaseImponible.setText(factura.getBaseImponible().toString());
+        // Cargar línea única con el concepto existente
+        if (factura.getConcepto() != null && !factura.getConcepto().isEmpty() && factura.getBaseImponible() != null) {
+            LineaFactura linea = new LineaFactura(factura.getConcepto(), 1, factura.getBaseImponible());
+            lineas.add(linea);
         }
+
         if (factura.getTipoIva() != null) {
             cmbTipoIva.setValue(factura.getTipoIva());
         }
@@ -235,7 +308,7 @@ public class FormularioFacturaRecibidaController {
         }
 
         cmbEstado.setValue(factura.getEstado());
-        cmbMetodoPago.setValue(factura.getMetodoPago());
+        cmbMetodoPago.setValue(factura.getMetodoPago() != null ? factura.getMetodoPago() : "");
         txtNotas.setText(factura.getNotas());
 
         calcularTotales();
@@ -249,6 +322,7 @@ public class FormularioFacturaRecibidaController {
             stage.setTitle("Nuevo Proveedor");
             stage.setScene(new Scene(loader.load()));
             stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(txtNumeroFactura.getScene().getWindow());
             stage.showAndWait();
             cargarProveedores();
         } catch (Exception e) {
@@ -272,6 +346,8 @@ public class FormularioFacturaRecibidaController {
             ProveedorDTO proveedor = cmbProveedor.getValue();
             if (proveedor != null) {
                 dto.setProveedorId(proveedor.getId());
+                dto.setProveedorNombre(proveedor.getNombre());
+                dto.setProveedorNif(proveedor.getNif());
             } else {
                 dto.setProveedorNombre(txtProveedorNombre.getText());
                 dto.setProveedorNif(txtProveedorNif.getText());
@@ -285,15 +361,34 @@ public class FormularioFacturaRecibidaController {
             }
 
             dto.setCategoria(cmbCategoria.getValue());
-            dto.setConcepto(txtConcepto.getText());
+            
+            // Concatenar conceptos de las líneas
+            String conceptosConcatenados = lineas.stream()
+                    .map(l -> l.getCantidad() + "x " + l.getConcepto())
+                    .collect(Collectors.joining(", "));
+            dto.setConcepto(conceptosConcatenados);
 
-            String baseText = txtBaseImponible.getText().replace(",", ".");
-            dto.setBaseImponible(new BigDecimal(baseText));
-            dto.setTipoIva(cmbTipoIva.getValue());
-            dto.setTipoIrpf(cmbTipoIrpf.getValue());
+            // Calcular totales
+            BigDecimal base = lineas.stream()
+                    .map(LineaFactura::getSubtotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            BigDecimal tipoIva = cmbTipoIva.getValue() != null ? cmbTipoIva.getValue() : BigDecimal.ZERO;
+            BigDecimal tipoIrpf = cmbTipoIrpf.getValue() != null ? cmbTipoIrpf.getValue() : BigDecimal.ZERO;
+            BigDecimal cuotaIva = base.multiply(tipoIva).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+            BigDecimal cuotaIrpf = base.multiply(tipoIrpf).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+            BigDecimal total = base.add(cuotaIva).subtract(cuotaIrpf);
+
+            dto.setBaseImponible(base);
+            dto.setTipoIva(tipoIva);
+            dto.setCuotaIva(cuotaIva);
+            dto.setTipoIrpf(tipoIrpf);
+            dto.setCuotaIrpf(cuotaIrpf);
+            dto.setTotal(total);
 
             dto.setEstado(cmbEstado.getValue());
-            dto.setMetodoPago(cmbMetodoPago.getValue());
+            String metodoPago = cmbMetodoPago.getValue();
+            dto.setMetodoPago(metodoPago != null && !metodoPago.isEmpty() ? metodoPago : null);
             dto.setNotas(txtNotas.getText());
 
             if (modoEdicion) {
@@ -320,11 +415,8 @@ public class FormularioFacturaRecibidaController {
         if (cmbCategoria.getValue() == null) {
             errores.append("- La categoría es obligatoria\n");
         }
-        if (txtConcepto.getText().trim().isEmpty()) {
-            errores.append("- El concepto es obligatorio\n");
-        }
-        if (txtBaseImponible.getText().trim().isEmpty()) {
-            errores.append("- La base imponible es obligatoria\n");
+        if (lineas.isEmpty()) {
+            errores.append("- Debe añadir al menos una línea de factura\n");
         }
 
         // Validar que haya proveedor (seleccionado o manual)
@@ -355,6 +447,29 @@ public class FormularioFacturaRecibidaController {
         alert.setTitle(titulo);
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
+        alert.initOwner(txtNumeroFactura.getScene().getWindow());
         alert.showAndWait();
+    }
+
+    // ============ CLASE INTERNA PARA LÍNEAS DE FACTURA ============
+    
+    public static class LineaFactura {
+        private String concepto;
+        private int cantidad;
+        private BigDecimal precioUnitario;
+        
+        public LineaFactura(String concepto, int cantidad, BigDecimal precioUnitario) {
+            this.concepto = concepto;
+            this.cantidad = cantidad;
+            this.precioUnitario = precioUnitario;
+        }
+        
+        public String getConcepto() { return concepto; }
+        public int getCantidad() { return cantidad; }
+        public BigDecimal getPrecioUnitario() { return precioUnitario; }
+        
+        public BigDecimal getSubtotal() {
+            return precioUnitario.multiply(new BigDecimal(cantidad));
+        }
     }
 }

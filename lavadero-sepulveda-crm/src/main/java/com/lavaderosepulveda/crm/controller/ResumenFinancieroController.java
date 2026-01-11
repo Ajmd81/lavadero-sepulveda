@@ -14,6 +14,8 @@ import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -25,6 +27,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 public class ResumenFinancieroController implements Initializable {
 
     // Filtros
@@ -298,7 +301,7 @@ public class ResumenFinancieroController implements Initializable {
                 Platform.runLater(this::actualizarVista);
 
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Error al cargar datos financieros", e);
                 Platform.runLater(() -> mostrarError("Error al cargar datos: " + e.getMessage()));
             }
         });

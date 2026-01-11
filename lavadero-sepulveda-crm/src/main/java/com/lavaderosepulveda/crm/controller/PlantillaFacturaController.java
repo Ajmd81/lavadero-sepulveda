@@ -8,12 +8,10 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -22,9 +20,8 @@ import java.util.Base64;
 /**
  * Controlador para el editor de plantilla de facturas
  */
+@Slf4j
 public class PlantillaFacturaController {
-
-    private static final Logger log = LoggerFactory.getLogger(PlantillaFacturaController.class);
 
     // ========================================
     // DATOS DEL EMISOR
