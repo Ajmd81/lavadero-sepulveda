@@ -2,26 +2,27 @@ package com.lavaderosepulveda.app.model;
 
 public enum CategoriaGasto {
     AGUA("Agua"),
-    LUZ("Electricidad"),
     ALQUILER("Alquiler"),
-    SEGUROS("Seguros"),
-    SUMINISTROS("Productos de limpieza"),
-    PRODUCTOS("Productos"),
-    MANTENIMIENTO("Mantenimiento"),
-    REPARACIONES("Reparaciones"),
+    ASOCIACIONES("Asociaciones"),
+    BANCARIOS("Gastos bancarios"),
     COMBUSTIBLE("Combustible"),
+    GESTORÍA("Gestoría/Asesoría"),
+    IMPUESTOS("Impuestos/Tasas"),
+    LUZ("Electricidad"),
+    MANTENIMIENTO("Mantenimiento"),
+    MAQUINARIA("Maquinaria/Equipos"),
+    MATERIAL_OFICINA("Material oficina"),
+    OTROS("Otros"),
     PERSONAL("Personal/Nóminas"),
+    PRODUCTOS("Productos"),
+    PUBLICIDAD("Publicidad/Marketing"),
+    REPARACIONES("Reparaciones"),
     SEGURIDAD_SOCIAL("Seguridad Social"),
     SEGURIDAD_SOCIAL_A_CARGO_EMPRESA("Autónomos"),
-    IMPUESTOS("Impuestos/Tasas"),
+    SEGUROS("Seguros"),
+    SUMINISTROS("Productos de limpieza"),
     TELEFONIA("Telefonía/Internet"),
-    PUBLICIDAD("Publicidad/Marketing"),
-    MATERIAL_OFICINA("Material oficina"),
-    GESTORÍA("Gestoría/Asesoría"),
-    BANCARIOS("Gastos bancarios"),
-    VEHICULOS("Vehículos"),
-    MAQUINARIA("Maquinaria/Equipos"),
-    OTROS("Otros");
+    VEHICULOS("Vehículos");
 
     private final String descripcion;
 
