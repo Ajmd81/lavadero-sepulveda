@@ -3,102 +3,131 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
 
-<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.lavaderosepulveda.crm.controller.FormularioGastoController"
-      spacing="15" prefWidth="500" styleClass="formulario-modal">
+      spacing="15" prefWidth="550" prefHeight="550">
     
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
     
     <!-- Título -->
-    <Label fx:id="lblTitulo" text="Nuevo Gasto" styleClass="titulo-formulario">
-        <font><Font size="18" name="System Bold"/></font>
-    </Label>
+    <Label fx:id="lblTitulo" text="Nuevo Gasto" 
+           style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
     
     <Separator/>
     
     <!-- Datos del Gasto -->
-    <GridPane hgap="10" vgap="15">
-        <Label text="Concepto:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <TextField fx:id="txtConcepto" promptText="Descripción del gasto" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
-        
-        <Label text="Fecha:*" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <DatePicker fx:id="dpFecha" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="150"/>
-        
-        <Label text="Categoría:*" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
-        <ComboBox fx:id="cmbCategoria" promptText="Seleccionar..." GridPane.columnIndex="3" GridPane.rowIndex="1" prefWidth="180"/>
-        
-        <columnConstraints>
-            <ColumnConstraints minWidth="80"/>
-            <ColumnConstraints hgrow="ALWAYS"/>
-            <ColumnConstraints minWidth="80"/>
-            <ColumnConstraints hgrow="ALWAYS"/>
-        </columnConstraints>
-    </GridPane>
-    
-    <!-- Importes -->
-    <TitledPane text="Importe" expanded="true" collapsible="false">
+    <TitledPane text="Datos del Gasto" expanded="true" collapsible="false">
         <GridPane hgap="10" vgap="10">
-            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
             
-            <Label text="Importe:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-            <TextField fx:id="txtImporte" promptText="0,00" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="120"/>
-            <Label text="€" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <Label text="Fecha:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <DatePicker fx:id="dpFecha" prefWidth="150"
+                        GridPane.columnIndex="1" GridPane.rowIndex="0"/>
             
-            <CheckBox fx:id="chkIvaIncluido" text="IVA incluido en el importe" GridPane.columnIndex="3" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
+            <Label text="Categoría:*" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="cmbCategoria" prefWidth="180" promptText="Seleccionar"
+                      GridPane.columnIndex="3" GridPane.rowIndex="0"/>
             
-            <Separator GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="5"/>
-            
-            <Label text="Base:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-            <Label fx:id="lblBase" text="0,00 €" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="label-calculado"/>
-            
-            <Label text="IVA (21%):" GridPane.columnIndex="3" GridPane.rowIndex="2"/>
-            <Label fx:id="lblIva" text="0,00 €" GridPane.columnIndex="4" GridPane.rowIndex="2" styleClass="label-calculado"/>
+            <Label text="Concepto:*" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="txtConcepto" promptText="Descripción del gasto" 
+                       GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="3"/>
             
             <columnConstraints>
-                <ColumnConstraints minWidth="60"/>
-                <ColumnConstraints minWidth="100"/>
-                <ColumnConstraints minWidth="20"/>
+                <ColumnConstraints minWidth="80"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
                 <ColumnConstraints minWidth="80"/>
                 <ColumnConstraints hgrow="ALWAYS"/>
             </columnConstraints>
         </GridPane>
     </TitledPane>
     
-    <!-- Pago y Recurrencia -->
-    <HBox spacing="30">
-        <VBox spacing="5">
-            <Label text="Método de Pago:"/>
-            <ComboBox fx:id="cmbMetodoPago" prefWidth="150"/>
-        </VBox>
-        <VBox spacing="5">
-            <CheckBox fx:id="chkPagado" text="Ya pagado"/>
-        </VBox>
-    </HBox>
+    <!-- Importes -->
+    <TitledPane text="Importes" expanded="true" collapsible="false">
+        <GridPane hgap="15" vgap="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            
+            <Label text="Base Imponible:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="txtBaseImponible" promptText="0.00" prefWidth="120"
+                       GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            <Label text="€" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            
+            <Label text="Tipo IVA:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cmbTipoIva" prefWidth="100"
+                      GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            <Label text="Cuota IVA:" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+            <Label fx:id="lblCuotaIva" text="0,00 €" style="-fx-font-weight: bold;"
+                   GridPane.columnIndex="4" GridPane.rowIndex="1"/>
+            
+            <Separator GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="5"/>
+            
+            <Label text="IMPORTE TOTAL:" style="-fx-font-size: 14px; -fx-font-weight: bold;"
+                   GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"/>
+            <Label fx:id="lblTotal" text="0,00 €" 
+                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #c62828;"
+                   GridPane.columnIndex="3" GridPane.rowIndex="3" GridPane.columnSpan="2"/>
+            
+            <columnConstraints>
+                <ColumnConstraints minWidth="100"/>
+                <ColumnConstraints/>
+                <ColumnConstraints minWidth="20"/>
+                <ColumnConstraints minWidth="80"/>
+                <ColumnConstraints minWidth="100"/>
+            </columnConstraints>
+        </GridPane>
+    </TitledPane>
     
-    <!-- Recurrencia -->
-    <TitledPane text="Gasto Recurrente" expanded="false">
-        <HBox spacing="20" alignment="CENTER_LEFT">
-            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-            <CheckBox fx:id="chkRecurrente" text="Es un gasto recurrente mensual"/>
-            <Label text="Día del mes:"/>
-            <Spinner fx:id="spnDiaRecurrencia" prefWidth="80"/>
-        </HBox>
+    <!-- Estado y Pago -->
+    <TitledPane text="Estado y Pago" expanded="true" collapsible="false">
+        <GridPane hgap="15" vgap="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            
+            <Label text="Pagado:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <CheckBox fx:id="chkPagado" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            
+            <Label text="Método Pago:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="cmbMetodoPago" prefWidth="150"
+                      GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+            
+            <Label text="Recurrente:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <CheckBox fx:id="chkRecurrente" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            
+            <Label fx:id="lblPeriodicidad" text="Periodicidad:" 
+                   GridPane.columnIndex="2" GridPane.rowIndex="1" visible="false"/>
+            <ComboBox fx:id="cmbPeriodicidad" prefWidth="150"
+                      GridPane.columnIndex="3" GridPane.rowIndex="1" visible="false"/>
+            
+            <columnConstraints>
+                <ColumnConstraints minWidth="80"/>
+                <ColumnConstraints/>
+                <ColumnConstraints minWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+        </GridPane>
     </TitledPane>
     
     <!-- Notas -->
     <VBox spacing="5">
         <Label text="Notas:"/>
-        <TextArea fx:id="txtNotas" promptText="Notas adicionales..." prefRowCount="2"/>
+        <TextArea fx:id="txtNotas" promptText="Observaciones adicionales..." prefRowCount="2"/>
     </VBox>
     
     <Separator/>
     
     <!-- Botones -->
     <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Cancelar" onAction="#cancelar" styleClass="btn-cancelar" prefWidth="100"/>
-        <Button text="Guardar" onAction="#guardar" styleClass="btn-primario" prefWidth="100"/>
+        <Button text="Cancelar" onAction="#cancelar" prefWidth="100"
+                style="-fx-background-color: #e0e0e0;"/>
+        <Button text="Guardar" onAction="#guardar" prefWidth="100"
+                style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
     </HBox>
     
 </VBox>

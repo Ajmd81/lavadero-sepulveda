@@ -4,8 +4,7 @@ import com.google.gson.reflect.TypeToken;
 import com.lavaderosepulveda.crm.api.ApiClient;
 import com.lavaderosepulveda.crm.api.dto.FacturaDTO;
 import com.lavaderosepulveda.crm.config.ConfigManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -16,9 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class FacturaApiService {
-
-    private static final Logger log = LoggerFactory.getLogger(FacturaApiService.class);
 
     private static FacturaApiService instance;
     private final ApiClient apiClient;
