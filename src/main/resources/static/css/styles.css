@@ -117,19 +117,24 @@ nav {
 .hero {
     background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
     color: white;
-    padding: 20px 0; /* Reducido de 40px a 20px */
+    padding: 20px 0;
+    /* Reducido de 40px a 20px */
     text-align: center;
 }
 
 .hero h1 {
-    font-size: 1.8rem; /* Reducido de 2.2rem */
-    margin-bottom: 10px; /* Reducido de 15px */
+    font-size: 1.8rem;
+    /* Reducido de 2.2rem */
+    margin-bottom: 10px;
+    /* Reducido de 15px */
 }
 
 .hero p {
-    font-size: 1rem; /* Reducido de 1.1rem */
+    font-size: 1rem;
+    /* Reducido de 1.1rem */
     max-width: 700px;
-    margin: 0 auto 15px; /* Reducido de 25px a 15px */
+    margin: 0 auto 15px;
+    /* Reducido de 25px a 15px */
 }
 
 /* Cards y contenido */
@@ -139,6 +144,7 @@ nav {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     padding: 20px;
     margin-bottom: 20px;
+    margin-top: 30px;
 }
 
 .card-title {
@@ -162,7 +168,9 @@ label {
     font-weight: 500;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
     width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
@@ -279,7 +287,8 @@ footer {
 }
 
 /* Secciones adicionales */
-.about-us, .location {
+.about-us,
+.location {
     margin-top: 30px;
     background-color: white;
     border-radius: 8px;
@@ -292,7 +301,8 @@ footer {
     border-radius: 8px;
     overflow: hidden;
     position: relative;
-    padding-bottom: 56.25%; /* Proporción 16:9 */
+    padding-bottom: 56.25%;
+    /* Proporción 16:9 */
     height: 0;
 }
 
@@ -357,7 +367,8 @@ footer {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+    box-sizing: border-box;
+    /* Asegura que el padding no afecte el ancho total */
 }
 
 .additional-services-grid {
@@ -408,12 +419,12 @@ footer {
     clear: both;
 }
 
-#turismoToggle > div:first-child {
+#turismoToggle>div:first-child {
     margin-bottom: 15px;
     text-align: center;
 }
 
-#turismoToggle > div:last-child {
+#turismoToggle>div:last-child {
     display: flex;
     gap: 20px;
     align-items: center;
@@ -429,7 +440,8 @@ footer {
     cursor: pointer;
     padding: 12px 15px;
     background-color: rgba(255, 255, 255, 0.7);
-    border: 1px solid #ffc107; /* Agregar borde visible */
+    border: 1px solid #ffc107;
+    /* Agregar borde visible */
     border-radius: 6px;
     transition: all 0.2s ease;
     /* DIMENSIONES FIJAS */
@@ -451,35 +463,42 @@ footer {
 }
 
 #turismoToggle input[type="radio"] {
-    margin: 0 8px 0 0; /* Solo margen derecho */
+    margin: 0 8px 0 0;
+    /* Solo margen derecho */
     cursor: pointer;
     flex-shrink: 0;
-    width: 16px; /* Tamaño fijo */
+    width: 16px;
+    /* Tamaño fijo */
     height: 16px;
-    position: relative; /* Asegurar posición relativa */
+    position: relative;
+    /* Asegurar posición relativa */
     z-index: 1;
 }
 
 #turismoToggle label span {
     flex: 1;
-    text-align: left; /* Alinear texto a la izquierda */
+    text-align: left;
+    /* Alinear texto a la izquierda */
     line-height: 1.2;
     font-size: 14px;
-    white-space: nowrap; /* Evitar salto de línea */
+    white-space: nowrap;
+    /* Evitar salto de línea */
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 /* Separación del elemento anterior */
-.vehicle-category-info + #turismoToggle,
-#vehicleCategoryInfo + #turismoToggle {
+.vehicle-category-info+#turismoToggle,
+#vehicleCategoryInfo+#turismoToggle {
     margin-top: 25px;
 }
 
 /* Estilos para la información de pago en el formulario */
 .note-info h4 {
-    color: #dc3545; /* Rojo */
-    text-align: center; /* Centrado */
+    color: #dc3545;
+    /* Rojo */
+    text-align: center;
+    /* Centrado */
     margin-top: 0;
     margin-bottom: 15px;
     font-size: 1.4rem;
@@ -487,7 +506,8 @@ footer {
 }
 
 .note-info p {
-    color: #333; /* Texto normal */
+    color: #333;
+    /* Texto normal */
     margin: 10px 0;
     font-size: 1rem;
     line-height: 1.6;
@@ -564,7 +584,8 @@ footer {
     }
 
     .hero {
-        padding: 15px 0; /* Aún más compacto en móviles */
+        padding: 15px 0;
+        /* Aún más compacto en móviles */
     }
 
     .hero h1 {
@@ -603,7 +624,7 @@ footer {
     }
 
     /* Responsive para el toggle de turismo */
-    #turismoToggle > div:last-child {
+    #turismoToggle>div:last-child {
         flex-direction: column;
         gap: 15px;
     }
@@ -627,7 +648,10 @@ footer {
         font-size: 1.5rem;
     }
 
-    .card, .section, .schedule-container, .policy-container {
+    .card,
+    .section,
+    .schedule-container,
+    .policy-container {
         padding: 15px;
     }
 
@@ -640,7 +664,9 @@ footer {
         height: 120px;
     }
 
-    .section-title, .card-title, .policy-title {
+    .section-title,
+    .card-title,
+    .policy-title {
         font-size: 1.1rem;
     }
 
@@ -768,7 +794,11 @@ footer {
 
 /* Impresión */
 @media print {
-    header, footer, .hero, .btn {
+
+    header,
+    footer,
+    .hero,
+    .btn {
         display: none;
     }
 
@@ -777,7 +807,9 @@ footer {
         color: black;
     }
 
-    .card, .section, .policy-container {
+    .card,
+    .section,
+    .policy-container {
         box-shadow: none;
         border: 1px solid #ddd;
     }
