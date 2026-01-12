@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.app.controller;
 
-import com.lavaderosepulveda.app.model.TipoLavado;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;

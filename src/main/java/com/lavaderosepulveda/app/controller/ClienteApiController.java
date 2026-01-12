@@ -15,9 +15,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/clientes")
 @CrossOrigin(origins = "*")
-public class ClienteController {
+public class ClienteApiController {
 
-    private static final Logger log = LoggerFactory.getLogger(ClienteController.class);
+    private static final Logger log = LoggerFactory.getLogger(ClienteApiController.class);
 
     @Autowired
     private ClienteService clienteService;

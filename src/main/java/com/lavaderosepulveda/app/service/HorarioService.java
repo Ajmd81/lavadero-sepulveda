@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.lavaderosepulveda.app.model.TipoLavado;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 
 /**
  * Servicio especializado en la gestión de horarios disponibles

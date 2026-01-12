@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.app.dto;
 
-import com.lavaderosepulveda.app.model.TipoLavado;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

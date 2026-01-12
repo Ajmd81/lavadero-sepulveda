@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.repository;
 
 import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.model.EstadoCita;
+import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

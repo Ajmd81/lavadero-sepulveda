@@ -2,7 +2,7 @@ package com.lavaderosepulveda.app.controller;
 
 import com.lavaderosepulveda.app.dto.ClienteEstadisticaDTO;
 import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.model.EstadoCita;
+import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.VehicleModel;
 import com.lavaderosepulveda.app.repository.VehicleModelRepository;
 import com.lavaderosepulveda.app.service.CitaService;

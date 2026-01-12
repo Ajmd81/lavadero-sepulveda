@@ -2,7 +2,7 @@ package com.lavaderosepulveda.app.service;
 
 import com.lavaderosepulveda.app.model.Factura;
 import com.lavaderosepulveda.app.model.LineaFactura;
-import com.lavaderosepulveda.app.model.MetodoPago;
+import com.lavaderosepulveda.app.model.enums.MetodoPago;
 import com.lavaderosepulveda.app.model.PlantillaFacturaConfig;
 import com.lavaderosepulveda.app.repository.PlantillaFacturaConfigRepository;
 import com.lowagie.text.*;

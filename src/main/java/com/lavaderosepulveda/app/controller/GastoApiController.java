@@ -13,7 +13,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/gastos")
 @CrossOrigin(origins = "*")
-public class GastoController {
+public class GastoApiController {
 
     @Autowired
     private GastoService gastoService;

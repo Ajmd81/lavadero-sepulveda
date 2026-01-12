@@ -2,7 +2,7 @@ package com.lavaderosepulveda.app.mapper;
 
 import com.lavaderosepulveda.app.dto.CitaDTO;
 import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.model.EstadoCita;
+import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import org.springframework.stereotype.Component;
 
