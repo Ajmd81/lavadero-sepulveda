@@ -31,18 +31,15 @@ public class FacturaRecibidaMapper {
         dto.setId(factura.getId());
         dto.setNumeroFactura(factura.getNumeroFactura());
         
-        // Formatear fechas
+        // Formatear fechas usando los métodos correctos
         if (factura.getFechaFactura() != null) {
-            dto.setFechaFactura(DateTimeFormatUtils.formatDate(factura.getFechaFactura()));
-        }
-        if (factura.getFechaRecepcion() != null) {
-            dto.setFechaRecepcion(DateTimeFormatUtils.formatDate(factura.getFechaRecepcion()));
+            dto.setFechaFactura(DateTimeFormatUtils.formatearFechaCorta(factura.getFechaFactura()));
         }
         if (factura.getFechaVencimiento() != null) {
-            dto.setFechaVencimiento(DateTimeFormatUtils.formatDate(factura.getFechaVencimiento()));
+            dto.setFechaVencimiento(DateTimeFormatUtils.formatearFechaCorta(factura.getFechaVencimiento()));
         }
         if (factura.getFechaPago() != null) {
-            dto.setFechaPago(DateTimeFormatUtils.formatDate(factura.getFechaPago()));
+            dto.setFechaPago(DateTimeFormatUtils.formatearFechaCorta(factura.getFechaPago()));
         }
         
         // Proveedor
@@ -50,6 +47,10 @@ public class FacturaRecibidaMapper {
         if (proveedor != null) {
             dto.setProveedorId(proveedor.getId());
             dto.setProveedorNombre(proveedor.getNombre());
+            dto.setProveedorNif(proveedor.getNif());
+        } else {
+            dto.setProveedorNombre(factura.getProveedorNombre());
+            dto.setProveedorNif(factura.getProveedorNif());
         }
         
         // Enums a String
@@ -63,17 +64,18 @@ public class FacturaRecibidaMapper {
             dto.setMetodoPago(factura.getMetodoPago().name());
         }
         
-        // Importes
+        // Importes - usar los nombres correctos: cuotaIva, cuotaIrpf
         dto.setBaseImponible(factura.getBaseImponible());
         dto.setTipoIva(factura.getTipoIva());
-        dto.setImporteIva(factura.getImporteIva());
+        dto.setCuotaIva(factura.getCuotaIva());
         dto.setTipoIrpf(factura.getTipoIrpf());
-        dto.setImporteIrpf(factura.getImporteIrpf());
+        dto.setCuotaIrpf(factura.getCuotaIrpf());
         dto.setTotal(factura.getTotal());
         
         // Otros
         dto.setConcepto(factura.getConcepto());
         dto.setNotas(factura.getNotas());
+        dto.setDocumentoAdjunto(factura.getDocumentoAdjunto());
 
         return dto;
     }
@@ -90,26 +92,27 @@ public class FacturaRecibidaMapper {
         factura.setId(dto.getId());
         factura.setNumeroFactura(dto.getNumeroFactura());
         
-        // Parsear fechas
+        // Parsear fechas usando los métodos correctos
         if (dto.getFechaFactura() != null && !dto.getFechaFactura().isEmpty()) {
-            factura.setFechaFactura(DateTimeFormatUtils.parseDate(dto.getFechaFactura()));
-        }
-        if (dto.getFechaRecepcion() != null && !dto.getFechaRecepcion().isEmpty()) {
-            factura.setFechaRecepcion(DateTimeFormatUtils.parseDate(dto.getFechaRecepcion()));
+            factura.setFechaFactura(DateTimeFormatUtils.parsearFechaCorta(dto.getFechaFactura()));
         }
         if (dto.getFechaVencimiento() != null && !dto.getFechaVencimiento().isEmpty()) {
-            factura.setFechaVencimiento(DateTimeFormatUtils.parseDate(dto.getFechaVencimiento()));
+            factura.setFechaVencimiento(DateTimeFormatUtils.parsearFechaCorta(dto.getFechaVencimiento()));
         }
         if (dto.getFechaPago() != null && !dto.getFechaPago().isEmpty()) {
-            factura.setFechaPago(DateTimeFormatUtils.parseDate(dto.getFechaPago()));
+            factura.setFechaPago(DateTimeFormatUtils.parsearFechaCorta(dto.getFechaPago()));
         }
+        
+        // Datos del proveedor directos
+        factura.setProveedorNombre(dto.getProveedorNombre());
+        factura.setProveedorNif(dto.getProveedorNif());
         
         // String a Enums
         if (dto.getCategoria() != null && !dto.getCategoria().isEmpty()) {
             try {
                 factura.setCategoria(CategoriaGasto.valueOf(dto.getCategoria()));
             } catch (IllegalArgumentException e) {
-                // Ignorar
+                // Ignorar si no es válido
             }
         }
         if (dto.getEstado() != null && !dto.getEstado().isEmpty()) {
@@ -122,14 +125,15 @@ public class FacturaRecibidaMapper {
         // Importes
         factura.setBaseImponible(dto.getBaseImponible());
         factura.setTipoIva(dto.getTipoIva());
-        factura.setImporteIva(dto.getImporteIva());
+        factura.setCuotaIva(dto.getCuotaIva());
         factura.setTipoIrpf(dto.getTipoIrpf());
-        factura.setImporteIrpf(dto.getImporteIrpf());
+        factura.setCuotaIrpf(dto.getCuotaIrpf());
         factura.setTotal(dto.getTotal());
         
         // Otros
         factura.setConcepto(dto.getConcepto());
         factura.setNotas(dto.getNotas());
+        factura.setDocumentoAdjunto(dto.getDocumentoAdjunto());
 
         return factura;
     }
@@ -144,29 +148,27 @@ public class FacturaRecibidaMapper {
 
         if (dto.getNumeroFactura() != null) factura.setNumeroFactura(dto.getNumeroFactura());
         if (dto.getFechaFactura() != null && !dto.getFechaFactura().isEmpty()) {
-            factura.setFechaFactura(DateTimeFormatUtils.parseDate(dto.getFechaFactura()));
-        }
-        if (dto.getFechaRecepcion() != null && !dto.getFechaRecepcion().isEmpty()) {
-            factura.setFechaRecepcion(DateTimeFormatUtils.parseDate(dto.getFechaRecepcion()));
+            factura.setFechaFactura(DateTimeFormatUtils.parsearFechaCorta(dto.getFechaFactura()));
         }
         if (dto.getFechaVencimiento() != null && !dto.getFechaVencimiento().isEmpty()) {
-            factura.setFechaVencimiento(DateTimeFormatUtils.parseDate(dto.getFechaVencimiento()));
+            factura.setFechaVencimiento(DateTimeFormatUtils.parsearFechaCorta(dto.getFechaVencimiento()));
         }
         if (dto.getCategoria() != null && !dto.getCategoria().isEmpty()) {
             try {
                 factura.setCategoria(CategoriaGasto.valueOf(dto.getCategoria()));
             } catch (IllegalArgumentException e) {
-                // Ignorar
+                // Ignorar si no es válido
             }
         }
         if (dto.getBaseImponible() != null) factura.setBaseImponible(dto.getBaseImponible());
         if (dto.getTipoIva() != null) factura.setTipoIva(dto.getTipoIva());
-        if (dto.getImporteIva() != null) factura.setImporteIva(dto.getImporteIva());
+        if (dto.getCuotaIva() != null) factura.setCuotaIva(dto.getCuotaIva());
         if (dto.getTipoIrpf() != null) factura.setTipoIrpf(dto.getTipoIrpf());
-        if (dto.getImporteIrpf() != null) factura.setImporteIrpf(dto.getImporteIrpf());
+        if (dto.getCuotaIrpf() != null) factura.setCuotaIrpf(dto.getCuotaIrpf());
         if (dto.getTotal() != null) factura.setTotal(dto.getTotal());
         if (dto.getConcepto() != null) factura.setConcepto(dto.getConcepto());
         if (dto.getNotas() != null) factura.setNotas(dto.getNotas());
+        if (dto.getDocumentoAdjunto() != null) factura.setDocumentoAdjunto(dto.getDocumentoAdjunto());
     }
 
     /**

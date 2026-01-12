@@ -2,6 +2,7 @@ package com.lavaderosepulveda.app.service;
 
 import com.lavaderosepulveda.app.dto.FacturaRecibidaDTO;
 import com.lavaderosepulveda.app.model.*;
+import com.lavaderosepulveda.app.model.enums.*;
 import com.lavaderosepulveda.app.repository.FacturaRecibidaRepository;
 import com.lavaderosepulveda.app.repository.ProveedorRepository;
 import org.springframework.beans.factory.annotation.Autowired;

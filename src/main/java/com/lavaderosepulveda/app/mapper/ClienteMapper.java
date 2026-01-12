@@ -4,6 +4,10 @@ import com.lavaderosepulveda.app.dto.ClienteDTO;
 import com.lavaderosepulveda.app.model.Cliente;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Mapper para convertir entre Cliente (Entity) y ClienteDTO
  */
@@ -21,29 +25,26 @@ public class ClienteMapper {
         ClienteDTO dto = new ClienteDTO();
         dto.setId(cliente.getId());
         dto.setNombre(cliente.getNombre());
+        dto.setApellidos(cliente.getApellidos());
+        dto.setTelefono(cliente.getTelefono());
+        dto.setEmail(cliente.getEmail());
+        dto.setActivo(cliente.getActivo());
+        dto.setVehiculoHabitual(cliente.getVehiculoHabitual());
+        
+        // Campos CRM
         dto.setNif(cliente.getNif());
         dto.setDireccion(cliente.getDireccion());
         dto.setCodigoPostal(cliente.getCodigoPostal());
-        dto.setPoblacion(cliente.getPoblacion());
+        dto.setCiudad(cliente.getCiudad());
         dto.setProvincia(cliente.getProvincia());
-        dto.setTelefono(cliente.getTelefono());
-        dto.setEmail(cliente.getEmail());
-        dto.setObservaciones(cliente.getObservaciones());
-        dto.setActivo(cliente.getActivo());
-        dto.setTotalVisitas(cliente.getTotalVisitas());
-        dto.setTotalGastado(cliente.getTotalGastado());
-        dto.setTotalNoPresentaciones(cliente.getTotalNoPresentaciones());
+        dto.setMatricula(cliente.getMatricula());
+        dto.setMarca(cliente.getMarca());
+        dto.setModelo(cliente.getModelo());
+        dto.setColor(cliente.getColor());
+        dto.setNotas(cliente.getNotas());
         
-        // Formatear fechas si existen
-        if (cliente.getCreatedAt() != null) {
-            dto.setCreatedAt(cliente.getCreatedAt().toString());
-        }
-        if (cliente.getUpdatedAt() != null) {
-            dto.setUpdatedAt(cliente.getUpdatedAt().toString());
-        }
-        if (cliente.getUltimaVisita() != null) {
-            dto.setUltimaVisita(cliente.getUltimaVisita().toString());
-        }
+        // Estadísticas se calculan en el Service, no aquí
+        // totalCitas, citasCompletadas, etc. vienen de consultas
 
         return dto;
     }
@@ -59,18 +60,23 @@ public class ClienteMapper {
         Cliente cliente = new Cliente();
         cliente.setId(dto.getId());
         cliente.setNombre(dto.getNombre());
+        cliente.setApellidos(dto.getApellidos());
+        cliente.setTelefono(dto.getTelefono());
+        cliente.setEmail(dto.getEmail());
+        cliente.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+        cliente.setVehiculoHabitual(dto.getVehiculoHabitual());
+        
+        // Campos CRM
         cliente.setNif(dto.getNif());
         cliente.setDireccion(dto.getDireccion());
         cliente.setCodigoPostal(dto.getCodigoPostal());
-        cliente.setPoblacion(dto.getPoblacion());
+        cliente.setCiudad(dto.getCiudad());
         cliente.setProvincia(dto.getProvincia());
-        cliente.setTelefono(dto.getTelefono());
-        cliente.setEmail(dto.getEmail());
-        cliente.setObservaciones(dto.getObservaciones());
-        cliente.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
-        cliente.setTotalVisitas(dto.getTotalVisitas() != null ? dto.getTotalVisitas() : 0);
-        cliente.setTotalGastado(dto.getTotalGastado());
-        cliente.setTotalNoPresentaciones(dto.getTotalNoPresentaciones() != null ? dto.getTotalNoPresentaciones() : 0);
+        cliente.setMatricula(dto.getMatricula());
+        cliente.setMarca(dto.getMarca());
+        cliente.setModelo(dto.getModelo());
+        cliente.setColor(dto.getColor());
+        cliente.setNotas(dto.getNotas());
 
         return cliente;
     }
@@ -84,14 +90,34 @@ public class ClienteMapper {
         }
 
         if (dto.getNombre() != null) cliente.setNombre(dto.getNombre());
+        if (dto.getApellidos() != null) cliente.setApellidos(dto.getApellidos());
+        if (dto.getTelefono() != null) cliente.setTelefono(dto.getTelefono());
+        if (dto.getEmail() != null) cliente.setEmail(dto.getEmail());
+        if (dto.getActivo() != null) cliente.setActivo(dto.getActivo());
+        if (dto.getVehiculoHabitual() != null) cliente.setVehiculoHabitual(dto.getVehiculoHabitual());
+        
+        // Campos CRM
         if (dto.getNif() != null) cliente.setNif(dto.getNif());
         if (dto.getDireccion() != null) cliente.setDireccion(dto.getDireccion());
         if (dto.getCodigoPostal() != null) cliente.setCodigoPostal(dto.getCodigoPostal());
-        if (dto.getPoblacion() != null) cliente.setPoblacion(dto.getPoblacion());
+        if (dto.getCiudad() != null) cliente.setCiudad(dto.getCiudad());
         if (dto.getProvincia() != null) cliente.setProvincia(dto.getProvincia());
-        if (dto.getTelefono() != null) cliente.setTelefono(dto.getTelefono());
-        if (dto.getEmail() != null) cliente.setEmail(dto.getEmail());
-        if (dto.getObservaciones() != null) cliente.setObservaciones(dto.getObservaciones());
-        if (dto.getActivo() != null) cliente.setActivo(dto.getActivo());
+        if (dto.getMatricula() != null) cliente.setMatricula(dto.getMatricula());
+        if (dto.getMarca() != null) cliente.setMarca(dto.getMarca());
+        if (dto.getModelo() != null) cliente.setModelo(dto.getModelo());
+        if (dto.getColor() != null) cliente.setColor(dto.getColor());
+        if (dto.getNotas() != null) cliente.setNotas(dto.getNotas());
+    }
+
+    /**
+     * Convierte lista de entidades a lista de DTOs
+     */
+    public List<ClienteDTO> toDTOList(List<Cliente> clientes) {
+        if (clientes == null) {
+            return new ArrayList<>();
+        }
+        return clientes.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 }

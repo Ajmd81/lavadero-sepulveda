@@ -3,6 +3,7 @@ package com.lavaderosepulveda.app.mapper;
 import com.lavaderosepulveda.app.dto.GastoDTO;
 import com.lavaderosepulveda.app.model.Gasto;
 import com.lavaderosepulveda.app.model.enums.CategoriaGasto;
+import com.lavaderosepulveda.app.model.enums.MetodoPago;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import org.springframework.stereotype.Component;
 
@@ -31,20 +32,30 @@ public class GastoMapper {
         
         // Formatear fecha
         if (gasto.getFecha() != null) {
-            dto.setFecha(DateTimeFormatUtils.formatDate(gasto.getFecha()));
+            dto.setFecha(DateTimeFormatUtils.formatearFechaCorta(gasto.getFecha()));
         }
         
         // Enum a String
         if (gasto.getCategoria() != null) {
             dto.setCategoria(gasto.getCategoria().name());
         }
+        if (gasto.getMetodoPago() != null) {
+            dto.setMetodoPago(gasto.getMetodoPago().name());
+        }
         
-        dto.setProveedor(gasto.getProveedor());
-        dto.setNumeroFactura(gasto.getNumeroFactura());
-        dto.setDeducible(gasto.getDeducible());
+        dto.setIvaIncluido(gasto.getIvaIncluido());
+        dto.setBaseImponible(gasto.getBaseImponible());
+        dto.setCuotaIva(gasto.getCuotaIva());
+        
+        // Factura recibida vinculada
+        if (gasto.getFacturaRecibida() != null) {
+            dto.setFacturaRecibidaId(gasto.getFacturaRecibida().getId());
+        }
+        
         dto.setRecurrente(gasto.getRecurrente());
-        dto.setPeriodicidad(gasto.getPeriodicidad());
+        dto.setDiaRecurrencia(gasto.getDiaRecurrencia());
         dto.setNotas(gasto.getNotas());
+        dto.setPagado(gasto.getPagado());
 
         return dto;
     }
@@ -64,7 +75,7 @@ public class GastoMapper {
         
         // Parsear fecha
         if (dto.getFecha() != null && !dto.getFecha().isEmpty()) {
-            gasto.setFecha(DateTimeFormatUtils.parseDate(dto.getFecha()));
+            gasto.setFecha(DateTimeFormatUtils.parsearFechaCorta(dto.getFecha()));
         }
         
         // String a Enum
@@ -75,13 +86,24 @@ public class GastoMapper {
                 // Si no coincide con ningún enum, dejarlo null
             }
         }
+        if (dto.getMetodoPago() != null && !dto.getMetodoPago().isEmpty()) {
+            try {
+                gasto.setMetodoPago(MetodoPago.valueOf(dto.getMetodoPago()));
+            } catch (IllegalArgumentException e) {
+                // Ignorar
+            }
+        }
         
-        gasto.setProveedor(dto.getProveedor());
-        gasto.setNumeroFactura(dto.getNumeroFactura());
-        gasto.setDeducible(dto.getDeducible() != null ? dto.getDeducible() : true);
+        gasto.setIvaIncluido(dto.getIvaIncluido() != null ? dto.getIvaIncluido() : true);
+        gasto.setBaseImponible(dto.getBaseImponible());
+        gasto.setCuotaIva(dto.getCuotaIva());
+        
+        // facturaRecibida se setea en el Service
+        
         gasto.setRecurrente(dto.getRecurrente() != null ? dto.getRecurrente() : false);
-        gasto.setPeriodicidad(dto.getPeriodicidad());
+        gasto.setDiaRecurrencia(dto.getDiaRecurrencia());
         gasto.setNotas(dto.getNotas());
+        gasto.setPagado(dto.getPagado() != null ? dto.getPagado() : true);
 
         return gasto;
     }
@@ -97,7 +119,7 @@ public class GastoMapper {
         if (dto.getConcepto() != null) gasto.setConcepto(dto.getConcepto());
         if (dto.getImporte() != null) gasto.setImporte(dto.getImporte());
         if (dto.getFecha() != null && !dto.getFecha().isEmpty()) {
-            gasto.setFecha(DateTimeFormatUtils.parseDate(dto.getFecha()));
+            gasto.setFecha(DateTimeFormatUtils.parsearFechaCorta(dto.getFecha()));
         }
         if (dto.getCategoria() != null && !dto.getCategoria().isEmpty()) {
             try {
@@ -106,12 +128,20 @@ public class GastoMapper {
                 // Ignorar si no es válido
             }
         }
-        if (dto.getProveedor() != null) gasto.setProveedor(dto.getProveedor());
-        if (dto.getNumeroFactura() != null) gasto.setNumeroFactura(dto.getNumeroFactura());
-        if (dto.getDeducible() != null) gasto.setDeducible(dto.getDeducible());
+        if (dto.getMetodoPago() != null && !dto.getMetodoPago().isEmpty()) {
+            try {
+                gasto.setMetodoPago(MetodoPago.valueOf(dto.getMetodoPago()));
+            } catch (IllegalArgumentException e) {
+                // Ignorar
+            }
+        }
+        if (dto.getIvaIncluido() != null) gasto.setIvaIncluido(dto.getIvaIncluido());
+        if (dto.getBaseImponible() != null) gasto.setBaseImponible(dto.getBaseImponible());
+        if (dto.getCuotaIva() != null) gasto.setCuotaIva(dto.getCuotaIva());
         if (dto.getRecurrente() != null) gasto.setRecurrente(dto.getRecurrente());
-        if (dto.getPeriodicidad() != null) gasto.setPeriodicidad(dto.getPeriodicidad());
+        if (dto.getDiaRecurrencia() != null) gasto.setDiaRecurrencia(dto.getDiaRecurrencia());
         if (dto.getNotas() != null) gasto.setNotas(dto.getNotas());
+        if (dto.getPagado() != null) gasto.setPagado(dto.getPagado());
     }
 
     /**

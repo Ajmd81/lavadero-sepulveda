@@ -15,24 +15,22 @@ import java.util.Locale;
 public class DateTimeFormatUtils {
 
     // Formatters estáticos reutilizables
-    public static final DateTimeFormatter FECHA_COMPLETA_ES =
-            DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", new Locale("es", "ES"));
+    public static final DateTimeFormatter FECHA_COMPLETA_ES = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy",
+            new Locale("es", "ES"));
 
-    public static final DateTimeFormatter FECHA_CORTA =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    public static final DateTimeFormatter FECHA_CORTA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    public static final DateTimeFormatter HORA_CORTA =
-            DateTimeFormatter.ofPattern("HH:mm");
+    public static final DateTimeFormatter HORA_CORTA = DateTimeFormatter.ofPattern("HH:mm");
 
-    public static final DateTimeFormatter FECHA_ISO =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    public static final DateTimeFormatter FECHA_ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     /**
      * Formatea una fecha en español con formato completo
      * Ejemplo: "Lunes, 15 de junio de 2025"
      */
     public static String formatearFechaCompleta(LocalDate fecha) {
-        if (fecha == null) return "";
+        if (fecha == null)
+            return "";
 
         String formatted = fecha.format(FECHA_COMPLETA_ES);
         // Capitalizar la primera letra del día de la semana
@@ -44,7 +42,8 @@ public class DateTimeFormatUtils {
      * Ejemplo: "15/06/2025"
      */
     public static String formatearFechaCorta(LocalDate fecha) {
-        if (fecha == null) return "";
+        if (fecha == null)
+            return "";
         return fecha.format(FECHA_CORTA);
     }
 
@@ -53,7 +52,8 @@ public class DateTimeFormatUtils {
      * Ejemplo: "14:30"
      */
     public static String formatearHoraCorta(LocalTime hora) {
-        if (hora == null) return "";
+        if (hora == null)
+            return "";
         return hora.format(HORA_CORTA);
     }
 
@@ -62,7 +62,8 @@ public class DateTimeFormatUtils {
      * Ejemplo: "2025-06-15"
      */
     public static String formatearFechaISO(LocalDate fecha) {
-        if (fecha == null) return "";
+        if (fecha == null)
+            return "";
         return fecha.format(FECHA_ISO);
     }
 

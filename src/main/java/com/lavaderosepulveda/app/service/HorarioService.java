@@ -139,9 +139,9 @@ public class HorarioService {
             horariosOcupados.add(cita.getHora());
 
             // Si es tapicería, bloquear también las 2 horas siguientes (total 3 horas)
-            com.lavaderosepulveda.app.model.TipoLavado tipo = cita.getTipoLavado();
-            if (tipo == com.lavaderosepulveda.app.model.TipoLavado.TAPICERIA_SIN_DESMONTAR ||
-                    tipo == com.lavaderosepulveda.app.model.TipoLavado.TAPICERIA_DESMONTANDO) {
+            com.lavaderosepulveda.app.model.enums.TipoLavado tipo = cita.getTipoLavado();
+            if (tipo == com.lavaderosepulveda.app.model.enums.TipoLavado.TAPICERIA_SIN_DESMONTAR ||
+                    tipo == com.lavaderosepulveda.app.model.enums.TipoLavado.TAPICERIA_DESMONTANDO) {
 
                 horariosOcupados.add(cita.getHora().plusHours(1));
                 horariosOcupados.add(cita.getHora().plusHours(2));
