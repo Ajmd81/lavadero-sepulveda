@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lavaderosepulveda.crm.model.*;
+import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -152,7 +153,26 @@ public class FacturacionApiService {
         private String encode(String value) {
                 return URLEncoder.encode(value, StandardCharsets.UTF_8);
         }
-
+        
+        // ==================== CLIENTES ====================
+        
+        public List<ClienteDTO> obtenerClientes() throws IOException {
+        String response = doGet("/api/clientes");
+        return objectMapper.readValue(response, 
+                objectMapper.getTypeFactory().constructCollectionType(List.class, ClienteDTO.class));
+        }
+        
+        public List<ClienteDTO> buscarClientes(String termino) throws IOException {
+        String response = doGet("/api/clientes/buscar?termino=" + 
+                java.net.URLEncoder.encode(termino, java.nio.charset.StandardCharsets.UTF_8));
+        return objectMapper.readValue(response, 
+                objectMapper.getTypeFactory().constructCollectionType(List.class, ClienteDTO.class));
+        }
+        
+        public ClienteDTO obtenerClientePorId(Long id) throws IOException {
+        String response = doGet("/api/clientes/" + id);
+        return objectMapper.readValue(response, ClienteDTO.class);
+        }
         // ==================== PROVEEDORES ====================
 
         public List<ProveedorDTO> obtenerProveedores() throws IOException {
