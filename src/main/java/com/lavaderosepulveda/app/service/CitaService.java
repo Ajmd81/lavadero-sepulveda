@@ -2,8 +2,8 @@ package com.lavaderosepulveda.app.service;
 
 import com.lavaderosepulveda.app.dto.ClienteEstadisticaDTO;
 import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.model.EstadoCita;
-import com.lavaderosepulveda.app.model.TipoLavado;
+import com.lavaderosepulveda.app.model.enums.EstadoCita;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.repository.CitaRepository;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import org.slf4j.Logger;

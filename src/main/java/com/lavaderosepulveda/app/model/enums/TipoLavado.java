@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.model;
+package com.lavaderosepulveda.app.model.enums;
 
 public enum TipoLavado {
     LAVADO_COMPLETO_TURISMO("Lavado Completo Turismo", 25.0),

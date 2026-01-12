@@ -1,8 +1,8 @@
 package com.lavaderosepulveda.app.dto;
 
-import com.lavaderosepulveda.app.model.EstadoFactura;
-import com.lavaderosepulveda.app.model.MetodoPago;
-import com.lavaderosepulveda.app.model.TipoFactura;
+import com.lavaderosepulveda.app.model.enums.EstadoFactura;
+import com.lavaderosepulveda.app.model.enums.MetodoPago;
+import com.lavaderosepulveda.app.model.enums.TipoFactura;
 
 import java.math.BigDecimal;
 import java.util.List;

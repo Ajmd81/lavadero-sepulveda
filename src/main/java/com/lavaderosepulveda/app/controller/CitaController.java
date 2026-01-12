@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.controller;
 
 import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.model.TipoLavado;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.model.VehicleModel;
 import com.lavaderosepulveda.app.repository.VehicleModelRepository;
 import com.lavaderosepulveda.app.service.CitaService;

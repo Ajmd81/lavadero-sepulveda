@@ -3,7 +3,7 @@ package com.lavaderosepulveda.app.service;
 import com.lavaderosepulveda.app.dto.ClienteDTO;
 import com.lavaderosepulveda.app.model.Cliente;
 import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.model.EstadoCita;
+import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.repository.ClienteRepository;
 import com.lavaderosepulveda.app.repository.CitaRepository;
 import org.slf4j.Logger;

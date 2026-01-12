@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.model;
+package com.lavaderosepulveda.app.model.enums;
 
 public enum CategoriaGasto {
     AGUA("Agua"),

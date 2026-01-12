@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.app.repository;
 
-import com.lavaderosepulveda.app.model.CategoriaGasto;
+import com.lavaderosepulveda.app.model.enums.CategoriaGasto;
 import com.lavaderosepulveda.app.model.Gasto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

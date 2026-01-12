@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.app.service;
 
-import com.lavaderosepulveda.app.model.TipoLavado;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.model.VehicleCategory;
 import com.lavaderosepulveda.app.model.VehicleModel;
 import com.lavaderosepulveda.app.repository.VehicleCategoryRepository;

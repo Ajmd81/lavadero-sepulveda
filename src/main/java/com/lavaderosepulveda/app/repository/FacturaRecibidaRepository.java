@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.repository;
 
-import com.lavaderosepulveda.app.model.CategoriaGasto;
-import com.lavaderosepulveda.app.model.EstadoFactura;
+import com.lavaderosepulveda.app.model.enums.CategoriaGasto;
+import com.lavaderosepulveda.app.model.enums.EstadoFactura;
 import com.lavaderosepulveda.app.model.FacturaRecibida;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
