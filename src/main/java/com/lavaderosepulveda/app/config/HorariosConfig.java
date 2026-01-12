@@ -24,8 +24,8 @@ public class HorariosConfig {
         manana.setInicio(8);
         manana.setFin(15);
 
-        //tarde.setInicio(17);
-        //tarde.setFin(20);
+        tarde.setInicio(0);
+        tarde.setFin(0);
 
         sabado.setInicio(9);
         sabado.setFin(14);
@@ -73,7 +73,8 @@ public class HorariosConfig {
         private List<Integer> excluir = List.of();
 
         // Constructores
-        public Turno() {}
+        public Turno() {
+        }
 
         public Turno(int inicio, int fin) {
             this.inicio = inicio;
@@ -122,6 +123,9 @@ public class HorariosConfig {
          * Valida si la configuración del turno es válida
          */
         public boolean isValid() {
+            if (inicio == 0 || fin == 0) {
+                return true;
+            }
             return inicio >= 0 && fin <= 24 && inicio < fin;
         }
 

@@ -2,6 +2,7 @@ package com.lavaderosepulveda.crm.controller;
 
 import com.lavaderosepulveda.crm.api.service.FacturacionApiService;
 import com.lavaderosepulveda.crm.model.*;
+import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -432,7 +433,6 @@ public class FacturacionController {
         Dialog<FacturaEmitidaDTO> dialog = new Dialog<>();
         dialog.setTitle("Nueva Factura Emitida");
         dialog.setHeaderText("Crear nueva factura");
-
         dialog.initOwner(tablaEmitidas.getScene().getWindow());
         dialog.initModality(Modality.APPLICATION_MODAL);
         
@@ -459,10 +459,52 @@ public class FacturacionController {
         panelCliente.setText("Datos del Cliente");
         panelCliente.setCollapsible(false);
         
+        VBox vboxCliente = new VBox(10);
+        vboxCliente.setPadding(new Insets(10));
+        
+        // Selector de cliente existente
+        HBox boxSelectorCliente = new HBox(10);
+        boxSelectorCliente.setAlignment(Pos.CENTER_LEFT);
+        Label lblSeleccionar = new Label("Cliente:");
+        ComboBox<ClienteDTO> cmbCliente = new ComboBox<>();
+        cmbCliente.setPromptText("Seleccionar cliente existente...");
+        cmbCliente.setPrefWidth(350);
+        
+        // Cargar clientes
+        try {
+            List<ClienteDTO> clientes = apiService.obtenerClientes();
+            cmbCliente.setItems(FXCollections.observableArrayList(clientes));
+        } catch (Exception ex) {
+            log.error("Error al cargar clientes", ex);
+        }
+        
+        // Converter para mostrar nombre del cliente
+        cmbCliente.setConverter(new javafx.util.StringConverter<ClienteDTO>() {
+            @Override
+            public String toString(ClienteDTO cliente) {
+                if (cliente == null) return "";
+                String nif = cliente.getNif() != null && !cliente.getNif().isEmpty() 
+                    ? " (" + cliente.getNif() + ")" : "";
+                return cliente.getNombreCompleto() + nif;
+            }
+            @Override
+            public ClienteDTO fromString(String string) { return null; }
+        });
+        
+        Button btnLimpiarCliente = new Button("✖ Limpiar");
+        btnLimpiarCliente.setOnAction(e -> {
+            cmbCliente.setValue(null);
+        });
+        
+        boxSelectorCliente.getChildren().addAll(lblSeleccionar, cmbCliente, btnLimpiarCliente);
+        
+        // Separador
+        Label lblManual = new Label("O introducir manualmente:");
+        lblManual.setStyle("-fx-font-style: italic; -fx-text-fill: #666;");
+        
         GridPane gridCliente = new GridPane();
         gridCliente.setHgap(10);
         gridCliente.setVgap(10);
-        gridCliente.setPadding(new Insets(10));
         
         TextField txtNombre = new TextField();
         txtNombre.setPromptText("Nombre del cliente");
@@ -495,18 +537,51 @@ public class FacturacionController {
         gridCliente.add(new Label("Email:"), 0, 3);
         gridCliente.add(txtEmail, 1, 3, 2, 1);
         
-        panelCliente.setContent(gridCliente);
+        vboxCliente.getChildren().addAll(boxSelectorCliente, lblManual, gridCliente);
+        panelCliente.setContent(vboxCliente);
         
-        // Mostrar/ocultar campos según tipo
+        // Listener para rellenar campos al seleccionar cliente
+        cmbCliente.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                txtNombre.setText(newVal.getNombreCompleto() != null ? newVal.getNombreCompleto() : "");
+                txtNif.setText(newVal.getNif() != null ? newVal.getNif() : "");
+                txtDireccion.setText(newVal.getDireccionCompleta() != null ? newVal.getDireccionCompleta() : "");
+                txtTelefono.setText(newVal.getTelefono() != null ? newVal.getTelefono() : "");
+                txtEmail.setText(newVal.getEmail() != null ? newVal.getEmail() : "");
+                // Desactivar edición si hay cliente seleccionado
+                txtNombre.setDisable(true);
+                txtNif.setDisable(true);
+                txtDireccion.setDisable(true);
+                txtTelefono.setDisable(true);
+                txtEmail.setDisable(true);
+            } else {
+                // Limpiar y habilitar campos
+                txtNombre.clear();
+                txtNif.clear();
+                txtDireccion.clear();
+                txtTelefono.clear();
+                txtEmail.clear();
+                txtNombre.setDisable(false);
+                boolean esCompleta = "COMPLETA".equals(cmbTipo.getValue());
+                txtNif.setDisable(!esCompleta);
+                txtDireccion.setDisable(!esCompleta);
+                txtTelefono.setDisable(false);
+                txtEmail.setDisable(false);
+            }
+        });
+        
+        // Mostrar/ocultar campos según tipo (solo si no hay cliente seleccionado)
         txtNif.setDisable(true);
         txtDireccion.setDisable(true);
         cmbTipo.setOnAction(e -> {
-            boolean esCompleta = "COMPLETA".equals(cmbTipo.getValue());
-            txtNif.setDisable(!esCompleta);
-            txtDireccion.setDisable(!esCompleta);
-            if (!esCompleta) {
-                txtNif.clear();
-                txtDireccion.clear();
+            if (cmbCliente.getValue() == null) {
+                boolean esCompleta = "COMPLETA".equals(cmbTipo.getValue());
+                txtNif.setDisable(!esCompleta);
+                txtDireccion.setDisable(!esCompleta);
+                if (!esCompleta) {
+                    txtNif.clear();
+                    txtDireccion.clear();
+                }
             }
         });
         
@@ -741,7 +816,6 @@ public class FacturacionController {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Detalle de Factura");
         dialog.setHeaderText("Factura " + factura.getNumeroFactura());
-
         dialog.initOwner(tablaEmitidas.getScene().getWindow());
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
