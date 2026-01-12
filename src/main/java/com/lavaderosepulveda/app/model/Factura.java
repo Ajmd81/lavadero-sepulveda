@@ -1,5 +1,6 @@
 package com.lavaderosepulveda.app.model;
 
+import com.lavaderosepulveda.app.model.enums.*;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;

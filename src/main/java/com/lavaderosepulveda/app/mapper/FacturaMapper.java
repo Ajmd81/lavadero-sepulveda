@@ -34,7 +34,7 @@ public class FacturaMapper {
         
         // Formatear fecha
         if (factura.getFecha() != null) {
-            dto.setFecha(DateTimeFormatUtils.formatDate(factura.getFecha()));
+            dto.setFecha(DateTimeFormatUtils.formatearFechaCorta(factura.getFecha()));
         }
         
         // Enums a String
@@ -79,7 +79,7 @@ public class FacturaMapper {
         
         // Otros
         if (factura.getFechaPago() != null) {
-            dto.setFechaPago(DateTimeFormatUtils.formatDate(factura.getFechaPago()));
+            dto.setFechaPago(DateTimeFormatUtils.formatearFechaCorta(factura.getFechaPago()));
         }
         dto.setObservaciones(factura.getObservaciones());
 
@@ -119,7 +119,7 @@ public class FacturaMapper {
         
         // Parsear fecha
         if (dto.getFecha() != null && !dto.getFecha().isEmpty()) {
-            factura.setFecha(DateTimeFormatUtils.parseDate(dto.getFecha()));
+            factura.setFecha(DateTimeFormatUtils.parsearFechaCorta(dto.getFecha()));
         }
         
         // String a Enums
@@ -146,7 +146,7 @@ public class FacturaMapper {
         
         // Otros
         if (dto.getFechaPago() != null && !dto.getFechaPago().isEmpty()) {
-            factura.setFechaPago(DateTimeFormatUtils.parseDate(dto.getFechaPago()));
+            factura.setFechaPago(DateTimeFormatUtils.parsearFechaCorta(dto.getFechaPago()));
         }
         factura.setObservaciones(dto.getObservaciones());
 

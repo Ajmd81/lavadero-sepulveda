@@ -1,5 +1,6 @@
 package com.lavaderosepulveda.app.model;
 
+import com.lavaderosepulveda.app.model.enums.*;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -85,7 +86,8 @@ public class Gasto {
     }
 
     // Constructores
-    public Gasto() {}
+    public Gasto() {
+    }
 
     public Gasto(String concepto, LocalDate fecha, CategoriaGasto categoria, BigDecimal importe) {
         this.concepto = concepto;
@@ -95,57 +97,133 @@ public class Gasto {
     }
 
     // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getConcepto() { return concepto; }
-    public void setConcepto(String concepto) { this.concepto = concepto; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public LocalDate getFecha() { return fecha; }
-    public void setFecha(LocalDate fecha) { this.fecha = fecha; }
+    public String getConcepto() {
+        return concepto;
+    }
 
-    public CategoriaGasto getCategoria() { return categoria; }
-    public void setCategoria(CategoriaGasto categoria) { this.categoria = categoria; }
+    public void setConcepto(String concepto) {
+        this.concepto = concepto;
+    }
 
-    public BigDecimal getImporte() { return importe; }
-    public void setImporte(BigDecimal importe) { 
+    public LocalDate getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDate fecha) {
+        this.fecha = fecha;
+    }
+
+    public CategoriaGasto getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(CategoriaGasto categoria) {
+        this.categoria = categoria;
+    }
+
+    public BigDecimal getImporte() {
+        return importe;
+    }
+
+    public void setImporte(BigDecimal importe) {
         this.importe = importe;
         calcularDesglose();
     }
 
-    public Boolean getIvaIncluido() { return ivaIncluido; }
-    public void setIvaIncluido(Boolean ivaIncluido) { 
+    public Boolean getIvaIncluido() {
+        return ivaIncluido;
+    }
+
+    public void setIvaIncluido(Boolean ivaIncluido) {
         this.ivaIncluido = ivaIncluido;
         calcularDesglose();
     }
 
-    public BigDecimal getBaseImponible() { return baseImponible; }
-    public void setBaseImponible(BigDecimal baseImponible) { this.baseImponible = baseImponible; }
+    public BigDecimal getBaseImponible() {
+        return baseImponible;
+    }
 
-    public BigDecimal getCuotaIva() { return cuotaIva; }
-    public void setCuotaIva(BigDecimal cuotaIva) { this.cuotaIva = cuotaIva; }
+    public void setBaseImponible(BigDecimal baseImponible) {
+        this.baseImponible = baseImponible;
+    }
 
-    public FacturaRecibida getFacturaRecibida() { return facturaRecibida; }
-    public void setFacturaRecibida(FacturaRecibida facturaRecibida) { this.facturaRecibida = facturaRecibida; }
+    public BigDecimal getCuotaIva() {
+        return cuotaIva;
+    }
 
-    public MetodoPago getMetodoPago() { return metodoPago; }
-    public void setMetodoPago(MetodoPago metodoPago) { this.metodoPago = metodoPago; }
+    public void setCuotaIva(BigDecimal cuotaIva) {
+        this.cuotaIva = cuotaIva;
+    }
 
-    public Boolean getRecurrente() { return recurrente; }
-    public void setRecurrente(Boolean recurrente) { this.recurrente = recurrente; }
+    public FacturaRecibida getFacturaRecibida() {
+        return facturaRecibida;
+    }
 
-    public Integer getDiaRecurrencia() { return diaRecurrencia; }
-    public void setDiaRecurrencia(Integer diaRecurrencia) { this.diaRecurrencia = diaRecurrencia; }
+    public void setFacturaRecibida(FacturaRecibida facturaRecibida) {
+        this.facturaRecibida = facturaRecibida;
+    }
 
-    public String getNotas() { return notas; }
-    public void setNotas(String notas) { this.notas = notas; }
+    public MetodoPago getMetodoPago() {
+        return metodoPago;
+    }
 
-    public Boolean getPagado() { return pagado; }
-    public void setPagado(Boolean pagado) { this.pagado = pagado; }
+    public void setMetodoPago(MetodoPago metodoPago) {
+        this.metodoPago = metodoPago;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Boolean getRecurrente() {
+        return recurrente;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public void setRecurrente(Boolean recurrente) {
+        this.recurrente = recurrente;
+    }
+
+    public Integer getDiaRecurrencia() {
+        return diaRecurrencia;
+    }
+
+    public void setDiaRecurrencia(Integer diaRecurrencia) {
+        this.diaRecurrencia = diaRecurrencia;
+    }
+
+    public String getNotas() {
+        return notas;
+    }
+
+    public void setNotas(String notas) {
+        this.notas = notas;
+    }
+
+    public Boolean getPagado() {
+        return pagado;
+    }
+
+    public void setPagado(Boolean pagado) {
+        this.pagado = pagado;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

@@ -42,8 +42,8 @@ public class FacturaApiController {
     public ResponseEntity<List<FacturaDTO>> listarFacturas() {
         List<Factura> facturas = facturaService.obtenerTodas();
         List<FacturaDTO> facturasDTO = facturas.stream()
-            .map(this::convertirADTO)
-            .collect(Collectors.toList());
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(facturasDTO);
     }
 
@@ -54,8 +54,8 @@ public class FacturaApiController {
     @GetMapping("/{id}")
     public ResponseEntity<FacturaDTO> obtenerPorId(@PathVariable Long id) {
         return facturaService.obtenerPorId(id)
-            .map(factura -> ResponseEntity.ok(convertirADTO(factura)))
-            .orElse(ResponseEntity.notFound().build());
+                .map(factura -> ResponseEntity.ok(convertirADTO(factura)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -65,8 +65,8 @@ public class FacturaApiController {
     @GetMapping("/numero/{numero}")
     public ResponseEntity<FacturaDTO> obtenerPorNumero(@PathVariable String numero) {
         return facturaService.obtenerPorNumero(numero)
-            .map(factura -> ResponseEntity.ok(convertirADTO(factura)))
-            .orElse(ResponseEntity.notFound().build());
+                .map(factura -> ResponseEntity.ok(convertirADTO(factura)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -133,7 +133,7 @@ public class FacturaApiController {
     public ResponseEntity<FacturaDTO> crearManual(@RequestBody FacturaDTO facturaDTO) {
         try {
             TipoFactura tipo = TipoFactura.valueOf(facturaDTO.getTipo());
-            
+
             List<LineaFactura> lineas = new ArrayList<>();
             if (facturaDTO.getLineas() != null) {
                 for (FacturaDTO.LineaFacturaDTO lineaDTO : facturaDTO.getLineas()) {
@@ -147,14 +147,13 @@ public class FacturaApiController {
             }
 
             Factura factura = facturaService.crearFacturaManual(
-                tipo,
-                facturaDTO.getClienteNombre(),
-                facturaDTO.getClienteNif(),
-                facturaDTO.getClienteDireccion(),
-                facturaDTO.getClienteTelefono(),
-                facturaDTO.getClienteEmail(),
-                lineas
-            );
+                    tipo,
+                    facturaDTO.getClienteNombre(),
+                    facturaDTO.getClienteNif(),
+                    facturaDTO.getClienteDireccion(),
+                    facturaDTO.getClienteTelefono(),
+                    facturaDTO.getClienteEmail(),
+                    lineas);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(convertirADTO(factura));
         } catch (Exception e) {
@@ -199,8 +198,8 @@ public class FacturaApiController {
             EstadoFactura estadoFactura = EstadoFactura.valueOf(estado.toUpperCase());
             List<Factura> facturas = facturaService.obtenerPorEstado(estadoFactura);
             List<FacturaDTO> facturasDTO = facturas.stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+                    .map(this::convertirADTO)
+                    .collect(Collectors.toList());
             return ResponseEntity.ok(facturasDTO);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -215,8 +214,8 @@ public class FacturaApiController {
     public ResponseEntity<List<FacturaDTO>> obtenerPendientes() {
         List<Factura> facturas = facturaService.obtenerPendientes();
         List<FacturaDTO> facturasDTO = facturas.stream()
-            .map(this::convertirADTO)
-            .collect(Collectors.toList());
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(facturasDTO);
     }
 
@@ -228,8 +227,8 @@ public class FacturaApiController {
     public ResponseEntity<List<FacturaDTO>> obtenerPorCliente(@PathVariable Long clienteId) {
         List<Factura> facturas = facturaService.obtenerPorCliente(clienteId);
         List<FacturaDTO> facturasDTO = facturas.stream()
-            .map(this::convertirADTO)
-            .collect(Collectors.toList());
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(facturasDTO);
     }
 
@@ -244,11 +243,11 @@ public class FacturaApiController {
         try {
             LocalDate desde = DateTimeFormatUtils.parsearFechaCorta(desdeStr);
             LocalDate hasta = DateTimeFormatUtils.parsearFechaCorta(hastaStr);
-            
+
             List<Factura> facturas = facturaService.obtenerPorFechas(desde, hasta);
             List<FacturaDTO> facturasDTO = facturas.stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+                    .map(this::convertirADTO)
+                    .collect(Collectors.toList());
             return ResponseEntity.ok(facturasDTO);
         } catch (Exception e) {
             log.error("Error al obtener facturas por fecha: {}", e.getMessage());
@@ -264,8 +263,8 @@ public class FacturaApiController {
     public ResponseEntity<List<FacturaDTO>> buscar(@RequestParam("q") String texto) {
         List<Factura> facturas = facturaService.buscar(texto);
         List<FacturaDTO> facturasDTO = facturas.stream()
-            .map(this::convertirADTO)
-            .collect(Collectors.toList());
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(facturasDTO);
     }
 
@@ -277,8 +276,8 @@ public class FacturaApiController {
     public ResponseEntity<List<FacturaDTO>> obtenerDeHoy() {
         List<Factura> facturas = facturaService.obtenerDeHoy();
         List<FacturaDTO> facturasDTO = facturas.stream()
-            .map(this::convertirADTO)
-            .collect(Collectors.toList());
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(facturasDTO);
     }
 
@@ -318,7 +317,7 @@ public class FacturaApiController {
         dto.setTipo(factura.getTipo().name());
         dto.setEstado(factura.getEstado().name());
         dto.setMetodoPago(factura.getMetodoPago() != null ? factura.getMetodoPago().name() : null);
-        
+
         // Cliente
         dto.setClienteId(factura.getCliente() != null ? factura.getCliente().getId() : null);
         dto.setClienteNombre(factura.getClienteNombre());
@@ -326,33 +325,34 @@ public class FacturaApiController {
         dto.setClienteDireccion(factura.getClienteDireccion());
         dto.setClienteEmail(factura.getClienteEmail());
         dto.setClienteTelefono(factura.getClienteTelefono());
-        
+
         // Importes
         dto.setBaseImponible(factura.getBaseImponible());
         dto.setTipoIva(factura.getTipoIva());
         dto.setImporteIva(factura.getImporteIva());
         dto.setTotal(factura.getTotal());
-        
+
         // Otros
-        dto.setFechaPago(factura.getFechaPago() != null ? 
-            DateTimeFormatUtils.formatearFechaCorta(factura.getFechaPago()) : null);
+        dto.setFechaPago(
+                factura.getFechaPago() != null ? DateTimeFormatUtils.formatearFechaCorta(factura.getFechaPago())
+                        : null);
         dto.setObservaciones(factura.getObservaciones());
-        
+
         // Líneas
         List<FacturaDTO.LineaFacturaDTO> lineasDTO = factura.getLineas().stream()
-            .map(linea -> {
-                FacturaDTO.LineaFacturaDTO lineaDTO = new FacturaDTO.LineaFacturaDTO();
-                lineaDTO.setId(linea.getId());
-                lineaDTO.setCitaId(linea.getCitaId());
-                lineaDTO.setConcepto(linea.getConcepto());
-                lineaDTO.setCantidad(linea.getCantidad());
-                lineaDTO.setPrecioUnitario(linea.getPrecioUnitario());
-                lineaDTO.setSubtotal(linea.getSubtotal());
-                return lineaDTO;
-            })
-            .collect(Collectors.toList());
+                .map(linea -> {
+                    FacturaDTO.LineaFacturaDTO lineaDTO = new FacturaDTO.LineaFacturaDTO();
+                    lineaDTO.setId(linea.getId());
+                    lineaDTO.setCitaId(linea.getCitaId());
+                    lineaDTO.setConcepto(linea.getConcepto());
+                    lineaDTO.setCantidad(linea.getCantidad());
+                    lineaDTO.setPrecioUnitario(linea.getPrecioUnitario());
+                    lineaDTO.setSubtotal(linea.getSubtotal());
+                    return lineaDTO;
+                })
+                .collect(Collectors.toList());
         dto.setLineas(lineasDTO);
-        
+
         return dto;
     }
 }

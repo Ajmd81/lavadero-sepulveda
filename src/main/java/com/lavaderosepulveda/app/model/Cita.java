@@ -1,5 +1,7 @@
 package com.lavaderosepulveda.app.model;
 
+import com.lavaderosepulveda.app.model.enums.EstadoCita;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

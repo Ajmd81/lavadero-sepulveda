@@ -1,5 +1,6 @@
 package com.lavaderosepulveda.app.model;
 
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
