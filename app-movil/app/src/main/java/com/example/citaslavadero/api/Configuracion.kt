@@ -4,17 +4,17 @@ import com.google.gson.annotations.SerializedName
 
 data class Configuracion(
     @SerializedName("horaAperturaMañana")
-    val hora_apertura_mañana: Int = 9,
+    val hora_apertura_mañana: Int = 8,
 
     @SerializedName("horaCierreMañana")
-    val hora_cierre_mañana: Int = 14,
+    val hora_cierre_mañana: Int = 15,
 
-    @SerializedName("horaAperturaTarde")
-    val hora_apertura_tarde: Int = 17,
-
-    @SerializedName("horaCierreTarde")
-    val hora_cierre_tarde: Int = 20,
-
+    // Horario Sábados
+    @SerializedName("horaAperturaSabado")
+    val hora_apertura_sabado: Int = 9,
+    @SerializedName("horaCierreSabado")
+    val hora_cierre_sabado: Int = 13,
+    
     @SerializedName("intervaloMinutos")
     val intervalo_minutos: Int = 60,
 

@@ -19,6 +19,8 @@ import retrofit2.HttpException
 import retrofit2.Response
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * Repositorio que maneja la sincronización entre la base de datos local (Room)
@@ -54,25 +56,6 @@ class CitaRepository(private val context: Context) {
     suspend fun sincronizarCitas() {
         Log.d(TAG, "MODIFICADO: Saltando sincronización desde servidor")
         Log.d(TAG, "Solo se mostrarán citas creadas desde esta aplicación Android")
-
-        // COMENTADO: No descargar citas del servidor
-        // Esto permite que solo se vean las citas creadas desde Android
-
-        /*
-        // CÓDIGO ORIGINAL COMENTADO:
-        if (!modoOffline && NetworkUtils.isNetworkAvailable(context)) {
-            try {
-                Log.d(TAG, "Obteniendo citas del servidor: ${RetrofitClient.getServerUrl()}api/citas")
-                val response = apiService.obtenerCitas()
-                // ... resto del código de sincronización comentado
-            } catch (e: Exception) {
-                Log.e(TAG, "Error sincronizando citas", e)
-                manejarExcepcionRed(e)
-            }
-        } else {
-            Log.d(TAG, "No hay conexión, o en modo offline. No se pueden sincronizar citas.")
-        }
-        */
     }
 
     /**
@@ -202,19 +185,6 @@ class CitaRepository(private val context: Context) {
         val existeLocal = citaDao.existeCitaEnFechaHora(fecha, hora)
         Log.d(TAG, "Verificación local (solo Android): ${if (existeLocal) "Horario ocupado" else "Horario disponible"}")
         return@withContext existeLocal
-
-        /*
-        // CÓDIGO ORIGINAL COMENTADO:
-        if (!modoOffline && NetworkUtils.isNetworkAvailable(context)) {
-            try {
-                Log.d(TAG, "Consultando disponibilidad al servidor")
-                val response = apiService.verificarDisponibilidad(fecha, hora)
-                // ... resto comentado
-            } catch (e: Exception) {
-                // ... manejo comentado
-            }
-        }
-        */
     }
 
     /**
@@ -246,10 +216,28 @@ class CitaRepository(private val context: Context) {
             }
         }
 
-        // Modo offline o error - devolver horarios por defecto
-        Log.d(TAG, "Usando horarios por defecto")
-        val horariosDefault = HorariosUtil.generarHorariosDisponibles()
+        // Modo offline o error - devolver horarios por defecto según el día
+        Log.d(TAG, "Usando horarios por defecto para fecha: $fecha")
+        val diaSemana = obtenerDiaSemana(fecha)
+        val horariosDefault = HorariosUtil.generarHorariosDisponibles(diaSemana)
+        Log.d(TAG, "Horarios por defecto generados (día $diaSemana): $horariosDefault")
         return@withContext Response.success(horariosDefault)
+    }
+    
+    /**
+     * Convierte una fecha en formato dd/MM/yyyy al día de la semana (Calendar constant)
+     */
+    private fun obtenerDiaSemana(fecha: String): Int {
+        return try {
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val date = sdf.parse(fecha)
+            val calendar = Calendar.getInstance()
+            calendar.time = date!!
+            calendar.get(Calendar.DAY_OF_WEEK)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al parsear fecha: $fecha", e)
+            Calendar.MONDAY // Por defecto retornar lunes
+        }
     }
 
     /**
@@ -267,9 +255,9 @@ class CitaRepository(private val context: Context) {
                     val config = response.body()!!
                     Log.d(TAG, "Configuración recibida del servidor: $config")
                     return@withContext Triple(
-                        config.hora_apertura_mañana ?: HorariosUtil.HORA_APERTURA_MAÑANA,
-                        config.hora_cierre_tarde ?: HorariosUtil.HORA_CIERRE_TARDE,
-                        config.intervalo_minutos ?: HorariosUtil.INTERVALO_MINUTOS
+                        config.hora_apertura_mañana,
+                        config.hora_cierre_mañana,
+                        config.intervalo_minutos
                     )
                 } else {
                     Log.e(TAG, "Error al obtener configuración. Código: ${response.code()}")
@@ -284,7 +272,7 @@ class CitaRepository(private val context: Context) {
         Log.d(TAG, "Usando configuración por defecto")
         return@withContext Triple(
             HorariosUtil.HORA_APERTURA_MAÑANA,
-            HorariosUtil.HORA_CIERRE_TARDE,
+            HorariosUtil.HORA_CIERRE_MAÑANA,
             HorariosUtil.INTERVALO_MINUTOS
         )
     }
