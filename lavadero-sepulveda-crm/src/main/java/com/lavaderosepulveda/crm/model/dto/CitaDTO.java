@@ -1,6 +1,6 @@
-package com.lavaderosepulveda.crm.api.dto;
+package com.lavaderosepulveda.crm.model.dto;
 
-import com.lavaderosepulveda.crm.model.EstadoCita;
+import com.lavaderosepulveda.crm.model.enums.EstadoCita;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;

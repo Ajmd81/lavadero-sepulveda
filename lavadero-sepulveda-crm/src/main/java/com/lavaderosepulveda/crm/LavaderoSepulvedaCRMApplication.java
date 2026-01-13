@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.crm;
 
-import com.lavaderosepulveda.crm.api.ApiClient;
+import com.lavaderosepulveda.crm.api.client.ApiClient;
 import com.lavaderosepulveda.crm.config.ConfigManager;
 import com.lavaderosepulveda.crm.config.StageManager;
 import com.lavaderosepulveda.crm.util.AlertUtil;

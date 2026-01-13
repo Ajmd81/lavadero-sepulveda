@@ -1,10 +1,10 @@
 package com.lavaderosepulveda.crm.service;
 
-import com.lavaderosepulveda.crm.api.dto.CitaDTO;
-import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
+import com.lavaderosepulveda.crm.model.dto.CitaDTO;
+import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
 import com.lavaderosepulveda.crm.api.service.CitaApiService;
 import com.lavaderosepulveda.crm.api.service.ClienteApiService;
-import com.lavaderosepulveda.crm.model.EstadoCita;
+import com.lavaderosepulveda.crm.model.enums.EstadoCita;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

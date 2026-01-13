@@ -2,9 +2,9 @@ package com.lavaderosepulveda.crm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.lavaderosepulveda.crm.api.ApiClient;
+import com.lavaderosepulveda.crm.api.client.ApiClient;
 import com.lavaderosepulveda.crm.config.ConfigManager;
-import com.lavaderosepulveda.crm.model.PlantillaFacturaConfig;
+import com.lavaderosepulveda.crm.model.entity.PlantillaFacturaConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

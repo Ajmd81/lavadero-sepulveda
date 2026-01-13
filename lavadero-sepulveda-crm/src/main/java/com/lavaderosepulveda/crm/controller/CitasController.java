@@ -1,10 +1,10 @@
 package com.lavaderosepulveda.crm.controller;
 
-import com.lavaderosepulveda.crm.api.dto.CitaDTO;
-import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
-import com.lavaderosepulveda.crm.api.dto.ServicioDTO;
+import com.lavaderosepulveda.crm.model.dto.CitaDTO;
+import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
+import com.lavaderosepulveda.crm.model.dto.ServicioDTO;
 import com.lavaderosepulveda.crm.api.service.CitaApiService;
-import com.lavaderosepulveda.crm.model.EstadoCita;
+import com.lavaderosepulveda.crm.model.enums.EstadoCita;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

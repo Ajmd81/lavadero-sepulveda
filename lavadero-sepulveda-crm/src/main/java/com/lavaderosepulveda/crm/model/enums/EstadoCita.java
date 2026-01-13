@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.crm.model;
+package com.lavaderosepulveda.crm.model.enums;
 
 public enum EstadoCita {
     PENDIENTE("Pendiente", "#FFA500"),

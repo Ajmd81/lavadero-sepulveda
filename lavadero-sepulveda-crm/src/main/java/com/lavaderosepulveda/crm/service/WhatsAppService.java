@@ -1,8 +1,8 @@
 package com.lavaderosepulveda.crm.service;
 
 import com.google.gson.JsonObject;
-import com.lavaderosepulveda.crm.model.Cita;
-import com.lavaderosepulveda.crm.model.Factura;
+import com.lavaderosepulveda.crm.model.entity.Cita;
+import com.lavaderosepulveda.crm.model.entity.Factura;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 

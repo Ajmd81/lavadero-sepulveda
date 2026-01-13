@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.crm.repository;
 
-import com.lavaderosepulveda.crm.model.Cita;
-import com.lavaderosepulveda.crm.model.EstadoCita;
+import com.lavaderosepulveda.crm.model.entity.Cita;
+import com.lavaderosepulveda.crm.model.enums.EstadoCita;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 

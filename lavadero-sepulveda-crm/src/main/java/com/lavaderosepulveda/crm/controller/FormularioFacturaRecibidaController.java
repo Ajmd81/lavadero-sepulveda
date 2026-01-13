@@ -1,8 +1,8 @@
 package com.lavaderosepulveda.crm.controller;
 
 import com.lavaderosepulveda.crm.api.service.FacturacionApiService;
-import com.lavaderosepulveda.crm.model.FacturaRecibidaDTO;
-import com.lavaderosepulveda.crm.model.ProveedorDTO;
+import com.lavaderosepulveda.crm.model.dto.FacturaRecibidaDTO;
+import com.lavaderosepulveda.crm.model.dto.ProveedorDTO;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;

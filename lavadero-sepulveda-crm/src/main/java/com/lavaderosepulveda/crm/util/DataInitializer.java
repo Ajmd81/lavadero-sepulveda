@@ -1,6 +1,8 @@
 package com.lavaderosepulveda.crm.util;
 
-import com.lavaderosepulveda.crm.model.*;
+import com.lavaderosepulveda.crm.model.dto.*;
+import com.lavaderosepulveda.crm.model.entity.*;
+import com.lavaderosepulveda.crm.model.enums.*;
 import com.lavaderosepulveda.crm.repository.*;
 import lombok.extern.slf4j.Slf4j;
 

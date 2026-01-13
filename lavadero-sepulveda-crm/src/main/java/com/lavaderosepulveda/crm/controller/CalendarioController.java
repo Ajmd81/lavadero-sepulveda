@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.crm.controller;
 
-import com.lavaderosepulveda.crm.api.dto.CitaDTO;
+import com.lavaderosepulveda.crm.model.dto.CitaDTO;
 import com.lavaderosepulveda.crm.api.service.CitaApiService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;

@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.crm.util;
 
-import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
+import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;

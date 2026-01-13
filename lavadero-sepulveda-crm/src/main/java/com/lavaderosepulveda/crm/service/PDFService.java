@@ -6,8 +6,8 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
-import com.lavaderosepulveda.crm.model.Factura;
-import com.lavaderosepulveda.crm.model.LineaFactura;
+import com.lavaderosepulveda.crm.model.entity.Factura;
+import com.lavaderosepulveda.crm.model.entity.LineaFactura;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;

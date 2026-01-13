@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.crm.controller;
 
-import com.lavaderosepulveda.crm.model.PlantillaFacturaConfig;
+import com.lavaderosepulveda.crm.model.entity.PlantillaFacturaConfig;
 import com.lavaderosepulveda.crm.service.PlantillaFacturaService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;

@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.crm.controller;
 
 import com.lavaderosepulveda.crm.api.service.FacturacionApiService;
-import com.lavaderosepulveda.crm.model.ProveedorDTO;
+import com.lavaderosepulveda.crm.model.dto.ProveedorDTO;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;

@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.crm.service;
 
 import com.lavaderosepulveda.crm.config.ConfigManager;
-import com.lavaderosepulveda.crm.model.Factura;
+import com.lavaderosepulveda.crm.model.entity.Factura;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import lombok.extern.slf4j.Slf4j;
