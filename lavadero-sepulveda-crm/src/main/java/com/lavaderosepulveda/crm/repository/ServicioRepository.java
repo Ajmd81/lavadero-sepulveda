@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.crm.repository;
 
-import com.lavaderosepulveda.crm.model.Servicio;
+import com.lavaderosepulveda.crm.model.entity.Servicio;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 

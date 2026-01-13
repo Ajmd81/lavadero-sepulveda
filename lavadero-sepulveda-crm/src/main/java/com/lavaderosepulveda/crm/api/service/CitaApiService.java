@@ -1,12 +1,12 @@
 package com.lavaderosepulveda.crm.api.service;
 
 import com.google.gson.reflect.TypeToken;
-import com.lavaderosepulveda.crm.api.ApiClient;
-import com.lavaderosepulveda.crm.api.dto.CitaDTO;
+import com.lavaderosepulveda.crm.api.client.ApiClient;
+import com.lavaderosepulveda.crm.model.dto.CitaDTO;
 import com.lavaderosepulveda.crm.config.ConfigManager;
 import com.lavaderosepulveda.crm.mapper.CitaMapper;
-import com.lavaderosepulveda.crm.model.EstadoCita;
-import com.lavaderosepulveda.crm.api.dto.CitaApiResponseDTO;
+import com.lavaderosepulveda.crm.model.enums.EstadoCita;
+import com.lavaderosepulveda.crm.model.dto.CitaApiResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

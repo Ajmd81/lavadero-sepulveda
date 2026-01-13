@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.crm.api.dto;
+package com.lavaderosepulveda.crm.model.dto;
 
 import java.time.LocalDateTime;
 

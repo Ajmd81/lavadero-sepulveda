@@ -3,8 +3,10 @@ package com.lavaderosepulveda.crm.api.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lavaderosepulveda.crm.model.*;
-import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
+import com.lavaderosepulveda.crm.model.dto.*;
+import com.lavaderosepulveda.crm.model.entity.*;
+import com.lavaderosepulveda.crm.model.enums.*;
+import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
 
 import java.io.BufferedReader;
 import java.io.IOException;

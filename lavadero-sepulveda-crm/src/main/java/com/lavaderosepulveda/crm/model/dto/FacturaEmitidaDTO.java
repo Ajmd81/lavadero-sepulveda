@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.crm.model;
+package com.lavaderosepulveda.crm.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

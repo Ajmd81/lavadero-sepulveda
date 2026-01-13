@@ -1,8 +1,8 @@
 package com.lavaderosepulveda.crm.api.service;
 
 import com.google.gson.reflect.TypeToken;
-import com.lavaderosepulveda.crm.api.ApiClient;
-import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
+import com.lavaderosepulveda.crm.api.client.ApiClient;
+import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
 import com.lavaderosepulveda.crm.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

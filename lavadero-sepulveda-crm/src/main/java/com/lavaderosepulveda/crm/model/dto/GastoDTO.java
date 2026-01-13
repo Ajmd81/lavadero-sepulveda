@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.crm.model;
+package com.lavaderosepulveda.crm.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

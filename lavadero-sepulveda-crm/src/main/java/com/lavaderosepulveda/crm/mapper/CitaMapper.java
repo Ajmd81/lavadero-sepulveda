@@ -1,10 +1,10 @@
 package com.lavaderosepulveda.crm.mapper;
 
-import com.lavaderosepulveda.crm.api.dto.CitaApiResponseDTO;
-import com.lavaderosepulveda.crm.api.dto.CitaDTO;
-import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
-import com.lavaderosepulveda.crm.api.dto.ServicioDTO;
-import com.lavaderosepulveda.crm.model.EstadoCita;
+import com.lavaderosepulveda.crm.model.dto.CitaApiResponseDTO;
+import com.lavaderosepulveda.crm.model.dto.CitaDTO;
+import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
+import com.lavaderosepulveda.crm.model.dto.ServicioDTO;
+import com.lavaderosepulveda.crm.model.enums.EstadoCita;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,51 +12,44 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * Mapper que convierte CitaApiResponseDTO (JSON de la API) a CitaDTO (usado por
+ * el CRM)
+ */
 public class CitaMapper {
 
     private static final Logger log = LoggerFactory.getLogger(CitaMapper.class);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter HORA_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
-
-    // Mapa de precios con IVA incluido (21%)
+    // Mapa de precios por tipo de lavado (debe coincidir con TipoLavado del
+    // backend)
     private static final Map<String, Double> PRECIOS_LAVADO = new HashMap<>();
 
     static {
-        // Turismo
         PRECIOS_LAVADO.put("LAVADO_COMPLETO_TURISMO", 23.0);
         PRECIOS_LAVADO.put("LAVADO_INTERIOR_TURISMO", 16.0);
         PRECIOS_LAVADO.put("LAVADO_EXTERIOR_TURISMO", 12.0);
-
-        // Ranchera
         PRECIOS_LAVADO.put("LAVADO_COMPLETO_RANCHERA", 26.0);
         PRECIOS_LAVADO.put("LAVADO_INTERIOR_RANCHERA", 18.0);
         PRECIOS_LAVADO.put("LAVADO_EXTERIOR_RANCHERA", 13.0);
-
-        // Monovolumen
         PRECIOS_LAVADO.put("LAVADO_COMPLETO_MONOVOLUMEN", 28.0);
         PRECIOS_LAVADO.put("LAVADO_INTERIOR_MONOVOLUMEN", 19.0);
         PRECIOS_LAVADO.put("LAVADO_EXTERIOR_MONOVOLUMEN", 14.0);
-
-        // Todoterreno
         PRECIOS_LAVADO.put("LAVADO_COMPLETO_TODOTERRENO", 31.0);
         PRECIOS_LAVADO.put("LAVADO_INTERIOR_TODOTERRENO", 20.0);
         PRECIOS_LAVADO.put("LAVADO_EXTERIOR_TODOTERRENO", 16.0);
-
-        // Furgoneta pequeña
         PRECIOS_LAVADO.put("LAVADO_COMPLETO_FURGONETA_PEQUEÑA", 30.0);
         PRECIOS_LAVADO.put("LAVADO_INTERIOR_FURGONETA_PEQUEÑA", 20.0);
         PRECIOS_LAVADO.put("LAVADO_EXTERIOR_FURGONETA_PEQUEÑA", 15.0);
-
-        // Furgoneta grande
         PRECIOS_LAVADO.put("LAVADO_COMPLETO_FURGONETA_GRANDE", 35.0);
         PRECIOS_LAVADO.put("LAVADO_INTERIOR_FURGONETA_GRANDE", 25.0);
         PRECIOS_LAVADO.put("LAVADO_EXTERIOR_FURGONETA_GRANDE", 20.0);
-
-        // Adicionales
         PRECIOS_LAVADO.put("TRATAMIENTO_OZONO", 15.0);
         PRECIOS_LAVADO.put("ENCERADO", 25.0);
         PRECIOS_LAVADO.put("TAPICERIA_SIN_DESMONTAR", 100.0);
@@ -64,75 +57,85 @@ public class CitaMapper {
     }
 
     /**
-     * Convertir de CitaApiResponseDTO a CitaDTO
+     * Convierte CitaApiResponseDTO a CitaDTO
      */
-    public CitaDTO toDTO(CitaApiResponseDTO apiResponse) {
+    public static CitaDTO toDTO(CitaApiResponseDTO apiResponse) {
         if (apiResponse == null) {
             return null;
         }
 
-        CitaDTO dto = new CitaDTO();
+        CitaDTO cita = new CitaDTO();
 
         try {
             // ID
-            dto.setId(apiResponse.getId());
+            cita.setId(apiResponse.getId());
 
-            // Fecha y hora
-            dto.setFechaHora(combinarFechaHora(apiResponse.getFecha(), apiResponse.getHora()));
+            // Fecha y hora combinadas
+            LocalDateTime fechaHora = combinarFechaHora(apiResponse.getFecha(), apiResponse.getHora());
+            cita.setFechaHora(fechaHora);
 
-            // Cliente
-            dto.setCliente(crearClienteDTO(apiResponse));
-
-            // Servicios
-            dto.setServicios(crearServiciosDTO(apiResponse.getTipoLavado()));
+            // Cliente (crear objeto a partir de campos separados)
+            ClienteDTO cliente = crearClienteDTO(apiResponse);
+            cita.setCliente(cliente);
 
             // Estado
-            dto.setEstado(convertirEstado(apiResponse.getEstado()));
+            EstadoCita estado = convertirEstado(apiResponse.getEstado());
+            cita.setEstado(estado);
 
-            // NOTA: No se establece importeTotal porque es un método calculado
-            // El importe total se calcula automáticamente sumando los servicios:
-            // dto.getImporteTotal() =
-            // servicios.stream().mapToDouble(ServicioDTO::getPrecioConIva).sum()
+            // Servicios (crear a partir del tipoLavado)
+            List<ServicioDTO> servicios = crearServiciosDTO(apiResponse.getTipoLavado());
+            cita.setServicios(servicios);
+
+            // Otros campos
+            cita.setMarcaModelo(apiResponse.getModeloVehiculo());
+            cita.setObservaciones(apiResponse.getObservaciones());
+            cita.setFacturada(apiResponse.getPagoAdelantado());
+
+            log.debug("Cita mapeada correctamente: ID {}", cita.getId());
 
         } catch (Exception e) {
-            log.error("Error al mapear CitaApiResponseDTO a CitaDTO", e);
+            log.error("Error al mapear cita: {}", e.getMessage(), e);
         }
 
-        return dto;
+        return cita;
     }
 
     /**
-     * Convertir lista de CitaApiResponseDTO a lista de CitaDTO
+     * Convierte una lista de CitaApiResponseDTO a CitaDTO
      */
-    public List<CitaDTO> toDTOList(List<CitaApiResponseDTO> apiResponseList) {
-        if (apiResponseList == null) {
-            return new ArrayList<>();
+    public static List<CitaDTO> toDTOList(List<CitaApiResponseDTO> apiResponseList) {
+        List<CitaDTO> result = new ArrayList<>();
+
+        if (apiResponseList != null) {
+            for (CitaApiResponseDTO apiResponse : apiResponseList) {
+                CitaDTO cita = toDTO(apiResponse);
+                if (cita != null) {
+                    result.add(cita);
+                }
+            }
         }
 
-        return apiResponseList.stream()
-                .map(this::toDTO)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        return result;
     }
 
     /**
-     * Combinar fecha y hora en LocalDateTime
+     * Combina fecha (dd/MM/yyyy) y hora (HH:mm:ss) en LocalDateTime
      */
-    private LocalDateTime combinarFechaHora(String fechaStr, String horaStr) {
+    private static LocalDateTime combinarFechaHora(String fechaStr, String horaStr) {
         try {
-            LocalDate fecha = LocalDate.parse(fechaStr, FECHA_FORMATTER);
-            LocalTime hora = LocalTime.parse(horaStr, HORA_FORMATTER);
+            LocalDate fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+            LocalTime hora = LocalTime.parse(horaStr, TIME_FORMATTER);
             return LocalDateTime.of(fecha, hora);
         } catch (Exception e) {
-            log.error("Error al parsear fecha/hora: {} {}", fechaStr, horaStr, e);
-            return LocalDateTime.now();
+            log.error("Error al parsear fecha '{}' y hora '{}': {}", fechaStr, horaStr, e.getMessage());
+            return null;
         }
     }
 
     /**
-     * Crear ClienteDTO desde los datos de la API
+     * Crea un ClienteDTO a partir de los campos separados de la API
      */
-    private ClienteDTO crearClienteDTO(CitaApiResponseDTO apiResponse) {
+    private static ClienteDTO crearClienteDTO(CitaApiResponseDTO apiResponse) {
         ClienteDTO cliente = new ClienteDTO();
 
         // Separar nombre y apellidos
@@ -148,76 +151,76 @@ public class CitaMapper {
 
         cliente.setTelefono(apiResponse.getTelefono());
         cliente.setEmail(apiResponse.getEmail());
-        cliente.setVehiculoHabitual(apiResponse.getModeloVehiculo());
 
         return cliente;
     }
 
     /**
-     * Crear lista de ServicioDTO desde tipo de lavado
+     * Convierte el string del estado a enum EstadoCita
      */
-    private List<ServicioDTO> crearServiciosDTO(String tipoLavado) {
-        ServicioDTO servicio = new ServicioDTO();
-
-        // Nombre formateado
-        servicio.setNombre(formatearNombreLavado(tipoLavado));
-
-        // Precio con IVA (según tabla de precios)
-        Double precioConIva = PRECIOS_LAVADO.getOrDefault(tipoLavado, 0.0);
-
-        // Calcular precio base (sin IVA): precioConIva / 1.21
-        Double precioBase = precioConIva / 1.21;
-        servicio.setPrecio(precioBase);
-
-        // IVA como porcentaje (21.0 = 21%)
-        servicio.setIva(21.0);
-
-        // Activo por defecto
-        servicio.setActivo(true);
-
-        return Arrays.asList(servicio);
-    }
-
-    /**
-     * Formatear nombre de lavado: "LAVADO_COMPLETO_TURISMO" → "Lavado Completo
-     * Turismo"
-     */
-    private String formatearNombreLavado(String tipoLavado) {
-        if (tipoLavado == null || tipoLavado.isEmpty()) {
-            return "";
-        }
-
-        String[] palabras = tipoLavado.split("_");
-        StringBuilder resultado = new StringBuilder();
-
-        for (int i = 0; i < palabras.length; i++) {
-            String palabra = palabras[i];
-            if (!palabra.isEmpty()) {
-                resultado.append(Character.toUpperCase(palabra.charAt(0)));
-                resultado.append(palabra.substring(1).toLowerCase());
-
-                if (i < palabras.length - 1) {
-                    resultado.append(" ");
-                }
-            }
-        }
-
-        return resultado.toString();
-    }
-
-    /**
-     * Convertir String de estado a enum EstadoCita
-     */
-    private EstadoCita convertirEstado(String estado) {
-        if (estado == null) {
+    private static EstadoCita convertirEstado(String estadoStr) {
+        if (estadoStr == null || estadoStr.isEmpty()) {
             return EstadoCita.PENDIENTE;
         }
 
         try {
-            return EstadoCita.valueOf(estado.toUpperCase());
+            return EstadoCita.valueOf(estadoStr);
         } catch (IllegalArgumentException e) {
-            log.warn("Estado desconocido: {}, usando PENDIENTE por defecto", estado);
+            log.warn("Estado desconocido: {}, usando PENDIENTE", estadoStr);
             return EstadoCita.PENDIENTE;
         }
+    }
+
+    /**
+ * Crea una lista de ServicioDTO a partir del tipoLavado
+ */
+private static List<ServicioDTO> crearServiciosDTO(String tipoLavado) {
+    List<ServicioDTO> servicios = new ArrayList<>();
+    
+    if (tipoLavado != null && !tipoLavado.isEmpty()) {
+        ServicioDTO servicio = new ServicioDTO();
+        servicio.setId(0L);
+        servicio.setNombre(formatearNombreLavado(tipoLavado));
+        
+        // Obtener precio CON IVA del mapa
+        Double precioConIva = PRECIOS_LAVADO.getOrDefault(tipoLavado, 0.0);
+        
+        // Calcular precio BASE (sin IVA)
+        // Si precio con IVA es 23.0€, precio base = 23.0 / 1.21 = 19.01€
+        Double precioBase = precioConIva / 1.21;
+        
+        servicio.setPrecio(precioBase);
+        servicio.setIva(21.0); // IVA del 21%
+        
+        servicios.add(servicio);
+    }
+    
+    return servicios;
+}
+
+    /**
+     * Formatea el nombre del tipo de lavado para mostrar
+     */
+    private static String formatearNombreLavado(String tipoLavado) {
+        if (tipoLavado == null || tipoLavado.isEmpty()) {
+            return "";
+        }
+
+        // Convertir de LAVADO_COMPLETO_TURISMO a "Lavado Completo Turismo"
+        String[] palabras = tipoLavado.toLowerCase().split("_");
+        StringBuilder resultado = new StringBuilder();
+
+        for (String palabra : palabras) {
+            if (palabra.length() > 0) {
+                // Capitalizar primera letra de cada palabra
+                resultado.append(Character.toUpperCase(palabra.charAt(0)));
+                if (palabra.length() > 1) {
+                    resultado.append(palabra.substring(1));
+                }
+                resultado.append(" ");
+            }
+        }
+
+        return resultado.toString().trim();
     }
 }

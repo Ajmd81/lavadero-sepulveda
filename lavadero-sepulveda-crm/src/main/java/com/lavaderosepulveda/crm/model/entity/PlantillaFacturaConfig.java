@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.crm.model;
+package com.lavaderosepulveda.crm.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;

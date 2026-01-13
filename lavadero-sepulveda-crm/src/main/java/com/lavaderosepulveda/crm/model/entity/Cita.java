@@ -1,4 +1,6 @@
-package com.lavaderosepulveda.crm.model;
+package com.lavaderosepulveda.crm.model.entity;
+
+import com.lavaderosepulveda.crm.model.enums.EstadoCita;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

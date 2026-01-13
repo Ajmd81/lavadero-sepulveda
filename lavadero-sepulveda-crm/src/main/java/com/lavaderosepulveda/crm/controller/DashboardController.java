@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.crm.controller;
 
-import com.lavaderosepulveda.crm.api.dto.ClienteDTO;
+import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
 import com.lavaderosepulveda.crm.service.DashboardService;
 import com.lavaderosepulveda.crm.service.DashboardService.DashboardMetrics;
 import javafx.application.Platform;

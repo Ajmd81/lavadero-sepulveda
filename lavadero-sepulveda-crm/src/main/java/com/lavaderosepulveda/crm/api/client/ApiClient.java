@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.crm.api;
+package com.lavaderosepulveda.crm.api.client;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

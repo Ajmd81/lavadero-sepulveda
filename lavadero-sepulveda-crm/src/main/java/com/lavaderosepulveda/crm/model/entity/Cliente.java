@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.crm.model;
+package com.lavaderosepulveda.crm.model.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
