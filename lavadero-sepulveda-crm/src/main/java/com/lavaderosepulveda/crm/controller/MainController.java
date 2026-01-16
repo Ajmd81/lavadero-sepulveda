@@ -47,6 +47,16 @@ public class MainController {
     }
 
     @FXML
+    private void cargarResumenFinanciero() {
+        cargarVista("/fxml/resumen-financiero.fxml");
+    }
+
+    @FXML
+    private void cargarModelosFiscales() {
+        cargarVista("/fxml/modelos-fiscales.fxml");
+    }
+
+    @FXML
     private void cargarPlantillaFactura() {
         cargarVista("/fxml/plantilla_factura.fxml");
     }

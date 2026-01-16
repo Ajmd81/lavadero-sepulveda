@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.lavaderosepulveda.crm.controller.ModelosFiscalesController"
+      spacing="15" style="-fx-padding: 20; -fx-background-color: #f5f5f5;">
+    
+    <!-- Encabezado -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="Modelos Fiscales" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+    </HBox>
+    
+    <Separator/>
+    
+    <!-- Panel de selección -->
+    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 5;">
+        <!-- Modelo -->
+        <VBox spacing="5">
+            <Label text="Modelo:" style="-fx-font-weight: bold;"/>
+            <ComboBox fx:id="comboModelo" prefWidth="250"/>
+        </VBox>
+        
+        <!-- Año -->
+        <VBox spacing="5">
+            <Label text="Ejercicio:" style="-fx-font-weight: bold;"/>
+            <ComboBox fx:id="comboAno" prefWidth="100"/>
+        </VBox>
+        
+        <!-- Trimestre -->
+        <VBox spacing="5">
+            <Label fx:id="lblTrimestreLabel" text="Trimestre:" style="-fx-font-weight: bold;"/>
+            <ComboBox fx:id="comboTrimestre" prefWidth="150"/>
+        </VBox>
+        
+        <Region HBox.hgrow="ALWAYS"/>
+        
+        <!-- Botón generar -->
+        <Button fx:id="btnGenerar" text="Generar Modelo" onAction="#generarModelo" 
+                style="-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;"
+                prefHeight="40"/>
+    </HBox>
+    
+    <!-- Contenedor de resultados -->
+    <ScrollPane fx:id="scrollResultados" fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent; -fx-background: #f5f5f5;">
+        <VBox fx:id="contenedorResultados" spacing="10" style="-fx-padding: 10;">
+            <!-- Mensaje inicial -->
+            <VBox alignment="CENTER" spacing="10" style="-fx-padding: 50;">
+                <Label text="Seleccione un modelo y pulse 'Generar Modelo'" 
+                       style="-fx-font-size: 16px; -fx-text-fill: #666;"/>
+                <Label text="Los datos se calcularán automáticamente a partir de las facturas registradas"
+                       style="-fx-font-size: 12px; -fx-text-fill: #999;"/>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+    
+    <!-- Barra de botones inferior -->
+    <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+        <Button fx:id="btnExportarBOE" text="Exportar BOE (AEAT)" onAction="#exportarBOE"
+                style="-fx-background-color: #388E3C; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        <Button fx:id="btnExportarExcel" text="Exportar Excel" onAction="#exportarExcel"
+                style="-fx-background-color: #1976D2; -fx-text-fill: white;"/>
+        <Button fx:id="btnExportarPDF" text="Exportar PDF" onAction="#exportarPDF"
+                style="-fx-background-color: #757575; -fx-text-fill: white;"/>
+    </HBox>
+    
+    <!-- Información sobre formatos -->
+    <HBox spacing="20" alignment="CENTER" style="-fx-padding: 5; -fx-background-color: #E3F2FD; -fx-background-radius: 5;">
+        <Label text="💡 Exportar BOE: Genera fichero importable en la sede electrónica de la AEAT" 
+               style="-fx-font-size: 11px; -fx-text-fill: #1565C0;"/>
+    </HBox>
+</VBox>
