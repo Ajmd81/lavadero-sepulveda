@@ -1,70 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
-<BorderPane xmlns="http://javafx.com/javafx" 
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.lavaderosepulveda.crm.controller.MainController"
-            prefHeight="800.0" prefWidth="1200.0">
-
+<BorderPane prefHeight="800.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.lavaderosepulveda.crm.controller.MainController">
+    
     <!-- Top: MenuBar -->
     <top>
         <VBox>
             <MenuBar>
                 <Menu text="Archivo">
-                    <MenuItem text="Configuración" onAction="#abrirConfiguracion"/>
-                    <MenuItem text="Plantilla Factura" onAction="#cargarPlantillaFactura"/>
-                    <SeparatorMenuItem/>
-                    <MenuItem text="Salir" onAction="#salir"/>
+                    <MenuItem onAction="#abrirConfiguracion" text="Configuración" />
+                    <MenuItem onAction="#cargarPlantillaFactura" text="Plantilla Factura" />
+                    <SeparatorMenuItem />
+                    <MenuItem onAction="#salir" text="Salir" />
                 </Menu>
                 <Menu text="Gestión">
-                    <MenuItem text="Clientes" onAction="#cargarClientes"/>
-                    <MenuItem text="Citas" onAction="#cargarCitas"/>
-                    <MenuItem text="Facturación" onAction="#cargarFacturacion"/>
+                    <MenuItem onAction="#cargarClientes" text="Clientes" />
+                    <MenuItem onAction="#cargarCitas" text="Citas" />
+                    <MenuItem onAction="#cargarFacturacion" text="Facturación" />
                 </Menu>
                 <Menu text="Reportes">
-                    <MenuItem text="Contabilidad" onAction="#cargarContabilidad"/>
-                    <MenuItem text="Dashboard" onAction="#cargarDashboard"/>
+                    <MenuItem onAction="#cargarDashboard" text="Dashboard" />
+                    <MenuItem onAction="#cargarResumenFinanciero" text="Resumen Financiero" />
+                    <SeparatorMenuItem />
+                    <MenuItem onAction="#cargarContabilidad" text="Contabilidad" />
+                    <MenuItem onAction="#cargarModelosFiscales" text="Modelos Fiscales" />
                 </Menu>
                 <Menu text="Ayuda">
-                    <MenuItem text="Acerca de"/>
+                    <MenuItem text="Acerca de" />
                 </Menu>
             </MenuBar>
             
             <!-- Barra de herramientas -->
             <ToolBar>
-                <Button text="Dashboard" onAction="#cargarDashboard" styleClass="toolbar-button"/>
-                <Separator orientation="VERTICAL"/>
-                <Button text="Clientes" onAction="#cargarClientes" styleClass="toolbar-button"/>
-                <Button text="Citas" onAction="#cargarCitas" styleClass="toolbar-button"/>
-                <Button text="Facturación" onAction="#cargarFacturacion" styleClass="toolbar-button"/>
-                <Separator orientation="VERTICAL"/>
-                <Button text="Contabilidad" onAction="#cargarContabilidad" styleClass="toolbar-button"/>
+                <Button onAction="#cargarDashboard" styleClass="toolbar-button" text="Dashboard" />
+                <Separator orientation="VERTICAL" />
+                <Button onAction="#cargarClientes" styleClass="toolbar-button" text="Clientes"  />
+                <Button onAction="#cargarCitas" styleClass="toolbar-button" text="Citas"  />
+                <Button onAction="#cargarFacturacion" styleClass="toolbar-button" text="Facturación"  />
+                <Separator orientation="VERTICAL" />
+                <Button onAction="#cargarContabilidad" styleClass="toolbar-button" text="Contabilidad"  />
+                <Button onAction="#cargarResumenFinanciero" styleClass="toolbar-button" text="Resumen Financiero"  />
+                <Button onAction="#cargarModelosFiscales" styleClass="toolbar-button" text="Modelos Fiscales"  />
             </ToolBar>
         </VBox>
     </top>
-
+    
     <!-- Center: Contenido dinámico -->
     <center>
         <BorderPane fx:id="mainBorderPane" styleClass="content-area">
             <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
+                <Insets bottom="10" left="10" right="10" top="10" />
             </padding>
         </BorderPane>
     </center>
-
+    
     <!-- Bottom: Barra de estado -->
     <bottom>
-        <HBox styleClass="status-bar" spacing="20" alignment="CENTER_LEFT">
+        <HBox alignment="CENTER_LEFT" spacing="20" styleClass="status-bar">
             <padding>
-                <Insets top="5" right="10" bottom="5" left="10"/>
+                <Insets bottom="5" left="10" right="10" top="5" />
             </padding>
-            <Label text="Lavadero Sepúlveda CRM v1.0" styleClass="status-label"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="lblStatusMessage" text="Listo" styleClass="status-label"/>
+            <Label styleClass="status-label" text="Lavadero Sepúlveda CRM v1.0" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="lblStatusMessage" styleClass="status-label" text="Listo" />
         </HBox>
     </bottom>
-
 </BorderPane>

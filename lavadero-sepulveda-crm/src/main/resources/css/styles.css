@@ -15,6 +15,7 @@
     -fx-app-background-color: #F5F5F5;
     -fx-surface-color: #FFFFFF;
     -fx-text-color: #212121;
+    -fx-primary-text: #066cf2;
     -fx-secondary-text: #757575;
     -fx-app-border-color: #E0E0E0;
     -fx-divider-color: #BDBDBD;
@@ -39,16 +40,18 @@
     -fx-padding: 5;
 }
 
-.toolbar-button {
+/* 🔥 BOTONES DEL TOOLBAR (OPCIÓN A) */
+.button.toolbar-button {
     -fx-background-color: transparent;
     -fx-padding: 8 15 8 15;
     -fx-cursor: hand;
-    -fx-text-fill: -fx-text-color;
+    -fx-text-fill: -fx-primary-text;
 }
 
-.toolbar-button:hover {
+.button.toolbar-button:hover {
     -fx-background-color: -fx-primary-light;
 }
+
 
 /* ========== Barra de estado ========== */
 .status-bar {
@@ -58,7 +61,7 @@
 }
 
 .status-label {
-    -fx-text-fill: -fx-secondary-text;
+    -fx-text-fill: -fx-primary-text;
     -fx-font-size: 12px;
 }
 
@@ -72,7 +75,7 @@
 .subtitle-label {
     -fx-font-size: 16px;
     -fx-font-weight: bold;
-    -fx-text-fill: -fx-secondary-text;
+    -fx-text-fill: -fx-primary-text;
 }
 
 .metric-title {
@@ -137,7 +140,7 @@
 .btn-secondary {
     -fx-background-color: -fx-surface-color;
     -fx-border-color: -fx-divider-color;
-    -fx-text-fill: -fx-text-color;
+    -fx-text-fill: -fx-primary-text;
     -fx-border-radius: 4px;
     -fx-background-radius: 4px;
 }

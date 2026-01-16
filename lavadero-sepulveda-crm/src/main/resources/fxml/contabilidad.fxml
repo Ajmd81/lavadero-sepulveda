@@ -8,92 +8,93 @@
 
 <VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.lavaderosepulveda.crm.controller.ContabilidadController"
       spacing="20">
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
     
+    <!-- Cabecera -->
     <HBox alignment="CENTER_LEFT" spacing="20">
         <Label text="Contabilidad y Reportes" styleClass="title-label"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Generar Reporte" styleClass="primary-button"/>
-        <Button text="Exportar Excel"/>
+        <Button fx:id="btnGenerarReporte" text="Generar Reporte" styleClass="primary-button" onAction="#generarReporte"/>
+        <Button fx:id="btnExportarExcel" text="Exportar Excel" onAction="#exportarExcel"/>
     </HBox>
     
     <!-- Filtros de período -->
     <HBox spacing="10" alignment="CENTER_LEFT">
         <Label text="Período:"/>
-        <ComboBox prefWidth="150" promptText="Seleccionar...">
-            <items>
-                <FXCollections fx:factory="observableArrayList">
-                    <String fx:value="Este mes"/>
-                    <String fx:value="Mes anterior"/>
-                    <String fx:value="Este trimestre"/>
-                    <String fx:value="Este año"/>
-                    <String fx:value="Personalizado"/>
-                </FXCollections>
-            </items>
-        </ComboBox>
+        <ComboBox fx:id="comboPeriodo" prefWidth="150"/>
         <Label text="Desde:"/>
-        <DatePicker prefWidth="130"/>
+        <DatePicker fx:id="dpDesde" prefWidth="130"/>
         <Label text="Hasta:"/>
-        <DatePicker prefWidth="130"/>
-        <Button text="Generar"/>
+        <DatePicker fx:id="dpHasta" prefWidth="130"/>
+        <Button fx:id="btnGenerar" text="Generar" styleClass="primary-button" onAction="#cargarDatos"/>
     </HBox>
     
-    <!-- Resumen financiero -->
+    <!-- Resumen financiero - Tarjetas -->
     <GridPane hgap="15" vgap="15">
         <VBox styleClass="metric-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
             <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-            <Label text="Ingresos Totales"/>
-            <Label text="0.00 €" styleClass="metric-value-small"/>
+            <Label text="Ingresos Totales" styleClass="metric-label"/>
+            <Label fx:id="lblIngresosTotales" text="0,00 €" styleClass="metric-value-small"/>
         </VBox>
         <VBox styleClass="metric-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
             <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-            <Label text="IVA Repercutido"/>
-            <Label text="0.00 €" styleClass="metric-value-small"/>
+            <Label text="IVA Repercutido" styleClass="metric-label"/>
+            <Label fx:id="lblIvaRepercutido" text="0,00 €" styleClass="metric-value-small"/>
         </VBox>
         <VBox styleClass="metric-card" GridPane.columnIndex="2" GridPane.rowIndex="0">
             <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-            <Label text="Base Imponible"/>
-            <Label text="0.00 €" styleClass="metric-value-small"/>
+            <Label text="Base Imponible" styleClass="metric-label"/>
+            <Label fx:id="lblBaseImponible" text="0,00 €" styleClass="metric-value-small"/>
         </VBox>
         <VBox styleClass="metric-card" GridPane.columnIndex="3" GridPane.rowIndex="0">
             <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-            <Label text="Nº Facturas"/>
-            <Label text="0" styleClass="metric-value-small"/>
+            <Label text="Nº Facturas" styleClass="metric-label"/>
+            <Label fx:id="lblNumFacturas" text="0" styleClass="metric-value-small"/>
         </VBox>
     </GridPane>
     
     <!-- Tabla de desglose -->
-    <TabPane VBox.vgrow="ALWAYS">
+    <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS">
         <Tab text="Resumen Mensual" closable="false">
-            <TableView>
+            <TableView fx:id="tablaResumenMensual">
                 <columns>
-                    <TableColumn text="Mes" prefWidth="150"/>
-                    <TableColumn text="Facturas" prefWidth="100"/>
-                    <TableColumn text="Base" prefWidth="120"/>
-                    <TableColumn text="IVA" prefWidth="100"/>
-                    <TableColumn text="Total" prefWidth="120"/>
+                    <TableColumn fx:id="colMes" text="Mes" prefWidth="150"/>
+                    <TableColumn fx:id="colFacturasMes" text="Facturas" prefWidth="100"/>
+                    <TableColumn fx:id="colBaseMes" text="Base" prefWidth="120"/>
+                    <TableColumn fx:id="colIvaMes" text="IVA" prefWidth="100"/>
+                    <TableColumn fx:id="colTotalMes" text="Total" prefWidth="120"/>
                 </columns>
+                <placeholder>
+                    <Label text="Seleccione un período y pulse 'Generar'"/>
+                </placeholder>
             </TableView>
         </Tab>
         <Tab text="Por Cliente" closable="false">
-            <TableView>
+            <TableView fx:id="tablaPorCliente">
                 <columns>
-                    <TableColumn text="Cliente" prefWidth="250"/>
-                    <TableColumn text="Facturas" prefWidth="100"/>
-                    <TableColumn text="Total" prefWidth="150"/>
+                    <TableColumn fx:id="colCliente" text="Cliente" prefWidth="250"/>
+                    <TableColumn fx:id="colFacturasCliente" text="Facturas" prefWidth="100"/>
+                    <TableColumn fx:id="colTotalCliente" text="Total" prefWidth="150"/>
                 </columns>
+                <placeholder>
+                    <Label text="Seleccione un período y pulse 'Generar'"/>
+                </placeholder>
             </TableView>
         </Tab>
         <Tab text="Por Servicio" closable="false">
-            <TableView>
+            <TableView fx:id="tablaPorServicio">
                 <columns>
-                    <TableColumn text="Servicio" prefWidth="250"/>
-                    <TableColumn text="Cantidad" prefWidth="100"/>
-                    <TableColumn text="Total" prefWidth="150"/>
+                    <TableColumn fx:id="colServicio" text="Servicio" prefWidth="250"/>
+                    <TableColumn fx:id="colCantidadServicio" text="Cantidad" prefWidth="100"/>
+                    <TableColumn fx:id="colTotalServicio" text="Total" prefWidth="150"/>
                 </columns>
+                <placeholder>
+                    <Label text="Funcionalidad en desarrollo"/>
+                </placeholder>
             </TableView>
         </Tab>
     </TabPane>
