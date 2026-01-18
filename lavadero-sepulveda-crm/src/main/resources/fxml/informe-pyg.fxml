@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.lavaderosepulveda.crm.controller.InformePyGController"
+      spacing="15" style="-fx-padding: 20px; -fx-background-color: #f5f5f5;">
+    
+    <!-- Encabezado -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <VBox>
+            <Label text="Cuenta de Pérdidas y Ganancias" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+            <Label fx:id="lblPeriodo" text="Período: 01/01/2026 - 31/12/2026" style="-fx-text-fill: #666666;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        
+        <!-- Filtros -->
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Label text="Desde:"/>
+            <DatePicker fx:id="dpDesde" prefWidth="130"/>
+            <Label text="Hasta:"/>
+            <DatePicker fx:id="dpHasta" prefWidth="130"/>
+            <Button text="Generar" onAction="#generarInforme" 
+                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        </HBox>
+    </HBox>
+    
+    <!-- Accesos rápidos -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Período rápido:" style="-fx-text-fill: #666666;"/>
+        <Button text="Este mes" onAction="#filtrarEsteMes" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-cursor: hand;"/>
+        <Button text="T1" onAction="#filtrarT1" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-cursor: hand;"/>
+        <Button text="T2" onAction="#filtrarT2" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-cursor: hand;"/>
+        <Button text="T3" onAction="#filtrarT3" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-cursor: hand;"/>
+        <Button text="T4" onAction="#filtrarT4" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-cursor: hand;"/>
+        <Button text="Año completo" onAction="#filtrarAnio" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-cursor: hand;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Exportar Excel" onAction="#exportarExcel"/>
+    </HBox>
+    
+    <Separator/>
+    
+    <!-- Contenido principal -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
+        <VBox spacing="15" style="-fx-padding: 10px;">
+            
+            <!-- Tarjeta resumen -->
+            <HBox spacing="20" alignment="CENTER">
+                <VBox alignment="CENTER" spacing="5" 
+                      style="-fx-background-color: #E8F5E9; -fx-padding: 20px; -fx-background-radius: 8px; -fx-min-width: 200px;">
+                    <Label text="INGRESOS" style="-fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+                    <Label fx:id="lblTotalIngresos" text="0,00 EUR" 
+                           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;"/>
+                    <Label fx:id="lblNumIngresos" text="0 facturas" style="-fx-text-fill: #666666; -fx-font-size: 11px;"/>
+                </VBox>
+                
+                <Label text="-" style="-fx-font-size: 30px; -fx-text-fill: #666666;"/>
+                
+                <VBox alignment="CENTER" spacing="5" 
+                      style="-fx-background-color: #FFEBEE; -fx-padding: 20px; -fx-background-radius: 8px; -fx-min-width: 200px;">
+                    <Label text="GASTOS" style="-fx-font-weight: bold; -fx-text-fill: #C62828;"/>
+                    <Label fx:id="lblTotalGastos" text="0,00 EUR" 
+                           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #C62828;"/>
+                    <Label fx:id="lblNumGastos" text="0 facturas + 0 gastos" style="-fx-text-fill: #666666; -fx-font-size: 11px;"/>
+                </VBox>
+                
+                <Label text="=" style="-fx-font-size: 30px; -fx-text-fill: #666666;"/>
+                
+                <VBox fx:id="cardResultado" alignment="CENTER" spacing="5" 
+                      style="-fx-background-color: #E3F2FD; -fx-padding: 20px; -fx-background-radius: 8px; -fx-min-width: 200px;">
+                    <Label fx:id="lblTituloResultado" text="RESULTADO" style="-fx-font-weight: bold; -fx-text-fill: #1565C0;"/>
+                    <Label fx:id="lblResultadoFinal" text="0,00 EUR" 
+                           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1565C0;"/>
+                    <Label fx:id="lblMargen" text="Margen: 0 por ciento" style="-fx-text-fill: #666666; -fx-font-size: 11px;"/>
+                </VBox>
+            </HBox>
+            
+            <!-- Informe detallado -->
+            <VBox spacing="0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);">
+                
+                <!-- Cabecera -->
+                <HBox style="-fx-background-color: #1565C0; -fx-padding: 15px; -fx-background-radius: 8px 8px 0 0;">
+                    <Label text="CUENTA DE PÉRDIDAS Y GANANCIAS" 
+                           style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblEjercicio" text="Ejercicio 2026" style="-fx-text-fill: white;"/>
+                </HBox>
+                
+                <VBox style="-fx-padding: 20px;" spacing="5">
+                    
+                    <!-- A) OPERACIONES CONTINUADAS -->
+                    <Label text="A) OPERACIONES CONTINUADAS" style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 0 0 10px 0;"/>
+                    
+                    <!-- 1. Ingresos -->
+                    <HBox spacing="10" style="-fx-padding: 5px 0 5px 20px;">
+                        <Label text="1. Importe neto de la cifra de negocios" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblVentasNetas" text="0,00 EUR" style="-fx-font-weight: bold;" prefWidth="120" alignment="CENTER_RIGHT"/>
+                    </HBox>
+                    
+                    <HBox spacing="10" style="-fx-padding: 5px 0 5px 20px;">
+                        <Label text="4. Aprovisionamientos" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblAprovisionamientos" text="0,00 EUR" style="-fx-font-weight: bold; -fx-text-fill: #C62828;" prefWidth="120" alignment="CENTER_RIGHT"/>
+                    </HBox>
+                    
+                    <HBox spacing="10" style="-fx-padding: 5px 0 5px 20px;">
+                        <Label text="6. Gastos de personal" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblGastosPersonal" text="0,00 EUR" style="-fx-font-weight: bold; -fx-text-fill: #C62828;" prefWidth="120" alignment="CENTER_RIGHT"/>
+                    </HBox>
+                    
+                    <HBox spacing="10" style="-fx-padding: 5px 0 5px 20px;">
+                        <Label text="7. Otros gastos de explotación" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblOtrosGastosExplotacion" text="0,00 EUR" style="-fx-font-weight: bold; -fx-text-fill: #C62828;" prefWidth="120" alignment="CENTER_RIGHT"/>
+                    </HBox>
+                    
+                    <Separator style="-fx-padding: 10px 0;"/>
+                    
+                    <!-- A.1) RESULTADO DE EXPLOTACIÓN -->
+                    <HBox spacing="10" style="-fx-background-color: #E8F5E9; -fx-padding: 12px; -fx-background-radius: 5px;">
+                        <Label text="A.1) RESULTADO DE EXPLOTACIÓN" style="-fx-font-weight: bold;" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblResultadoExplotacion" text="0,00 EUR" 
+                               style="-fx-font-weight: bold; -fx-font-size: 14px;" prefWidth="120" alignment="CENTER_RIGHT"/>
+                    </HBox>
+                    
+                    <Separator style="-fx-padding: 10px 0;"/>
+                    
+                    <!-- A.2) RESULTADO FINANCIERO -->
+                    <HBox spacing="10" style="-fx-background-color: #E3F2FD; -fx-padding: 12px; -fx-background-radius: 5px;">
+                        <Label text="A.2) RESULTADO FINANCIERO" style="-fx-font-weight: bold;" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblResultadoFinanciero" text="0,00 EUR" 
+                               style="-fx-font-weight: bold; -fx-font-size: 14px;" prefWidth="120" alignment="CENTER_RIGHT"/>
+                    </HBox>
+                    
+                    <Separator style="-fx-padding: 10px 0;"/>
+                    
+                    <!-- A.4) RESULTADO DEL EJERCICIO -->
+                    <HBox fx:id="boxResultadoEjercicio" spacing="10" 
+                          style="-fx-background-color: #FFF8E1; -fx-padding: 15px; -fx-background-radius: 5px; -fx-border-color: #FFB300; -fx-border-radius: 5px;">
+                        <Label text="A.4) RESULTADO DEL EJERCICIO" style="-fx-font-weight: bold; -fx-font-size: 14px;" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblResultadoEjercicio" text="0,00 EUR" 
+                               style="-fx-font-weight: bold; -fx-font-size: 18px;" prefWidth="150" alignment="CENTER_RIGHT"/>
+                    </HBox>
+                    
+                </VBox>
+            </VBox>
+            
+            <!-- Desglose de gastos por categoría -->
+            <TitledPane text="Desglose de gastos por categoria" expanded="false">
+                <VBox spacing="10" style="-fx-padding: 15px;">
+                    <HBox spacing="20">
+                        <TableView fx:id="tablaGastosPorCategoria" prefHeight="250" HBox.hgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colCategoria" text="Categoria" prefWidth="200"/>
+                                <TableColumn fx:id="colImporteCategoria" text="Importe" prefWidth="120"/>
+                                <TableColumn fx:id="colPorcentajeCategoria" text="Porcentaje" prefWidth="80"/>
+                            </columns>
+                        </TableView>
+                        <PieChart fx:id="chartGastos" prefWidth="350" prefHeight="250" legendSide="BOTTOM"/>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+            
+        </VBox>
+    </ScrollPane>
+</VBox>

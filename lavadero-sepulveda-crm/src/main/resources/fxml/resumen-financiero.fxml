@@ -207,6 +207,7 @@
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button text="Exportar a Excel" onAction="#exportarExcel" styleClass="btn-secondary"/>
         <Button text="Imprimir" onAction="#imprimir" styleClass="btn-secondary"/>
+        <Button text="📊 Pérdidas y Ganancias" onAction="#abrirInformePyG" style="-fx-background-color: #FF9800; -fx-text-fill: white;"/>
         <Button text="Cerrar" onAction="#cerrar" styleClass="btn-primary"/>
     </HBox>
 </VBox>

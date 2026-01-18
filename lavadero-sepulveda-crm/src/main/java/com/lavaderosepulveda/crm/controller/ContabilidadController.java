@@ -15,9 +15,22 @@ import javafx.stage.Stage;
 
 import lombok.extern.slf4j.Slf4j;
 
+// iText 7/8 imports
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigDecimal;
@@ -96,7 +109,17 @@ public class ContabilidadController implements Initializable {
     private FacturacionApiService facturacionService;
     private NumberFormat currencyFormat;
     private DateTimeFormatter monthFormatter;
+    private DateTimeFormatter dateFormatter;
     private List<FacturaEmitidaDTO> facturasEmitidas;
+
+    // Colores para PDF (iText 7/8)
+    private static final DeviceRgb COLOR_VERDE = new DeviceRgb(46, 125, 50);
+    private static final DeviceRgb COLOR_AZUL = new DeviceRgb(21, 101, 192);
+    private static final DeviceRgb COLOR_AZUL_CLARO = new DeviceRgb(227, 242, 253);
+    private static final DeviceRgb COLOR_VERDE_CLARO = new DeviceRgb(232, 245, 233);
+    private static final DeviceRgb COLOR_NARANJA = new DeviceRgb(230, 81, 0);
+    private static final DeviceRgb COLOR_NARANJA_CLARO = new DeviceRgb(255, 243, 224);
+    private static final DeviceRgb COLOR_GRIS = new DeviceRgb(100, 100, 100);
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -105,6 +128,7 @@ public class ContabilidadController implements Initializable {
             facturacionService = FacturacionApiService.getInstance();
             currencyFormat = NumberFormat.getCurrencyInstance(new Locale("es", "ES"));
             monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", new Locale("es", "ES"));
+            dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
             facturasEmitidas = new ArrayList<>();
 
             configurarFiltros();
@@ -364,10 +388,265 @@ public class ContabilidadController implements Initializable {
         tablaPorCliente.setItems(FXCollections.observableArrayList(resumenes));
     }
 
+    // ========================================
+    // GENERACIÓN DE REPORTE PDF
+    // ========================================
+
     @FXML
     private void generarReporte() {
-        mostrarAlerta("Información", "Funcionalidad de generación de reporte en desarrollo",
-                Alert.AlertType.INFORMATION);
+        if (tablaResumenMensual == null || tablaResumenMensual.getItems().isEmpty()) {
+            mostrarAlerta("Aviso", "No hay datos para generar el reporte. Cargue los datos primero.",
+                    Alert.AlertType.WARNING);
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Guardar Reporte de Contabilidad");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+        fileChooser.setInitialFileName("reporte_contabilidad_" +
+                dpDesde.getValue().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "_" +
+                dpHasta.getValue().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".pdf");
+
+        File file = fileChooser.showSaveDialog(getStage());
+
+        if (file != null) {
+            try {
+                crearPDFReporte(file);
+
+                Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmacion.initOwner(getStage());
+                confirmacion.setTitle("PDF Generado");
+                confirmacion.setHeaderText("Reporte de contabilidad guardado correctamente");
+                confirmacion.setContentText("¿Desea abrir el PDF ahora?");
+
+                Optional<ButtonType> respuesta = confirmacion.showAndWait();
+                if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().open(file);
+                    }
+                }
+
+            } catch (Exception e) {
+                log.error("Error generando PDF", e);
+                mostrarAlerta("Error", "Error al generar el PDF: " + e.getMessage(), Alert.AlertType.ERROR);
+            }
+        }
+    }
+
+    /**
+     * Crea el documento PDF con el reporte de contabilidad (iText 7/8)
+     */
+    private void crearPDFReporte(File file) throws Exception {
+        PdfWriter writer = new PdfWriter(file);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
+
+        // ========================================
+        // TÍTULO
+        // ========================================
+        document.add(new Paragraph("REPORTE DE CONTABILIDAD")
+                .setFontSize(18)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER)
+                .setFontColor(ColorConstants.DARK_GRAY));
+
+        document.add(new Paragraph("Período: " +
+                dpDesde.getValue().format(dateFormatter) + " - " +
+                dpHasta.getValue().format(dateFormatter))
+                .setFontSize(10)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(10));
+
+        document.add(new Paragraph("Lavadero Sepúlveda")
+                .setFontSize(12)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(20));
+
+        // ========================================
+        // TARJETAS RESUMEN
+        // ========================================
+        Table tablaResumen = new Table(UnitValue.createPercentArray(4)).useAllAvailableWidth();
+
+        tablaResumen.addCell(crearCeldaResumen("INGRESOS TOTALES",
+                lblIngresosTotales != null ? lblIngresosTotales.getText() : "0,00 €",
+                COLOR_VERDE_CLARO, COLOR_VERDE));
+        tablaResumen.addCell(crearCeldaResumen("BASE IMPONIBLE",
+                lblBaseImponible != null ? lblBaseImponible.getText() : "0,00 €",
+                COLOR_AZUL_CLARO, COLOR_AZUL));
+        tablaResumen.addCell(crearCeldaResumen("IVA REPERCUTIDO",
+                lblIvaRepercutido != null ? lblIvaRepercutido.getText() : "0,00 €",
+                COLOR_NARANJA_CLARO, COLOR_NARANJA));
+        tablaResumen.addCell(crearCeldaResumen("Nº FACTURAS",
+                lblNumFacturas != null ? lblNumFacturas.getText() : "0",
+                COLOR_AZUL_CLARO, COLOR_AZUL));
+
+        document.add(tablaResumen);
+        document.add(new Paragraph(" "));
+
+        // ========================================
+        // RESUMEN MENSUAL
+        // ========================================
+        document.add(new Paragraph("RESUMEN MENSUAL")
+                .setFontSize(12)
+                .setBold()
+                .setFontColor(ColorConstants.DARK_GRAY));
+
+        Table tablaMensual = new Table(UnitValue.createPercentArray(new float[] { 3, 1, 2, 2, 2 }))
+                .useAllAvailableWidth();
+
+        tablaMensual.addHeaderCell(crearCeldaCabecera("Mes"));
+        tablaMensual.addHeaderCell(crearCeldaCabecera("Facturas"));
+        tablaMensual.addHeaderCell(crearCeldaCabecera("Base"));
+        tablaMensual.addHeaderCell(crearCeldaCabecera("IVA"));
+        tablaMensual.addHeaderCell(crearCeldaCabecera("Total"));
+
+        BigDecimal totalBase = BigDecimal.ZERO;
+        BigDecimal totalIva = BigDecimal.ZERO;
+        BigDecimal totalGeneral = BigDecimal.ZERO;
+        int totalFacturas = 0;
+
+        for (ResumenMensual rm : tablaResumenMensual.getItems()) {
+            tablaMensual.addCell(new Cell().add(new Paragraph(rm.getMes()).setFontSize(9)));
+            tablaMensual.addCell(new Cell().add(new Paragraph(String.valueOf(rm.getNumFacturas())).setFontSize(9)
+                    .setTextAlignment(TextAlignment.CENTER)));
+            tablaMensual.addCell(new Cell().add(new Paragraph(currencyFormat.format(rm.getBase())).setFontSize(9)
+                    .setTextAlignment(TextAlignment.RIGHT)));
+            tablaMensual.addCell(new Cell().add(new Paragraph(currencyFormat.format(rm.getIva())).setFontSize(9)
+                    .setTextAlignment(TextAlignment.RIGHT)));
+            tablaMensual.addCell(new Cell().add(new Paragraph(currencyFormat.format(rm.getTotal())).setFontSize(9)
+                    .setTextAlignment(TextAlignment.RIGHT)));
+
+            totalBase = totalBase.add(rm.getBase());
+            totalIva = totalIva.add(rm.getIva());
+            totalGeneral = totalGeneral.add(rm.getTotal());
+            totalFacturas += rm.getNumFacturas();
+        }
+
+        // Fila de totales
+        tablaMensual.addCell(
+                new Cell().add(new Paragraph("TOTAL").setFontSize(9).setBold()).setBackgroundColor(COLOR_VERDE_CLARO));
+        tablaMensual.addCell(new Cell().add(new Paragraph(String.valueOf(totalFacturas)).setFontSize(9).setBold()
+                .setTextAlignment(TextAlignment.CENTER)).setBackgroundColor(COLOR_VERDE_CLARO));
+        tablaMensual.addCell(new Cell().add(new Paragraph(currencyFormat.format(totalBase)).setFontSize(9).setBold()
+                .setTextAlignment(TextAlignment.RIGHT)).setBackgroundColor(COLOR_VERDE_CLARO));
+        tablaMensual.addCell(new Cell().add(new Paragraph(currencyFormat.format(totalIva)).setFontSize(9).setBold()
+                .setTextAlignment(TextAlignment.RIGHT)).setBackgroundColor(COLOR_VERDE_CLARO));
+        tablaMensual.addCell(new Cell().add(new Paragraph(currencyFormat.format(totalGeneral)).setFontSize(9).setBold()
+                .setTextAlignment(TextAlignment.RIGHT)).setBackgroundColor(COLOR_VERDE_CLARO));
+
+        document.add(tablaMensual);
+        document.add(new Paragraph(" "));
+
+        // ========================================
+        // RESUMEN POR CLIENTE
+        // ========================================
+        if (tablaPorCliente != null && !tablaPorCliente.getItems().isEmpty()) {
+            document.add(new Paragraph("FACTURACIÓN POR CLIENTE")
+                    .setFontSize(12)
+                    .setBold()
+                    .setFontColor(ColorConstants.DARK_GRAY));
+
+            Table tablaClientes = new Table(UnitValue.createPercentArray(new float[] { 4, 1, 2 }))
+                    .useAllAvailableWidth();
+
+            tablaClientes.addHeaderCell(crearCeldaCabecera("Cliente"));
+            tablaClientes.addHeaderCell(crearCeldaCabecera("Facturas"));
+            tablaClientes.addHeaderCell(crearCeldaCabecera("Total"));
+
+            BigDecimal totalClientes = BigDecimal.ZERO;
+            int facturasClientes = 0;
+
+            for (ResumenCliente rc : tablaPorCliente.getItems()) {
+                tablaClientes.addCell(new Cell().add(new Paragraph(rc.getNombreCliente()).setFontSize(9)));
+                tablaClientes.addCell(new Cell().add(new Paragraph(String.valueOf(rc.getNumFacturas())).setFontSize(9)
+                        .setTextAlignment(TextAlignment.CENTER)));
+                tablaClientes.addCell(new Cell().add(new Paragraph(currencyFormat.format(rc.getTotal())).setFontSize(9)
+                        .setTextAlignment(TextAlignment.RIGHT)));
+
+                totalClientes = totalClientes.add(rc.getTotal());
+                facturasClientes += rc.getNumFacturas();
+            }
+
+            // Fila de totales
+            tablaClientes.addCell(new Cell().add(new Paragraph("TOTAL").setFontSize(9).setBold())
+                    .setBackgroundColor(COLOR_VERDE_CLARO));
+            tablaClientes
+                    .addCell(
+                            new Cell()
+                                    .add(new Paragraph(String.valueOf(facturasClientes)).setFontSize(9).setBold()
+                                            .setTextAlignment(TextAlignment.CENTER))
+                                    .setBackgroundColor(COLOR_VERDE_CLARO));
+            tablaClientes
+                    .addCell(
+                            new Cell()
+                                    .add(new Paragraph(currencyFormat.format(totalClientes)).setFontSize(9).setBold()
+                                            .setTextAlignment(TextAlignment.RIGHT))
+                                    .setBackgroundColor(COLOR_VERDE_CLARO));
+
+            document.add(tablaClientes);
+        }
+
+        // ========================================
+        // PIE DE PÁGINA
+        // ========================================
+        document.add(new Paragraph(" "));
+        document.add(new Paragraph("Documento generado el " +
+                LocalDate.now().format(dateFormatter) + " - Lavadero Sepúlveda CRM")
+                .setFontSize(8)
+                .setFontColor(COLOR_GRIS)
+                .setTextAlignment(TextAlignment.CENTER));
+
+        document.close();
+        log.info("PDF de contabilidad generado: {}", file.getAbsolutePath());
+    }
+
+    /**
+     * Crea una celda de resumen con estilo (iText 7/8)
+     */
+    private Cell crearCeldaResumen(String titulo, String valor, DeviceRgb bgColor, DeviceRgb fontColor) {
+        Cell celda = new Cell()
+                .setBackgroundColor(bgColor)
+                .setPadding(8)
+                .setTextAlignment(TextAlignment.CENTER);
+
+        celda.add(new Paragraph(titulo)
+                .setFontSize(8)
+                .setBold()
+                .setFontColor(ColorConstants.DARK_GRAY)
+                .setTextAlignment(TextAlignment.CENTER));
+
+        celda.add(new Paragraph(valor)
+                .setFontSize(11)
+                .setBold()
+                .setFontColor(fontColor)
+                .setTextAlignment(TextAlignment.CENTER));
+
+        return celda;
+    }
+
+    /**
+     * Crea una celda de cabecera (iText 7/8)
+     */
+    private Cell crearCeldaCabecera(String texto) {
+        return new Cell()
+                .add(new Paragraph(texto).setFontSize(9).setBold().setFontColor(ColorConstants.WHITE))
+                .setBackgroundColor(COLOR_AZUL)
+                .setPadding(5)
+                .setTextAlignment(TextAlignment.CENTER);
+    }
+
+    private Stage getStage() {
+        if (btnGenerarReporte != null && btnGenerarReporte.getScene() != null) {
+            return (Stage) btnGenerarReporte.getScene().getWindow();
+        }
+        if (btnExportarExcel != null && btnExportarExcel.getScene() != null) {
+            return (Stage) btnExportarExcel.getScene().getWindow();
+        }
+        if (comboPeriodo != null && comboPeriodo.getScene() != null) {
+            return (Stage) comboPeriodo.getScene().getWindow();
+        }
+        return null;
     }
 
     @FXML
@@ -383,7 +662,7 @@ public class ContabilidadController implements Initializable {
         fileChooser.setInitialFileName(
                 "contabilidad_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".xlsx");
 
-        Stage stage = btnExportarExcel != null ? (Stage) btnExportarExcel.getScene().getWindow() : null;
+        Stage stage = getStage();
         if (stage == null)
             return;
 
@@ -409,6 +688,7 @@ public class ContabilidadController implements Initializable {
 
     private void mostrarAlerta(String titulo, String mensaje, Alert.AlertType tipo) {
         Alert alert = new Alert(tipo);
+        alert.initOwner(getStage());
         alert.setTitle(titulo);
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
