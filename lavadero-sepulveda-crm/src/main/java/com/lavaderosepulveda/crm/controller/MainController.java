@@ -68,6 +68,11 @@ public class MainController {
     }
 
     @FXML
+    private void cargarInformePyG() {
+        cargarVista("/fxml/informe-pyg.fxml");
+    }
+
+    @FXML
     private void salir() {
         StageManager.getInstance().getPrimaryStage().close();
     }

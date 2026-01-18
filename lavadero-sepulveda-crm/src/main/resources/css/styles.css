@@ -40,7 +40,7 @@
     -fx-padding: 5;
 }
 
-/* 🔥 BOTONES DEL TOOLBAR (OPCIÓN A) */
+/* 🔥 BOTONES DEL TOOLBAR */
 .button.toolbar-button {
     -fx-background-color: transparent;
     -fx-padding: 8 15 8 15;
