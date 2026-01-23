@@ -11,13 +11,13 @@
         <VBox>
             <MenuBar>
                 <Menu text="Archivo">
-                    <MenuItem onAction="#abrirConfiguracion" text="Configuración" />
                     <MenuItem onAction="#cargarPlantillaFactura" text="Plantilla Factura" />
                     <SeparatorMenuItem />
                     <MenuItem onAction="#salir" text="Salir" />
                 </Menu>
                 <Menu text="Gestión">
                     <MenuItem onAction="#cargarClientes" text="Clientes" />
+                    <MenuItem onAction="#cargarProveedores" text="Proveedores" />
                     <MenuItem onAction="#cargarCitas" text="Citas" />
                     <MenuItem onAction="#cargarFacturacion" text="Facturación" />
                 </Menu>
@@ -28,22 +28,20 @@
                     <MenuItem onAction="#cargarContabilidad" text="Contabilidad" />
                     <MenuItem onAction="#cargarModelosFiscales" text="Modelos Fiscales" />
                 </Menu>
-                <Menu text="Ayuda">
-                    <MenuItem text="Acerca de" />
-                </Menu>
             </MenuBar>
             
             <!-- Barra de herramientas -->
-            <ToolBar>
+            <ToolBar style="-fx-background-color: #E1F5FE;">
                 <Button onAction="#cargarDashboard" styleClass="toolbar-button" text="Dashboard" />
                 <Separator orientation="VERTICAL" />
-                <Button onAction="#cargarClientes" styleClass="toolbar-button" text="Clientes"  />
-                <Button onAction="#cargarCitas" styleClass="toolbar-button" text="Citas"  />
-                <Button onAction="#cargarFacturacion" styleClass="toolbar-button" text="Facturación"  />
+                <Button onAction="#cargarClientes" styleClass="toolbar-button" text="Clientes" />
+                <Button onAction="#cargarProveedores" styleClass="toolbar-button" text="Proveedores" />
+                <Button onAction="#cargarCitas" styleClass="toolbar-button" text="Citas" />
+                <Button onAction="#cargarFacturacion" styleClass="toolbar-button" text="Facturación" />
                 <Separator orientation="VERTICAL" />
-                <Button onAction="#cargarContabilidad" styleClass="toolbar-button" text="Contabilidad"  />
-                <Button onAction="#cargarResumenFinanciero" styleClass="toolbar-button" text="Resumen Financiero"  />
-                <Button onAction="#cargarModelosFiscales" styleClass="toolbar-button" text="Modelos Fiscales"  />
+                <Button onAction="#cargarContabilidad" styleClass="toolbar-button" text="Contabilidad" />
+                <Button onAction="#cargarResumenFinanciero" styleClass="toolbar-button" text="Resumen Financiero" />
+                <Button onAction="#cargarModelosFiscales" styleClass="toolbar-button" text="Modelos Fiscales" />
             </ToolBar>
         </VBox>
     </top>

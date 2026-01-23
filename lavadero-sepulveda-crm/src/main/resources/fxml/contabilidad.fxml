@@ -6,6 +6,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.collections.FXCollections?>
 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.lavaderosepulveda.crm.controller.ContabilidadController"
@@ -16,7 +18,17 @@
     
     <!-- Cabecera -->
     <HBox alignment="CENTER_LEFT" spacing="20">
-        <Label text="Contabilidad y Reportes" styleClass="title-label"/>
+        <Label text="Contabilidad y Reportes"
+               graphicTextGap="20"
+               styleClass="title-label">
+            <graphic>
+                <ImageView fitHeight="64" fitWidth="64" preserveRatio="true">
+                    <image>
+                        <Image url="@/images/contabilidad.png"/>
+                    </image>
+                </ImageView>
+            </graphic>
+        </Label>
         <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="btnGenerarReporte" text="Generar Reporte" styleClass="primary-button" onAction="#generarReporte"/>
         <Button fx:id="btnExportarExcel" text="Exportar Excel" onAction="#exportarExcel"/>

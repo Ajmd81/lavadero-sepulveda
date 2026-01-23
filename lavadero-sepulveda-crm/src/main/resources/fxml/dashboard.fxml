@@ -4,6 +4,8 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.lavaderosepulveda.crm.controller.DashboardController"
@@ -15,9 +17,22 @@
 
     <!-- Título -->
     <HBox alignment="CENTER_LEFT" spacing="20">
-        <Label text="Dashboard" styleClass="title-label"/>
+        <HBox alignment="CENTER_LEFT" spacing="40">
+            <Label text="Dashboard"
+                   graphicTextGap="20"
+                   styleClass="title-label">
+                <graphic>
+                    <ImageView fitHeight="64" fitWidth="64" preserveRatio="true">
+                        <image>
+                            <Image url="@/images/panel.png"/>
+                        </image>
+                    </ImageView>
+                </graphic>
+            </Label>
+        </HBox>
         <Region HBox.hgrow="ALWAYS"/>
         <Button text="Refrescar" onAction="#refrescar" styleClass="primary-button"/>
+
     </HBox>
 
     <!-- Métricas principales -->

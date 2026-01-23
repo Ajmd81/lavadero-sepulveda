@@ -4,6 +4,8 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.lavaderosepulveda.crm.controller.ClientesController"
@@ -15,7 +17,17 @@
     
     <!-- Título y botones -->
     <HBox alignment="CENTER_LEFT" spacing="20">
-        <Label text="Gestión de Clientes" styleClass="title-label"/>
+        <Label text="Clientes"
+               graphicTextGap="20"
+               styleClass="title-label">
+            <graphic>
+                <ImageView fitHeight="64" fitWidth="64" preserveRatio="true">
+                    <image>
+                        <Image url="@/images/cliente.png"/>
+                    </image>
+                </ImageView>
+            </graphic>
+        </Label>
         <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="btnNuevoCliente" text="Nuevo Cliente" styleClass="primary-button" onAction="#nuevoCliente"/>
         <Button fx:id="btnImportar" text="Importar Excel" onAction="#importarExcel"/>
