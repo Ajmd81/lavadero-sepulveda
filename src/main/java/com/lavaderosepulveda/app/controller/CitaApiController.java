@@ -245,6 +245,36 @@ public class CitaApiController {
         return ResponseEntity.ok(citasDTO);
     }
 
+    /**
+     * POST /api/citas/migrar-email
+     * Permitir NULL en columna email
+     */
+    @PostMapping("/citas/migrar-email")
+    public ResponseEntity<Map<String, String>> migrarColumnaEmail() {
+        try (java.sql.Connection connection = dataSource.getConnection();
+             java.sql.Statement statement = connection.createStatement()) {
+
+            // Cambiar la columna para permitir NULL
+            String sql = "ALTER TABLE citas MODIFY COLUMN email VARCHAR(255) NULL";
+            statement.executeUpdate(sql);
+
+            logger.info("Migración de columna email completada exitosamente");
+
+            Map<String, String> response = new HashMap<>();
+            response.put("mensaje", "Migración completada");
+            response.put("detalle", "Columna 'email' ahora permite NULL");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error en migración de columna email: {}", e.getMessage());
+
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     // ========================================
     // NUEVOS ENDPOINTS PARA INTEGRACIÓN CRM
     // ========================================
