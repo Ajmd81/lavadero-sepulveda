@@ -42,14 +42,15 @@
 
 /* 🔥 BOTONES DEL TOOLBAR */
 .button.toolbar-button {
-    -fx-background-color: transparent;
+    -fx-background-color: -fx-surface-color;
     -fx-padding: 8 15 8 15;
     -fx-cursor: hand;
     -fx-text-fill: -fx-primary-text;
 }
 
 .button.toolbar-button:hover {
-    -fx-background-color: -fx-primary-light;
+    -fx-background-color: -fx-primary-color;
+    -fx-text-fill: -fx-surface-color;
 }
 
 
@@ -96,6 +97,11 @@
     -fx-text-fill: -fx-primary-color;
 }
 
+/* ========== Imágenes ========= */
+.dashboard-icon {
+    -fx-graphic: url("/images/analisis.png");
+    -fx-graphic-text-gap: 10;
+}
 /* ========== Botones ========== */
 .button {
     -fx-background-color: -fx-surface-color;

@@ -6,14 +6,26 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.lavaderosepulveda.crm.controller.ResumenFinancieroController"
       spacing="20" prefWidth="900" prefHeight="700" styleClass="facturacion-container">
     
     <!-- Encabezado -->
     <HBox alignment="CENTER_LEFT" spacing="20">
         <VBox>
-            <Label text="Resumen Financiero" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+            <Label text="Resumen Financiero"
+                   graphicTextGap="20"
+                   styleClass="title-label">
+                <graphic>
+                    <ImageView fitHeight="64" fitWidth="64" preserveRatio="true">
+                        <image>
+                            <Image url="@/images/estado-financiero.png"/>
+                        </image>
+                    </ImageView>
+                </graphic>
+            </Label>
             <Label fx:id="lblPeriodo" text="Período: 01/01/2025 - 31/12/2025" style="-fx-text-fill: #666;"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>

@@ -335,26 +335,26 @@ public class CitasController {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        // Campos del formulario
+        // Campos del formulario - DATOS DIRECTOS DEL CLIENTE
         TextField txtNombre = new TextField();
         txtNombre.setPromptText("Nombre del cliente");
-        
+
         TextField txtTelefono = new TextField();
         txtTelefono.setPromptText("Teléfono");
-        
+
         TextField txtEmail = new TextField();
-        txtEmail.setPromptText("Email");
-        
+        txtEmail.setPromptText("Email (opcional)");
+
         DatePicker dpFechaCita = new DatePicker();
         dpFechaCita.setValue(LocalDate.now().plusDays(1));
-        
+
         ComboBox<String> cmbHora = new ComboBox<>();
         cmbHora.setPromptText("Selecciona fecha primero");
-        
+
         // Label para mostrar estado de carga
         Label lblHorariosStatus = new Label("Selecciona una fecha para ver horarios disponibles");
         lblHorariosStatus.setStyle("-fx-text-fill: #666666; -fx-font-size: 10px;");
-        
+
         // Listener para cargar horarios cuando cambie la fecha
         dpFechaCita.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
@@ -362,11 +362,11 @@ public class CitasController {
                 lblHorariosStatus.setStyle("-fx-text-fill: #2196F3; -fx-font-size: 10px;");
                 cmbHora.setDisable(true);
                 cmbHora.getItems().clear();
-                
+
                 // Cargar horarios en hilo separado
                 new Thread(() -> {
                     List<String> horarios = citaApiService.obtenerHorariosDisponibles(newValue);
-                    
+
                     Platform.runLater(() -> {
                         if (horarios != null && !horarios.isEmpty()) {
                             cmbHora.setItems(FXCollections.observableArrayList(horarios));
@@ -384,11 +384,67 @@ public class CitasController {
                 }).start();
             }
         });
-        
+
+        // ComboBox de servicios con los ENUMs disponibles
+        ComboBox<String> cmbServicio = new ComboBox<>();
+        cmbServicio.setItems(FXCollections.observableArrayList(
+                "LAVADO_COMPLETO_TURISMO",
+                "LAVADO_INTERIOR_TURISMO",
+                "LAVADO_EXTERIOR_TURISMO",
+                "LAVADO_COMPLETO_RANCHERA",
+                "LAVADO_INTERIOR_RANCHERA",
+                "LAVADO_EXTERIOR_RANCHERA",
+                "LAVADO_COMPLETO_MONOVOLUMEN",
+                "LAVADO_INTERIOR_MONOVOLUMEN",
+                "LAVADO_EXTERIOR_MONOVOLUMEN",
+                "LAVADO_COMPLETO_TODOTERRENO",
+                "LAVADO_INTERIOR_TODOTERRENO",
+                "LAVADO_EXTERIOR_TODOTERRENO",
+                "LAVADO_COMPLETO_FURGONETA_PEQUEÑA",
+                "LAVADO_INTERIOR_FURGONETA_PEQUEÑA",
+                "LAVADO_EXTERIOR_FURGONETA_PEQUEÑA",
+                "LAVADO_COMPLETO_FURGONETA_GRANDE",
+                "LAVADO_INTERIOR_FURGONETA_GRANDE",
+                "LAVADO_EXTERIOR_FURGONETA_GRANDE",
+                "TRATAMIENTO_OZONO",
+                "ENCERADO",
+                "TAPICERIA_SIN_DESMONTAR",
+                "TAPICERIA_DESMONTANDO"
+        ));
+        cmbServicio.setValue("LAVADO_COMPLETO_TURISMO");
+
+        TextField txtVehiculo = new TextField();
+        txtVehiculo.setPromptText("Marca y modelo del vehículo");
+
+        TextArea txtObservaciones = new TextArea();
+        txtObservaciones.setPromptText("Observaciones adicionales (opcional)");
+        txtObservaciones.setPrefRowCount(2);
+
+        // Agregar campos al grid
+        grid.add(new Label("Nombre:*"), 0, 0);
+        grid.add(txtNombre, 1, 0);
+        grid.add(new Label("Teléfono:*"), 0, 1);
+        grid.add(txtTelefono, 1, 1);
+        grid.add(new Label("Email:"), 0, 2);
+        grid.add(txtEmail, 1, 2);
+        grid.add(new Label("Fecha:*"), 0, 3);
+        grid.add(dpFechaCita, 1, 3);
+        grid.add(new Label("Hora:*"), 0, 4);
+        grid.add(cmbHora, 1, 4);
+        grid.add(lblHorariosStatus, 1, 5);
+        grid.add(new Label("Servicio:*"), 0, 6);
+        grid.add(cmbServicio, 1, 6);
+        grid.add(new Label("Vehículo:"), 0, 7);
+        grid.add(txtVehiculo, 1, 7);
+        grid.add(new Label("Observaciones:"), 0, 8);
+        grid.add(txtObservaciones, 1, 8);
+
+        dialog.getDialogPane().setContent(grid);
+
+        Platform.runLater(() -> txtNombre.requestFocus());
+
         // Disparar carga inicial de horarios
         Platform.runLater(() -> {
-            dpFechaCita.fireEvent(new javafx.event.ActionEvent());
-            // Forzar actualización de horarios para la fecha inicial
             LocalDate fechaInicial = dpFechaCita.getValue();
             if (fechaInicial != null) {
                 new Thread(() -> {
@@ -405,92 +461,61 @@ public class CitasController {
                 }).start();
             }
         });
-        
-        ComboBox<String> cmbServicio = new ComboBox<>();
-        cmbServicio.setItems(FXCollections.observableArrayList(
-            "LAVADO_COMPLETO_TURISMO",
-            "LAVADO_INTERIOR_TURISMO",
-            "LAVADO_EXTERIOR_TURISMO",
-            "LAVADO_COMPLETO_RANCHERA",
-            "LAVADO_INTERIOR_RANCHERA",
-            "LAVADO_EXTERIOR_RANCHERA",
-            "LAVADO_COMPLETO_MONOVOLUMEN",
-            "LAVADO_INTERIOR_MONOVOLUMEN",
-            "LAVADO_EXTERIOR_MONOVOLUMEN",
-            "LAVADO_COMPLETO_TODOTERRENO",
-            "LAVADO_INTERIOR_TODOTERRENO",
-            "LAVADO_EXTERIOR_TODOTERRENO",
-            "LAVADO_COMPLETO_FURGONETA_PEQUEÑA",
-            "LAVADO_INTERIOR_FURGONETA_PEQUEÑA",
-            "LAVADO_EXTERIOR_FURGONETA_PEQUEÑA",
-            "LAVADO_COMPLETO_FURGONETA_GRANDE",
-            "LAVADO_INTERIOR_FURGONETA_GRANDE",
-            "LAVADO_EXTERIOR_FURGONETA_GRANDE",
-            "TRATAMIENTO_OZONO",
-            "ENCERADO",
-            "TAPICERIA_SIN_DESMONTAR",
-            "TAPICERIA_DESMONTANDO"
-        ));
-        cmbServicio.setValue("LAVADO_COMPLETO_TURISMO");
-        
-        TextField txtVehiculo = new TextField();
-        txtVehiculo.setPromptText("Modelo de vehículo");
-
-        // Agregar campos al grid
-        grid.add(new Label("Nombre:"), 0, 0);
-        grid.add(txtNombre, 1, 0);
-        grid.add(new Label("Teléfono:"), 0, 1);
-        grid.add(txtTelefono, 1, 1);
-        grid.add(new Label("Email:"), 0, 2);
-        grid.add(txtEmail, 1, 2);
-        grid.add(new Label("Fecha:"), 0, 3);
-        grid.add(dpFechaCita, 1, 3);
-        grid.add(new Label("Hora:"), 0, 4);
-        grid.add(cmbHora, 1, 4);
-        grid.add(lblHorariosStatus, 1, 5);
-        grid.add(new Label("Servicio:"), 0, 6);
-        grid.add(cmbServicio, 1, 6);
-        grid.add(new Label("Vehículo:"), 0, 7);
-        grid.add(txtVehiculo, 1, 7);
-
-        dialog.getDialogPane().setContent(grid);
-
-        Platform.runLater(() -> txtNombre.requestFocus());
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == crearButtonType) {
-                // Validar que haya un horario seleccionado
-                if (cmbHora.getValue() == null || cmbHora.getValue().isEmpty()) {
-                    mostrarError("Debes seleccionar un horario disponible");
+                // Validaciones
+                if (txtNombre.getText().trim().isEmpty()) {
+                    Platform.runLater(() -> mostrarError("El nombre del cliente es obligatorio"));
                     return null;
                 }
-                
-                // Construir CitaDTO
+                if (txtTelefono.getText().trim().isEmpty()) {
+                    Platform.runLater(() -> mostrarError("El teléfono es obligatorio"));
+                    return null;
+                }
+                if (cmbHora.getValue() == null || cmbHora.getValue().isEmpty()) {
+                    Platform.runLater(() -> mostrarError("Debes seleccionar un horario disponible"));
+                    return null;
+                }
+
+                // Construir CitaDTO CON DATOS DIRECTOS del cliente
                 CitaDTO cita = new CitaDTO();
-                
-                // Cliente
+
+                // Cliente CON DATOS COMPLETOS (no ID)
                 ClienteDTO cliente = new ClienteDTO();
-                cliente.setNombre(txtNombre.getText());
-                cliente.setTelefono(txtTelefono.getText());
-                cliente.setEmail(txtEmail.getText());
+                cliente.setNombre(txtNombre.getText().trim());
+                cliente.setTelefono(txtTelefono.getText().trim());
+                String email = txtEmail.getText().trim();
+                if (!email.isEmpty()) {
+                    cliente.setEmail(email);
+                }
                 cita.setCliente(cliente);
-                
+
                 // Fecha y hora
                 LocalDate fecha = dpFechaCita.getValue();
                 LocalTime hora = LocalTime.parse(cmbHora.getValue());
                 cita.setFechaHora(LocalDateTime.of(fecha, hora));
-                
-                // Servicio
+
+                // Servicio (nombre del ENUM como String)
                 ServicioDTO servicio = new ServicioDTO();
-                servicio.setNombre(formatearNombreServicio(cmbServicio.getValue()));
+                servicio.setNombre(cmbServicio.getValue());
                 cita.setServicios(Arrays.asList(servicio));
-                
+
                 // Estado inicial
                 cita.setEstado(EstadoCita.PENDIENTE);
-                
+
                 // Vehículo
-                // TODO: Agregar modeloVehiculo al CitaDTO si es necesario
-                
+                String vehiculo = txtVehiculo.getText().trim();
+                if (!vehiculo.isEmpty()) {
+                    cita.setMarcaModelo(vehiculo);
+                }
+
+                // Observaciones
+                String observaciones = txtObservaciones.getText().trim();
+                if (!observaciones.isEmpty()) {
+                    cita.setObservaciones(observaciones);
+                }
+
                 return cita;
             }
             return null;

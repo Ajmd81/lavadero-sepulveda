@@ -32,6 +32,9 @@ public class MainController {
     }
 
     @FXML
+    private void cargarProveedores(){ cargarVista("/fxml/proveedores.fxml");}
+
+    @FXML
     private void cargarCitas() {
         cargarVista("/fxml/citas.fxml");
     }

@@ -4,6 +4,8 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.lavaderosepulveda.crm.controller.CitasController"
@@ -15,7 +17,17 @@
     
     <!-- Encabezado -->
     <HBox alignment="CENTER_LEFT" spacing="20">
-        <Label text="Gestión de Citas" styleClass="title-label"/>
+        <Label text="Citas"
+               graphicTextGap="20"
+               styleClass="title-label">
+            <graphic>
+                <ImageView fitHeight="64" fitWidth="64" preserveRatio="true">
+                    <image>
+                        <Image url="@/images/citas.png"/>
+                    </image>
+                </ImageView>
+            </graphic>
+        </Label>
         <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="btnNuevaCita" text="Nueva Cita" styleClass="primary-button" onAction="#nuevaCita"/>
         <Button fx:id="btnCalendario" text="Calendario" onAction="#abrirCalendario"/>

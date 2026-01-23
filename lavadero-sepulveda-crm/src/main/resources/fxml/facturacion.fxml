@@ -5,33 +5,66 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.lavaderosepulveda.crm.controller.FacturacionController"
             styleClass="main-container">
-    
+
     <top>
         <VBox spacing="10">
             <padding><Insets top="15" right="20" bottom="10" left="20"/></padding>
-            
+
             <!-- Título -->
             <HBox alignment="CENTER_LEFT" spacing="15">
-                <Label text="💰 Facturación" styleClass="titulo-seccion">
-                    <font><Font size="24" name="System Bold"/></font>
+                <Label text="Facturación"
+                       graphicTextGap="20"
+                       styleClass="title-label">
+                    <graphic>
+                        <ImageView fitHeight="64" fitWidth="64" preserveRatio="true">
+                            <image>
+                                <Image url="@/images/facturacion.png"/>
+                            </image>
+                        </ImageView>
+                    </graphic>
                 </Label>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button fx:id="btnResumenFinanciero" text="📊 Resumen Financiero" styleClass="btn-secundario" onAction="#mostrarResumenFinanciero"/>
+                <Button fx:id="btnResumenFinanciero"
+                        text="Resumen Financiero"
+                        styleClass="btn-secundario"
+                        onAction="#mostrarResumenFinanciero">
+
+                    <graphic>
+                        <ImageView fitHeight="18" fitWidth="18" preserveRatio="true">
+                            <image>
+                                <Image url="@/images/estado-financiero.png"/>
+                            </image>
+                        </ImageView>
+                    </graphic>
+                </Button>
+
             </HBox>
         </VBox>
     </top>
-    
+
     <center>
         <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
-            
+
             <!-- TAB: Facturas Emitidas -->
-            <Tab text="📤 Facturas Emitidas" fx:id="tabEmitidas">
+            <Tab fx:id="tabEmitidas" text="Facturas Emitidas">
+                <graphic>
+                    <ImageView fitHeight="16" fitWidth="16" preserveRatio="true">
+                        <image>
+                            <Image url="@/images/facturaEmitida.png"/>
+                        </image>
+                    </ImageView>
+                </graphic>
+
                 <VBox spacing="10">
-                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-                    
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+
                     <!-- Barra de herramientas -->
                     <HBox spacing="10" alignment="CENTER_LEFT">
                         <TextField fx:id="txtBuscarEmitida" promptText="Buscar por número, cliente..." prefWidth="250"/>
@@ -43,7 +76,7 @@
                         <Region HBox.hgrow="ALWAYS"/>
                         <Button fx:id="btnNuevaEmitida" text="➕ Nueva Factura" onAction="#nuevaFacturaEmitida" styleClass="btn-primario"/>
                     </HBox>
-                    
+
                     <!-- Tabla -->
                     <TableView fx:id="tablaEmitidas" VBox.vgrow="ALWAYS">
                         <columns>
@@ -59,7 +92,7 @@
                         </columns>
                         <placeholder><Label text="No hay facturas emitidas"/></placeholder>
                     </TableView>
-                    
+
                     <!-- Totales -->
                     <HBox spacing="30" alignment="CENTER_RIGHT" styleClass="barra-totales">
                         <Label fx:id="lblTotalBaseEmitidas" text="Base: 0,00 €"/>
@@ -68,12 +101,22 @@
                     </HBox>
                 </VBox>
             </Tab>
-            
+
             <!-- TAB: Facturas Recibidas -->
-            <Tab text="📥 Facturas Recibidas" fx:id="tabRecibidas">
+            <Tab fx:id="tabRecibidas" text="Facturas Recibidas">
+                <graphic>
+                    <ImageView fitHeight="16" fitWidth="16" preserveRatio="true">
+                        <image>
+                            <Image url="@/images/invoice.png"/>
+                        </image>
+                    </ImageView>
+                </graphic>
+
                 <VBox spacing="10">
-                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-                    
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+
                     <!-- Barra de herramientas -->
                     <HBox spacing="10" alignment="CENTER_LEFT">
                         <TextField fx:id="txtBuscarRecibida" promptText="Buscar por número, proveedor..." prefWidth="250"/>
@@ -84,10 +127,10 @@
                         <DatePicker fx:id="dpHastaRecibida" promptText="Hasta" prefWidth="130"/>
                         <Button text="Filtrar" onAction="#filtrarFacturasRecibidas" styleClass="btn-secundario"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="📋 Proveedores" onAction="#gestionarProveedores" styleClass="btn-secundario"/>
+                        <Button text="🤵 Proveedores" onAction="#gestionarProveedores" styleClass="btn-secundario"/>
                         <Button fx:id="btnNuevaRecibida" text="➕ Nueva Factura" onAction="#nuevaFacturaRecibida" styleClass="btn-primario"/>
                     </HBox>
-                    
+
                     <!-- Tabla -->
                     <TableView fx:id="tablaRecibidas" VBox.vgrow="ALWAYS">
                         <columns>
@@ -105,7 +148,7 @@
                         </columns>
                         <placeholder><Label text="No hay facturas recibidas"/></placeholder>
                     </TableView>
-                    
+
                     <!-- Totales -->
                     <HBox spacing="30" alignment="CENTER_RIGHT" styleClass="barra-totales">
                         <Label fx:id="lblPendientesRecibidas" text="Pendientes: 0" styleClass="alerta-pendiente"/>
@@ -115,12 +158,23 @@
                     </HBox>
                 </VBox>
             </Tab>
-            
+
             <!-- TAB: Gastos -->
-            <Tab text="💸 Gastos" fx:id="tabGastos">
+            <Tab fx:id="tabGastos"
+                 text="Gastos">
+                <graphic>
+                    <ImageView fitHeight="16" fitWidth="16" preserveRatio="true">
+                        <image>
+                            <Image url="@/images/carro-de-la-compra.png"/>
+                        </image>
+                    </ImageView>
+                </graphic>
+
                 <VBox spacing="10">
-                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
-                    
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+
                     <!-- Barra de herramientas -->
                     <HBox spacing="10" alignment="CENTER_LEFT">
                         <TextField fx:id="txtBuscarGasto" promptText="Buscar por concepto..." prefWidth="250"/>
@@ -133,7 +187,7 @@
                         <Region HBox.hgrow="ALWAYS"/>
                         <Button fx:id="btnNuevoGasto" text="➕ Nuevo Gasto" onAction="#nuevoGasto" styleClass="btn-primario"/>
                     </HBox>
-                    
+
                     <!-- Tabla -->
                     <TableView fx:id="tablaGastos" VBox.vgrow="ALWAYS">
                         <columns>
@@ -150,7 +204,7 @@
                         </columns>
                         <placeholder><Label text="No hay gastos registrados"/></placeholder>
                     </TableView>
-                    
+
                     <!-- Totales -->
                     <HBox spacing="30" alignment="CENTER_RIGHT" styleClass="barra-totales">
                         <Label fx:id="lblNumGastos" text="Gastos: 0"/>
@@ -160,8 +214,8 @@
                     </HBox>
                 </VBox>
             </Tab>
-            
+
         </TabPane>
     </center>
-    
+
 </BorderPane>
