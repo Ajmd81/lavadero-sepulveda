@@ -28,7 +28,7 @@ public class Cita {
     private String nombre;
 
     @Email(message = "Formato de email no válido")
-    @Column(nullable = false)
+    @Column
     private String email;
 
     @NotBlank(message = "El teléfono es obligatorio")
