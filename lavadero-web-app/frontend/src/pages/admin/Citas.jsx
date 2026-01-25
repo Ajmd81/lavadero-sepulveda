@@ -36,18 +36,21 @@ const Citas = () => {
       
       // Ordenar citas por fecha y hora
       citasData = citasData.sort((a, b) => {
-        // Crear objetos Date para comparar
-        let fechaA = a.fecha ? new Date(a.fecha) : new Date(0);
-        let fechaB = b.fecha ? new Date(b.fecha) : new Date(0);
+        // Convertir fechas a formato comparable YYYY-MM-DD
+        const fechaA = a.fecha ? a.fecha.split('T')[0] : '0000-00-00';
+        const fechaB = b.fecha ? b.fecha.split('T')[0] : '0000-00-00';
         
-        // Si las fechas son iguales, comparar por hora
-        if (fechaA.getTime() === fechaB.getTime()) {
-          let horaA = a.hora ? new Date(`2000-01-01T${a.hora}`) : new Date(0);
-          let horaB = b.hora ? new Date(`2000-01-01T${b.hora}`) : new Date(0);
-          return horaA.getTime() - horaB.getTime();
+        // Comparar fechas primero
+        const comparacionFecha = fechaA.localeCompare(fechaB);
+        if (comparacionFecha !== 0) {
+          return comparacionFecha; // Ordenar por fecha
         }
         
-        return fechaA.getTime() - fechaB.getTime();
+        // Si fechas son iguales, comparar por hora
+        const horaA = a.hora ? a.hora.substring(0, 5) : '00:00';
+        const horaB = b.hora ? b.hora.substring(0, 5) : '00:00';
+        
+        return horaA.localeCompare(horaB); // Ordenar por hora (menor a mayor)
       });
       
       setCitas(citasData);
