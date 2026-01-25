@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/facturas-recibidas")
-@CrossOrigin(origins = "*")
 public class FacturaRecibidaApiController {
 
     @Autowired

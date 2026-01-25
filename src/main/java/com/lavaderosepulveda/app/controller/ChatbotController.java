@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/chatbot")
-@CrossOrigin(origins = {
         "https://lavadero-sepulveda-production.up.railway.app",
         "http://localhost:8080"
 })

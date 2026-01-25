@@ -15,7 +15,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/migracion")
-@CrossOrigin(origins = "*")
 public class MigracionController {
 
     private static final Logger log = LoggerFactory.getLogger(MigracionController.class);

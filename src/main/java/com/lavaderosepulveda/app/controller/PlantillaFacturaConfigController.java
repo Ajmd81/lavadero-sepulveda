@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/config/plantilla-factura")
-@CrossOrigin(origins = "*")
 public class PlantillaFacturaConfigController {
 
     private static final Logger log = LoggerFactory.getLogger(PlantillaFacturaConfigController.class);
