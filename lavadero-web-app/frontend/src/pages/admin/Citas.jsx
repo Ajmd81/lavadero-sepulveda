@@ -149,6 +149,9 @@ const Citas = () => {
       return fecha;
     }
   };
+
+  // Eliminar cita
+  const eliminarCita = async (id) => {
     if (window.confirm('¿Está seguro de que desea eliminar esta cita?')) {
       try {
         await citaService.delete(id);
