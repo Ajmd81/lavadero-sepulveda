@@ -8,43 +8,25 @@ const Calendario = () => {
   const [error, setError] = useState(null);
   const [citasSeleccionadas, setCitasSeleccionadas] = useState([]);
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
+  const [todasLasCitas, setTodasLasCitas] = useState([]);
 
   // Cargar citas al montar el componente
   useEffect(() => {
     cargarCitas();
-  }, [fecha]);
+  }, []);
+
+  // Agrupar citas por mes cuando cambia fecha o citas
+  useEffect(() => {
+    agruparCitasPorMes();
+  }, [fecha, todasLasCitas]);
 
   // Cargar todas las citas
   const cargarCitas = async () => {
     setLoading(true);
     try {
       const response = await citaService.getAll();
-      const todasLasCitas = response.data || [];
-      
-      // Agrupar citas por fecha del mes actual
-      const citasPorFecha = {};
-      todasLasCitas.forEach(cita => {
-        if (cita.fecha) {
-          try {
-            // Parsear fecha ISO (YYYY-MM-DD)
-            const partes = cita.fecha.split('T')[0].split('-');
-            const fechaCita = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-            
-            if (fechaCita.getFullYear() === fecha.getFullYear() && 
-                fechaCita.getMonth() === fecha.getMonth()) {
-              const dia = fechaCita.getDate();
-              if (!citasPorFecha[dia]) {
-                citasPorFecha[dia] = [];
-              }
-              citasPorFecha[dia].push(cita);
-            }
-          } catch (parseErr) {
-            console.error('Error parseando fecha:', cita.fecha, parseErr);
-          }
-        }
-      });
-      
-      setCitasDelMes(citasPorFecha);
+      const citas = response.data || [];
+      setTodasLasCitas(citas);
       setError(null);
     } catch (err) {
       setError('Error al cargar las citas: ' + err.message);
@@ -52,6 +34,35 @@ const Calendario = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Agrupar citas por fecha del mes actual
+  const agruparCitasPorMes = () => {
+    const citasPorFecha = {};
+    
+    todasLasCitas.forEach(cita => {
+      if (cita.fecha) {
+        try {
+          // Parsear fecha ISO (YYYY-MM-DD)
+          const partes = cita.fecha.split('T')[0].split('-');
+          const fechaCita = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+          
+          if (fechaCita.getFullYear() === fecha.getFullYear() && 
+              fechaCita.getMonth() === fecha.getMonth()) {
+            const dia = fechaCita.getDate();
+            if (!citasPorFecha[dia]) {
+              citasPorFecha[dia] = [];
+            }
+            citasPorFecha[dia].push(cita);
+          }
+        } catch (parseErr) {
+          console.error('Error parseando fecha:', cita.fecha, parseErr);
+        }
+      }
+    });
+    
+    console.log('Citas del mes:', citasPorFecha);
+    setCitasDelMes(citasPorFecha);
   };
 
   // Obtener días del mes
