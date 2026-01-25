@@ -34,6 +34,12 @@ const Citas = () => {
       const response = await citaService.getAll();
       let citasData = response.data || [];
       
+      // Log para ver qué llega
+      if (citasData.length > 0) {
+        console.log('Primera cita:', citasData[0]);
+        console.log('Fecha de la primera cita:', citasData[0].fecha, 'Tipo:', typeof citasData[0].fecha);
+      }
+      
       // Ordenar citas por fecha y hora
       citasData = citasData.sort((a, b) => {
         // Convertir fechas a formato comparable YYYY-MM-DD
@@ -183,46 +189,56 @@ const Citas = () => {
   // Función auxiliar para formatear fecha
   const formatearFecha = (fecha) => {
     if (!fecha) {
-      console.warn('Fecha vacía recibida');
       return '—';
     }
+    
     try {
-      console.log('Formateando fecha:', fecha, 'tipo:', typeof fecha);
-      
-      let resultado = '';
+      let day, month, year;
       
       // Si es string en formato ISO (YYYY-MM-DD)
       if (typeof fecha === 'string') {
         const partes = fecha.split('T')[0].split('-');
-        console.log('Partes:', partes);
         
         if (partes.length === 3) {
-          const year = parseInt(partes[0]);
-          const month = parseInt(partes[1]);
-          const day = parseInt(partes[2]);
-          
-          console.log('Parsed - Year:', year, 'Month:', month, 'Day:', day);
-          
-          // Validar que los valores sean válidos
-          if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
-              month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-            // Retornar directamente en formato DD/MM/YYYY
-            resultado = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
-            console.log('Resultado:', resultado);
-            return resultado;
-          }
+          year = parseInt(partes[0]);
+          month = parseInt(partes[1]);
+          day = parseInt(partes[2]);
+        } else {
+          // Si no tiene guiones, intentar como array de caracteres
+          console.warn('Formato de fecha no esperado:', fecha);
+          return fecha;
         }
-      } else if (fecha instanceof Date && !isNaN(fecha.getTime())) {
-        const day = String(fecha.getDate()).padStart(2, '0');
-        const month = String(fecha.getMonth() + 1).padStart(2, '0');
-        const year = fecha.getFullYear();
-        resultado = `${day}/${month}/${year}`;
-        console.log('Resultado desde Date:', resultado);
-        return resultado;
+      } else if (fecha instanceof Date) {
+        if (isNaN(fecha.getTime())) {
+          console.warn('Objeto Date inválido:', fecha);
+          return '—';
+        }
+        day = fecha.getDate();
+        month = fecha.getMonth() + 1;
+        year = fecha.getFullYear();
+      } else if (typeof fecha === 'object' && fecha !== null) {
+        // Podría ser un objeto con propiedades day, month, year
+        day = fecha.day || fecha.fecha?.getDate() || null;
+        month = fecha.month || fecha.fecha?.getMonth() + 1 || null;
+        year = fecha.year || fecha.fecha?.getFullYear() || null;
+        
+        if (!day || !month || !year) {
+          console.warn('No se pueden extraer día, mes, año de:', fecha);
+          return '—';
+        }
+      } else {
+        console.warn('Tipo de fecha no reconocido:', typeof fecha, fecha);
+        return '—';
       }
       
-      console.warn('No se pudo formatear fecha:', fecha);
-      return '—';
+      // Validar valores
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
+          month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+      } else {
+        console.warn('Valores fuera de rango:', {day, month, year});
+        return '—';
+      }
     } catch (err) {
       console.error('Error formateando fecha:', fecha, err);
       return '—';
