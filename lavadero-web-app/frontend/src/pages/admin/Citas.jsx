@@ -32,7 +32,25 @@ const Citas = () => {
     setLoading(true);
     try {
       const response = await citaService.getAll();
-      setCitas(response.data || []);
+      let citasData = response.data || [];
+      
+      // Ordenar citas por fecha y hora
+      citasData = citasData.sort((a, b) => {
+        // Crear objetos Date para comparar
+        let fechaA = a.fecha ? new Date(a.fecha) : new Date(0);
+        let fechaB = b.fecha ? new Date(b.fecha) : new Date(0);
+        
+        // Si las fechas son iguales, comparar por hora
+        if (fechaA.getTime() === fechaB.getTime()) {
+          let horaA = a.hora ? new Date(`2000-01-01T${a.hora}`) : new Date(0);
+          let horaB = b.hora ? new Date(`2000-01-01T${b.hora}`) : new Date(0);
+          return horaA.getTime() - horaB.getTime();
+        }
+        
+        return fechaA.getTime() - fechaB.getTime();
+      });
+      
+      setCitas(citasData);
       setError(null);
     } catch (err) {
       setError('Error al cargar las citas: ' + err.message);
