@@ -73,18 +73,43 @@ const Citas = () => {
   // Abrir modal para editar cita
   const abrirModalEditar = (cita) => {
     setEditingCita(cita);
-    // Convertir fecha a formato YYYY-MM-DD si es necesario
-    let fechaFormato = cita.fecha || '';
-    if (fechaFormato && typeof fechaFormato === 'string') {
-      // Si la fecha viene en formato ISO, ya está lista
-      fechaFormato = fechaFormato.split('T')[0]; // Eliminar la parte de hora si existe
+    
+    // Debug: Ver qué viene en la cita
+    console.log('Cita completa:', cita);
+    console.log('Fecha recibida:', cita.fecha, 'Tipo:', typeof cita.fecha);
+    console.log('Hora recibida:', cita.hora, 'Tipo:', typeof cita.hora);
+    
+    // Convertir fecha a formato YYYY-MM-DD
+    let fechaFormato = '';
+    if (cita.fecha) {
+      if (typeof cita.fecha === 'string') {
+        // Si es string, tomar solo la parte de fecha (antes de T)
+        fechaFormato = cita.fecha.split('T')[0];
+      } else if (cita.fecha instanceof Date) {
+        // Si es un objeto Date
+        const year = cita.fecha.getFullYear();
+        const month = String(cita.fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(cita.fecha.getDate()).padStart(2, '0');
+        fechaFormato = `${year}-${month}-${day}`;
+      }
     }
     
-    // Convertir hora a formato HH:mm si es necesario
-    let horaFormato = cita.hora || '';
-    if (horaFormato && typeof horaFormato === 'string') {
-      horaFormato = horaFormato.substring(0, 5); // Tomar solo HH:mm
+    // Convertir hora a formato HH:mm
+    let horaFormato = '';
+    if (cita.hora) {
+      if (typeof cita.hora === 'string') {
+        // Si es string, tomar solo HH:mm
+        horaFormato = cita.hora.substring(0, 5);
+      } else if (cita.hora instanceof Date) {
+        // Si es un objeto Date
+        const hours = String(cita.hora.getHours()).padStart(2, '0');
+        const minutes = String(cita.hora.getMinutes()).padStart(2, '0');
+        horaFormato = `${hours}:${minutes}`;
+      }
     }
+    
+    console.log('Fecha convertida:', fechaFormato);
+    console.log('Hora convertida:', horaFormato);
     
     setFormData({
       nombre: cita.nombre || '',
@@ -138,15 +163,33 @@ const Citas = () => {
   const formatearFecha = (fecha) => {
     if (!fecha) return '';
     try {
-      // Si viene como string ISO
-      const fechaObj = new Date(fecha + 'T00:00:00');
+      let fechaObj;
+      
+      // Si es string en formato ISO (YYYY-MM-DD)
+      if (typeof fecha === 'string') {
+        // Crear fecha sin considerar timezone
+        const partes = fecha.split('T')[0].split('-');
+        fechaObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      } else if (fecha instanceof Date) {
+        fechaObj = fecha;
+      } else {
+        return fecha.toString();
+      }
+      
+      // Validar que la fecha sea válida
+      if (isNaN(fechaObj.getTime())) {
+        console.warn('Fecha inválida:', fecha);
+        return fecha.toString();
+      }
+      
       return fechaObj.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
       });
     } catch (err) {
-      return fecha;
+      console.error('Error formateando fecha:', err);
+      return fecha?.toString() || '';
     }
   };
 
