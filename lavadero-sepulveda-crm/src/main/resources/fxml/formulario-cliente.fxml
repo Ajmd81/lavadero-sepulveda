@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.lavaderosepulveda.crm.controller.FormularioClienteController"
+      spacing="15" prefWidth="650" prefHeight="580">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+    
+    <!-- Título -->
+    <Label fx:id="lblTitulo" text="Nuevo Cliente" 
+           style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+    
+    <Separator/>
+    
+    <!-- ScrollPane para el contenido -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+        <VBox spacing="15">
+            
+            <!-- Datos Personales -->
+            <TitledPane text="Datos Personales" expanded="true" collapsible="false">
+                <GridPane hgap="15" vgap="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
+                    
+                    <Label text="Nombre:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="txtNombre" promptText="Nombre"
+                               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    
+                    <Label text="Apellidos:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                    <TextField fx:id="txtApellidos" promptText="Apellidos"
+                               GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+                    
+                    <Label text="Teléfono:*" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtTelefono" promptText="666123456"
+                               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    
+                    <Label text="Email:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtEmail" promptText="email@example.com"
+                               GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+                    
+                    <Label text="NIF/DNI:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <TextField fx:id="txtNif" promptText="12345678A"
+                               GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="3"/>
+                    
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="100"/>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="150"/>
+                        <ColumnConstraints minWidth="100"/>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="150"/>
+                    </columnConstraints>
+                </GridPane>
+            </TitledPane>
+            
+            <!-- Dirección -->
+            <TitledPane text="Dirección" expanded="true" collapsible="false">
+                <GridPane hgap="15" vgap="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
+                    
+                    <Label text="Dirección:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="txtDireccion" promptText="Calle, número"
+                               GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
+                    
+                    <Label text="Ciudad:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtCiudad" promptText="Ciudad"
+                               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    
+                    <Label text="CP:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtCodigoPostal" promptText="14001" prefWidth="100"
+                               GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+                    
+                    <Label text="Provincia:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <TextField fx:id="txtProvincia" promptText="Provincia"
+                               GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="3"/>
+                    
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="100"/>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="150"/>
+                        <ColumnConstraints minWidth="100"/>
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="150"/>
+                    </columnConstraints>
+                </GridPane>
+            </TitledPane>
+            
+            <!-- Notas -->
+            <VBox spacing="5">
+                <Label text="Notas:"/>
+                <TextArea fx:id="txtNotas" promptText="Información adicional sobre el cliente..."
+                          prefRowCount="3"/>
+            </VBox>
+            
+        </VBox>
+    </ScrollPane>
+    
+    <Separator/>
+    
+    <!-- Botones -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancelar" onAction="#cancelar" prefWidth="100"
+                style="-fx-background-color: #e0e0e0;"/>
+        <Button text="Guardar" onAction="#guardar" prefWidth="100"
+                style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+    </HBox>
+    
+</VBox>

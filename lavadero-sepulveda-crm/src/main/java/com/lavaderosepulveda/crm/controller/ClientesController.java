@@ -7,16 +7,23 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -330,39 +337,29 @@ public class ClientesController {
     private void nuevoCliente() {
         log.info("Abriendo formulario de nuevo cliente...");
         
-        Dialog<ClienteDTO> dialog = crearDialogoCliente(null);
-        Optional<ClienteDTO> resultado = dialog.showAndWait();
-        
-        resultado.ifPresent(cliente -> {
-            log.info("Guardando nuevo cliente: {}", cliente.getNombre());
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/formulario-cliente.fxml"));
+            Parent root = loader.load();
             
-            // Llamar a la API para crear el cliente
-            new Thread(() -> {
-                try {
-                    ClienteDTO clienteCreado = clienteApiService.crear(cliente);
-                    
-                    Platform.runLater(() -> {
-                        if (clienteCreado != null && clienteCreado.getId() != null) {
-                            log.info("Cliente creado exitosamente con ID: {}", clienteCreado.getId());
-                            mostrarInfo("Cliente Creado", 
-                                "El cliente se ha guardado correctamente.\n\n" +
-                                "ID: " + clienteCreado.getId() + "\n" +
-                                "Nombre: " + clienteCreado.getNombre());
-                            
-                            // Recargar la lista de clientes
-                            cargarClientes();
-                        } else {
-                            mostrarError("No se pudo crear el cliente. Verifica que el servidor esté funcionando.");
-                        }
-                    });
-                } catch (Exception e) {
-                    log.error("Error al crear cliente", e);
-                    Platform.runLater(() -> {
-                        mostrarError("Error al crear el cliente: " + e.getMessage());
-                    });
-                }
-            }).start();
-        });
+            FormularioClienteController controller = loader.getController();
+            
+            // Callback para recargar la tabla cuando se guarde
+            controller.setOnClienteGuardado(() -> {
+                cargarClientes();
+            });
+            
+            Stage stage = new Stage();
+            stage.setTitle("Nuevo Cliente");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(tblClientes.getScene().getWindow());
+            stage.setScene(new Scene(root));
+            stage.setResizable(false);
+            stage.show();
+            
+        } catch (Exception e) {
+            log.error("Error al abrir formulario de nuevo cliente", e);
+            mostrarError("Error al abrir el formulario: " + e.getMessage());
+        }
     }
 
     private void editarCliente(ClienteDTO cliente) {
