@@ -1,42 +1,47 @@
 import { useState, useEffect } from 'react';
-import gastoService from '../../services/gastoService';
+import facturaRecibidaService from '../../services/facturaRecibidaService';
 
-const Gastos = () => {
-  const [gastos, setGastos] = useState([]);
+const FacturasRecibidas = () => {
+  const [facturas, setFacturas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [editandoGasto, setEditandoGasto] = useState(null);
+  const [editandoFactura, setEditandoFactura] = useState(null);
   const [formData, setFormData] = useState({
+    numeroFactura: '',
+    proveedorNombre: '',
+    proveedorNif: '',
+    fechaFactura: '',
+    fechaVencimiento: '',
+    fechaPago: '',
+    categoria: 'SUMINISTROS',
     concepto: '',
-    fecha: '',
-    categoria: 'MANTENIMIENTO',
-    importe: '',
-    ivaIncluido: false,
     baseImponible: '',
+    tipoIva: '21',
     cuotaIva: '',
-    metodoPago: 'EFECTIVO',
-    recurrente: false,
-    diaRecurrencia: '',
+    tipoIrpf: '0',
+    cuotaIrpf: '',
+    total: '',
+    estado: 'PENDIENTE',
+    metodoPago: 'TRANSFERENCIA',
     notas: '',
-    pagado: false,
   });
 
   useEffect(() => {
-    cargarGastos();
+    cargarFacturas();
   }, []);
 
-  // Cargar todos los gastos
-  const cargarGastos = async () => {
+  // Cargar todas las facturas recibidas
+  const cargarFacturas = async () => {
     setLoading(true);
     try {
-      const response = await gastoService.getAll();
-      let gastosData = response.data || [];
+      const response = await facturaRecibidaService.getAll();
+      let facturasData = response.data || [];
       
       // Ordenar por fecha (más reciente primero)
-      gastosData = gastosData.sort((a, b) => {
-        let fechaA = a.fecha;
-        let fechaB = b.fecha;
+      facturasData = facturasData.sort((a, b) => {
+        let fechaA = a.fechaFactura;
+        let fechaB = b.fechaFactura;
         
         // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaA && fechaA.includes('/')) {
@@ -51,95 +56,100 @@ const Gastos = () => {
         return fechaB.localeCompare(fechaA);
       });
       
-      setGastos(gastosData);
+      setFacturas(facturasData);
       setError(null);
     } catch (err) {
-      setError('Error al cargar los gastos: ' + err.message);
+      setError('Error al cargar las facturas recibidas: ' + err.message);
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Abrir modal para crear nuevo gasto
+  // Abrir modal para crear nueva factura
   const abrirModalNuevo = () => {
     setFormData({
+      numeroFactura: '',
+      proveedorNombre: '',
+      proveedorNif: '',
+      fechaFactura: new Date().toISOString().split('T')[0],
+      fechaVencimiento: '',
+      fechaPago: '',
+      categoria: 'SUMINISTROS',
       concepto: '',
-      fecha: new Date().toISOString().split('T')[0],
-      categoria: 'MANTENIMIENTO',
-      importe: '',
-      ivaIncluido: false,
       baseImponible: '',
+      tipoIva: '21',
       cuotaIva: '',
-      metodoPago: 'EFECTIVO',
-      recurrente: false,
-      diaRecurrencia: '',
+      tipoIrpf: '0',
+      cuotaIrpf: '',
+      total: '',
+      estado: 'PENDIENTE',
+      metodoPago: 'TRANSFERENCIA',
       notas: '',
-      pagado: false,
     });
-    setEditandoGasto(null);
+    setEditandoFactura(null);
     setModalAbierto(true);
   };
 
-  // Abrir modal para editar gasto
-  const abrirModalEditar = (gasto) => {
-    setFormData(gasto);
-    setEditandoGasto(gasto.id);
+  // Abrir modal para editar factura
+  const abrirModalEditar = (factura) => {
+    setFormData(factura);
+    setEditandoFactura(factura.id);
     setModalAbierto(true);
   };
 
   // Cerrar modal
   const cerrarModal = () => {
     setModalAbierto(false);
-    setEditandoGasto(null);
+    setEditandoFactura(null);
   };
 
   // Manejar cambios en los inputs
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: value,
     }));
   };
 
-  // Guardar gasto
-  const guardarGasto = async (e) => {
+  // Guardar factura
+  const guardarFactura = async (e) => {
     e.preventDefault();
     
-    if (!formData.concepto || !formData.importe) {
+    if (!formData.numeroFactura || !formData.proveedorNombre || !formData.total) {
       alert('Por favor completa los campos obligatorios');
       return;
     }
 
     try {
-      if (editandoGasto) {
-        await gastoService.update(editandoGasto, formData);
-        alert('Gasto actualizado correctamente');
+      if (editandoFactura) {
+        await facturaRecibidaService.update(editandoFactura, formData);
+        alert('Factura actualizada correctamente');
       } else {
-        await gastoService.create(formData);
-        alert('Gasto creado correctamente');
+        await facturaRecibidaService.create(formData);
+        alert('Factura creada correctamente');
       }
       cerrarModal();
-      cargarGastos();
+      cargarFacturas();
     } catch (err) {
-      alert('Error al guardar gasto: ' + err.message);
+      alert('Error al guardar factura: ' + err.message);
       console.error(err);
     }
   };
 
-  // Eliminar gasto
-  const eliminarGasto = async (id) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
+  // Eliminar factura
+  const eliminarFactura = async (id) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta factura?')) {
       return;
     }
 
     try {
-      await gastoService.delete(id);
-      alert('Gasto eliminado correctamente');
-      cargarGastos();
+      await facturaRecibidaService.delete(id);
+      alert('Factura eliminada correctamente');
+      cargarFacturas();
     } catch (err) {
-      alert('Error al eliminar gasto: ' + err.message);
+      alert('Error al eliminar factura: ' + err.message);
       console.error(err);
     }
   };
@@ -184,36 +194,37 @@ const Gastos = () => {
     }).format(parseFloat(cantidad));
   };
 
-  // Calcular total de gastos
-  const totalGastos = gastos.reduce((sum, gasto) => sum + (parseFloat(gasto.importe) || 0), 0);
-
-  // Obtener color de categoría
-  const getColorCategoria = (categoria) => {
-    const colores = {
-      'MANTENIMIENTO': 'bg-blue-100 text-blue-800',
-      'SUMINISTROS': 'bg-green-100 text-green-800',
-      'PERSONAL': 'bg-purple-100 text-purple-800',
-      'SERVICIOS': 'bg-yellow-100 text-yellow-800',
-      'TRANSPORTE': 'bg-orange-100 text-orange-800',
-      'OTROS': 'bg-gray-100 text-gray-800',
-    };
-    return colores[categoria] || 'bg-gray-100 text-gray-800';
+  // Obtener color de estado
+  const getColorEstado = (estado) => {
+    switch (estado) {
+      case 'PAGADA':
+        return 'bg-green-100 text-green-800';
+      case 'PENDIENTE':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'RECHAZADA':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
+
+  // Calcular total de facturas
+  const totalFacturas = facturas.reduce((sum, factura) => sum + (parseFloat(factura.total) || 0), 0);
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold">Gastos</h2>
+          <h2 className="text-2xl font-bold">Facturas Recibidas</h2>
           <p className="text-gray-500 text-sm mt-1">
-            Total: {formatearMoneda(totalGastos)}
+            Total: {formatearMoneda(totalFacturas)}
           </p>
         </div>
         <button
           onClick={abrirModalNuevo}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
         >
-          + Nuevo Gasto
+          + Nueva Factura
         </button>
       </div>
 
@@ -225,58 +236,56 @@ const Gastos = () => {
 
       {loading ? (
         <div className="text-center py-8">
-          <p className="text-gray-500">Cargando gastos...</p>
+          <p className="text-gray-500">Cargando facturas recibidas...</p>
         </div>
-      ) : gastos.length === 0 ? (
+      ) : facturas.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-500">No hay gastos registrados</p>
+          <p className="text-gray-500">No hay facturas recibidas registradas</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100 border-b">
-                <th className="px-4 py-2 text-left font-semibold">Concepto</th>
+                <th className="px-4 py-2 text-left font-semibold">Nº Factura</th>
+                <th className="px-4 py-2 text-left font-semibold">Proveedor</th>
                 <th className="px-4 py-2 text-left font-semibold">Fecha</th>
+                <th className="px-4 py-2 text-left font-semibold">Vencimiento</th>
                 <th className="px-4 py-2 text-left font-semibold">Categoría</th>
-                <th className="px-4 py-2 text-left font-semibold">Método Pago</th>
-                <th className="px-4 py-2 text-right font-semibold">Importe</th>
-                <th className="px-4 py-2 text-center font-semibold">Pagado</th>
+                <th className="px-4 py-2 text-right font-semibold">Total</th>
+                <th className="px-4 py-2 text-center font-semibold">Estado</th>
                 <th className="px-4 py-2 text-center font-semibold">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {gastos.map(gasto => (
-                <tr key={gasto.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3 font-semibold">{gasto.concepto}</td>
-                  <td className="px-4 py-3">{formatearFecha(gasto.fecha)}</td>
+              {facturas.map(factura => (
+                <tr key={factura.id} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-3 font-semibold text-blue-600">{factura.numeroFactura}</td>
+                  <td className="px-4 py-3">{factura.proveedorNombre}</td>
+                  <td className="px-4 py-3">{formatearFecha(factura.fechaFactura)}</td>
+                  <td className="px-4 py-3">{formatearFecha(factura.fechaVencimiento)}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getColorCategoria(gasto.categoria)}`}>
-                      {gasto.categoria}
+                    <span className="px-2 py-1 bg-gray-200 rounded text-xs font-semibold">
+                      {factura.categoria}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm">{gasto.metodoPago}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-red-600">
-                    {formatearMoneda(gasto.importe)}
+                  <td className="px-4 py-3 text-right font-semibold text-orange-600">
+                    {formatearMoneda(factura.total)}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      gasto.pagado 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {gasto.pagado ? 'Pagado' : 'Pendiente'}
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getColorEstado(factura.estado)}`}>
+                      {factura.estado}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center space-x-2">
                     <button
-                      onClick={() => abrirModalEditar(gasto)}
+                      onClick={() => abrirModalEditar(factura)}
                       className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
                     >
                       Editar
                     </button>
                     <button
-                      onClick={() => eliminarGasto(gasto.id)}
+                      onClick={() => eliminarFactura(factura.id)}
                       className="text-red-600 hover:text-red-800 font-semibold text-sm"
                     >
                       Eliminar
@@ -289,35 +298,57 @@ const Gastos = () => {
         </div>
       )}
 
-      {/* Modal para crear/editar gasto */}
+      {/* Modal para crear/editar factura */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-96 overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">
-              {editandoGasto ? 'Editar Gasto' : 'Nuevo Gasto'}
+              {editandoFactura ? 'Editar Factura Recibida' : 'Nueva Factura Recibida'}
             </h3>
             
-            <form onSubmit={guardarGasto} className="space-y-4">
+            <form onSubmit={guardarFactura} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-semibold mb-1">Concepto*</label>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Nº Factura*</label>
                   <input
                     type="text"
-                    name="concepto"
-                    value={formData.concepto}
+                    name="numeroFactura"
+                    value={formData.numeroFactura}
                     onChange={handleInputChange}
                     className="w-full border rounded px-3 py-2"
-                    placeholder="Descripción del gasto"
+                    placeholder="Ej: FAC-2026-001"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1">Fecha*</label>
                   <input
                     type="date"
-                    name="fecha"
-                    value={formData.fecha}
+                    name="fechaFactura"
+                    value={formData.fechaFactura}
                     onChange={handleInputChange}
                     className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold mb-1">Proveedor*</label>
+                  <input
+                    type="text"
+                    name="proveedorNombre"
+                    value={formData.proveedorNombre}
+                    onChange={handleInputChange}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="Nombre del proveedor"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">NIF/CIF</label>
+                  <input
+                    type="text"
+                    name="proveedorNif"
+                    value={formData.proveedorNif}
+                    onChange={handleInputChange}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="NIF/CIF"
                   />
                 </div>
                 <div>
@@ -328,20 +359,18 @@ const Gastos = () => {
                     onChange={handleInputChange}
                     className="w-full border rounded px-3 py-2"
                   >
-                    <option value="MANTENIMIENTO">Mantenimiento</option>
                     <option value="SUMINISTROS">Suministros</option>
-                    <option value="PERSONAL">Personal</option>
                     <option value="SERVICIOS">Servicios</option>
-                    <option value="TRANSPORTE">Transporte</option>
+                    <option value="MANTENIMIENTO">Mantenimiento</option>
                     <option value="OTROS">Otros</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Importe*</label>
+                  <label className="block text-sm font-semibold mb-1">Base Imponible*</label>
                   <input
                     type="number"
-                    name="importe"
-                    value={formData.importe}
+                    name="baseImponible"
+                    value={formData.baseImponible}
                     onChange={handleInputChange}
                     step="0.01"
                     className="w-full border rounded px-3 py-2"
@@ -349,42 +378,39 @@ const Gastos = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Método Pago</label>
+                  <label className="block text-sm font-semibold mb-1">Total*</label>
+                  <input
+                    type="number"
+                    name="total"
+                    value={formData.total}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="0,00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Estado</label>
                   <select
-                    name="metodoPago"
-                    value={formData.metodoPago}
+                    name="estado"
+                    value={formData.estado}
                     onChange={handleInputChange}
                     className="w-full border rounded px-3 py-2"
                   >
-                    <option value="EFECTIVO">Efectivo</option>
-                    <option value="TARJETA">Tarjeta</option>
-                    <option value="TRANSFERENCIA">Transferencia</option>
-                    <option value="CHEQUE">Cheque</option>
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="PAGADA">Pagada</option>
+                    <option value="RECHAZADA">Rechazada</option>
                   </select>
                 </div>
                 <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="pagado"
-                      checked={formData.pagado}
-                      onChange={handleInputChange}
-                      className="rounded"
-                    />
-                    <span className="text-sm font-semibold">Pagado</span>
-                  </label>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="recurrente"
-                      checked={formData.recurrente}
-                      onChange={handleInputChange}
-                      className="rounded"
-                    />
-                    <span className="text-sm font-semibold">Recurrente</span>
-                  </label>
+                  <label className="block text-sm font-semibold mb-1">Vencimiento</label>
+                  <input
+                    type="date"
+                    name="fechaVencimiento"
+                    value={formData.fechaVencimiento}
+                    onChange={handleInputChange}
+                    className="w-full border rounded px-3 py-2"
+                  />
                 </div>
               </div>
 
@@ -412,7 +438,7 @@ const Gastos = () => {
                   type="submit"
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
                 >
-                  {editandoGasto ? 'Actualizar' : 'Crear'}
+                  {editandoFactura ? 'Actualizar' : 'Crear'}
                 </button>
               </div>
             </form>
@@ -423,4 +449,4 @@ const Gastos = () => {
   );
 };
 
-export default Gastos;
+export default FacturasRecibidas;
