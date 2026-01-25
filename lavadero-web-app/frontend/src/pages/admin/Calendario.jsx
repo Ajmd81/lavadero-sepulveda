@@ -3,7 +3,6 @@ import citaService from '../../services/citaService';
 
 const Calendario = () => {
   const [fecha, setFecha] = useState(new Date());
-  const [citas, setCitas] = useState([]);
   const [citasDelMes, setCitasDelMes] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,7 +19,6 @@ const Calendario = () => {
     try {
       const response = await citaService.getAll();
       const todasLasCitas = response.data || [];
-      setCitas(todasLasCitas);
       
       // Agrupar citas por fecha del mes actual
       const citasPorFecha = {};
