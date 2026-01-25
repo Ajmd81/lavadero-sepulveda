@@ -1,4 +1,4 @@
-package main.java.com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller;
 
 import com.lavaderosepulveda.app.dto.LoginRequest;
 import com.lavaderosepulveda.app.dto.LoginResponse;

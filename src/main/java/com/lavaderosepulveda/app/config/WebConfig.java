@@ -1,4 +1,4 @@
-package main.java.com.lavaderosepulveda.app.config;
+package com.lavaderosepulveda.app.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
