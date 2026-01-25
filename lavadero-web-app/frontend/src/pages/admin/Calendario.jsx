@@ -24,14 +24,21 @@ const Calendario = () => {
       const citasPorFecha = {};
       todasLasCitas.forEach(cita => {
         if (cita.fecha) {
-          const fechaCita = new Date(cita.fecha);
-          if (fechaCita.getFullYear() === fecha.getFullYear() && 
-              fechaCita.getMonth() === fecha.getMonth()) {
-            const dia = fechaCita.getDate();
-            if (!citasPorFecha[dia]) {
-              citasPorFecha[dia] = [];
+          try {
+            // Parsear fecha ISO (YYYY-MM-DD)
+            const partes = cita.fecha.split('T')[0].split('-');
+            const fechaCita = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+            
+            if (fechaCita.getFullYear() === fecha.getFullYear() && 
+                fechaCita.getMonth() === fecha.getMonth()) {
+              const dia = fechaCita.getDate();
+              if (!citasPorFecha[dia]) {
+                citasPorFecha[dia] = [];
+              }
+              citasPorFecha[dia].push(cita);
             }
-            citasPorFecha[dia].push(cita);
+          } catch (parseErr) {
+            console.error('Error parseando fecha:', cita.fecha, parseErr);
           }
         }
       });
