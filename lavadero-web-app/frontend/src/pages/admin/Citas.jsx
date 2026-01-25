@@ -184,33 +184,32 @@ const Citas = () => {
   const formatearFecha = (fecha) => {
     if (!fecha) return '';
     try {
-      let fechaObj;
-      
       // Si es string en formato ISO (YYYY-MM-DD)
       if (typeof fecha === 'string') {
-        // Crear fecha sin considerar timezone
         const partes = fecha.split('T')[0].split('-');
-        fechaObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-      } else if (fecha instanceof Date) {
-        fechaObj = fecha;
-      } else {
-        return fecha.toString();
+        if (partes.length === 3) {
+          const year = parseInt(partes[0]);
+          const month = parseInt(partes[1]);
+          const day = parseInt(partes[2]);
+          
+          // Validar que los valores sean válidos
+          if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
+              month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            // Retornar directamente en formato DD/MM/YYYY
+            return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+          }
+        }
+      } else if (fecha instanceof Date && !isNaN(fecha.getTime())) {
+        const day = String(fecha.getDate()).padStart(2, '0');
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const year = fecha.getFullYear();
+        return `${day}/${month}/${year}`;
       }
       
-      // Validar que la fecha sea válida
-      if (isNaN(fechaObj.getTime())) {
-        console.warn('Fecha inválida:', fecha);
-        return fecha.toString();
-      }
-      
-      return fechaObj.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
+      return '';
     } catch (err) {
-      console.error('Error formateando fecha:', err);
-      return fecha?.toString() || '';
+      console.error('Error formateando fecha:', fecha, err);
+      return '';
     }
   };
 
