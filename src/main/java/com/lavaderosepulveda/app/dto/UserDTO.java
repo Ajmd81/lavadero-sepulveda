@@ -1,4 +1,4 @@
-package main.java.com.lavaderosepulveda.app.dto;
+package com.lavaderosepulveda.app.dto;
 
 public class UserDTO {
     private String username;
