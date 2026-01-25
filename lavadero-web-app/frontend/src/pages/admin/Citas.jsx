@@ -11,13 +11,13 @@ const Citas = () => {
   
   // Estados del formulario
   const [formData, setFormData] = useState({
-    nombreCliente: '',
-    telefonoCliente: '',
-    emailCliente: '',
-    fechaCita: '',
-    horaCita: '',
+    nombre: '',
+    telefono: '',
+    email: '',
+    fecha: '',
+    hora: '',
     tipoLavado: '',
-    placa: '',
+    modeloVehiculo: '',
     observaciones: '',
   });
 
@@ -58,13 +58,13 @@ const Citas = () => {
   const abrirModalNuevo = () => {
     setEditingCita(null);
     setFormData({
-      nombreCliente: '',
-      telefonoCliente: '',
-      emailCliente: '',
-      fechaCita: '',
-      horaCita: '',
+      nombre: '',
+      telefono: '',
+      email: '',
+      fecha: '',
+      hora: '',
       tipoLavado: '',
-      placa: '',
+      modeloVehiculo: '',
       observaciones: '',
     });
     setShowModal(true);
@@ -74,13 +74,13 @@ const Citas = () => {
   const abrirModalEditar = (cita) => {
     setEditingCita(cita);
     setFormData({
-      nombreCliente: cita.nombreCliente || '',
-      telefonoCliente: cita.telefonoCliente || '',
-      emailCliente: cita.emailCliente || '',
-      fechaCita: cita.fechaCita || '',
-      horaCita: cita.horaCita || '',
+      nombre: cita.nombre || '',
+      telefono: cita.telefono || '',
+      email: cita.email || '',
+      fecha: cita.fecha || '',
+      hora: cita.hora || '',
       tipoLavado: cita.tipoLavado || '',
-      placa: cita.placa || '',
+      modeloVehiculo: cita.modeloVehiculo || '',
       observaciones: cita.observaciones || '',
     });
     setShowModal(true);
@@ -173,7 +173,7 @@ const Citas = () => {
                 <th className="border border-gray-300 px-4 py-2 text-left">Fecha</th>
                 <th className="border border-gray-300 px-4 py-2 text-left">Hora</th>
                 <th className="border border-gray-300 px-4 py-2 text-left">Tipo Lavado</th>
-                <th className="border border-gray-300 px-4 py-2 text-left">Placa</th>
+                <th className="border border-gray-300 px-4 py-2 text-left">Modelo Vehículo</th>
                 <th className="border border-gray-300 px-4 py-2 text-left">Estado</th>
                 <th className="border border-gray-300 px-4 py-2 text-center">Acciones</th>
               </tr>
@@ -181,12 +181,14 @@ const Citas = () => {
             <tbody>
               {citas.map((cita) => (
                 <tr key={cita.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-300 px-4 py-2">{cita.nombreCliente}</td>
-                  <td className="border border-gray-300 px-4 py-2">{cita.telefonoCliente}</td>
-                  <td className="border border-gray-300 px-4 py-2">{cita.fechaCita}</td>
-                  <td className="border border-gray-300 px-4 py-2">{cita.horaCita}</td>
+                  <td className="border border-gray-300 px-4 py-2">{cita.nombre}</td>
+                  <td className="border border-gray-300 px-4 py-2">{cita.telefono}</td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {cita.fecha ? new Date(cita.fecha).toLocaleDateString('es-ES') : ''}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">{cita.hora}</td>
                   <td className="border border-gray-300 px-4 py-2">{cita.tipoLavado}</td>
-                  <td className="border border-gray-300 px-4 py-2">{cita.placa}</td>
+                  <td className="border border-gray-300 px-4 py-2">{cita.modeloVehiculo}</td>
                   <td className="border border-gray-300 px-4 py-2">
                     <span className={`px-3 py-1 rounded text-sm font-medium ${
                       cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
@@ -220,49 +222,50 @@ const Citas = () => {
       {/* Modal para crear/editar cita */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">
               {editingCita ? 'Editar Cita' : 'Nueva Cita'}
             </h3>
             <form onSubmit={guardarCita} className="space-y-4">
               <input
                 type="text"
-                name="nombreCliente"
+                name="nombre"
                 placeholder="Nombre del cliente"
-                value={formData.nombreCliente}
+                value={formData.nombre}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded px-3 py-2"
                 required
               />
               <input
                 type="tel"
-                name="telefonoCliente"
+                name="telefono"
                 placeholder="Teléfono"
-                value={formData.telefonoCliente}
+                value={formData.telefono}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded px-3 py-2"
                 required
               />
               <input
                 type="email"
-                name="emailCliente"
+                name="email"
                 placeholder="Email"
-                value={formData.emailCliente}
+                value={formData.email}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded px-3 py-2"
+                required
               />
               <input
                 type="date"
-                name="fechaCita"
-                value={formData.fechaCita}
+                name="fecha"
+                value={formData.fecha}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded px-3 py-2"
                 required
               />
               <input
                 type="time"
-                name="horaCita"
-                value={formData.horaCita}
+                name="hora"
+                value={formData.hora}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded px-3 py-2"
                 required
@@ -283,9 +286,9 @@ const Citas = () => {
               </select>
               <input
                 type="text"
-                name="placa"
-                placeholder="Placa del vehículo"
-                value={formData.placa}
+                name="modeloVehiculo"
+                placeholder="Modelo del vehículo"
+                value={formData.modeloVehiculo}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded px-3 py-2"
                 required
