@@ -13,11 +13,13 @@ public class WebConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
+                registry.addMapping("/**")
                     .allowedOrigins(
                         "http://localhost:5173",          // Desarrollo
                         "http://localhost:3000",          // Desarrollo alternativo
-                        "https://tu-dominio.com"          // Producción (cambia esto)
+                        "https://tu-dominio.com",          // Producción (cambia esto)
+                        "https://*.vercel.app",          // Producción en Vercel
+                        "https://*.netlify.app"        // Producción en Netlify
                     )
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     .allowedHeaders("*")
