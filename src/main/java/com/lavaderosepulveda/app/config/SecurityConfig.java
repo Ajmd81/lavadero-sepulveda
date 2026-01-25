@@ -34,7 +34,17 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Orígenes permitidos
+<<<<<<< HEAD
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+=======
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "https://lavadero-sepulveda-production.up.railway.app",
+                "http://localhost:8080",
+                "http://127.0.0.1:8080",
+                "http://localhost:5173",
+                "http://localhost:3000"
+        ));
+>>>>>>> ef0f4a123b1375407c9272b6ba8410af49c6de3e
 
         // Métodos HTTP permitidos
         configuration.setAllowedMethods(Arrays.asList(
