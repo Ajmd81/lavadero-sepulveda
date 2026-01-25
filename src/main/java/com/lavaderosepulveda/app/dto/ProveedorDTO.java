@@ -5,9 +5,13 @@ public class ProveedorDTO {
     private String nombre;
     private String nif;
     private String direccion;
+    private String ciudad;
+    private String codigoPostal;
     private String telefono;
     private String email;
     private String contacto;
+    private String categoria;
+    private String formaPago;
     private String iban;
     private String notas;
     private Boolean activo;
@@ -28,6 +32,12 @@ public class ProveedorDTO {
     public String getDireccion() { return direccion; }
     public void setDireccion(String direccion) { this.direccion = direccion; }
 
+    public String getCiudad() { return ciudad; }
+    public void setCiudad(String ciudad) { this.ciudad = ciudad; }
+
+    public String getCodigoPostal() { return codigoPostal; }
+    public void setCodigoPostal(String codigoPostal) { this.codigoPostal = codigoPostal; }
+
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
 
@@ -36,6 +46,12 @@ public class ProveedorDTO {
 
     public String getContacto() { return contacto; }
     public void setContacto(String contacto) { this.contacto = contacto; }
+
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
+
+    public String getFormaPago() { return formaPago; }
+    public void setFormaPago(String formaPago) { this.formaPago = formaPago; }
 
     public String getIban() { return iban; }
     public void setIban(String iban) { this.iban = iban; }

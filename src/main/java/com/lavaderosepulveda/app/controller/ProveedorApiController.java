@@ -11,6 +11,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/proveedores")
+@CrossOrigin(origins = {
+        "https://lavadero-sepulveda-production.up.railway.app",
+        "http://localhost:8080",
+        "http://localhost:3000"
+})
 public class ProveedorApiController {
 
     @Autowired
