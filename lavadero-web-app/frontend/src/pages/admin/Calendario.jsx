@@ -7,6 +7,7 @@ const Calendario = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [citasSeleccionadas, setCitasSeleccionadas] = useState([]);
+  const [diaSeleccionado, setDiaSeleccionado] = useState(null);
 
   // Cargar citas al montar el componente
   useEffect(() => {
@@ -95,6 +96,8 @@ const Calendario = () => {
 
   // Seleccionar un día para ver sus citas
   const seleccionarDia = (dia) => {
+    setDiaSeleccionado(dia);
+    console.log('Día seleccionado:', dia, 'Citas:', citasDelMes[dia]);
     if (citasDelMes[dia]) {
       setCitasSeleccionadas(citasDelMes[dia]);
     } else {
@@ -177,13 +180,15 @@ const Calendario = () => {
                     return (
                       <button
                         key={`${semanaIdx}-${diaIdx}`}
-                        onClick={() => dia.esDelMesActual && seleccionarDia(diaNum)}
+                        onClick={() => seleccionarDia(diaNum)}
                         disabled={!dia.esDelMesActual}
-                        className={`p-2 rounded text-sm h-20 relative ${
+                        className={`p-2 rounded text-sm h-20 relative transition-all ${
                           !dia.esDelMesActual 
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : diaSeleccionado === diaNum
+                            ? 'bg-purple-500 text-white font-bold border-2 border-purple-700'
                             : esHoy
-                            ? 'bg-blue-500 text-white font-bold'
+                            ? 'bg-blue-500 text-white font-bold border-2 border-blue-700'
                             : tieneCitas
                             ? 'bg-green-100 hover:bg-green-200 border-2 border-green-500'
                             : 'bg-white hover:bg-gray-100 border border-gray-300'
@@ -206,11 +211,17 @@ const Calendario = () => {
           {/* Panel de detalles de citas */}
           <div className="lg:col-span-1">
             <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-lg font-bold mb-4">Citas del día</h4>
+              <h4 className="text-lg font-bold mb-4">
+                {diaSeleccionado ? `Citas del ${diaSeleccionado}/${fecha.getMonth() + 1}/${fecha.getFullYear()}` : 'Citas del día'}
+              </h4>
               
-              {citasSeleccionadas.length === 0 ? (
+              {!diaSeleccionado ? (
                 <p className="text-gray-500 text-center py-8">
                   Selecciona un día para ver sus citas
+                </p>
+              ) : citasSeleccionadas.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  No hay citas programadas para este día
                 </p>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
