@@ -16,6 +16,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -29,6 +30,11 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = {
+        "https://lavadero-sepulveda-production.up.railway.app",
+        "http://localhost:8080",
+        "http://localhost:3000"
+})
 public class CitaApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(CitaApiController.class);

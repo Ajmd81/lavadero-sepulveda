@@ -37,6 +37,9 @@ const citaService = {
   // Obtener estadísticas
   getEstadisticas: (fechaInicio, fechaFin) => 
     api.get('/citas/estadisticas', { params: { fechaInicio, fechaFin } }),
+  
+  // Obtener tipos de lavado
+  getTiposLavado: () => api.get('/tipos-lavado'),
 };
 
 export default citaService;
