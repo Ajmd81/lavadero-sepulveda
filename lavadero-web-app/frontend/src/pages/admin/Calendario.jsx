@@ -26,6 +26,12 @@ const Calendario = () => {
     try {
       const response = await citaService.getAll();
       const citas = response.data || [];
+      console.log('📦 Citas cargadas:', citas);
+      console.log('Cantidad total:', citas.length);
+      if (citas.length > 0) {
+        console.log('Primera cita:', citas[0]);
+        console.log('Formato fecha:', citas[0].fecha, 'Tipo:', typeof citas[0].fecha);
+      }
       setTodasLasCitas(citas);
       setError(null);
     } catch (err) {
@@ -43,9 +49,22 @@ const Calendario = () => {
     todasLasCitas.forEach(cita => {
       if (cita.fecha) {
         try {
-          // Parsear fecha ISO (YYYY-MM-DD)
-          const partes = cita.fecha.split('T')[0].split('-');
-          const fechaCita = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+          let fechaCita;
+          
+          // Detectar formato de fecha y parsear
+          if (typeof cita.fecha === 'string') {
+            if (cita.fecha.includes('/')) {
+              // Formato DD/MM/YYYY
+              const partes = cita.fecha.split('/');
+              fechaCita = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+            } else {
+              // Formato ISO (YYYY-MM-DD)
+              const partes = cita.fecha.split('T')[0].split('-');
+              fechaCita = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+            }
+          } else {
+            return;
+          }
           
           if (fechaCita.getFullYear() === fecha.getFullYear() && 
               fechaCita.getMonth() === fecha.getMonth()) {
@@ -61,7 +80,6 @@ const Calendario = () => {
       }
     });
     
-    console.log('Citas del mes:', citasPorFecha);
     setCitasDelMes(citasPorFecha);
   };
 
@@ -108,7 +126,6 @@ const Calendario = () => {
   // Seleccionar un día para ver sus citas
   const seleccionarDia = (dia) => {
     setDiaSeleccionado(dia);
-    console.log('Día seleccionado:', dia, 'Citas:', citasDelMes[dia]);
     if (citasDelMes[dia]) {
       setCitasSeleccionadas(citasDelMes[dia]);
     } else {

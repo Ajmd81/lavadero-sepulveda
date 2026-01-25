@@ -34,29 +34,37 @@ const Citas = () => {
       const response = await citaService.getAll();
       let citasData = response.data || [];
       
-      // Log para ver qué llega
-      if (citasData.length > 0) {
-        console.log('Primera cita:', citasData[0]);
-        console.log('Fecha de la primera cita:', citasData[0].fecha, 'Tipo:', typeof citasData[0].fecha);
-      }
-      
       // Ordenar citas por fecha y hora
       citasData = citasData.sort((a, b) => {
-        // Convertir fechas a formato comparable YYYY-MM-DD
-        const fechaA = a.fecha ? a.fecha.split('T')[0] : '0000-00-00';
-        const fechaB = b.fecha ? b.fecha.split('T')[0] : '0000-00-00';
+        // Convertir fechas a formato YYYY-MM-DD para comparar
+        let fechaA = a.fecha;
+        let fechaB = b.fecha;
+        
+        // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
+        if (fechaA && fechaA.includes('/')) {
+          const [d, m, y] = fechaA.split('/');
+          fechaA = `${y}-${m}-${d}`;
+        }
+        if (fechaB && fechaB.includes('/')) {
+          const [d, m, y] = fechaB.split('/');
+          fechaB = `${y}-${m}-${d}`;
+        }
+        
+        // Usar ISO format para comparación
+        fechaA = fechaA ? fechaA.split('T')[0] : '0000-00-00';
+        fechaB = fechaB ? fechaB.split('T')[0] : '0000-00-00';
         
         // Comparar fechas primero
         const comparacionFecha = fechaA.localeCompare(fechaB);
         if (comparacionFecha !== 0) {
-          return comparacionFecha; // Ordenar por fecha
+          return comparacionFecha;
         }
         
         // Si fechas son iguales, comparar por hora
         const horaA = a.hora ? a.hora.substring(0, 5) : '00:00';
         const horaB = b.hora ? b.hora.substring(0, 5) : '00:00';
         
-        return horaA.localeCompare(horaB); // Ordenar por hora (menor a mayor)
+        return horaA.localeCompare(horaB);
       });
       
       setCitas(citasData);
@@ -195,18 +203,25 @@ const Citas = () => {
     try {
       let day, month, year;
       
-      // Si es string en formato ISO (YYYY-MM-DD)
+      // Si es string
       if (typeof fecha === 'string') {
-        const partes = fecha.split('T')[0].split('-');
-        
-        if (partes.length === 3) {
-          year = parseInt(partes[0]);
-          month = parseInt(partes[1]);
-          day = parseInt(partes[2]);
-        } else {
-          // Si no tiene guiones, intentar como array de caracteres
-          console.warn('Formato de fecha no esperado:', fecha);
-          return fecha;
+        // Formato ISO (YYYY-MM-DD)
+        if (fecha.includes('-') && !fecha.includes('/')) {
+          const partes = fecha.split('T')[0].split('-');
+          if (partes.length === 3) {
+            year = parseInt(partes[0]);
+            month = parseInt(partes[1]);
+            day = parseInt(partes[2]);
+          }
+        }
+        // Formato DD/MM/YYYY (lo que viene del backend)
+        else if (fecha.includes('/')) {
+          const partes = fecha.split('/');
+          if (partes.length === 3) {
+            day = parseInt(partes[0]);
+            month = parseInt(partes[1]);
+            year = parseInt(partes[2]);
+          }
         }
       } else if (fecha instanceof Date) {
         if (isNaN(fecha.getTime())) {
@@ -216,16 +231,6 @@ const Citas = () => {
         day = fecha.getDate();
         month = fecha.getMonth() + 1;
         year = fecha.getFullYear();
-      } else if (typeof fecha === 'object' && fecha !== null) {
-        // Podría ser un objeto con propiedades day, month, year
-        day = fecha.day || fecha.fecha?.getDate() || null;
-        month = fecha.month || fecha.fecha?.getMonth() + 1 || null;
-        year = fecha.year || fecha.fecha?.getFullYear() || null;
-        
-        if (!day || !month || !year) {
-          console.warn('No se pueden extraer día, mes, año de:', fecha);
-          return '—';
-        }
       } else {
         console.warn('Tipo de fecha no reconocido:', typeof fecha, fecha);
         return '—';
