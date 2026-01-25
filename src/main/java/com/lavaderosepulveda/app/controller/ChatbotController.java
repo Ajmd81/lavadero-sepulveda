@@ -5,6 +5,7 @@ import com.lavaderosepulveda.app.dto.ChatbotResponse;
 import com.lavaderosepulveda.app.service.ChatbotService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 /**
  * Controlador REST para el chatbot
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/chatbot")
+@CrossOrigin(origins = {
         "https://lavadero-sepulveda-production.up.railway.app",
         "http://localhost:8080"
 })
