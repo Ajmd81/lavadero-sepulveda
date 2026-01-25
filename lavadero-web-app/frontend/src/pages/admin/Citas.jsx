@@ -73,12 +73,25 @@ const Citas = () => {
   // Abrir modal para editar cita
   const abrirModalEditar = (cita) => {
     setEditingCita(cita);
+    // Convertir fecha a formato YYYY-MM-DD si es necesario
+    let fechaFormato = cita.fecha || '';
+    if (fechaFormato && typeof fechaFormato === 'string') {
+      // Si la fecha viene en formato ISO, ya está lista
+      fechaFormato = fechaFormato.split('T')[0]; // Eliminar la parte de hora si existe
+    }
+    
+    // Convertir hora a formato HH:mm si es necesario
+    let horaFormato = cita.hora || '';
+    if (horaFormato && typeof horaFormato === 'string') {
+      horaFormato = horaFormato.substring(0, 5); // Tomar solo HH:mm
+    }
+    
     setFormData({
       nombre: cita.nombre || '',
       telefono: cita.telefono || '',
       email: cita.email || '',
-      fecha: cita.fecha || '',
-      hora: cita.hora || '',
+      fecha: fechaFormato,
+      hora: horaFormato,
       tipoLavado: cita.tipoLavado || '',
       modeloVehiculo: cita.modeloVehiculo || '',
       observaciones: cita.observaciones || '',
@@ -121,8 +134,21 @@ const Citas = () => {
     }
   };
 
-  // Eliminar cita
-  const eliminarCita = async (id) => {
+  // Función auxiliar para formatear fecha
+  const formatearFecha = (fecha) => {
+    if (!fecha) return '';
+    try {
+      // Si viene como string ISO
+      const fechaObj = new Date(fecha + 'T00:00:00');
+      return fechaObj.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch (err) {
+      return fecha;
+    }
+  };
     if (window.confirm('¿Está seguro de que desea eliminar esta cita?')) {
       try {
         await citaService.delete(id);
@@ -184,9 +210,9 @@ const Citas = () => {
                   <td className="border border-gray-300 px-4 py-2">{cita.nombre}</td>
                   <td className="border border-gray-300 px-4 py-2">{cita.telefono}</td>
                   <td className="border border-gray-300 px-4 py-2">
-                    {cita.fecha ? new Date(cita.fecha).toLocaleDateString('es-ES') : ''}
+                    {formatearFecha(cita.fecha)}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2">{cita.hora}</td>
+                  <td className="border border-gray-300 px-4 py-2">{cita.hora?.substring(0, 5)}</td>
                   <td className="border border-gray-300 px-4 py-2">{cita.tipoLavado}</td>
                   <td className="border border-gray-300 px-4 py-2">{cita.modeloVehiculo}</td>
                   <td className="border border-gray-300 px-4 py-2">
