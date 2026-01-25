@@ -182,34 +182,50 @@ const Citas = () => {
 
   // Función auxiliar para formatear fecha
   const formatearFecha = (fecha) => {
-    if (!fecha) return '';
+    if (!fecha) {
+      console.warn('Fecha vacía recibida');
+      return '—';
+    }
     try {
+      console.log('Formateando fecha:', fecha, 'tipo:', typeof fecha);
+      
+      let resultado = '';
+      
       // Si es string en formato ISO (YYYY-MM-DD)
       if (typeof fecha === 'string') {
         const partes = fecha.split('T')[0].split('-');
+        console.log('Partes:', partes);
+        
         if (partes.length === 3) {
           const year = parseInt(partes[0]);
           const month = parseInt(partes[1]);
           const day = parseInt(partes[2]);
           
+          console.log('Parsed - Year:', year, 'Month:', month, 'Day:', day);
+          
           // Validar que los valores sean válidos
           if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
               month >= 1 && month <= 12 && day >= 1 && day <= 31) {
             // Retornar directamente en formato DD/MM/YYYY
-            return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+            resultado = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+            console.log('Resultado:', resultado);
+            return resultado;
           }
         }
       } else if (fecha instanceof Date && !isNaN(fecha.getTime())) {
         const day = String(fecha.getDate()).padStart(2, '0');
         const month = String(fecha.getMonth() + 1).padStart(2, '0');
         const year = fecha.getFullYear();
-        return `${day}/${month}/${year}`;
+        resultado = `${day}/${month}/${year}`;
+        console.log('Resultado desde Date:', resultado);
+        return resultado;
       }
       
-      return '';
+      console.warn('No se pudo formatear fecha:', fecha);
+      return '—';
     } catch (err) {
       console.error('Error formateando fecha:', fecha, err);
-      return '';
+      return '—';
     }
   };
 
