@@ -58,8 +58,8 @@ const Calendario = () => {
     
     // Días del mes anterior para llenar la primera semana
     const diasAnterior = primerDia.getDay();
-    for (let i = diasAnterior - 1; i >= 0; i--) {
-      const dia = new Date(year, month, -i);
+    for (let i = diasAnterior; i > 0; i--) {
+      const dia = new Date(year, month, -i + 1);
       diasDelMes.push({ fecha: dia, esDelMesActual: false });
     }
     
@@ -69,7 +69,7 @@ const Calendario = () => {
     }
     
     // Días del mes siguiente para llenar la última semana
-    const diasSiguiente = 6 - ultimoDia.getDay();
+    const diasSiguiente = 42 - diasDelMes.length; // 6 semanas * 7 días = 42
     for (let i = 1; i <= diasSiguiente; i++) {
       const dia = new Date(year, month + 1, i);
       diasDelMes.push({ fecha: dia, esDelMesActual: false });
