@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.lavaderosepulveda.crm.controller.FormularioNuevaCitaController"
+      spacing="15" prefWidth="600" prefHeight="650">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+    
+    <!-- Título -->
+    <Label fx:id="lblTitulo" text="Nueva Cita" 
+           style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+    
+    <Separator/>
+    
+    <!-- ScrollPane para el contenido -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+        <VBox spacing="15">
+            
+            <!-- Datos del Cliente -->
+            <TitledPane text="Datos del Cliente" expanded="true" collapsible="false">
+                <GridPane hgap="15" vgap="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
+                    
+                    <Label text="Nombre:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="txtNombre" promptText="Nombre del cliente"
+                               GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
+                    
+                    <Label text="Teléfono:*" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtTelefono" promptText="666123456" prefWidth="150"
+                               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    
+                    <Label text="Email:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtEmail" promptText="email@example.com (opcional)"
+                               GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+                    
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="80"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                        <ColumnConstraints minWidth="80"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                </GridPane>
+            </TitledPane>
+            
+            <!-- Fecha y Hora -->
+            <TitledPane text="Fecha y Hora" expanded="true" collapsible="false">
+                <GridPane hgap="15" vgap="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
+                    
+                    <Label text="Fecha:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <DatePicker fx:id="dpFecha" prefWidth="150"
+                                GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    
+                    <Label text="Hora:*" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                    <ComboBox fx:id="cmbHora" prefWidth="150" promptText="Selecciona fecha primero"
+                              GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+                    
+                    <!-- Estado de horarios -->
+                    <Label fx:id="lblHorariosStatus" text="Selecciona una fecha para ver horarios"
+                           style="-fx-text-fill: #666666; -fx-font-size: 10px;"
+                           GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="3"/>
+                    
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="80"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                        <ColumnConstraints minWidth="80"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                </GridPane>
+            </TitledPane>
+            
+            <!-- Servicio -->
+            <TitledPane text="Servicio" expanded="true" collapsible="false">
+                <GridPane hgap="15" vgap="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
+                    
+                    <Label text="Tipo de Lavado:*" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <ComboBox fx:id="cmbServicio" prefWidth="300" promptText="Seleccionar servicio"
+                              GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
+                    
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="120"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                        <ColumnConstraints minWidth="80"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                </GridPane>
+            </TitledPane>
+            
+            <!-- Vehículo -->
+            <TitledPane text="Vehículo" expanded="true" collapsible="false">
+                <GridPane hgap="15" vgap="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
+                    
+                    <Label text="Marca/Modelo:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="txtVehiculo" promptText="Ej: Seat León, BMW X5, etc."
+                               GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
+                    
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="120"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                        <ColumnConstraints minWidth="80"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                </GridPane>
+            </TitledPane>
+            
+            <!-- Observaciones -->
+            <VBox spacing="5">
+                <Label text="Observaciones:"/>
+                <TextArea fx:id="txtObservaciones" promptText="Notas adicionales sobre la cita..."
+                          prefRowCount="3"/>
+            </VBox>
+            
+        </VBox>
+    </ScrollPane>
+    
+    <Separator/>
+    
+    <!-- Botones -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancelar" onAction="#cancelar" prefWidth="100"
+                style="-fx-background-color: #e0e0e0;"/>
+        <Button text="Guardar" onAction="#guardar" prefWidth="100"
+                style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+    </HBox>
+    
+</VBox>

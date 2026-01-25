@@ -1,8 +1,6 @@
 package com.lavaderosepulveda.crm.controller;
 
 import com.lavaderosepulveda.crm.model.dto.CitaDTO;
-import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
-import com.lavaderosepulveda.crm.model.dto.ServicioDTO;
 import com.lavaderosepulveda.crm.api.service.CitaApiService;
 import com.lavaderosepulveda.crm.model.enums.EstadoCita;
 import javafx.application.Platform;
@@ -24,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -114,14 +111,21 @@ public class CitasController {
         // Columna de acciones
         colAcciones.setCellFactory(column -> new TableCell<CitaDTO, Void>() {
             private final Button btnCambiarEstado = new Button("Cambiar Estado");
-            private final HBox hbox = new HBox(5, btnCambiarEstado);
+            private final Button btnEliminar = new Button("Eliminar");
+            private final HBox hbox = new HBox(5, btnCambiarEstado, btnEliminar);
 
             {
                 btnCambiarEstado.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+                btnEliminar.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
                 
                 btnCambiarEstado.setOnAction(event -> {
                     CitaDTO cita = getTableView().getItems().get(getIndex());
                     cambiarEstadoCita(cita);
+                });
+
+                btnEliminar.setOnAction(event -> {
+                    CitaDTO cita = getTableView().getItems().get(getIndex());
+                    eliminarCita(cita);
                 });
             }
 
@@ -200,32 +204,29 @@ public class CitasController {
     private void nuevaCita() {
         log.info("Abriendo formulario de nueva cita...");
         
-        Dialog<CitaDTO> dialog = crearDialogoNuevaCita();
-        Optional<CitaDTO> resultado = dialog.showAndWait();
-        
-        resultado.ifPresent(cita -> {
-            log.info("Creando nueva cita en la API...");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/formulario-nueva-cita.fxml"));
+            Parent root = loader.load();
             
-            new Thread(() -> {
-                try {
-                    // Llamar al endpoint POST /api/citas
-                    CitaDTO citaCreada = citaApiService.create(cita);
-                    
-                    Platform.runLater(() -> {
-                        mostrarInfo("Cita Creada", 
-                            "La cita ha sido creada exitosamente.\n" +
-                            "ID: " + citaCreada.getId());
-                        cargarCitas(); // Recargar tabla
-                    });
-                    
-                } catch (Exception e) {
-                    log.error("Error al crear cita", e);
-                    Platform.runLater(() -> {
-                        mostrarError("Error al crear la cita: " + e.getMessage());
-                    });
-                }
-            }).start();
-        });
+            FormularioNuevaCitaController controller = loader.getController();
+            
+            // Callback para recargar la tabla cuando se guarde
+            controller.setOnCitaGuardada(() -> {
+                cargarCitas();
+            });
+            
+            Stage stage = new Stage();
+            stage.setTitle("Nueva Cita");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(tblCitas.getScene().getWindow());
+            stage.setScene(new Scene(root));
+            stage.setResizable(false);
+            stage.show();
+            
+        } catch (Exception e) {
+            log.error("Error al abrir formulario de nueva cita", e);
+            mostrarError("Error al abrir el formulario: " + e.getMessage());
+        }
     }
 
     @FXML
@@ -241,7 +242,9 @@ public class CitasController {
             Stage stage = new Stage();
             stage.setTitle("Calendario de Citas");
             stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(tblCitas.getScene().getWindow()); 
             stage.setScene(new Scene(root, 900, 700));
+            stage.setResizable(false); 
             stage.show();
             
         } catch (Exception e) {
@@ -322,207 +325,47 @@ public class CitasController {
         });
     }
 
-    private Dialog<CitaDTO> crearDialogoNuevaCita() {
-        Dialog<CitaDTO> dialog = new Dialog<>();
-        dialog.setTitle("Nueva Cita");
-        dialog.setHeaderText("Registrar nueva cita");
-
-        ButtonType crearButtonType = new ButtonType("Crear", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(crearButtonType, ButtonType.CANCEL);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        // Campos del formulario - DATOS DIRECTOS DEL CLIENTE
-        TextField txtNombre = new TextField();
-        txtNombre.setPromptText("Nombre del cliente");
-
-        TextField txtTelefono = new TextField();
-        txtTelefono.setPromptText("Teléfono");
-
-        TextField txtEmail = new TextField();
-        txtEmail.setPromptText("Email (opcional)");
-
-        DatePicker dpFechaCita = new DatePicker();
-        dpFechaCita.setValue(LocalDate.now().plusDays(1));
-
-        ComboBox<String> cmbHora = new ComboBox<>();
-        cmbHora.setPromptText("Selecciona fecha primero");
-
-        // Label para mostrar estado de carga
-        Label lblHorariosStatus = new Label("Selecciona una fecha para ver horarios disponibles");
-        lblHorariosStatus.setStyle("-fx-text-fill: #666666; -fx-font-size: 10px;");
-
-        // Listener para cargar horarios cuando cambie la fecha
-        dpFechaCita.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                lblHorariosStatus.setText("Cargando horarios...");
-                lblHorariosStatus.setStyle("-fx-text-fill: #2196F3; -fx-font-size: 10px;");
-                cmbHora.setDisable(true);
-                cmbHora.getItems().clear();
-
-                // Cargar horarios en hilo separado
-                new Thread(() -> {
-                    List<String> horarios = citaApiService.obtenerHorariosDisponibles(newValue);
-
+    private void eliminarCita(CitaDTO cita) {
+        log.info("Solicitando eliminar cita: {}", cita.getId());
+        
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacion.setTitle("Confirmar Eliminación");
+        confirmacion.setHeaderText("¿Eliminar cita?");
+        confirmacion.setContentText(
+            "¿Estás seguro de que quieres eliminar esta cita?\n\n" +
+            "Cita #" + cita.getId() + "\n" +
+            "Cliente: " + cita.getCliente().getNombre() + "\n" +
+            "Fecha: " + cita.getFechaHora().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + "\n\n" +
+            "Esta acción no se puede deshacer."
+        );
+        
+        Optional<ButtonType> resultado = confirmacion.showAndWait();
+        
+        if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
+            log.info("Confirmada eliminación de cita: {}", cita.getId());
+            
+            new Thread(() -> {
+                try {
+                    citaApiService.delete(cita.getId());
+                    
                     Platform.runLater(() -> {
-                        if (horarios != null && !horarios.isEmpty()) {
-                            cmbHora.setItems(FXCollections.observableArrayList(horarios));
-                            cmbHora.setValue(horarios.get(0));
-                            cmbHora.setDisable(false);
-                            lblHorariosStatus.setText(horarios.size() + " horarios disponibles");
-                            lblHorariosStatus.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 10px;");
-                        } else {
-                            cmbHora.setItems(FXCollections.observableArrayList());
-                            cmbHora.setDisable(true);
-                            lblHorariosStatus.setText("No hay horarios disponibles para esta fecha");
-                            lblHorariosStatus.setStyle("-fx-text-fill: #f44336; -fx-font-size: 10px;");
-                        }
+                        log.info("Cita eliminada exitosamente: {}", cita.getId());
+                        mostrarInfo("Cita Eliminada", 
+                            "La cita se ha eliminado correctamente.");
+                        
+                        // Recargar la lista de citas
+                        cargarCitas();
                     });
-                }).start();
-            }
-        });
-
-        // ComboBox de servicios con los ENUMs disponibles
-        ComboBox<String> cmbServicio = new ComboBox<>();
-        cmbServicio.setItems(FXCollections.observableArrayList(
-                "LAVADO_COMPLETO_TURISMO",
-                "LAVADO_INTERIOR_TURISMO",
-                "LAVADO_EXTERIOR_TURISMO",
-                "LAVADO_COMPLETO_RANCHERA",
-                "LAVADO_INTERIOR_RANCHERA",
-                "LAVADO_EXTERIOR_RANCHERA",
-                "LAVADO_COMPLETO_MONOVOLUMEN",
-                "LAVADO_INTERIOR_MONOVOLUMEN",
-                "LAVADO_EXTERIOR_MONOVOLUMEN",
-                "LAVADO_COMPLETO_TODOTERRENO",
-                "LAVADO_INTERIOR_TODOTERRENO",
-                "LAVADO_EXTERIOR_TODOTERRENO",
-                "LAVADO_COMPLETO_FURGONETA_PEQUEÑA",
-                "LAVADO_INTERIOR_FURGONETA_PEQUEÑA",
-                "LAVADO_EXTERIOR_FURGONETA_PEQUEÑA",
-                "LAVADO_COMPLETO_FURGONETA_GRANDE",
-                "LAVADO_INTERIOR_FURGONETA_GRANDE",
-                "LAVADO_EXTERIOR_FURGONETA_GRANDE",
-                "TRATAMIENTO_OZONO",
-                "ENCERADO",
-                "TAPICERIA_SIN_DESMONTAR",
-                "TAPICERIA_DESMONTANDO"
-        ));
-        cmbServicio.setValue("LAVADO_COMPLETO_TURISMO");
-
-        TextField txtVehiculo = new TextField();
-        txtVehiculo.setPromptText("Marca y modelo del vehículo");
-
-        TextArea txtObservaciones = new TextArea();
-        txtObservaciones.setPromptText("Observaciones adicionales (opcional)");
-        txtObservaciones.setPrefRowCount(2);
-
-        // Agregar campos al grid
-        grid.add(new Label("Nombre:*"), 0, 0);
-        grid.add(txtNombre, 1, 0);
-        grid.add(new Label("Teléfono:*"), 0, 1);
-        grid.add(txtTelefono, 1, 1);
-        grid.add(new Label("Email:"), 0, 2);
-        grid.add(txtEmail, 1, 2);
-        grid.add(new Label("Fecha:*"), 0, 3);
-        grid.add(dpFechaCita, 1, 3);
-        grid.add(new Label("Hora:*"), 0, 4);
-        grid.add(cmbHora, 1, 4);
-        grid.add(lblHorariosStatus, 1, 5);
-        grid.add(new Label("Servicio:*"), 0, 6);
-        grid.add(cmbServicio, 1, 6);
-        grid.add(new Label("Vehículo:"), 0, 7);
-        grid.add(txtVehiculo, 1, 7);
-        grid.add(new Label("Observaciones:"), 0, 8);
-        grid.add(txtObservaciones, 1, 8);
-
-        dialog.getDialogPane().setContent(grid);
-
-        Platform.runLater(() -> txtNombre.requestFocus());
-
-        // Disparar carga inicial de horarios
-        Platform.runLater(() -> {
-            LocalDate fechaInicial = dpFechaCita.getValue();
-            if (fechaInicial != null) {
-                new Thread(() -> {
-                    List<String> horarios = citaApiService.obtenerHorariosDisponibles(fechaInicial);
+                } catch (Exception e) {
+                    log.error("Error al eliminar cita", e);
                     Platform.runLater(() -> {
-                        if (horarios != null && !horarios.isEmpty()) {
-                            cmbHora.setItems(FXCollections.observableArrayList(horarios));
-                            cmbHora.setValue(horarios.get(0));
-                            cmbHora.setDisable(false);
-                            lblHorariosStatus.setText(horarios.size() + " horarios disponibles");
-                            lblHorariosStatus.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 10px;");
-                        }
+                        mostrarError("Error al eliminar la cita: " + e.getMessage());
                     });
-                }).start();
-            }
-        });
-
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == crearButtonType) {
-                // Validaciones
-                if (txtNombre.getText().trim().isEmpty()) {
-                    Platform.runLater(() -> mostrarError("El nombre del cliente es obligatorio"));
-                    return null;
                 }
-                if (txtTelefono.getText().trim().isEmpty()) {
-                    Platform.runLater(() -> mostrarError("El teléfono es obligatorio"));
-                    return null;
-                }
-                if (cmbHora.getValue() == null || cmbHora.getValue().isEmpty()) {
-                    Platform.runLater(() -> mostrarError("Debes seleccionar un horario disponible"));
-                    return null;
-                }
-
-                // Construir CitaDTO CON DATOS DIRECTOS del cliente
-                CitaDTO cita = new CitaDTO();
-
-                // Cliente CON DATOS COMPLETOS (no ID)
-                ClienteDTO cliente = new ClienteDTO();
-                cliente.setNombre(txtNombre.getText().trim());
-                cliente.setTelefono(txtTelefono.getText().trim());
-                String email = txtEmail.getText().trim();
-                if (!email.isEmpty()) {
-                    cliente.setEmail(email);
-                }
-                cita.setCliente(cliente);
-
-                // Fecha y hora
-                LocalDate fecha = dpFechaCita.getValue();
-                LocalTime hora = LocalTime.parse(cmbHora.getValue());
-                cita.setFechaHora(LocalDateTime.of(fecha, hora));
-
-                // Servicio (nombre del ENUM como String)
-                ServicioDTO servicio = new ServicioDTO();
-                servicio.setNombre(cmbServicio.getValue());
-                cita.setServicios(Arrays.asList(servicio));
-
-                // Estado inicial
-                cita.setEstado(EstadoCita.PENDIENTE);
-
-                // Vehículo
-                String vehiculo = txtVehiculo.getText().trim();
-                if (!vehiculo.isEmpty()) {
-                    cita.setMarcaModelo(vehiculo);
-                }
-
-                // Observaciones
-                String observaciones = txtObservaciones.getText().trim();
-                if (!observaciones.isEmpty()) {
-                    cita.setObservaciones(observaciones);
-                }
-
-                return cita;
-            }
-            return null;
-        });
-
-        return dialog;
+            }).start();
+        }
     }
+
 
     private String formatearNombreServicio(String servicio) {
         return Arrays.stream(servicio.split("_"))
@@ -531,7 +374,17 @@ public class CitasController {
     }
 
     private void actualizarTabla(List<CitaDTO> citas) {
-        ObservableList<CitaDTO> data = FXCollections.observableArrayList(citas);
+        // Ordenar por fecha y hora (ascendente)
+        List<CitaDTO> citasOrdenadas = citas.stream()
+            .sorted((c1, c2) -> {
+                if (c1.getFechaHora() == null && c2.getFechaHora() == null) return 0;
+                if (c1.getFechaHora() == null) return 1;
+                if (c2.getFechaHora() == null) return -1;
+                return c1.getFechaHora().compareTo(c2.getFechaHora());
+            })
+            .collect(Collectors.toList());
+        
+        ObservableList<CitaDTO> data = FXCollections.observableArrayList(citasOrdenadas);
         tblCitas.setItems(data);
     }
 
