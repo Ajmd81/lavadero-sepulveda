@@ -37,9 +37,9 @@ public class ResumenFinancieroService {
         ResumenFinancieroDTO resumen = new ResumenFinancieroDTO();
 
         // Obtener datos
-        List<Factura> facturasEmitidas = facturaRepository.findByFechaBetween(desde, hasta);
+        List<Factura> facturasEmitidas = facturaRepository.findByFechaBetweenOrderByFechaDesc(desde, hasta);
         List<FacturaRecibida> facturasRecibidas = facturaRecibidaRepository
-                .findByFechaFacturaBetweenOrderByFechaFacturaDesc(desde, hasta);
+                .findByFechaFacturaBetween(desde, hasta);
         List<Gasto> gastos = gastoRepository.findByFechaBetween(desde, hasta);
 
         // ========== INGRESOS (Facturas Emitidas) ==========
