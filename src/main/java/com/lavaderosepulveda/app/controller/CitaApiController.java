@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
@@ -50,6 +51,66 @@ public class CitaApiController {
 
     @Autowired
     private CitaMapper citaMapper;
+
+    @Autowired
+    private javax.sql.DataSource dataSource;
+
+    // ========================================
+    // ENDPOINTS DE DIAGNÓSTICO
+    // ========================================
+
+    /**
+     * GET /api/test-email-config
+     * Diagnóstico de configuración de email
+     */
+    @GetMapping("/test-email-config")
+    public ResponseEntity<Map<String, String>> testEmailConfig() {
+        Map<String, String> info = new HashMap<>();
+
+        info.put("emailServiceNull", String.valueOf(emailService == null));
+
+        if (emailService != null) {
+            info.put("configuracion", emailService.obtenerEstadoConfiguracion());
+            info.put("disponible", String.valueOf(emailService.isServicioDisponible()));
+        } else {
+            info.put("error", "EmailService es NULL - JavaMailSender no se inyectó");
+        }
+
+        return ResponseEntity.ok(info);
+    }
+
+    /**
+     * GET /api/test-email
+     * Enviar email de prueba
+     */
+    @GetMapping("/test-email")
+    public ResponseEntity<String> testEmail() {
+        logger.info("Estado EmailService: {}",
+                emailService != null ? emailService.obtenerEstadoConfiguracion() : "NULL");
+
+        try {
+            // Crear cita de prueba
+            Cita citaPrueba = new Cita();
+            citaPrueba.setId(999L);
+            citaPrueba.setNombre("Prueba Test");
+            citaPrueba.setEmail("info@lavaderosepulveda.es");
+            citaPrueba.setFecha(LocalDate.now());
+            citaPrueba.setHora(LocalTime.now());
+            citaPrueba.setModeloVehiculo("Test Vehicle");
+            citaPrueba.setTipoLavado(TipoLavado.LAVADO_COMPLETO);
+
+            emailService.enviarEmailConfirmacion(citaPrueba);
+            return ResponseEntity.ok("Email enviado correctamente");
+
+        } catch (Exception e) {
+            logger.error("Error en test: ", e);
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
+    // ========================================
+    // ENDPOINTS PRINCIPALES DE CITAS
+    // ========================================
 
     /**
      * Obtener todas las citas
@@ -186,7 +247,7 @@ public class CitaApiController {
         LocalTime hora = DateTimeFormatUtils.parsearHoraCorta(horaStr);
         boolean disponible = horarioService.esHorarioDisponible(fecha, hora);
 
-        return ResponseEntity.ok(!disponible); // ← Devolver solo el boolean
+        return ResponseEntity.ok(!disponible);
     }
 
     /**
@@ -249,36 +310,6 @@ public class CitaApiController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(citasDTO);
-    }
-
-    /**
-     * POST /api/citas/migrar-email
-     * Permitir NULL en columna email
-     */
-    @PostMapping("/citas/migrar-email")
-    public ResponseEntity<Map<String, String>> migrarColumnaEmail() {
-        try (java.sql.Connection connection = dataSource.getConnection();
-             java.sql.Statement statement = connection.createStatement()) {
-
-            // Cambiar la columna para permitir NULL
-            String sql = "ALTER TABLE citas MODIFY COLUMN email VARCHAR(255) NULL";
-            statement.executeUpdate(sql);
-
-            logger.info("Migración de columna email completada exitosamente");
-
-            Map<String, String> response = new HashMap<>();
-            response.put("mensaje", "Migración completada");
-            response.put("detalle", "Columna 'email' ahora permite NULL");
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Error en migración de columna email: {}", e.getMessage());
-
-            Map<String, String> response = new HashMap<>();
-            response.put("error", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
     }
 
     // ========================================
@@ -586,11 +617,38 @@ public class CitaApiController {
     }
 
     // ========================================
-    // ENDPOINT DE MIGRACIÓN
+    // ENDPOINTS DE MIGRACIÓN
     // ========================================
 
-    @Autowired
-    private javax.sql.DataSource dataSource;
+    /**
+     * POST /api/citas/migrar-email
+     * Permitir NULL en columna email
+     */
+    @PostMapping("/citas/migrar-email")
+    public ResponseEntity<Map<String, String>> migrarColumnaEmail() {
+        try (java.sql.Connection connection = dataSource.getConnection();
+                java.sql.Statement statement = connection.createStatement()) {
+
+            // Cambiar la columna para permitir NULL
+            String sql = "ALTER TABLE citas MODIFY COLUMN email VARCHAR(255) NULL";
+            statement.executeUpdate(sql);
+
+            logger.info("Migración de columna email completada exitosamente");
+
+            Map<String, String> response = new HashMap<>();
+            response.put("mensaje", "Migración completada");
+            response.put("detalle", "Columna 'email' ahora permite NULL");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error en migración de columna email: {}", e.getMessage());
+
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 
     /**
      * POST /api/citas/migrar-estado
@@ -622,19 +680,36 @@ public class CitaApiController {
         }
     }
 
+    // ========================================
+    // MÉTODOS PRIVADOS
+    // ========================================
+
     /**
-     * Método privado para enviar email de confirmación
+     * Método privado para enviar email de confirmación con diagnóstico
      */
     private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
+        // === DIAGNÓSTICO EMAIL ===
+        logger.info("=== DIAGNÓSTICO EMAIL ===");
+        logger.info("EmailService null? {}", emailService == null);
+        if (emailService != null) {
+            logger.info("Estado: {}", emailService.obtenerEstadoConfiguracion());
+            logger.info("Servicio disponible? {}", emailService.isServicioDisponible());
+        }
+        logger.info("Email cita: {}", cita.getEmail());
+        logger.info("========================");
+
         if (emailService != null && cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
             try {
                 emailService.enviarEmailConfirmacion(cita);
-                logger.info("Email de confirmación enviado a: {}", cita.getEmail());
+                logger.info("✅ Email de confirmación enviado a: {}", cita.getEmail());
             } catch (Exception emailError) {
                 // Log del error pero no afecta la creación de la cita
-                logger.warn("Error al enviar email de confirmación a {}: {}",
-                        cita.getEmail(), emailError.getMessage());
+                logger.error("❌ Error al enviar email de confirmación a {}: {}",
+                        cita.getEmail(), emailError.getMessage(), emailError);
             }
+        } else {
+            logger.warn("⚠️ No se envió email - EmailService: {}, Email cita: {}",
+                    emailService != null, cita.getEmail());
         }
     }
 }
