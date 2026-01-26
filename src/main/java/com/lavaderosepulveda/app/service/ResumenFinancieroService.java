@@ -37,9 +37,10 @@ public class ResumenFinancieroService {
         ResumenFinancieroDTO resumen = new ResumenFinancieroDTO();
 
         // Obtener datos
-        List<Factura> facturasEmitidas = facturaRepository.findByFechaBetweenOrderByFechaDesc(desde, hasta);
-        List<FacturaRecibida> facturasRecibidas = facturaRecibidaRepository.findByFechaFacturaBetweenOrderByFechaFacturaDesc(desde, hasta);
-        List<Gasto> gastos = gastoRepository.findByFechaBetweenOrderByFechaDesc(desde, hasta);
+        List<Factura> facturasEmitidas = facturaRepository.findByFechaBetween(desde, hasta);
+        List<FacturaRecibida> facturasRecibidas = facturaRecibidaRepository
+                .findByFechaFacturaBetweenOrderByFechaFacturaDesc(desde, hasta);
+        List<Gasto> gastos = gastoRepository.findByFechaBetween(desde, hasta);
 
         // ========== INGRESOS (Facturas Emitidas) ==========
         BigDecimal totalIngresos = facturasEmitidas.stream()
@@ -111,16 +112,18 @@ public class ResumenFinancieroService {
         // Facturas recibidas
         for (FacturaRecibida f : facturasRecibidas) {
             String cat = f.getCategoria() != null ? f.getCategoria().name() : "OTROS";
-            porCategoria.computeIfAbsent(cat, k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
-            porCategoria.get(cat)[0] = porCategoria.get(cat)[0].add(f.getTotal() != null ? f.getTotal() : BigDecimal.ZERO);
+            porCategoria.computeIfAbsent(cat, k -> new BigDecimal[] { BigDecimal.ZERO, BigDecimal.ZERO });
+            porCategoria.get(cat)[0] = porCategoria.get(cat)[0]
+                    .add(f.getTotal() != null ? f.getTotal() : BigDecimal.ZERO);
             porCategoria.get(cat)[1] = porCategoria.get(cat)[1].add(BigDecimal.ONE);
         }
 
         // Gastos
         for (Gasto g : gastos) {
             String cat = g.getCategoria() != null ? g.getCategoria().name() : "OTROS";
-            porCategoria.computeIfAbsent(cat, k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
-            porCategoria.get(cat)[0] = porCategoria.get(cat)[0].add(g.getImporte() != null ? g.getImporte() : BigDecimal.ZERO);
+            porCategoria.computeIfAbsent(cat, k -> new BigDecimal[] { BigDecimal.ZERO, BigDecimal.ZERO });
+            porCategoria.get(cat)[0] = porCategoria.get(cat)[0]
+                    .add(g.getImporte() != null ? g.getImporte() : BigDecimal.ZERO);
             porCategoria.get(cat)[1] = porCategoria.get(cat)[1].add(BigDecimal.ONE);
         }
 
@@ -129,8 +132,7 @@ public class ResumenFinancieroService {
                         entry.getKey(),
                         formatearCategoria(entry.getKey()),
                         entry.getValue()[1].intValue(),
-                        entry.getValue()[0]
-                ))
+                        entry.getValue()[0]))
                 .sorted((a, b) -> b.getTotal().compareTo(a.getTotal()))
                 .collect(Collectors.toList());
 
@@ -142,7 +144,7 @@ public class ResumenFinancieroService {
         LocalDate mes = desde.withDayOfMonth(1);
         while (!mes.isAfter(hasta)) {
             YearMonth ym = YearMonth.from(mes);
-            porMes.put(ym, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+            porMes.put(ym, new BigDecimal[] { BigDecimal.ZERO, BigDecimal.ZERO });
             mes = mes.plusMonths(1);
         }
 
@@ -188,7 +190,8 @@ public class ResumenFinancieroService {
     }
 
     private String formatearCategoria(String categoria) {
-        if (categoria == null) return "Otros";
+        if (categoria == null)
+            return "Otros";
         return switch (categoria) {
             case "AGUA" -> "Agua";
             case "LUZ" -> "Electricidad";
