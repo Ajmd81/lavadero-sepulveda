@@ -4,7 +4,9 @@ import citaService from '../../services/citaService';
 const Citas = () => {
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingCita, setEditingCita] = useState(null);
   const [tiposLavado, setTiposLavado] = useState([]);
@@ -21,6 +23,47 @@ const Citas = () => {
     observaciones: '',
   });
 
+  // Validar email
+  const validarEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  // Validar teléfono (al menos 9 dígitos)
+  const validarTelefono = (telefono) => {
+    const soloNumeros = telefono.replace(/\D/g, '');
+    return soloNumeros.length >= 9;
+  };
+
+  // Convertir fecha a formato YYYY-MM-DD
+  const convertirFechaAISO = (fecha) => {
+    if (!fecha) return '';
+    if (typeof fecha === 'string') {
+      return fecha.split('T')[0];
+    }
+    if (fecha instanceof Date && !isNaN(fecha.getTime())) {
+      const year = fecha.getFullYear();
+      const month = String(fecha.getMonth() + 1).padStart(2, '0');
+      const day = String(fecha.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return '';
+  };
+
+  // Convertir hora a formato HH:mm
+  const convertirHora = (hora) => {
+    if (!hora) return '';
+    if (typeof hora === 'string') {
+      return hora.substring(0, 5);
+    }
+    if (hora instanceof Date && !isNaN(hora.getTime())) {
+      const hours = String(hora.getHours()).padStart(2, '0');
+      const minutes = String(hora.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+    return '';
+  };
+
   // Cargar citas al montar componente
   useEffect(() => {
     cargarCitas();
@@ -30,48 +73,31 @@ const Citas = () => {
   // Cargar todas las citas
   const cargarCitas = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await citaService.getAll();
       let citasData = response.data || [];
       
       // Ordenar citas por fecha y hora
       citasData = citasData.sort((a, b) => {
-        // Convertir fechas a formato YYYY-MM-DD para comparar
-        let fechaA = a.fecha;
-        let fechaB = b.fecha;
+        const fechaA = convertirFechaAISO(a.fecha) || '0000-00-00';
+        const fechaB = convertirFechaAISO(b.fecha) || '0000-00-00';
         
-        // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
-        if (fechaA && fechaA.includes('/')) {
-          const [d, m, y] = fechaA.split('/');
-          fechaA = `${y}-${m}-${d}`;
-        }
-        if (fechaB && fechaB.includes('/')) {
-          const [d, m, y] = fechaB.split('/');
-          fechaB = `${y}-${m}-${d}`;
-        }
-        
-        // Usar ISO format para comparación
-        fechaA = fechaA ? fechaA.split('T')[0] : '0000-00-00';
-        fechaB = fechaB ? fechaB.split('T')[0] : '0000-00-00';
-        
-        // Comparar fechas primero
         const comparacionFecha = fechaA.localeCompare(fechaB);
         if (comparacionFecha !== 0) {
           return comparacionFecha;
         }
         
-        // Si fechas son iguales, comparar por hora
-        const horaA = a.hora ? a.hora.substring(0, 5) : '00:00';
-        const horaB = b.hora ? b.hora.substring(0, 5) : '00:00';
+        const horaA = convertirHora(a.hora) || '00:00';
+        const horaB = convertirHora(b.hora) || '00:00';
         
         return horaA.localeCompare(horaB);
       });
       
       setCitas(citasData);
-      setError(null);
     } catch (err) {
+      console.error('Error cargando citas:', err);
       setError('Error al cargar las citas: ' + err.message);
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -89,6 +115,12 @@ const Citas = () => {
     }
   };
 
+  // Mostrar mensaje de éxito temporal
+  const mostrarExito = (mensaje) => {
+    setSuccess(mensaje);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
   // Abrir modal para crear nueva cita
   const abrirModalNuevo = () => {
     setEditingCita(null);
@@ -102,60 +134,24 @@ const Citas = () => {
       modeloVehiculo: '',
       observaciones: '',
     });
+    setError(null);
     setShowModal(true);
   };
 
   // Abrir modal para editar cita
   const abrirModalEditar = (cita) => {
     setEditingCita(cita);
-    
-    // Debug: Ver qué viene en la cita
-    console.log('Cita completa:', cita);
-    console.log('Fecha recibida:', cita.fecha, 'Tipo:', typeof cita.fecha);
-    console.log('Hora recibida:', cita.hora, 'Tipo:', typeof cita.hora);
-    
-    // Convertir fecha a formato YYYY-MM-DD
-    let fechaFormato = '';
-    if (cita.fecha) {
-      if (typeof cita.fecha === 'string') {
-        // Si es string, tomar solo la parte de fecha (antes de T)
-        fechaFormato = cita.fecha.split('T')[0];
-      } else if (cita.fecha instanceof Date) {
-        // Si es un objeto Date
-        const year = cita.fecha.getFullYear();
-        const month = String(cita.fecha.getMonth() + 1).padStart(2, '0');
-        const day = String(cita.fecha.getDate()).padStart(2, '0');
-        fechaFormato = `${year}-${month}-${day}`;
-      }
-    }
-    
-    // Convertir hora a formato HH:mm
-    let horaFormato = '';
-    if (cita.hora) {
-      if (typeof cita.hora === 'string') {
-        // Si es string, tomar solo HH:mm
-        horaFormato = cita.hora.substring(0, 5);
-      } else if (cita.hora instanceof Date) {
-        // Si es un objeto Date
-        const hours = String(cita.hora.getHours()).padStart(2, '0');
-        const minutes = String(cita.hora.getMinutes()).padStart(2, '0');
-        horaFormato = `${hours}:${minutes}`;
-      }
-    }
-    
-    console.log('Fecha convertida:', fechaFormato);
-    console.log('Hora convertida:', horaFormato);
-    
     setFormData({
       nombre: cita.nombre || '',
       telefono: cita.telefono || '',
       email: cita.email || '',
-      fecha: fechaFormato,
-      hora: horaFormato,
+      fecha: convertirFechaAISO(cita.fecha),
+      hora: convertirHora(cita.hora),
       tipoLavado: cita.tipoLavado || '',
       modeloVehiculo: cita.modeloVehiculo || '',
       observaciones: cita.observaciones || '',
     });
+    setError(null);
     setShowModal(true);
   };
 
@@ -163,6 +159,7 @@ const Citas = () => {
   const cerrarModal = () => {
     setShowModal(false);
     setEditingCita(null);
+    setError(null);
   };
 
   // Manejar cambios en el formulario
@@ -174,76 +171,89 @@ const Citas = () => {
     }));
   };
 
+  // Validar formulario
+  const validarFormulario = () => {
+    if (!formData.nombre.trim()) {
+      setError('El nombre es requerido');
+      return false;
+    }
+    if (!validarTelefono(formData.telefono)) {
+      setError('Teléfono inválido (mínimo 9 dígitos)');
+      return false;
+    }
+    if (!validarEmail(formData.email)) {
+      setError('Email inválido');
+      return false;
+    }
+    if (!formData.fecha) {
+      setError('La fecha es requerida');
+      return false;
+    }
+    if (!formData.hora) {
+      setError('La hora es requerida');
+      return false;
+    }
+    if (!formData.tipoLavado) {
+      setError('Debe seleccionar un tipo de lavado');
+      return false;
+    }
+    if (!formData.modeloVehiculo.trim()) {
+      setError('El modelo del vehículo es requerido');
+      return false;
+    }
+    return true;
+  };
+
   // Guardar cita (crear o actualizar)
   const guardarCita = async (e) => {
     e.preventDefault();
+    
+    if (!validarFormulario()) {
+      return;
+    }
+
+    setLoadingSubmit(true);
     try {
       if (editingCita) {
-        // Actualizar cita existente
         await citaService.update(editingCita.id, formData);
+        mostrarExito('Cita actualizada correctamente');
       } else {
-        // Crear nueva cita
         await citaService.create(formData);
+        mostrarExito('Cita creada correctamente');
       }
       await cargarCitas();
       cerrarModal();
-      setError(null);
     } catch (err) {
+      console.error('Error guardando cita:', err);
       setError('Error al guardar la cita: ' + err.message);
-      console.error(err);
+    } finally {
+      setLoadingSubmit(false);
     }
   };
 
-  // Función auxiliar para formatear fecha
+  // Función auxiliar para formatear fecha para mostrar
   const formatearFecha = (fecha) => {
     if (!fecha) {
       return '—';
     }
     
     try {
-      let day, month, year;
-      
-      // Si es string
-      if (typeof fecha === 'string') {
-        // Formato ISO (YYYY-MM-DD)
-        if (fecha.includes('-') && !fecha.includes('/')) {
-          const partes = fecha.split('T')[0].split('-');
-          if (partes.length === 3) {
-            year = parseInt(partes[0]);
-            month = parseInt(partes[1]);
-            day = parseInt(partes[2]);
-          }
-        }
-        // Formato DD/MM/YYYY (lo que viene del backend)
-        else if (fecha.includes('/')) {
-          const partes = fecha.split('/');
-          if (partes.length === 3) {
-            day = parseInt(partes[0]);
-            month = parseInt(partes[1]);
-            year = parseInt(partes[2]);
-          }
-        }
-      } else if (fecha instanceof Date) {
-        if (isNaN(fecha.getTime())) {
-          console.warn('Objeto Date inválido:', fecha);
-          return '—';
-        }
-        day = fecha.getDate();
-        month = fecha.getMonth() + 1;
-        year = fecha.getFullYear();
-      } else {
-        console.warn('Tipo de fecha no reconocido:', typeof fecha, fecha);
+      const fechaISO = convertirFechaAISO(fecha);
+      if (!fechaISO) {
         return '—';
       }
       
-      // Validar valores
-      if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
-          month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
-      } else {
-        console.warn('Valores fuera de rango:', {day, month, year});
+      const [year, month, day] = fechaISO.split('-');
+      const y = parseInt(year);
+      const m = parseInt(month);
+      const d = parseInt(day);
+      
+      if (m < 1 || m > 12 || d < 1 || d > 31) {
+        console.warn('Fecha fuera de rango:', fecha);
         return '—';
       }
+      
+      return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
     } catch (err) {
       console.error('Error formateando fecha:', fecha, err);
       return '—';
@@ -256,10 +266,11 @@ const Citas = () => {
       try {
         await citaService.delete(id);
         await cargarCitas();
+        mostrarExito('Cita eliminada correctamente');
         setError(null);
       } catch (err) {
+        console.error('Error eliminando cita:', err);
         setError('Error al eliminar la cita: ' + err.message);
-        console.error(err);
       }
     }
   };
@@ -270,11 +281,19 @@ const Citas = () => {
         <h2 className="text-2xl font-bold">Gestión de Citas</h2>
         <button
           onClick={abrirModalNuevo}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
+          disabled={loading}
         >
           + Nueva Cita
         </button>
       </div>
+
+      {/* Mensaje de éxito */}
+      {success && (
+        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          {success}
+        </div>
+      )}
 
       {/* Mensaje de error */}
       {error && (
@@ -315,7 +334,7 @@ const Citas = () => {
                   <td className="border border-gray-300 px-4 py-2">
                     {formatearFecha(cita.fecha)}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2">{cita.hora?.substring(0, 5)}</td>
+                  <td className="border border-gray-300 px-4 py-2">{convertirHora(cita.hora) || '—'}</td>
                   <td className="border border-gray-300 px-4 py-2">{cita.tipoLavado}</td>
                   <td className="border border-gray-300 px-4 py-2">{cita.modeloVehiculo}</td>
                   <td className="border border-gray-300 px-4 py-2">
@@ -368,7 +387,7 @@ const Citas = () => {
               <input
                 type="tel"
                 name="telefono"
-                placeholder="Teléfono"
+                placeholder="Teléfono (9+ dígitos)"
                 value={formData.telefono}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded px-3 py-2"
@@ -424,7 +443,7 @@ const Citas = () => {
               />
               <textarea
                 name="observaciones"
-                placeholder="Observaciones"
+                placeholder="Observaciones (opcional)"
                 value={formData.observaciones}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded px-3 py-2"
@@ -433,14 +452,16 @@ const Citas = () => {
               <div className="flex gap-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
+                  disabled={loadingSubmit}
                 >
-                  {editingCita ? 'Actualizar' : 'Crear'}
+                  {loadingSubmit ? 'Guardando...' : (editingCita ? 'Actualizar' : 'Crear')}
                 </button>
                 <button
                   type="button"
                   onClick={cerrarModal}
-                  className="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
+                  className="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded disabled:opacity-50"
+                  disabled={loadingSubmit}
                 >
                   Cancelar
                 </button>
