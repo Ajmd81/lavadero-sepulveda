@@ -27,8 +27,17 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 
-import org.apache.poi.ss.usermodel.*;
+// POI imports
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.util.CellRangeAddress;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -304,6 +313,7 @@ public class ContabilidadController implements Initializable {
                 return LocalDate.parse(fechaStr);
             }
         } catch (Exception e) {
+            log.warn("No se pudo parsear la fecha: '{}' con formatos soportados (ISO, dd/MM/yyyy)", fechaStr, e);
             return null;
         }
     }
@@ -357,10 +367,10 @@ public class ContabilidadController implements Initializable {
                     .map(f -> f.getTotal() != null ? f.getTotal() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            resumenes.add(new ResumenMensual(mes.format(monthFormatter), facturasDelMes.size(), base, iva, total));
+            resumenes.add(new ResumenMensual(mes.format(monthFormatter), mes, facturasDelMes.size(), base, iva, total));
         }
 
-        resumenes.sort((a, b) -> b.getMes().compareTo(a.getMes()));
+        resumenes.sort((a, b) -> b.getYearMonth().compareTo(a.getYearMonth()));
         tablaResumenMensual.setItems(FXCollections.observableArrayList(resumenes));
     }
 
@@ -397,6 +407,11 @@ public class ContabilidadController implements Initializable {
         if (tablaResumenMensual == null || tablaResumenMensual.getItems().isEmpty()) {
             mostrarAlerta("Aviso", "No hay datos para generar el reporte. Cargue los datos primero.",
                     Alert.AlertType.WARNING);
+            return;
+        }
+
+        if (dpDesde == null || dpDesde.getValue() == null || dpHasta == null || dpHasta.getValue() == null) {
+            mostrarAlerta("Error", "Debe seleccionar un rango de fechas válido", Alert.AlertType.WARNING);
             return;
         }
 
@@ -651,8 +666,8 @@ public class ContabilidadController implements Initializable {
 
     @FXML
     private void exportarExcel() {
-        if (facturasEmitidas == null || facturasEmitidas.isEmpty()) {
-            mostrarAlerta("Aviso", "No hay datos para exportar", Alert.AlertType.WARNING);
+        if (tablaResumenMensual == null || tablaResumenMensual.getItems().isEmpty()) {
+            mostrarAlerta("Aviso", "No hay datos para exportar. Cargue los datos primero.", Alert.AlertType.WARNING);
             return;
         }
 
@@ -670,14 +685,171 @@ public class ContabilidadController implements Initializable {
 
         if (file != null) {
             try (Workbook workbook = new XSSFWorkbook()) {
-                Sheet sheet = workbook.createSheet("Resumen");
+                // Crear estilos
+                CellStyle styleHeader = workbook.createCellStyle();
+                Font fontHeader = workbook.createFont();
+                fontHeader.setBold(true);
+                fontHeader.setColor(IndexedColors.WHITE.getIndex());
+                styleHeader.setFont(fontHeader);
+                styleHeader.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+                styleHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                styleHeader.setAlignment(HorizontalAlignment.CENTER);
+
+                CellStyle styleTitle = workbook.createCellStyle();
+                Font fontTitle = workbook.createFont();
+                fontTitle.setBold(true);
+                fontTitle.setFontHeightInPoints((short) 14);
+                styleTitle.setFont(fontTitle);
+
+                CellStyle styleCurrency = workbook.createCellStyle();
+                styleCurrency.setDataFormat(workbook.createDataFormat().getFormat("\"€\" #,##0.00"));
+
+                // ========================================
+                // HOJA 1: RESUMEN GENERAL
+                // ========================================
+                Sheet sheetResumen = workbook.createSheet("Resumen General");
                 int rowNum = 0;
-                Row titleRow = sheet.createRow(rowNum++);
-                titleRow.createCell(0).setCellValue("RESUMEN CONTABLE");
+
+                Row titleRow = sheetResumen.createRow(rowNum++);
+                org.apache.poi.ss.usermodel.Cell titleCell = titleRow.createCell(0);
+                titleCell.setCellValue("RESUMEN CONTABLE - LAVADERO SEPÚLVEDA");
+                titleCell.setCellStyle(styleTitle);
+                sheetResumen.addMergedRegion(new CellRangeAddress(0, 0, 0, 3));
+
+                rowNum++; // Línea en blanco
+
+                Row periodRow = sheetResumen.createRow(rowNum++);
+                periodRow.createCell(0).setCellValue("Período:");
+                periodRow.createCell(1).setCellValue(dpDesde != null && dpDesde.getValue() != null ? 
+                    dpDesde.getValue().format(dateFormatter) : "N/A");
+                periodRow.createCell(2).setCellValue("hasta");
+                periodRow.createCell(3).setCellValue(dpHasta != null && dpHasta.getValue() != null ? 
+                    dpHasta.getValue().format(dateFormatter) : "N/A");
+
+                rowNum++; // Línea en blanco
+
+                // Tarjetas de resumen
+                Row headerResumen = sheetResumen.createRow(rowNum++);
+                String[] headersResumen = {"Ingresos Totales", "Base Imponible", "IVA Repercutido", "Nº Facturas"};
+                for (int i = 0; i < headersResumen.length; i++) {
+                    org.apache.poi.ss.usermodel.Cell cell = headerResumen.createCell(i);
+                    cell.setCellValue(headersResumen[i]);
+                    cell.setCellStyle(styleHeader);
+                }
+
+                Row dataResumen = sheetResumen.createRow(rowNum++);
+                dataResumen.createCell(0).setCellValue(lblIngresosTotales != null ? lblIngresosTotales.getText() : "0,00 €");
+                dataResumen.createCell(1).setCellValue(lblBaseImponible != null ? lblBaseImponible.getText() : "0,00 €");
+                dataResumen.createCell(2).setCellValue(lblIvaRepercutido != null ? lblIvaRepercutido.getText() : "0,00 €");
+                dataResumen.createCell(3).setCellValue(lblNumFacturas != null ? lblNumFacturas.getText() : "0");
+
+                sheetResumen.autoSizeColumn(0);
+                sheetResumen.autoSizeColumn(1);
+                sheetResumen.autoSizeColumn(2);
+                sheetResumen.autoSizeColumn(3);
+
+                // ========================================
+                // HOJA 2: RESUMEN MENSUAL
+                // ========================================
+                Sheet sheetMensual = workbook.createSheet("Resumen Mensual");
+                rowNum = 0;
+
+                Row headerMensual = sheetMensual.createRow(rowNum++);
+                String[] headersMensual = {"Mes", "Facturas", "Base Imponible", "IVA", "Total"};
+                for (int i = 0; i < headersMensual.length; i++) {
+                    org.apache.poi.ss.usermodel.Cell cell = headerMensual.createCell(i);
+                    cell.setCellValue(headersMensual[i]);
+                    cell.setCellStyle(styleHeader);
+                }
+
+                BigDecimal totalBaseMensual = BigDecimal.ZERO;
+                BigDecimal totalIvaMensual = BigDecimal.ZERO;
+                BigDecimal totalGeneralMensual = BigDecimal.ZERO;
+                int totalFacturasMensual = 0;
+
+                for (ResumenMensual rm : tablaResumenMensual.getItems()) {
+                    Row row = sheetMensual.createRow(rowNum++);
+                    row.createCell(0).setCellValue(rm.getMes());
+                    row.createCell(1).setCellValue(rm.getNumFacturas());
+                    row.createCell(2).setCellValue(rm.getBase().doubleValue());
+                    row.getCell(2).setCellStyle(styleCurrency);
+                    row.createCell(3).setCellValue(rm.getIva().doubleValue());
+                    row.getCell(3).setCellStyle(styleCurrency);
+                    row.createCell(4).setCellValue(rm.getTotal().doubleValue());
+                    row.getCell(4).setCellStyle(styleCurrency);
+
+                    totalBaseMensual = totalBaseMensual.add(rm.getBase());
+                    totalIvaMensual = totalIvaMensual.add(rm.getIva());
+                    totalGeneralMensual = totalGeneralMensual.add(rm.getTotal());
+                    totalFacturasMensual += rm.getNumFacturas();
+                }
+
+                // Fila de totales
+                Row totalRow = sheetMensual.createRow(rowNum++);
+                org.apache.poi.ss.usermodel.Cell cellTotalLabel = totalRow.createCell(0);
+                cellTotalLabel.setCellValue("TOTAL");
+                cellTotalLabel.setCellStyle(styleHeader);
+                totalRow.createCell(1).setCellValue(totalFacturasMensual);
+                totalRow.getCell(1).setCellStyle(styleHeader);
+                totalRow.createCell(2).setCellValue(totalBaseMensual.doubleValue());
+                totalRow.getCell(2).setCellStyle(styleHeader);
+                totalRow.createCell(3).setCellValue(totalIvaMensual.doubleValue());
+                totalRow.getCell(3).setCellStyle(styleHeader);
+                totalRow.createCell(4).setCellValue(totalGeneralMensual.doubleValue());
+                totalRow.getCell(4).setCellStyle(styleHeader);
+
+                for (int i = 0; i < headersMensual.length; i++) {
+                    sheetMensual.autoSizeColumn(i);
+                }
+
+                // ========================================
+                // HOJA 3: FACTURACIÓN POR CLIENTE
+                // ========================================
+                if (tablaPorCliente != null && !tablaPorCliente.getItems().isEmpty()) {
+                    Sheet sheetClientes = workbook.createSheet("Por Cliente");
+                    rowNum = 0;
+
+                    Row headerClientes = sheetClientes.createRow(rowNum++);
+                    String[] headersClientes = {"Cliente", "Facturas", "Total"};
+                    for (int i = 0; i < headersClientes.length; i++) {
+                        org.apache.poi.ss.usermodel.Cell cell = headerClientes.createCell(i);
+                        cell.setCellValue(headersClientes[i]);
+                        cell.setCellStyle(styleHeader);
+                    }
+
+                    BigDecimal totalClientesAmount = BigDecimal.ZERO;
+                    int totalClientesFacturas = 0;
+
+                    for (ResumenCliente rc : tablaPorCliente.getItems()) {
+                        Row row = sheetClientes.createRow(rowNum++);
+                        row.createCell(0).setCellValue(rc.getNombreCliente());
+                        row.createCell(1).setCellValue(rc.getNumFacturas());
+                        row.createCell(2).setCellValue(rc.getTotal().doubleValue());
+                        row.getCell(2).setCellStyle(styleCurrency);
+
+                        totalClientesAmount = totalClientesAmount.add(rc.getTotal());
+                        totalClientesFacturas += rc.getNumFacturas();
+                    }
+
+                    // Fila de totales
+                    Row totalClientesRow = sheetClientes.createRow(rowNum++);
+                    org.apache.poi.ss.usermodel.Cell cellTotalClientesLabel = totalClientesRow.createCell(0);
+                    cellTotalClientesLabel.setCellValue("TOTAL");
+                    cellTotalClientesLabel.setCellStyle(styleHeader);
+                    totalClientesRow.createCell(1).setCellValue(totalClientesFacturas);
+                    totalClientesRow.getCell(1).setCellStyle(styleHeader);
+                    totalClientesRow.createCell(2).setCellValue(totalClientesAmount.doubleValue());
+                    totalClientesRow.getCell(2).setCellStyle(styleHeader);
+
+                    for (int i = 0; i < headersClientes.length; i++) {
+                        sheetClientes.autoSizeColumn(i);
+                    }
+                }
 
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     workbook.write(fos);
                 }
+                log.info("Reporte Excel generado: {}", file.getAbsolutePath());
                 mostrarAlerta("Éxito", "Reporte exportado correctamente", Alert.AlertType.INFORMATION);
             } catch (Exception e) {
                 log.error("Error exportando a Excel", e);
@@ -698,13 +870,15 @@ public class ContabilidadController implements Initializable {
     // Clases internas
     public static class ResumenMensual {
         private final String mes;
+        private final YearMonth yearMonth;
         private final int numFacturas;
         private final BigDecimal base;
         private final BigDecimal iva;
         private final BigDecimal total;
 
-        public ResumenMensual(String mes, int numFacturas, BigDecimal base, BigDecimal iva, BigDecimal total) {
+        public ResumenMensual(String mes, YearMonth yearMonth, int numFacturas, BigDecimal base, BigDecimal iva, BigDecimal total) {
             this.mes = mes;
+            this.yearMonth = yearMonth;
             this.numFacturas = numFacturas;
             this.base = base;
             this.iva = iva;
@@ -713,6 +887,10 @@ public class ContabilidadController implements Initializable {
 
         public String getMes() {
             return mes;
+        }
+
+        public YearMonth getYearMonth() {
+            return yearMonth;
         }
 
         public int getNumFacturas() {
