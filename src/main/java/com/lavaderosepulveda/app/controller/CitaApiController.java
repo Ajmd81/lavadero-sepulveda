@@ -97,7 +97,7 @@ public class CitaApiController {
             citaPrueba.setFecha(LocalDate.now());
             citaPrueba.setHora(LocalTime.now());
             citaPrueba.setModeloVehiculo("Test Vehicle");
-            citaPrueba.setTipoLavado(TipoLavado.LAVADO_COMPLETO);
+            citaPrueba.setTipoLavado(TipoLavado.LAVADO_COMPLETO_TURISMO);
 
             emailService.enviarEmailConfirmacion(citaPrueba);
             return ResponseEntity.ok("Email enviado correctamente");
