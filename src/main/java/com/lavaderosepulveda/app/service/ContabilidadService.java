@@ -30,7 +30,7 @@ public class ContabilidadService {
             log.info("Generando resumen contable: {} a {}", desde, hasta);
             
             // Obtener facturas del período
-            List<Factura> facturas = facturaRepository.findByFechaEmisionBetween(desde, hasta);
+            List<Factura> facturas = facturaRepository.findByFechaBetweenOrderByFechaDesc(desde, hasta);
             
             if (facturas.isEmpty()) {
                 log.warn("No hay facturas en el período {} a {}", desde, hasta);
@@ -59,7 +59,7 @@ public class ContabilidadService {
 
             // Agrupar por mes
             Map<YearMonth, List<Factura>> facturasPorMes = facturas.stream()
-                    .collect(Collectors.groupingBy(f -> YearMonth.from(f.getFechaEmision())));
+                    .collect(Collectors.groupingBy(f -> YearMonth.from(f.getFecha())));
 
             // Generar resumen mensual
             List<ContabilidadResumenDTO.ResumenMensualDTO> resumenMensual = facturasPorMes.entrySet()
