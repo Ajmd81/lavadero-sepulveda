@@ -96,8 +96,26 @@ public class ResumenFinancieroService {
 
         // ========== RESULTADO ==========
         resumen.setTotalIngresos(totalIngresos);
+
+        // Calcular Base Imponible (Ingresos)
+        BigDecimal baseImponible = facturasEmitidas.stream()
+                .map(f -> f.getBaseImponible() != null ? f.getBaseImponible() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        resumen.setBaseImponible(baseImponible);
+
         BigDecimal totalGastosGeneral = totalFacturasRecibidas.add(totalGastos);
         resumen.setTotalGastosGeneral(totalGastosGeneral);
+
+        // Calcular Base Gastos
+        BigDecimal baseFacturasRecibidas = facturasRecibidas.stream()
+                .map(f -> f.getBaseImponible() != null ? f.getBaseImponible() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal baseGastos = gastos.stream()
+                .map(g -> g.getBaseImponible() != null ? g.getBaseImponible() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        resumen.setBaseGastos(baseFacturasRecibidas.add(baseGastos));
 
         BigDecimal beneficio = totalIngresos.subtract(totalGastosGeneral);
         resumen.setBeneficioBruto(beneficio);
