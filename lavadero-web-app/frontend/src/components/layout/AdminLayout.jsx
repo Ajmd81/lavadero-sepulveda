@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  LayoutDashboard, Calendar, Users, FileText, DollarSign, 
-  Package, TrendingUp, Settings, LogOut, Menu, X, CalendarDays
-} from 'lucide-react';
+import { LogOut, Menu, X, Settings } from 'lucide-react';
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
@@ -18,85 +15,83 @@ const AdminLayout = () => {
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-    { icon: Users, label: 'Clientes', path: '/admin/clientes' },
-    { icon: Calendar, label: 'Citas', path: '/admin/citas' },
-    { icon: CalendarDays, label: 'Calendario', path: '/admin/calendario' },
-    { icon: FileText, label: 'Facturación', path: '/admin/facturacion' },
-    { icon: Package, label: 'Proveedores', path: '/admin/proveedores' },
-    { icon: DollarSign, label: 'Gastos', path: '/admin/gastos' },
-    { icon: TrendingUp, label: 'Contabilidad', path: '/admin/contabilidad' },
-    { icon: TrendingUp, label: 'Resumen Financiero', path: '/admin/resumen-financiero' },
-    { icon: Settings, label: 'Configuración', path: '/admin/configuracion' },
+    { icon: '/assets/icons/panel.png', label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: '/assets/icons/cliente.png', label: 'Clientes', path: '/admin/clientes' },
+    { icon: '/assets/icons/citas.png', label: 'Citas', path: '/admin/citas' },
+    { icon: '/assets/icons/calendario.png?v=1', label: 'Calendario', path: '/admin/calendario' },
+    { icon: '/assets/icons/facturacion.png', label: 'Facturación', path: '/admin/facturacion' },
+    { icon: '/assets/icons/proveedor.png', label: 'Proveedores', path: '/admin/proveedores' },
+    { icon: '/assets/icons/invoice.png', label: 'Gastos', path: '/admin/gastos' },
+    { icon: '/assets/icons/contabilidad.png', label: 'Contabilidad', path: '/admin/contabilidad' },
+    { icon: '/assets/icons/estado-financiero.png', label: 'Resumen financiero', path: '/admin/resumen-financiero' },
+    { icon: '/assets/icons/modeloFiscal.png', label: 'Modelos fiscales', path: '/admin/modelos-fiscales' },
   ];
 
   const isActive = (path) => {
-    return location.pathname === path;
+    if (path === '/admin') return location.pathname === path;
+    return location.pathname.startsWith(path);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <aside className={`bg-blue-900 text-white transition-all duration-300 ${ 
-        sidebarOpen ? 'w-64' : 'w-20'
-      } flex flex-col`}>
-        <div className="p-4 flex items-center justify-between border-b border-blue-800">
-          {sidebarOpen && <h1 className="text-xl font-bold">CRM Lavadero</h1>}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-blue-800 rounded"
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+      <aside className={`bg-gradient-to-b from-blue-900 to-blue-800 text-white transition-all duration-300 ${sidebarOpen ? 'w-72' : 'w-20'} flex flex-col shadow-2xl`}>
+        <div className="p-4 border-b border-blue-700">
+          <div className="flex items-center justify-between mb-3">
+            {sidebarOpen && (
+              <div className="flex items-center gap-3 flex-1">
+                <img src="/assets/icons/logo_crm.png" alt="Logo" className="w-12 h-12 object-contain" />
+                <div>
+                  <h1 className="text-lg font-bold leading-tight">Lavadero</h1>
+                  <p className="text-xs text-blue-300">CRM Web</p>
+                </div>
+              </div>
+            )}
+            {!sidebarOpen && (
+              <img src="/assets/icons/logo_crm.png" alt="Logo" className="w-10 h-10 object-contain mx-auto" />
+            )}
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0">
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
 
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-3 overflow-y-auto">
           {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 p-3 rounded mb-2 transition-colors ${
-                isActive(item.path)
-                  ? 'bg-blue-700 text-white'
-                  : 'hover:bg-blue-800'
-              }`}
-            >
-              <item.icon size={20} />
-              {sidebarOpen && <span>{item.label}</span>}
+            <Link key={item.path} to={item.path} className={`flex items-center gap-3 p-3 rounded-lg mb-1 transition-all ${isActive(item.path) ? 'bg-blue-700 shadow-lg' : 'hover:bg-blue-700/50'}`} title={!sidebarOpen ? item.label : ''}>
+              <img src={item.icon} alt={item.label} className="w-8 h-8 object-contain flex-shrink-0" />
+              {sidebarOpen && <span className="font-medium text-sm">{item.label}</span>}
             </Link>
           ))}
+
+          <Link to="/admin/configuracion" className={`flex items-center gap-3 p-3 rounded-lg mb-1 transition-all ${isActive('/admin/configuracion') ? 'bg-blue-700 shadow-lg' : 'hover:bg-blue-700/50'}`} title={!sidebarOpen ? 'Configuración' : ''}>
+            <img src="/assets/icons/configuracion.png" alt="Configuración" className="w-8 h-8 object-contain flex-shrink-0" />
+            {sidebarOpen && <span className="font-medium text-sm">Configuración</span>}
+          </Link>
         </nav>
 
-        <div className="p-4 border-t border-blue-800">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 p-3 w-full hover:bg-blue-800 rounded"
-          >
+        <div className="p-4 border-t border-blue-700">
+          {sidebarOpen ? (
+            <div className="mb-3">
+              <p className="text-xs text-blue-300">Usuario:</p>
+              <p className="font-medium text-sm truncate">{user?.username || 'Admin'}</p>
+            </div>
+          ) : (
+            <div className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-lg font-bold">{(user?.username || 'A')[0].toUpperCase()}</span>
+            </div>
+          )}
+          <button onClick={handleLogout} className={`w-full flex items-center gap-2 p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''}`} title={!sidebarOpen ? 'Cerrar Sesión' : ''}>
             <LogOut size={20} />
-            {sidebarOpen && <span>Cerrar Sesión</span>}
+            {sidebarOpen && <span className="text-sm">Cerrar Sesión</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <header className="bg-white shadow-sm p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">
-              {menuItems.find(item => isActive(item.path))?.label || 'Dashboard'}
-            </h2>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                Bienvenido, <strong>{user?.nombre || 'Admin'}</strong>
-              </span>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 p-6 overflow-auto">
+      <main className="flex-1 overflow-auto">
+        <div className="container mx-auto p-6">
           <Outlet />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };

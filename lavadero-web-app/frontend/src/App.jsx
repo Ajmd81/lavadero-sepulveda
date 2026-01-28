@@ -15,6 +15,7 @@ import Proveedores from './pages/admin/Proveedores';
 import Gastos from './pages/admin/Gastos';
 import Contabilidad from './pages/admin/Contabilidad';
 import ResumenFinanciero from './pages/admin/ResumenFinanciero';
+import ModelosFiscales from './pages/admin/ModelosFiscales';
 import Configuracion from './pages/admin/Configuracion';
 
 const queryClient = new QueryClient({
@@ -33,7 +34,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/admin/login" element={<Login />} />
-            
+
             <Route path="/admin" element={
               <ProtectedRoute>
                 <AdminLayout />
@@ -48,6 +49,7 @@ function App() {
               <Route path="gastos" element={<Gastos />} />
               <Route path="contabilidad" element={<Contabilidad />} />
               <Route path="resumen-financiero" element={<ResumenFinanciero />} />
+              <Route path="modelos-fiscales" element={<ModelosFiscales />} />
               <Route path="configuracion" element={<Configuracion />} />
             </Route>
 
