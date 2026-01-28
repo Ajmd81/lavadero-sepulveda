@@ -35,12 +35,12 @@ const FacturasEmitidas = () => {
     try {
       const response = await facturaService.getAll();
       let facturasData = response.data || [];
-      
+
       // Ordenar por fecha (más reciente primero)
       facturasData = facturasData.sort((a, b) => {
         let fechaA = a.fecha;
         let fechaB = b.fecha;
-        
+
         // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaA && fechaA.includes('/')) {
           const [d, m, y] = fechaA.split('/');
@@ -50,10 +50,10 @@ const FacturasEmitidas = () => {
           const [d, m, y] = fechaB.split('/');
           fechaB = `${y}-${m}-${d}`;
         }
-        
+
         return fechaB.localeCompare(fechaA);
       });
-      
+
       setFacturas(facturasData);
       setError(null);
     } catch (err) {
@@ -112,7 +112,7 @@ const FacturasEmitidas = () => {
   // Guardar factura
   const guardarFactura = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.numero || !formData.clienteNombre || !formData.total) {
       alert('Por favor completa los campos obligatorios');
       return;
@@ -170,10 +170,10 @@ const FacturasEmitidas = () => {
   // Formatear fecha
   const formatearFecha = (fecha) => {
     if (!fecha) return '—';
-    
+
     try {
       let day, month, year;
-      
+
       if (typeof fecha === 'string') {
         if (fecha.includes('/')) {
           const partes = fecha.split('/');
@@ -187,7 +187,7 @@ const FacturasEmitidas = () => {
           day = parseInt(partes[2]);
         }
       }
-      
+
       if (day && month && year) {
         return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
       }
@@ -307,161 +307,196 @@ const FacturasEmitidas = () => {
         </div>
       )}
 
-      {/* Modal para crear/editar factura */}
+      {/* Modal para crear/editar factura - MEJORADO */}
       {modalAbierto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-96 overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">
-              {editandoFactura ? 'Editar Factura' : 'Nueva Factura'}
-            </h3>
-            
-            <form onSubmit={guardarFactura} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Nº Factura*</label>
-                  <input
-                    type="text"
-                    name="numero"
-                    value={formData.numero}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Ej: FAC-001"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Fecha*</label>
-                  <input
-                    type="date"
-                    name="fecha"
-                    value={formData.fecha}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Tipo</label>
-                  <select
-                    name="tipo"
-                    value={formData.tipo}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="FACTURA">Factura</option>
-                    <option value="NOTA_CREDITO">Nota de Crédito</option>
-                    <option value="RECIBO">Recibo</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Estado</label>
-                  <select
-                    name="estado"
-                    value={formData.estado}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="PAGADA">Pagada</option>
-                    <option value="CANCELADA">Cancelada</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Cliente*</label>
-                  <input
-                    type="text"
-                    name="clienteNombre"
-                    value={formData.clienteNombre}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Nombre del cliente"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">NIF</label>
-                  <input
-                    type="text"
-                    name="clienteNif"
-                    value={formData.clienteNif}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="NIF/CIF"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Email</label>
-                  <input
-                    type="email"
-                    name="clienteEmail"
-                    value={formData.clienteEmail}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="email@ejemplo.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Teléfono</label>
-                  <input
-                    type="tel"
-                    name="clienteTelefono"
-                    value={formData.clienteTelefono}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="600000000"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Base Imponible*</label>
-                  <input
-                    type="number"
-                    name="baseImponible"
-                    value={formData.baseImponible}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Total*</label>
-                  <input
-                    type="number"
-                    name="total"
-                    value={formData.total}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="0,00"
-                  />
-                </div>
-              </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col">
+            {/* Header del modal */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">
+                {editandoFactura ? 'Editar Factura' : 'Nueva Factura'}
+              </h3>
+            </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-1">Observaciones</label>
-                <textarea
-                  name="observaciones"
-                  value={formData.observaciones}
-                  onChange={handleInputChange}
-                  className="w-full border rounded px-3 py-2"
-                  rows="2"
-                  placeholder="Notas adicionales"
-                />
-              </div>
+            {/* Contenido con scroll */}
+            <div className="px-6 py-4 overflow-y-auto flex-1">
+              <form onSubmit={guardarFactura} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Nº Factura*
+                    </label>
+                    <input
+                      type="text"
+                      name="numero"
+                      value={formData.numero}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ej: FAC-001"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Fecha*
+                    </label>
+                    <input
+                      type="date"
+                      name="fecha"
+                      value={formData.fecha}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Tipo
+                    </label>
+                    <select
+                      name="tipo"
+                      value={formData.tipo}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="FACTURA">Factura</option>
+                      <option value="NOTA_CREDITO">Nota de Crédito</option>
+                      <option value="RECIBO">Recibo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Estado
+                    </label>
+                    <select
+                      name="estado"
+                      value={formData.estado}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="PENDIENTE">Pendiente</option>
+                      <option value="PAGADA">Pagada</option>
+                      <option value="CANCELADA">Cancelada</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Cliente*
+                    </label>
+                    <input
+                      type="text"
+                      name="clienteNombre"
+                      value={formData.clienteNombre}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Nombre del cliente"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      NIF/CIF
+                    </label>
+                    <input
+                      type="text"
+                      name="clienteNif"
+                      value={formData.clienteNif}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="NIF/CIF"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="clienteEmail"
+                      value={formData.clienteEmail}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="email@ejemplo.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Teléfono
+                    </label>
+                    <input
+                      type="tel"
+                      name="clienteTelefono"
+                      value={formData.clienteTelefono}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="600000000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Base Imponible*
+                    </label>
+                    <input
+                      type="number"
+                      name="baseImponible"
+                      value={formData.baseImponible}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="0,00"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Total*
+                    </label>
+                    <input
+                      type="number"
+                      name="total"
+                      value={formData.total}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="0,00"
+                      required
+                    />
+                  </div>
+                </div>
 
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={cerrarModal}
-                  className="px-4 py-2 border rounded font-semibold hover:bg-gray-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
-                >
-                  {editandoFactura ? 'Actualizar' : 'Crear'}
-                </button>
-              </div>
-            </form>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Observaciones
+                  </label>
+                  <textarea
+                    name="observaciones"
+                    value={formData.observaciones}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows="3"
+                    placeholder="Notas adicionales"
+                  />
+                </div>
+              </form>
+            </div>
+
+            {/* Footer con botones */}
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-lg">
+              <button
+                type="button"
+                onClick={cerrarModal}
+                className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                onClick={guardarFactura}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                {editandoFactura ? 'Actualizar' : 'Crear'}
+              </button>
+            </div>
           </div>
         </div>
       )}
