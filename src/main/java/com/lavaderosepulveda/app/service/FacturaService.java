@@ -66,13 +66,14 @@ public class FacturaService {
      */
     @Transactional
     public void eliminar(Long id) {
-        Factura factura = facturaRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Factura no encontrada"));
-        
+        // Cargar la factura CON sus líneas (esto activa el cascade)
+        Factura factura = facturaRepository.findByIdWithLineas(id)
+                .orElseThrow(() -> new RuntimeException("Factura no encontrada"));
+
         if (factura.getEstado() == EstadoFactura.PAGADA) {
             throw new RuntimeException("No se puede eliminar una factura pagada");
         }
-        
+
         // Desmarcar las citas asociadas como facturadas
         for (LineaFactura linea : factura.getLineas()) {
             if (linea.getCitaId() != null) {
@@ -83,8 +84,9 @@ public class FacturaService {
                 });
             }
         }
-        
-        facturaRepository.deleteById(id);
+
+        // IMPORTANTE: usar delete(factura) en lugar de deleteById(id)
+        facturaRepository.delete(factura);
         log.info("Factura {} eliminada", factura.getNumero());
     }
 
@@ -98,7 +100,7 @@ public class FacturaService {
     @Transactional
     public Factura crearFacturaSimplificadaDesdeCita(Long citaId) {
         Cita cita = citaRepository.findById(citaId)
-            .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
+                .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
 
         if (cita.getFacturada() != null && cita.getFacturada()) {
             throw new RuntimeException("La cita ya está facturada");
@@ -108,7 +110,7 @@ public class FacturaService {
         factura.setTipo(TipoFactura.SIMPLIFICADA);
         factura.setFecha(LocalDate.now());
         factura.setAnio(LocalDate.now().getYear());
-        
+
         // Generar número de factura
         generarNumeroFactura(factura);
 
@@ -137,9 +139,10 @@ public class FacturaService {
      * Crear factura completa para un cliente
      */
     @Transactional
-    public Factura crearFacturaCompleta(Long clienteId, List<Long> citaIds, String clienteNif, String clienteDireccion) {
+    public Factura crearFacturaCompleta(Long clienteId, List<Long> citaIds, String clienteNif,
+            String clienteDireccion) {
         Cliente cliente = clienteRepository.findById(clienteId)
-            .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
         Factura factura = new Factura();
         factura.setTipo(TipoFactura.COMPLETA);
@@ -151,7 +154,8 @@ public class FacturaService {
         generarNumeroFactura(factura);
 
         // Datos completos del cliente
-        factura.setClienteNombre(cliente.getNombre() + " " + (cliente.getApellidos() != null ? cliente.getApellidos() : ""));
+        factura.setClienteNombre(
+                cliente.getNombre() + " " + (cliente.getApellidos() != null ? cliente.getApellidos() : ""));
         factura.setClienteNif(clienteNif);
         factura.setClienteDireccion(clienteDireccion);
         factura.setClienteTelefono(cliente.getTelefono());
@@ -160,7 +164,7 @@ public class FacturaService {
         // Añadir líneas desde las citas
         for (Long citaId : citaIds) {
             Cita cita = citaRepository.findById(citaId)
-                .orElseThrow(() -> new RuntimeException("Cita no encontrada: " + citaId));
+                    .orElseThrow(() -> new RuntimeException("Cita no encontrada: " + citaId));
 
             if (cita.getFacturada() != null && cita.getFacturada()) {
                 throw new RuntimeException("La cita " + citaId + " ya está facturada");
@@ -189,9 +193,9 @@ public class FacturaService {
      * Crear factura manual (sin citas asociadas)
      */
     @Transactional
-    public Factura crearFacturaManual(TipoFactura tipo, String clienteNombre, String clienteNif, 
-                                       String clienteDireccion, String clienteTelefono, String clienteEmail,
-                                       List<LineaFactura> lineas) {
+    public Factura crearFacturaManual(TipoFactura tipo, String clienteNombre, String clienteNif,
+            String clienteDireccion, String clienteTelefono, String clienteEmail,
+            List<LineaFactura> lineas) {
         Factura factura = new Factura();
         factura.setTipo(tipo);
         factura.setFecha(LocalDate.now());
@@ -227,7 +231,7 @@ public class FacturaService {
     @Transactional
     public Factura marcarComoPagada(Long id, MetodoPago metodoPago) {
         Factura factura = facturaRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Factura no encontrada"));
+                .orElseThrow(() -> new RuntimeException("Factura no encontrada"));
 
         factura.marcarComoPagada(metodoPago);
         factura = facturaRepository.save(factura);
@@ -291,7 +295,7 @@ public class FacturaService {
      */
     public Map<String, Object> obtenerResumen() {
         Map<String, Object> resumen = new HashMap<>();
-        
+
         LocalDate hoy = LocalDate.now();
         LocalDate inicioMes = hoy.withDayOfMonth(1);
         LocalDate finMes = hoy.withDayOfMonth(hoy.lengthOfMonth());
@@ -312,7 +316,7 @@ public class FacturaService {
 
         // Cobrado este mes
         BigDecimal cobradoMes = facturaRepository.sumTotalByEstadoAndFechaBetween(
-            EstadoFactura.PAGADA, inicioMes, finMes);
+                EstadoFactura.PAGADA, inicioMes, finMes);
         resumen.put("cobradoMes", cobradoMes);
 
         // Número de facturas pendientes
@@ -351,8 +355,8 @@ public class FacturaService {
     private void generarNumeroFactura(Factura factura) {
         Integer anio = factura.getAnio();
         Integer siguienteNumero = facturaRepository.findMaxNumeroSecuencialByAnio(anio)
-            .map(max -> max + 1)
-            .orElse(1);
+                .map(max -> max + 1)
+                .orElse(1);
 
         factura.setNumeroSecuencial(siguienteNumero);
         factura.setNumero(String.format("%d/%03d", anio, siguienteNumero));
@@ -375,9 +379,8 @@ public class FacturaService {
         // Precio (el precio del TipoLavado ya incluye IVA, hay que extraer la base)
         BigDecimal precioConIva = new BigDecimal(cita.getTipoLavado().getPrecio());
         BigDecimal precioSinIva = precioConIva.divide(
-            BigDecimal.ONE.add(IVA_PORCENTAJE.divide(new BigDecimal("100"))),
-            2, RoundingMode.HALF_UP
-        );
+                BigDecimal.ONE.add(IVA_PORCENTAJE.divide(new BigDecimal("100"))),
+                2, RoundingMode.HALF_UP);
         linea.setPrecioUnitario(precioSinIva);
         linea.setCantidad(1);
         linea.calcularSubtotal();
@@ -389,7 +392,8 @@ public class FacturaService {
      * Formatear nombre del servicio para la factura
      */
     private String formatearConceptoServicio(TipoLavado tipoLavado) {
-        if (tipoLavado == null) return "Servicio de lavado";
+        if (tipoLavado == null)
+            return "Servicio de lavado";
         return tipoLavado.getDescripcion();
     }
 }

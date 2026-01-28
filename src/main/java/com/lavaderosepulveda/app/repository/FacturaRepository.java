@@ -18,6 +18,10 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     // Buscar por número de factura
     Optional<Factura> findByNumero(String numero);
 
+    // Buscar factura con sus líneas (para eliminación en cascada)
+    @Query("SELECT f FROM Factura f LEFT JOIN FETCH f.lineas WHERE f.id = :id")
+    Optional<Factura> findByIdWithLineas(@Param("id") Long id);
+
     // Buscar por estado
     List<Factura> findByEstadoOrderByFechaDesc(EstadoFactura estado);
 
@@ -40,13 +44,14 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
 
     // Total facturado en un período
     @Query("SELECT COALESCE(SUM(f.total), 0) FROM Factura f WHERE f.fecha BETWEEN :fechaInicio AND :fechaFin")
-    BigDecimal sumTotalByFechaBetween(@Param("fechaInicio") LocalDate fechaInicio, @Param("fechaFin") LocalDate fechaFin);
+    BigDecimal sumTotalByFechaBetween(@Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin);
 
     // Total facturado por estado en un período
     @Query("SELECT COALESCE(SUM(f.total), 0) FROM Factura f WHERE f.estado = :estado AND f.fecha BETWEEN :fechaInicio AND :fechaFin")
-    BigDecimal sumTotalByEstadoAndFechaBetween(@Param("estado") EstadoFactura estado, 
-                                                @Param("fechaInicio") LocalDate fechaInicio, 
-                                                @Param("fechaFin") LocalDate fechaFin);
+    BigDecimal sumTotalByEstadoAndFechaBetween(@Param("estado") EstadoFactura estado,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin);
 
     // Contar facturas por estado
     long countByEstado(EstadoFactura estado);
