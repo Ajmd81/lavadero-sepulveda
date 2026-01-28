@@ -70,10 +70,6 @@ public class FacturaService {
         Factura factura = facturaRepository.findByIdWithLineas(id)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada"));
 
-        if (factura.getEstado() == EstadoFactura.PAGADA) {
-            throw new RuntimeException("No se puede eliminar una factura pagada");
-        }
-
         // Desmarcar las citas asociadas como facturadas
         for (LineaFactura linea : factura.getLineas()) {
             if (linea.getCitaId() != null) {
