@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import facturaRecibidaService from '../../services/facturaRecibidaService';
+import proveedorService from '../../services/proveedorService';
 
 const FacturasRecibidas = () => {
   const [facturas, setFacturas] = useState([]);
+  const [proveedores, setProveedores] = useState([]); // NUEVO
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoFactura, setEditandoFactura] = useState(null);
   const [formData, setFormData] = useState({
     numeroFactura: '',
+    proveedorId: '', // NUEVO
     proveedorNombre: '',
     proveedorNif: '',
     fechaFactura: '',
@@ -29,6 +32,7 @@ const FacturasRecibidas = () => {
 
   useEffect(() => {
     cargarFacturas();
+    cargarProveedores(); // NUEVO
   }, []);
 
   // Cargar todas las facturas recibidas
@@ -37,12 +41,12 @@ const FacturasRecibidas = () => {
     try {
       const response = await facturaRecibidaService.getAll();
       let facturasData = response.data || [];
-      
+
       // Ordenar por fecha (más reciente primero)
       facturasData = facturasData.sort((a, b) => {
         let fechaA = a.fechaFactura;
         let fechaB = b.fechaFactura;
-        
+
         // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaA && fechaA.includes('/')) {
           const [d, m, y] = fechaA.split('/');
@@ -52,10 +56,10 @@ const FacturasRecibidas = () => {
           const [d, m, y] = fechaB.split('/');
           fechaB = `${y}-${m}-${d}`;
         }
-        
+
         return fechaB.localeCompare(fechaA);
       });
-      
+
       setFacturas(facturasData);
       setError(null);
     } catch (err) {
@@ -66,10 +70,21 @@ const FacturasRecibidas = () => {
     }
   };
 
+  // NUEVO: Cargar proveedores activos
+  const cargarProveedores = async () => {
+    try {
+      const response = await proveedorService.getActivos();
+      setProveedores(response.data || []);
+    } catch (err) {
+      console.error('Error al cargar proveedores:', err);
+    }
+  };
+
   // Abrir modal para crear nueva factura
   const abrirModalNuevo = () => {
     setFormData({
       numeroFactura: '',
+      proveedorId: '', // NUEVO
       proveedorNombre: '',
       proveedorNif: '',
       fechaFactura: new Date().toISOString().split('T')[0],
@@ -113,10 +128,35 @@ const FacturasRecibidas = () => {
     }));
   };
 
+  // NUEVO: Manejar selección de proveedor
+  const handleProveedorChange = (e) => {
+    const proveedorId = e.target.value;
+
+    if (!proveedorId) {
+      setFormData(prev => ({
+        ...prev,
+        proveedorId: '',
+        proveedorNombre: '',
+        proveedorNif: '',
+      }));
+      return;
+    }
+
+    const proveedor = proveedores.find(p => p.id === parseInt(proveedorId));
+    if (proveedor) {
+      setFormData(prev => ({
+        ...prev,
+        proveedorId: proveedor.id,
+        proveedorNombre: proveedor.nombre,
+        proveedorNif: proveedor.nif || '',
+      }));
+    }
+  };
+
   // Guardar factura
   const guardarFactura = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.numeroFactura || !formData.proveedorNombre || !formData.total) {
       alert('Por favor completa los campos obligatorios');
       return;
@@ -157,10 +197,10 @@ const FacturasRecibidas = () => {
   // Formatear fecha
   const formatearFecha = (fecha) => {
     if (!fecha) return '—';
-    
+
     try {
       let day, month, year;
-      
+
       if (typeof fecha === 'string') {
         if (fecha.includes('/')) {
           const partes = fecha.split('/');
@@ -174,7 +214,7 @@ const FacturasRecibidas = () => {
           day = parseInt(partes[2]);
         }
       }
-      
+
       if (day && month && year) {
         return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
       }
@@ -301,11 +341,11 @@ const FacturasRecibidas = () => {
       {/* Modal para crear/editar factura */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-96 overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">
               {editandoFactura ? 'Editar Factura Recibida' : 'Nueva Factura Recibida'}
             </h3>
-            
+
             <form onSubmit={guardarFactura} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -329,26 +369,36 @@ const FacturasRecibidas = () => {
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
+
+                {/* DESPLEGABLE DE PROVEEDORES - CAMBIADO */}
                 <div className="col-span-2">
                   <label className="block text-sm font-semibold mb-1">Proveedor*</label>
-                  <input
-                    type="text"
-                    name="proveedorNombre"
-                    value={formData.proveedorNombre}
-                    onChange={handleInputChange}
+                  <select
+                    name="proveedorId"
+                    value={formData.proveedorId}
+                    onChange={handleProveedorChange}
                     className="w-full border rounded px-3 py-2"
-                    placeholder="Nombre del proveedor"
-                  />
+                    required
+                  >
+                    <option value="">-- Selecciona un proveedor --</option>
+                    {proveedores.map(proveedor => (
+                      <option key={proveedor.id} value={proveedor.id}>
+                        {proveedor.nombre} {proveedor.nif && `(${proveedor.nif})`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-semibold mb-1">NIF/CIF</label>
+                  <label className="block text-sm font-semibold mb-1">NIF/CIF (autocompletado)</label>
                   <input
                     type="text"
                     name="proveedorNif"
                     value={formData.proveedorNif}
                     onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 bg-gray-50"
                     placeholder="NIF/CIF"
+                    readOnly
                   />
                 </div>
                 <div>

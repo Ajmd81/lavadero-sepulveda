@@ -6,7 +6,7 @@ const proveedorService = {
   create: (proveedorData) => api.post('/proveedores', proveedorData),
   update: (id, proveedorData) => api.put(`/proveedores/${id}`, proveedorData),
   delete: (id) => api.delete(`/proveedores/${id}`),
-  search: (query) => api.get(`/proveedores/buscar`, { params: { termino: query } }),
+  search: (query) => api.get('/proveedores/buscar', { params: { termino: query } }),
   getActivos: () => api.get('/proveedores'),
 };
 
