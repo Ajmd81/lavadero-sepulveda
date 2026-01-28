@@ -45,12 +45,12 @@ const Calendario = () => {
   // Agrupar citas por fecha del mes actual
   const agruparCitasPorMes = () => {
     const citasPorFecha = {};
-    
+
     todasLasCitas.forEach(cita => {
       if (cita.fecha) {
         try {
           let fechaCita;
-          
+
           // Detectar formato de fecha y parsear
           if (typeof cita.fecha === 'string') {
             if (cita.fecha.includes('/')) {
@@ -65,9 +65,9 @@ const Calendario = () => {
           } else {
             return;
           }
-          
-          if (fechaCita.getFullYear() === fecha.getFullYear() && 
-              fechaCita.getMonth() === fecha.getMonth()) {
+
+          if (fechaCita.getFullYear() === fecha.getFullYear() &&
+            fechaCita.getMonth() === fecha.getMonth()) {
             const dia = fechaCita.getDate();
             if (!citasPorFecha[dia]) {
               citasPorFecha[dia] = [];
@@ -79,7 +79,7 @@ const Calendario = () => {
         }
       }
     });
-    
+
     setCitasDelMes(citasPorFecha);
   };
 
@@ -90,26 +90,26 @@ const Calendario = () => {
     const primerDia = new Date(year, month, 1);
     const ultimoDia = new Date(year, month + 1, 0);
     const diasDelMes = [];
-    
+
     // Días del mes anterior para llenar la primera semana
     const diasAnterior = primerDia.getDay();
     for (let i = diasAnterior; i > 0; i--) {
       const dia = new Date(year, month, -i + 1);
       diasDelMes.push({ fecha: dia, esDelMesActual: false });
     }
-    
+
     // Días del mes actual
     for (let i = 1; i <= ultimoDia.getDate(); i++) {
       diasDelMes.push({ fecha: new Date(year, month, i), esDelMesActual: true });
     }
-    
+
     // Días del mes siguiente para llenar la última semana
     const diasSiguiente = 42 - diasDelMes.length; // 6 semanas * 7 días = 42
     for (let i = 1; i <= diasSiguiente; i++) {
       const dia = new Date(year, month + 1, i);
       diasDelMes.push({ fecha: dia, esDelMesActual: false });
     }
-    
+
     return diasDelMes;
   };
 
@@ -134,19 +134,24 @@ const Calendario = () => {
   };
 
   // Formatos
-  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   const diasDelMes = getDiasDelMes();
   const semanas = [];
-  
+
   for (let i = 0; i < diasDelMes.length; i += 7) {
     semanas.push(diasDelMes.slice(i, i + 7));
   }
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-2xl font-bold mb-6">Calendario de Citas</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src="/assets/icons/calendario.png" alt="Calendario" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900">Calendario de Citas</h1>
+      </div>
 
       {error && (
         <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -200,7 +205,7 @@ const Calendario = () => {
                     const diaNum = dia.fecha.getDate();
                     const tieneCitas = citasDelMes[diaNum] && dia.esDelMesActual;
                     const cantidadCitas = tieneCitas ? citasDelMes[diaNum].length : 0;
-                    const esHoy = 
+                    const esHoy =
                       new Date().getDate() === diaNum &&
                       new Date().getMonth() === fecha.getMonth() &&
                       new Date().getFullYear() === fecha.getFullYear();
@@ -210,17 +215,16 @@ const Calendario = () => {
                         key={`${semanaIdx}-${diaIdx}`}
                         onClick={() => seleccionarDia(diaNum)}
                         disabled={!dia.esDelMesActual}
-                        className={`p-2 rounded text-sm h-20 relative transition-all ${
-                          !dia.esDelMesActual 
+                        className={`p-2 rounded text-sm h-20 relative transition-all ${!dia.esDelMesActual
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                             : diaSeleccionado === diaNum
-                            ? 'bg-purple-500 text-white font-bold border-2 border-purple-700'
-                            : esHoy
-                            ? 'bg-blue-500 text-white font-bold border-2 border-blue-700'
-                            : tieneCitas
-                            ? 'bg-green-100 hover:bg-green-200 border-2 border-green-500'
-                            : 'bg-white hover:bg-gray-100 border border-gray-300'
-                        }`}
+                              ? 'bg-purple-500 text-white font-bold border-2 border-purple-700'
+                              : esHoy
+                                ? 'bg-blue-500 text-white font-bold border-2 border-blue-700'
+                                : tieneCitas
+                                  ? 'bg-green-100 hover:bg-green-200 border-2 border-green-500'
+                                  : 'bg-white hover:bg-gray-100 border border-gray-300'
+                          }`}
                       >
                         <div className="font-bold">{diaNum}</div>
                         {tieneCitas && (
@@ -242,7 +246,7 @@ const Calendario = () => {
               <h4 className="text-lg font-bold mb-4">
                 {diaSeleccionado ? `Citas del ${diaSeleccionado}/${fecha.getMonth() + 1}/${fecha.getFullYear()}` : 'Citas del día'}
               </h4>
-              
+
               {!diaSeleccionado ? (
                 <p className="text-gray-500 text-center py-8">
                   Selecciona un día para ver sus citas
@@ -271,11 +275,10 @@ const Calendario = () => {
                         {cita.tipoLavado}
                       </div>
                       <div className="text-xs mt-2">
-                        <span className={`px-2 py-1 rounded font-semibold ${
-                          cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
-                          cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded font-semibold ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
+                            cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                          }`}>
                           {cita.estado}
                         </span>
                       </div>

@@ -46,7 +46,7 @@ const Contabilidad = () => {
       desde: desde.toISOString().split('T')[0],
       hasta: hasta.toISOString().split('T')[0]
     };
-    
+
     console.log(`Período: ${periodoSeleccionado}`, resultado);
     return resultado;
   };
@@ -174,7 +174,12 @@ const Contabilidad = () => {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-2xl font-bold mb-6">Contabilidad</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src="/assets/icons/contabilidad.png" alt="Contabilidad" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900">Contabilidad</h1>
+      </div>
 
       {/* Panel de Filtros */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">

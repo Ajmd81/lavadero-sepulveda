@@ -31,26 +31,40 @@ const Proveedores = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex-1 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Buscar proveedores..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src="/assets/icons/proveedor.png" alt="Proveedores" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Gestión de Proveedores</h1>
+              <p className="text-gray-600">Total: {filteredProveedores.length} proveedores</p>
+            </div>
           </div>
+          <button
+            onClick={() => { setSelectedProveedor(null); setShowModal(true); }}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={20} />
+            Nuevo Proveedor
+          </button>
         </div>
-        <button
-          onClick={() => { setSelectedProveedor(null); setShowModal(true); }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          <Plus size={20} />
-          Nuevo Proveedor
-        </button>
+      </div>
+
+      {/* Barra de búsqueda */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Buscar proveedores por nombre, teléfono o email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
       </div>
 
       {/* Tabla de Proveedores */}
@@ -91,11 +105,10 @@ const Proveedores = () => {
                   <td className="px-6 py-4 text-sm text-gray-600">{proveedor.email}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{proveedor.categoria || '—'}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded ${
-                      proveedor.activo
+                    <span className={`px-2 py-1 text-xs rounded ${proveedor.activo
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                    }`}>
+                      }`}>
                       {proveedor.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>

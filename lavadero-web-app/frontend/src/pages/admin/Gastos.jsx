@@ -32,12 +32,12 @@ const Gastos = () => {
     try {
       const response = await gastoService.getAll();
       let gastosData = response.data || [];
-      
+
       // Ordenar por fecha (más reciente primero)
       gastosData = gastosData.sort((a, b) => {
         let fechaA = a.fecha;
         let fechaB = b.fecha;
-        
+
         // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaA && fechaA.includes('/')) {
           const [d, m, y] = fechaA.split('/');
@@ -47,10 +47,10 @@ const Gastos = () => {
           const [d, m, y] = fechaB.split('/');
           fechaB = `${y}-${m}-${d}`;
         }
-        
+
         return fechaB.localeCompare(fechaA);
       });
-      
+
       setGastos(gastosData);
       setError(null);
     } catch (err) {
@@ -106,7 +106,7 @@ const Gastos = () => {
   // Guardar gasto
   const guardarGasto = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.concepto || !formData.importe) {
       alert('Por favor completa los campos obligatorios');
       return;
@@ -147,10 +147,10 @@ const Gastos = () => {
   // Formatear fecha
   const formatearFecha = (fecha) => {
     if (!fecha) return '—';
-    
+
     try {
       let day, month, year;
-      
+
       if (typeof fecha === 'string') {
         if (fecha.includes('/')) {
           const partes = fecha.split('/');
@@ -164,7 +164,7 @@ const Gastos = () => {
           day = parseInt(partes[2]);
         }
       }
-      
+
       if (day && month && year) {
         return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
       }
@@ -203,17 +203,22 @@ const Gastos = () => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">Gastos</h2>
-          <p className="text-gray-500 text-sm mt-1">
-            Total: {formatearMoneda(totalGastos)}
-          </p>
+        <div className="flex items-center gap-3">
+          <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/assets/icons/invoice.png" alt="Gastos" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Gastos</h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Total: {formatearMoneda(totalGastos)}
+            </p>
+          </div>
         </div>
         <button
           onClick={abrirModalNuevo}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold flex items-center gap-2"
         >
-          + Nuevo Gasto
+          <span>+</span> Nuevo Gasto
         </button>
       </div>
 
@@ -260,11 +265,10 @@ const Gastos = () => {
                     {formatearMoneda(gasto.importe)}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      gasto.pagado 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${gasto.pagado
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                      }`}>
                       {gasto.pagado ? 'Pagado' : 'Pendiente'}
                     </span>
                   </td>
@@ -296,7 +300,7 @@ const Gastos = () => {
             <h3 className="text-xl font-bold mb-4">
               {editandoGasto ? 'Editar Gasto' : 'Nuevo Gasto'}
             </h3>
-            
+
             <form onSubmit={guardarGasto} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
