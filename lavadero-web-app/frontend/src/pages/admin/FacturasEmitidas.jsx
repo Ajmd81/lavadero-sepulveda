@@ -15,12 +15,13 @@ const FacturasEmitidas = () => {
     tipo: 'SIMPLIFICADA',
     estado: 'PENDIENTE',
     metodoPago: 'EFECTIVO',
-    clienteId: '', // NUEVO
+    clienteId: '',
     clienteNombre: '',
     clienteNif: '',
     clienteDireccion: '',
     clienteEmail: '',
     clienteTelefono: '',
+    lineas: [],
     baseImponible: '',
     tipoIva: '21',
     importeIva: '',
@@ -28,24 +29,17 @@ const FacturasEmitidas = () => {
     observaciones: '',
   });
 
+  const [nuevaLinea, setNuevaLinea] = useState({
+    concepto: '',
+    cantidad: 1,
+    precioUnitario: '',
+  });
+
   useEffect(() => {
     cargarFacturas();
     cargarClientes();
   }, []);
 
-  const cargarClientes = async () => {
-    setLoading(true);
-    try {
-      const response = await clienteService.getAll();
-      setClientes(response.data || []);
-      setError(null);
-    } catch (err) {
-      setError('Error al cargar los clientes: ' + err.message);
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
   // Cargar todas las facturas
   const cargarFacturas = async () => {
     setLoading(true);
@@ -53,12 +47,10 @@ const FacturasEmitidas = () => {
       const response = await facturaService.getAll();
       let facturasData = response.data || [];
 
-      // Ordenar por fecha (más reciente primero)
       facturasData = facturasData.sort((a, b) => {
         let fechaA = a.fecha;
         let fechaB = b.fecha;
 
-        // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaA && fechaA.includes('/')) {
           const [d, m, y] = fechaA.split('/');
           fechaA = `${y}-${m}-${d}`;
@@ -81,12 +73,22 @@ const FacturasEmitidas = () => {
     }
   };
 
+  // Cargar clientes
+  const cargarClientes = async () => {
+    try {
+      const response = await clienteService.getAll();
+      setClientes(response.data || []);
+    } catch (err) {
+      console.error('Error al cargar clientes:', err);
+    }
+  };
+
   // Abrir modal para crear nueva factura
   const abrirModalNuevo = () => {
     setFormData({
       numero: '',
       fecha: new Date().toISOString().split('T')[0],
-      tipo: 'FACTURA',
+      tipo: 'SIMPLIFICADA',
       estado: 'PENDIENTE',
       metodoPago: 'EFECTIVO',
       clienteId: '',
@@ -95,11 +97,17 @@ const FacturasEmitidas = () => {
       clienteDireccion: '',
       clienteEmail: '',
       clienteTelefono: '',
+      lineas: [],
       baseImponible: '',
       tipoIva: '21',
       importeIva: '',
       total: '',
       observaciones: '',
+    });
+    setNuevaLinea({
+      concepto: '',
+      cantidad: 1,
+      precioUnitario: '',
     });
     setEditandoFactura(null);
     setModalAbierto(true);
@@ -107,7 +115,10 @@ const FacturasEmitidas = () => {
 
   // Abrir modal para editar factura
   const abrirModalEditar = (factura) => {
-    setFormData(factura);
+    setFormData({
+      ...factura,
+      lineas: factura.lineas || [],
+    });
     setEditandoFactura(factura.id);
     setModalAbierto(true);
   };
@@ -125,7 +136,13 @@ const FacturasEmitidas = () => {
       ...prev,
       [name]: value,
     }));
+
+    if (name === 'tipoIva' && formData.lineas.length > 0) {
+      recalcularTotales(formData.lineas, value);
+    }
   };
+
+  // Manejar selección de cliente
   const handleClienteChange = (e) => {
     const clienteId = e.target.value;
 
@@ -141,15 +158,86 @@ const FacturasEmitidas = () => {
       }));
       return;
     }
-    const cliente = clientes.find(cliente => cliente.id === e.target.value);
+
+    const cliente = clientes.find(c => c.id === parseInt(clienteId));
+    if (cliente) {
+      setFormData(prev => ({
+        ...prev,
+        clienteId: cliente.id,
+        clienteNombre: `${cliente.nombre} ${cliente.apellidos || ''}`.trim(),
+        clienteNif: cliente.nif || '',
+        clienteDireccion: cliente.direccion || '',
+        clienteEmail: cliente.email || '',
+        clienteTelefono: cliente.telefono || '',
+      }));
+    }
+  };
+
+  // Manejar cambios en la nueva línea
+  const handleNuevaLineaChange = (e) => {
+    const { name, value } = e.target;
+    setNuevaLinea(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Agregar línea
+  const agregarLinea = () => {
+    if (!nuevaLinea.concepto || !nuevaLinea.cantidad || !nuevaLinea.precioUnitario) {
+      alert('Por favor completa todos los campos de la línea');
+      return;
+    }
+
+    const cantidad = parseFloat(nuevaLinea.cantidad);
+    const precioUnitario = parseFloat(nuevaLinea.precioUnitario);
+    const subtotal = cantidad * precioUnitario;
+
+    const linea = {
+      id: Date.now(),
+      concepto: nuevaLinea.concepto,
+      cantidad: cantidad,
+      precioUnitario: precioUnitario,
+      subtotal: subtotal,
+    };
+
+    const nuevasLineas = [...formData.lineas, linea];
     setFormData(prev => ({
       ...prev,
-      clienteId: e.target.value,
-      clienteNombre: cliente ? cliente.nombre : '',
-      clienteNif: cliente ? cliente.nif : '',
-      clienteDireccion: cliente ? cliente.direccion : '',
-      clienteEmail: cliente ? cliente.email : '',
-      clienteTelefono: cliente ? cliente.telefono : '',
+      lineas: nuevasLineas,
+    }));
+
+    recalcularTotales(nuevasLineas, formData.tipoIva);
+
+    setNuevaLinea({
+      concepto: '',
+      cantidad: 1,
+      precioUnitario: '',
+    });
+  };
+
+  // Eliminar línea
+  const eliminarLinea = (lineaId) => {
+    const nuevasLineas = formData.lineas.filter(l => l.id !== lineaId);
+    setFormData(prev => ({
+      ...prev,
+      lineas: nuevasLineas,
+    }));
+    recalcularTotales(nuevasLineas, formData.tipoIva);
+  };
+
+  // Recalcular totales
+  const recalcularTotales = (lineas, tipoIva) => {
+    const baseImponible = lineas.reduce((sum, linea) => sum + linea.subtotal, 0);
+    const iva = parseFloat(tipoIva) || 21;
+    const importeIva = (baseImponible * iva) / 100;
+    const total = baseImponible + importeIva;
+
+    setFormData(prev => ({
+      ...prev,
+      baseImponible: baseImponible.toFixed(2),
+      importeIva: importeIva.toFixed(2),
+      total: total.toFixed(2),
     }));
   };
 
@@ -159,6 +247,11 @@ const FacturasEmitidas = () => {
 
     if (!formData.numero || !formData.clienteNombre || !formData.total) {
       alert('Por favor completa los campos obligatorios');
+      return;
+    }
+
+    if (formData.lineas.length === 0) {
+      alert('Debes agregar al menos una línea a la factura');
       return;
     }
 
@@ -351,7 +444,7 @@ const FacturasEmitidas = () => {
         </div>
       )}
 
-      {/* Modal para crear/editar factura - MEJORADO */}
+      {/* Modal para crear/editar factura */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col">
@@ -453,7 +546,6 @@ const FacturasEmitidas = () => {
                     Datos del Cliente
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* DESPLEGABLE DE CLIENTES - REEMPLAZA EL INPUT DE NOMBRE */}
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
                         Seleccionar Cliente*
@@ -473,18 +565,14 @@ const FacturasEmitidas = () => {
                         ))}
                       </select>
                     </div>
-
-                    {/* Campos autorellenados (solo lectura) */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
                         Nombre (autocompletado)
                       </label>
                       <input
                         type="text"
-                        name="clienteNombre"
                         value={formData.clienteNombre}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
-                        placeholder="Se rellenará automáticamente"
                         readOnly
                       />
                     </div>
@@ -494,10 +582,8 @@ const FacturasEmitidas = () => {
                       </label>
                       <input
                         type="text"
-                        name="clienteNif"
                         value={formData.clienteNif}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
-                        placeholder="Se rellenará automáticamente"
                         readOnly
                       />
                     </div>
@@ -506,11 +592,9 @@ const FacturasEmitidas = () => {
                         Teléfono (autocompletado)
                       </label>
                       <input
-                        type="tel"
-                        name="clienteTelefono"
+                        type="text"
                         value={formData.clienteTelefono}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
-                        placeholder="Se rellenará automáticamente"
                         readOnly
                       />
                     </div>
@@ -519,11 +603,9 @@ const FacturasEmitidas = () => {
                         Email (autocompletado)
                       </label>
                       <input
-                        type="email"
-                        name="clienteEmail"
+                        type="text"
                         value={formData.clienteEmail}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
-                        placeholder="Se rellenará automáticamente"
                         readOnly
                       />
                     </div>
@@ -533,35 +615,130 @@ const FacturasEmitidas = () => {
                       </label>
                       <input
                         type="text"
-                        name="clienteDireccion"
                         value={formData.clienteDireccion}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
-                        placeholder="Se rellenará automáticamente"
                         readOnly
                       />
                     </div>
                   </div>
                 </div>
 
+                {/* Sección: Líneas de Factura */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                    Líneas de Factura
+                  </h4>
+
+                  <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                      <div className="md:col-span-5">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          Concepto
+                        </label>
+                        <input
+                          type="text"
+                          name="concepto"
+                          value={nuevaLinea.concepto}
+                          onChange={handleNuevaLineaChange}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                          placeholder="Descripción del servicio/producto"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          Cantidad
+                        </label>
+                        <input
+                          type="number"
+                          name="cantidad"
+                          value={nuevaLinea.cantidad}
+                          onChange={handleNuevaLineaChange}
+                          step="1"
+                          min="1"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          Precio Unitario (€)
+                        </label>
+                        <input
+                          type="number"
+                          name="precioUnitario"
+                          value={nuevaLinea.precioUnitario}
+                          onChange={handleNuevaLineaChange}
+                          step="0.01"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <button
+                          type="button"
+                          onClick={agregarLinea}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {formData.lineas.length > 0 ? (
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                      <table className="w-full">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Concepto</th>
+                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Cantidad</th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Precio Unit.</th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Subtotal</th>
+                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formData.lineas.map((linea) => (
+                            <tr key={linea.id} className="border-t border-gray-200 hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm">{linea.concepto}</td>
+                              <td className="px-4 py-3 text-sm text-center">{linea.cantidad}</td>
+                              <td className="px-4 py-3 text-sm text-right">{linea.precioUnitario.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-sm text-right font-semibold">{linea.subtotal.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => eliminarLinea(linea.id)}
+                                  className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                                >
+                                  Eliminar
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500">No hay líneas agregadas. Usa el formulario de arriba para agregar líneas.</p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Sección: Importes */}
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
-                    Importes
+                    Importes (Calculados Automáticamente)
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
-                        Base Imponible*
+                        Base Imponible
                       </label>
                       <input
-                        type="number"
-                        name="baseImponible"
-                        value={formData.baseImponible}
-                        onChange={handleInputChange}
-                        step="0.01"
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="0,00"
-                        required
+                        type="text"
+                        value={formData.baseImponible ? `${formData.baseImponible} €` : '0,00 €'}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 font-semibold"
+                        readOnly
                       />
                     </div>
                     <div>
@@ -580,19 +757,26 @@ const FacturasEmitidas = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
-                        Total*
+                        Importe IVA
                       </label>
                       <input
-                        type="number"
-                        name="total"
-                        value={formData.total}
-                        onChange={handleInputChange}
-                        step="0.01"
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
-                        placeholder="0,00"
-                        required
+                        type="text"
+                        value={formData.importeIva ? `${formData.importeIva} €` : '0,00 €'}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 font-semibold"
+                        readOnly
                       />
                     </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Total Factura
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.total ? `${formData.total} €` : '0,00 €'}
+                      className="w-full border-2 border-green-500 rounded-lg px-4 py-3 bg-green-50 text-xl font-bold text-green-700"
+                      readOnly
+                    />
                   </div>
                 </div>
 

@@ -26,19 +26,16 @@ const Gastos = () => {
     cargarGastos();
   }, []);
 
-  // Cargar todos los gastos
   const cargarGastos = async () => {
     setLoading(true);
     try {
       const response = await gastoService.getAll();
       let gastosData = response.data || [];
 
-      // Ordenar por fecha (más reciente primero)
       gastosData = gastosData.sort((a, b) => {
         let fechaA = a.fecha;
         let fechaB = b.fecha;
 
-        // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaA && fechaA.includes('/')) {
           const [d, m, y] = fechaA.split('/');
           fechaA = `${y}-${m}-${d}`;
@@ -61,7 +58,6 @@ const Gastos = () => {
     }
   };
 
-  // Abrir modal para crear nuevo gasto
   const abrirModalNuevo = () => {
     setFormData({
       concepto: '',
@@ -81,20 +77,17 @@ const Gastos = () => {
     setModalAbierto(true);
   };
 
-  // Abrir modal para editar gasto
   const abrirModalEditar = (gasto) => {
     setFormData(gasto);
     setEditandoGasto(gasto.id);
     setModalAbierto(true);
   };
 
-  // Cerrar modal
   const cerrarModal = () => {
     setModalAbierto(false);
     setEditandoGasto(null);
   };
 
-  // Manejar cambios en los inputs
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -103,7 +96,6 @@ const Gastos = () => {
     }));
   };
 
-  // Guardar gasto
   const guardarGasto = async (e) => {
     e.preventDefault();
 
@@ -128,7 +120,6 @@ const Gastos = () => {
     }
   };
 
-  // Eliminar gasto
   const eliminarGasto = async (id) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
       return;
@@ -144,7 +135,6 @@ const Gastos = () => {
     }
   };
 
-  // Formatear fecha
   const formatearFecha = (fecha) => {
     if (!fecha) return '—';
 
@@ -175,7 +165,6 @@ const Gastos = () => {
     }
   };
 
-  // Formatear moneda
   const formatearMoneda = (cantidad) => {
     if (!cantidad) return '€0,00';
     return new Intl.NumberFormat('es-ES', {
@@ -184,10 +173,8 @@ const Gastos = () => {
     }).format(parseFloat(cantidad));
   };
 
-  // Calcular total de gastos
   const totalGastos = gastos.reduce((sum, gasto) => sum + (parseFloat(gasto.importe) || 0), 0);
 
-  // Obtener color de categoría
   const getColorCategoria = (categoria) => {
     const colores = {
       'MANTENIMIENTO': 'bg-blue-100 text-blue-800',
@@ -293,133 +280,156 @@ const Gastos = () => {
         </div>
       )}
 
-      {/* Modal para crear/editar gasto */}
+      {/* Modal */}
       {modalAbierto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-96 overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">
-              {editandoGasto ? 'Editar Gasto' : 'Nuevo Gasto'}
-            </h3>
+        <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col">
+            <div className="px-8 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-purple-100">
+              <h3 className="text-2xl font-bold text-gray-900">
+                {editandoGasto ? 'Editar Gasto' : 'Nuevo Gasto'}
+              </h3>
+            </div>
 
-            <form onSubmit={guardarGasto} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-semibold mb-1">Concepto*</label>
-                  <input
-                    type="text"
-                    name="concepto"
-                    value={formData.concepto}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Descripción del gasto"
-                  />
-                </div>
+            <div className="px-8 py-6 overflow-y-auto flex-1">
+              <form onSubmit={guardarGasto} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Fecha*</label>
-                  <input
-                    type="date"
-                    name="fecha"
-                    value={formData.fecha}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                    Información del Gasto
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Concepto*
+                      </label>
+                      <input
+                        type="text"
+                        name="concepto"
+                        value={formData.concepto}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Descripción del gasto"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Fecha*
+                      </label>
+                      <input
+                        type="date"
+                        name="fecha"
+                        value={formData.fecha}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Categoría
+                      </label>
+                      <select
+                        name="categoria"
+                        value={formData.categoria}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        <option value="MANTENIMIENTO">Mantenimiento</option>
+                        <option value="SUMINISTROS">Suministros</option>
+                        <option value="PERSONAL">Personal</option>
+                        <option value="SERVICIOS">Servicios</option>
+                        <option value="TRANSPORTE">Transporte</option>
+                        <option value="OTROS">Otros</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Importe*
+                      </label>
+                      <input
+                        type="number"
+                        name="importe"
+                        value={formData.importe}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="0,00"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Método Pago
+                      </label>
+                      <select
+                        name="metodoPago"
+                        value={formData.metodoPago}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        <option value="EFECTIVO">Efectivo</option>
+                        <option value="TARJETA">Tarjeta</option>
+                        <option value="TRANSFERENCIA">Transferencia</option>
+                        <option value="CHEQUE">Cheque</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-6 md:col-span-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="pagado"
+                          checked={formData.pagado}
+                          onChange={handleInputChange}
+                          className="w-5 h-5 rounded"
+                        />
+                        <span className="text-sm font-semibold text-gray-700">Pagado</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="recurrente"
+                          checked={formData.recurrente}
+                          onChange={handleInputChange}
+                          className="w-5 h-5 rounded"
+                        />
+                        <span className="text-sm font-semibold text-gray-700">Recurrente</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Categoría</label>
-                  <select
-                    name="categoria"
-                    value={formData.categoria}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="MANTENIMIENTO">Mantenimiento</option>
-                    <option value="SUMINISTROS">Suministros</option>
-                    <option value="PERSONAL">Personal</option>
-                    <option value="SERVICIOS">Servicios</option>
-                    <option value="TRANSPORTE">Transporte</option>
-                    <option value="OTROS">Otros</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Importe*</label>
-                  <input
-                    type="number"
-                    name="importe"
-                    value={formData.importe}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Método Pago</label>
-                  <select
-                    name="metodoPago"
-                    value={formData.metodoPago}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="EFECTIVO">Efectivo</option>
-                    <option value="TARJETA">Tarjeta</option>
-                    <option value="TRANSFERENCIA">Transferencia</option>
-                    <option value="CHEQUE">Cheque</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="pagado"
-                      checked={formData.pagado}
-                      onChange={handleInputChange}
-                      className="rounded"
-                    />
-                    <span className="text-sm font-semibold">Pagado</span>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Notas
                   </label>
+                  <textarea
+                    name="notas"
+                    value={formData.notas}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    rows="3"
+                    placeholder="Notas adicionales"
+                  />
                 </div>
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="recurrente"
-                      checked={formData.recurrente}
-                      onChange={handleInputChange}
-                      className="rounded"
-                    />
-                    <span className="text-sm font-semibold">Recurrente</span>
-                  </label>
-                </div>
-              </div>
+              </form>
+            </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-1">Notas</label>
-                <textarea
-                  name="notas"
-                  value={formData.notas}
-                  onChange={handleInputChange}
-                  className="w-full border rounded px-3 py-2"
-                  rows="2"
-                  placeholder="Notas adicionales"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={cerrarModal}
-                  className="px-4 py-2 border rounded font-semibold hover:bg-gray-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
-                >
-                  {editandoGasto ? 'Actualizar' : 'Crear'}
-                </button>
-              </div>
-            </form>
+            <div className="px-8 py-5 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+              <button
+                type="button"
+                onClick={cerrarModal}
+                className="px-6 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                onClick={guardarGasto}
+                className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
+              >
+                {editandoGasto ? 'Actualizar Gasto' : 'Crear Gasto'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -4,14 +4,14 @@ import proveedorService from '../../services/proveedorService';
 
 const FacturasRecibidas = () => {
   const [facturas, setFacturas] = useState([]);
-  const [proveedores, setProveedores] = useState([]); // NUEVO
+  const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoFactura, setEditandoFactura] = useState(null);
   const [formData, setFormData] = useState({
     numeroFactura: '',
-    proveedorId: '', // NUEVO
+    proveedorId: '',
     proveedorNombre: '',
     proveedorNif: '',
     fechaFactura: '',
@@ -32,22 +32,19 @@ const FacturasRecibidas = () => {
 
   useEffect(() => {
     cargarFacturas();
-    cargarProveedores(); // NUEVO
+    cargarProveedores();
   }, []);
 
-  // Cargar todas las facturas recibidas
   const cargarFacturas = async () => {
     setLoading(true);
     try {
       const response = await facturaRecibidaService.getAll();
       let facturasData = response.data || [];
 
-      // Ordenar por fecha (más reciente primero)
       facturasData = facturasData.sort((a, b) => {
         let fechaA = a.fechaFactura;
         let fechaB = b.fechaFactura;
 
-        // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaA && fechaA.includes('/')) {
           const [d, m, y] = fechaA.split('/');
           fechaA = `${y}-${m}-${d}`;
@@ -70,7 +67,6 @@ const FacturasRecibidas = () => {
     }
   };
 
-  // NUEVO: Cargar proveedores activos
   const cargarProveedores = async () => {
     try {
       const response = await proveedorService.getActivos();
@@ -80,11 +76,10 @@ const FacturasRecibidas = () => {
     }
   };
 
-  // Abrir modal para crear nueva factura
   const abrirModalNuevo = () => {
     setFormData({
       numeroFactura: '',
-      proveedorId: '', // NUEVO
+      proveedorId: '',
       proveedorNombre: '',
       proveedorNif: '',
       fechaFactura: new Date().toISOString().split('T')[0],
@@ -106,20 +101,17 @@ const FacturasRecibidas = () => {
     setModalAbierto(true);
   };
 
-  // Abrir modal para editar factura
   const abrirModalEditar = (factura) => {
     setFormData(factura);
     setEditandoFactura(factura.id);
     setModalAbierto(true);
   };
 
-  // Cerrar modal
   const cerrarModal = () => {
     setModalAbierto(false);
     setEditandoFactura(null);
   };
 
-  // Manejar cambios en los inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -128,7 +120,6 @@ const FacturasRecibidas = () => {
     }));
   };
 
-  // NUEVO: Manejar selección de proveedor
   const handleProveedorChange = (e) => {
     const proveedorId = e.target.value;
 
@@ -153,7 +144,6 @@ const FacturasRecibidas = () => {
     }
   };
 
-  // Guardar factura
   const guardarFactura = async (e) => {
     e.preventDefault();
 
@@ -178,7 +168,6 @@ const FacturasRecibidas = () => {
     }
   };
 
-  // Eliminar factura
   const eliminarFactura = async (id) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar esta factura?')) {
       return;
@@ -194,7 +183,6 @@ const FacturasRecibidas = () => {
     }
   };
 
-  // Formatear fecha
   const formatearFecha = (fecha) => {
     if (!fecha) return '—';
 
@@ -225,7 +213,6 @@ const FacturasRecibidas = () => {
     }
   };
 
-  // Formatear moneda
   const formatearMoneda = (cantidad) => {
     if (!cantidad) return '€0,00';
     return new Intl.NumberFormat('es-ES', {
@@ -234,7 +221,6 @@ const FacturasRecibidas = () => {
     }).format(parseFloat(cantidad));
   };
 
-  // Obtener color de estado
   const getColorEstado = (estado) => {
     switch (estado) {
       case 'PAGADA':
@@ -248,7 +234,6 @@ const FacturasRecibidas = () => {
     }
   };
 
-  // Calcular total de facturas
   const totalFacturas = facturas.reduce((sum, factura) => sum + (parseFloat(factura.total) || 0), 0);
 
   return (
@@ -338,160 +323,234 @@ const FacturasRecibidas = () => {
         </div>
       )}
 
-      {/* Modal para crear/editar factura */}
+      {/* Modal */}
       {modalAbierto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">
-              {editandoFactura ? 'Editar Factura Recibida' : 'Nueva Factura Recibida'}
-            </h3>
+        <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col">
+            <div className="px-8 py-5 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
+              <h3 className="text-2xl font-bold text-gray-900">
+                {editandoFactura ? 'Editar Factura Recibida' : 'Nueva Factura Recibida'}
+              </h3>
+            </div>
 
-            <form onSubmit={guardarFactura} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="px-8 py-6 overflow-y-auto flex-1">
+              <form onSubmit={guardarFactura} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Nº Factura*</label>
-                  <input
-                    type="text"
-                    name="numeroFactura"
-                    value={formData.numeroFactura}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Ej: FAC-2026-001"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Fecha*</label>
-                  <input
-                    type="date"
-                    name="fechaFactura"
-                    value={formData.fechaFactura}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                    Datos de la Factura
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Nº Factura*
+                      </label>
+                      <input
+                        type="text"
+                        name="numeroFactura"
+                        value={formData.numeroFactura}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Ej: FAC-2026-001"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Fecha*
+                      </label>
+                      <input
+                        type="date"
+                        name="fechaFactura"
+                        value={formData.fechaFactura}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Vencimiento
+                      </label>
+                      <input
+                        type="date"
+                        name="fechaVencimiento"
+                        value={formData.fechaVencimiento}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* DESPLEGABLE DE PROVEEDORES - CAMBIADO */}
-                <div className="col-span-2">
-                  <label className="block text-sm font-semibold mb-1">Proveedor*</label>
-                  <select
-                    name="proveedorId"
-                    value={formData.proveedorId}
-                    onChange={handleProveedorChange}
-                    className="w-full border rounded px-3 py-2"
-                    required
-                  >
-                    <option value="">-- Selecciona un proveedor --</option>
-                    {proveedores.map(proveedor => (
-                      <option key={proveedor.id} value={proveedor.id}>
-                        {proveedor.nombre} {proveedor.nif && `(${proveedor.nif})`}
-                      </option>
-                    ))}
-                  </select>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                    Datos del Proveedor
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Proveedor*
+                      </label>
+                      <select
+                        name="proveedorId"
+                        value={formData.proveedorId}
+                        onChange={handleProveedorChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        required
+                      >
+                        <option value="">-- Selecciona un proveedor --</option>
+                        {proveedores.map(proveedor => (
+                          <option key={proveedor.id} value={proveedor.id}>
+                            {proveedor.nombre} {proveedor.nif && `(${proveedor.nif})`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        NIF/CIF (autocompletado)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.proveedorNif}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Categoría
+                      </label>
+                      <select
+                        name="categoria"
+                        value={formData.categoria}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      >
+                        <option value="SUMINISTROS">Suministros</option>
+                        <option value="SERVICIOS">Servicios</option>
+                        <option value="MANTENIMIENTO">Mantenimiento</option>
+                        <option value="OTROS">Otros</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold mb-1">NIF/CIF (autocompletado)</label>
-                  <input
-                    type="text"
-                    name="proveedorNif"
-                    value={formData.proveedorNif}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2 bg-gray-50"
-                    placeholder="NIF/CIF"
-                    readOnly
-                  />
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                    Importes
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Base Imponible*
+                      </label>
+                      <input
+                        type="number"
+                        name="baseImponible"
+                        value={formData.baseImponible}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="0,00"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        IVA (%)
+                      </label>
+                      <input
+                        type="number"
+                        name="tipoIva"
+                        value={formData.tipoIva}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="21"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Total*
+                      </label>
+                      <input
+                        type="number"
+                        name="total"
+                        value={formData.total}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-semibold"
+                        placeholder="0,00"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Estado
+                      </label>
+                      <select
+                        name="estado"
+                        value={formData.estado}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      >
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="PAGADA">Pagada</option>
+                        <option value="RECHAZADA">Rechazada</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Método de Pago
+                      </label>
+                      <select
+                        name="metodoPago"
+                        value={formData.metodoPago}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      >
+                        <option value="TRANSFERENCIA">Transferencia</option>
+                        <option value="EFECTIVO">Efectivo</option>
+                        <option value="TARJETA">Tarjeta</option>
+                        <option value="CHEQUE">Cheque</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Categoría</label>
-                  <select
-                    name="categoria"
-                    value={formData.categoria}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="SUMINISTROS">Suministros</option>
-                    <option value="SERVICIOS">Servicios</option>
-                    <option value="MANTENIMIENTO">Mantenimiento</option>
-                    <option value="OTROS">Otros</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Base Imponible*</label>
-                  <input
-                    type="number"
-                    name="baseImponible"
-                    value={formData.baseImponible}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Total*</label>
-                  <input
-                    type="number"
-                    name="total"
-                    value={formData.total}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="0,00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Estado</label>
-                  <select
-                    name="estado"
-                    value={formData.estado}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  >
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="PAGADA">Pagada</option>
-                    <option value="RECHAZADA">Rechazada</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Vencimiento</label>
-                  <input
-                    type="date"
-                    name="fechaVencimiento"
-                    value={formData.fechaVencimiento}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-1">Notas</label>
-                <textarea
-                  name="notas"
-                  value={formData.notas}
-                  onChange={handleInputChange}
-                  className="w-full border rounded px-3 py-2"
-                  rows="2"
-                  placeholder="Notas adicionales"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Notas
+                  </label>
+                  <textarea
+                    name="notas"
+                    value={formData.notas}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    rows="3"
+                    placeholder="Notas adicionales"
+                  />
+                </div>
+              </form>
+            </div>
 
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={cerrarModal}
-                  className="px-4 py-2 border rounded font-semibold hover:bg-gray-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
-                >
-                  {editandoFactura ? 'Actualizar' : 'Crear'}
-                </button>
-              </div>
-            </form>
+            <div className="px-8 py-5 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+              <button
+                type="button"
+                onClick={cerrarModal}
+                className="px-6 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                onClick={guardarFactura}
+                className="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
+              >
+                {editandoFactura ? 'Actualizar Factura' : 'Crear Factura'}
+              </button>
+            </div>
           </div>
         </div>
       )}
