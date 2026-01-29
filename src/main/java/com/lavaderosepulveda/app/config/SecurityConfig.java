@@ -28,13 +28,22 @@ public class SecurityConfig {
 
     /**
      * ✅ Configuración CORS para Railway y desarrollo local
+     * IMPORTANTE: Cuando allowCredentials es true, no se puede usar "*" en allowedOriginPatterns
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Orígenes permitidos
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        // ✅ CORREGIDO: Especificar orígenes explícitamente en lugar de usar "*"
+        // Esto es requerido cuando allowCredentials es true
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:8080",           // Desarrollo local backend
+                "http://127.0.0.1:8080",           // Desarrollo local alternativo
+                "https://lavadero-sepulveda-production.up.railway.app", // Railway production
+                "https://www.lavaderosepulveda.es", // Dominio custom
+                "http://localhost:5173",           // Frontend dev (Vite)
+                "http://localhost:3000"            // Frontend dev alternativo
+        ));
 
         // Métodos HTTP permitidos
         configuration.setAllowedMethods(Arrays.asList(
@@ -44,7 +53,7 @@ public class SecurityConfig {
         // Headers permitidos
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
-        // Permitir credenciales (cookies, auth headers)
+        // ✅ CORREGIDO: Permitir credenciales (ahora compatible con orígenes específicos)
         configuration.setAllowCredentials(true);
 
         // Cache de preflight requests (1 hora)
