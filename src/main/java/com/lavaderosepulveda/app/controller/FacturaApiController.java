@@ -78,13 +78,28 @@ public class FacturaApiController {
      * Eliminar factura
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
+            log.info("📋 Eliminando factura con ID: {}", id);
             facturaService.eliminar(id);
-            return ResponseEntity.noContent().build();
+            log.info("✅ Factura {} eliminada correctamente", id);
+            return ResponseEntity.ok(Map.of("mensaje", "Factura eliminada correctamente", "id", id));
         } catch (RuntimeException e) {
-            log.error("Error al eliminar factura: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            log.error("❌ Error al eliminar factura {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "error", e.getMessage(),
+                            "codigo", "ERROR_ELIMINAR_FACTURA",
+                            "id", id
+                    ));
+        } catch (Exception e) {
+            log.error("❌ Error inesperado al eliminar factura {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Error interno del servidor: " + e.getMessage(),
+                            "codigo", "ERROR_INTERNO",
+                            "id", id
+                    ));
         }
     }
 

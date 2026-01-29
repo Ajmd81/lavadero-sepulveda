@@ -67,25 +67,40 @@ public class FacturaService {
     @Transactional
     public void eliminar(Long id) {
         Factura factura = facturaRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Factura no encontrada"));
+            .orElseThrow(() -> new RuntimeException("Factura no encontrada con ID: " + id));
         
+        // Validar que no sea pagada
         if (factura.getEstado() == EstadoFactura.PAGADA) {
-            throw new RuntimeException("No se puede eliminar una factura pagada");
+            throw new RuntimeException("No se puede eliminar una factura pagada. Estado actual: " + factura.getEstado());
         }
         
-        // Desmarcar las citas asociadas como facturadas
-        for (LineaFactura linea : factura.getLineas()) {
-            if (linea.getCitaId() != null) {
-                citaRepository.findById(linea.getCitaId()).ifPresent(cita -> {
-                    cita.setFacturada(false);
-                    cita.setFacturaId(null);
-                    citaRepository.save(cita);
-                });
+        // Desmarcar las citas asociadas como facturadas (solo si tienen citaId)
+        if (factura.getLineas() != null && !factura.getLineas().isEmpty()) {
+            for (LineaFactura linea : factura.getLineas()) {
+                if (linea.getCitaId() != null) {
+                    try {
+                        citaRepository.findById(linea.getCitaId()).ifPresent(cita -> {
+                            cita.setFacturada(false);
+                            cita.setFacturaId(null);
+                            citaRepository.save(cita);
+                            log.debug("Cita {} marcada como no facturada", linea.getCitaId());
+                        });
+                    } catch (Exception e) {
+                        log.warn("Error al actualizar cita {}: {}", linea.getCitaId(), e.getMessage());
+                        // Continuar con la eliminación de la factura
+                    }
+                }
             }
         }
         
-        facturaRepository.deleteById(id);
-        log.info("Factura {} eliminada", factura.getNumero());
+        // Eliminar la factura
+        try {
+            facturaRepository.deleteById(id);
+            log.info("✅ Factura {} (ID: {}) eliminada correctamente", factura.getNumero(), id);
+        } catch (Exception e) {
+            log.error("❌ Error al eliminar factura: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al eliminar la factura: " + e.getMessage(), e);
+        }
     }
 
     // ========================================
