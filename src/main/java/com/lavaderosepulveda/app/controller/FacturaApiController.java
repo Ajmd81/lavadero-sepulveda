@@ -6,6 +6,7 @@ import com.lavaderosepulveda.app.model.LineaFactura;
 import com.lavaderosepulveda.app.model.enums.TipoFactura;
 import com.lavaderosepulveda.app.model.enums.EstadoFactura;
 import com.lavaderosepulveda.app.model.enums.MetodoPago;
+import com.lavaderosepulveda.app.repository.FacturaRepository;
 import com.lavaderosepulveda.app.service.FacturaService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import org.slf4j.Logger;
@@ -29,6 +30,9 @@ public class FacturaApiController {
 
     @Autowired
     private FacturaService facturaService;
+
+    @Autowired
+    private FacturaRepository facturaRepository;
 
     // ========================================
     // CRUD BÁSICO
@@ -128,9 +132,15 @@ public class FacturaApiController {
     /**
      * POST /api/facturas/manual
      * Crear factura manual sin citas asociadas
+     * Parámetros opcionales:
+     * - numeroFactura: Número de factura personalizado
+     * - fechaEmision: Fecha de emisión en formato dd/MM/yyyy
      */
     @PostMapping("/manual")
-    public ResponseEntity<FacturaDTO> crearManual(@RequestBody FacturaDTO facturaDTO) {
+    public ResponseEntity<FacturaDTO> crearManual(
+            @RequestBody FacturaDTO facturaDTO,
+            @RequestParam(value = "numeroFactura", required = false) String numeroFactura,
+            @RequestParam(value = "fechaEmision", required = false) String fechaEmision) {
         try {
             TipoFactura tipo = TipoFactura.valueOf(facturaDTO.getTipo());
 
@@ -155,7 +165,35 @@ public class FacturaApiController {
                     facturaDTO.getClienteEmail(),
                     lineas);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(convertirADTO(factura));
+            // Aplicar número de factura personalizado si se proporciona
+            if (numeroFactura != null && !numeroFactura.isEmpty()) {
+                factura.setNumero(numeroFactura);
+                log.info("✅ Número de factura personalizado aplicado: {} (será: {})", numeroFactura, factura.getNumero());
+            }
+
+            // Aplicar fecha de emisión personalizada si se proporciona
+            if (fechaEmision != null && !fechaEmision.isEmpty()) {
+                try {
+                    LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaEmision);
+                    factura.setFecha(fecha);
+                    log.info("✅ Fecha de emisión personalizada aplicada: {} -> {} (será: {})", fechaEmision, fecha, factura.getFecha());
+                } catch (Exception e) {
+                    log.warn("❌ Formato de fecha inválido '{}', se usará la fecha actual: {}", fechaEmision, e.getMessage());
+                }
+            }
+
+            // Guardar los cambios con parámetros personalizados
+            factura = facturaRepository.save(factura);
+            
+            // Log de verificación POST-SAVE
+            log.info("📋 Factura guardada: numero='{}', fecha='{}', id={}", 
+                    factura.getNumero(), factura.getFecha(), factura.getId());
+
+            FacturaDTO resultado = convertirADTO(factura);
+            log.info("📤 DTO retornado: numero='{}', fecha='{}', numeroFactura (esperado: '{}')", 
+                    resultado.getNumero(), resultado.getFecha(), numeroFactura);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
         } catch (Exception e) {
             log.error("Error al crear factura manual: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -312,7 +350,9 @@ public class FacturaApiController {
     private FacturaDTO convertirADTO(Factura factura) {
         FacturaDTO dto = new FacturaDTO();
         dto.setId(factura.getId());
+        // ✅ CORREGIDO: Usar 'numero' para compatibilidad con cliente FacturaEmitidaDTO que espera 'numeroFactura' (mapeado via @JsonAlias)
         dto.setNumero(factura.getNumero());
+        // ✅ CORREGIDO: Usar 'fecha' para compatibilidad con cliente FacturaEmitidaDTO que espera 'fechaEmision' (mapeado via @JsonAlias)
         dto.setFecha(DateTimeFormatUtils.formatearFechaCorta(factura.getFecha()));
         dto.setTipo(factura.getTipo().name());
         dto.setEstado(factura.getEstado().name());

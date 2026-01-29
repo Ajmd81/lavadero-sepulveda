@@ -1,5 +1,6 @@
 package com.lavaderosepulveda.app.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.lavaderosepulveda.app.model.enums.EstadoFactura;
 import com.lavaderosepulveda.app.model.enums.MetodoPago;
 import com.lavaderosepulveda.app.model.enums.TipoFactura;
@@ -10,18 +11,30 @@ import java.util.List;
 public class FacturaDTO {
 
     private Long id;
+    
+    @JsonAlias({"numeroFactura", "numero_factura"})
     private String numero;
+    
+    @JsonAlias({"fechaEmision", "fecha_emision"})
     private String fecha;
+    
     private String tipo;
     private String estado;
+    @JsonAlias({"metodo_pago", "metodoPago"})
     private String metodoPago;
     
     // Datos del cliente
+    @JsonAlias({"cliente_id"})
     private Long clienteId;
+    @JsonAlias({"cliente_nombre", "nombreCliente"})
     private String clienteNombre;
+    @JsonAlias({"cliente_nif", "nifCliente"})
     private String clienteNif;
+    @JsonAlias({"cliente_direccion", "direccionCliente"})
     private String clienteDireccion;
+    @JsonAlias({"cliente_email", "emailCliente"})
     private String clienteEmail;
+    @JsonAlias({"cliente_telefono", "telefonoCliente"})
     private String clienteTelefono;
     
     // Líneas de la factura

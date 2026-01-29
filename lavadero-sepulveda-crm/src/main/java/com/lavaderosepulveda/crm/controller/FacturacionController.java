@@ -35,6 +35,7 @@ import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -465,7 +466,10 @@ public class FacturacionController {
         VBox contenido = new VBox(15);
         contenido.setPadding(new Insets(20));
 
-        // === TIPO DE FACTURA ===
+        // === TIPO DE FACTURA, NÚMERO Y FECHA ===
+        VBox boxEncabezado = new VBox(10);
+        boxEncabezado.setStyle("-fx-border-color: #e0e0e0; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;");
+        
         HBox boxTipo = new HBox(10);
         boxTipo.setAlignment(Pos.CENTER_LEFT);
         Label lblTipo = new Label("Tipo de Factura:");
@@ -474,7 +478,33 @@ public class FacturacionController {
         cmbTipo.setItems(FXCollections.observableArrayList("SIMPLIFICADA", "COMPLETA"));
         cmbTipo.setValue("SIMPLIFICADA");
         cmbTipo.setPrefWidth(200);
-        boxTipo.getChildren().addAll(lblTipo, cmbTipo);
+        
+        Label lblNumeroFactura = new Label("Número Factura:");
+        lblNumeroFactura.setStyle("-fx-font-weight: bold;");
+        TextField txtNumeroFactura = new TextField();
+        txtNumeroFactura.setPromptText("Dejar vacío para generar automáticamente");
+        txtNumeroFactura.setPrefWidth(200);
+        
+        Region spacer1 = new Region();
+        HBox.setHgrow(spacer1, Priority.ALWAYS);
+        
+        boxTipo.getChildren().addAll(lblTipo, cmbTipo, spacer1, lblNumeroFactura, txtNumeroFactura);
+        
+        HBox boxFecha = new HBox(10);
+        boxFecha.setAlignment(Pos.CENTER_LEFT);
+        Label lblFecha = new Label("Fecha Factura:");
+        lblFecha.setStyle("-fx-font-weight: bold;");
+        DatePicker dpFechaFactura = new DatePicker();
+        dpFechaFactura.setValue(LocalDate.now());
+        dpFechaFactura.setPrefWidth(200);
+        
+        Label lblVacio = new Label("");
+        Region spacer2 = new Region();
+        HBox.setHgrow(spacer2, Priority.ALWAYS);
+        
+        boxFecha.getChildren().addAll(lblFecha, dpFechaFactura, spacer2, lblVacio);
+        
+        boxEncabezado.getChildren().addAll(boxTipo, boxFecha);
 
         // === DATOS DEL CLIENTE ===
         TitledPane panelCliente = new TitledPane();
@@ -489,16 +519,47 @@ public class FacturacionController {
         boxSelectorCliente.setAlignment(Pos.CENTER_LEFT);
         Label lblSeleccionar = new Label("Cliente:");
         ComboBox<ClienteDTO> cmbCliente = new ComboBox<>();
-        cmbCliente.setPromptText("Seleccionar cliente existente...");
+        cmbCliente.setPromptText("Seleccionar o escribir nombre de cliente...");
         cmbCliente.setPrefWidth(350);
+        cmbCliente.setEditable(true);
 
         // Cargar clientes
+        List<ClienteDTO> listaClientesOriginal = new ArrayList<>();
         try {
-            List<ClienteDTO> clientes = apiService.obtenerClientes();
-            cmbCliente.setItems(FXCollections.observableArrayList(clientes));
+            listaClientesOriginal = apiService.obtenerClientes();
+            cmbCliente.setItems(FXCollections.observableArrayList(listaClientesOriginal));
         } catch (Exception ex) {
             log.error("Error al cargar clientes", ex);
         }
+        
+        // Filtrado mientras se escribe
+        final List<ClienteDTO> listaClientesFinal = listaClientesOriginal;
+        final boolean[] isUpdating = {false}; // Flag para prevenir ciclos infinitos
+        
+        cmbCliente.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
+            if (isUpdating[0]) return; // Prevenir recursión
+            
+            try {
+                isUpdating[0] = true;
+                
+                if (newVal != null && !newVal.isEmpty()) {
+                    String search = newVal.toLowerCase();
+                    List<ClienteDTO> filtrados = listaClientesFinal.stream()
+                            .filter(c -> c.getNombreCompleto().toLowerCase().contains(search))
+                            .collect(java.util.stream.Collectors.toList());
+                    
+                    // Solo actualizar si hay resultados
+                    if (!filtrados.isEmpty()) {
+                        cmbCliente.setItems(FXCollections.observableArrayList(filtrados));
+                        cmbCliente.show();
+                    }
+                } else {
+                    cmbCliente.setItems(FXCollections.observableArrayList(listaClientesFinal));
+                }
+            } finally {
+                isUpdating[0] = false;
+            }
+        });
 
         // Converter para mostrar nombre del cliente
         cmbCliente.setConverter(new javafx.util.StringConverter<ClienteDTO>() {
@@ -759,7 +820,7 @@ public class FacturacionController {
         });
 
         // Añadir todo al contenido
-        contenido.getChildren().addAll(boxTipo, panelCliente, panelLineas, panelTotales, boxPago);
+        contenido.getChildren().addAll(boxEncabezado, panelCliente, panelLineas, panelTotales, boxPago);
 
         ScrollPane scroll = new ScrollPane(contenido);
         scroll.setFitToWidth(true);
@@ -783,6 +844,14 @@ public class FacturacionController {
                 factura.setClienteNif(txtNif.getText().trim());
                 factura.setClienteDireccion(txtDireccion.getText().trim());
                 factura.setMetodoPago(cmbMetodoPago.getValue());
+                // Incluir número de factura si se especifica
+                if (!txtNumeroFactura.getText().trim().isEmpty()) {
+                    factura.setNumeroFactura(txtNumeroFactura.getText().trim());
+                }
+                // Incluir fecha de factura
+                if (dpFechaFactura.getValue() != null) {
+                    factura.setFechaEmision(dpFechaFactura.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                }
 
                 return factura;
             }
@@ -797,6 +866,14 @@ public class FacturacionController {
                 StringBuilder jsonBuilder = new StringBuilder();
                 jsonBuilder.append("{");
                 jsonBuilder.append("\"tipo\":\"").append(facturaDTO.getTipoFactura()).append("\",");
+                // Incluir número de factura si está disponible
+                if (facturaDTO.getNumeroFactura() != null && !facturaDTO.getNumeroFactura().isEmpty()) {
+                    jsonBuilder.append("\"numeroFactura\":\"").append(escapeJson(facturaDTO.getNumeroFactura())).append("\",");
+                }
+                // Incluir fecha de factura si está disponible
+                if (facturaDTO.getFechaEmision() != null && !facturaDTO.getFechaEmision().isEmpty()) {
+                    jsonBuilder.append("\"fechaEmision\":\"").append(escapeJson(facturaDTO.getFechaEmision())).append("\",");
+                }
                 jsonBuilder.append("\"clienteNombre\":\"").append(escapeJson(facturaDTO.getClienteNombre()))
                         .append("\",");
                 jsonBuilder.append("\"clienteNif\":\"")
@@ -824,13 +901,15 @@ public class FacturacionController {
                 String json = jsonBuilder.toString();
                 log.info("Enviando factura: {}", json);
 
-                // Llamar a la API
-                String response = enviarFacturaManual(json);
-
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                        false);
-                FacturaEmitidaDTO nuevaFactura = mapper.readValue(response, FacturaEmitidaDTO.class);
+                // Llamar a la API usando el servicio, pasando número y fecha como parámetros
+                String numeroFactura = !txtNumeroFactura.getText().trim().isEmpty() 
+                        ? txtNumeroFactura.getText().trim() 
+                        : null;
+                String fechaEmision = dpFechaFactura.getValue() != null 
+                        ? dpFechaFactura.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                        : null;
+                        
+                FacturaEmitidaDTO nuevaFactura = apiService.crearFacturaEmitidaConParametros(json, numeroFactura, fechaEmision);
 
                 // Si no es pendiente, marcar como pagada
                 String metodoPago = facturaDTO.getMetodoPago();
@@ -857,7 +936,11 @@ public class FacturacionController {
         dialog.setHeaderText("Factura " + factura.getNumeroFactura());
         dialog.initOwner(getOwnerWindow());
         dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        
+        // Botones de acción
+        ButtonType btnDescargar = new ButtonType("📥 Descargar PDF", ButtonBar.ButtonData.LEFT);
+        ButtonType btnEliminar = new ButtonType("🗑 Eliminar", ButtonBar.ButtonData.LEFT);
+        dialog.getDialogPane().getButtonTypes().addAll(btnDescargar, btnEliminar, ButtonType.CLOSE);
 
         // Contenedor principal
         VBox contenido = new VBox(15);
@@ -998,6 +1081,16 @@ public class FacturacionController {
         dialog.getDialogPane().setContent(scroll);
         dialog.getDialogPane().setPrefSize(550, 550);
 
+        // Manejar click en botones
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == btnDescargar) {
+                descargarPdfEmitida(factura);
+            } else if (dialogButton == btnEliminar) {
+                eliminarFacturaEmitida(factura);
+            }
+            return null;
+        });
+
         dialog.showAndWait();
     }
 
@@ -1039,6 +1132,32 @@ public class FacturacionController {
                 mostrarError("Error", e.getMessage());
             }
         });
+    }
+
+    private void eliminarFacturaEmitida(FacturaEmitidaDTO factura) {
+        // Mostrar diálogo de confirmación
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacion.setTitle("Confirmar eliminación");
+        confirmacion.setHeaderText("¿Desea eliminar la factura?");
+        confirmacion.setContentText("Factura: " + factura.getNumeroFactura() + "\n" +
+                "Cliente: " + (factura.getClienteNombre() != null ? factura.getClienteNombre() : "Mostrador") + "\n" +
+                "Total: " + formatearMoneda(factura.getTotal()) + "\n\n" +
+                "Esta acción no se puede deshacer.");
+        confirmacion.initOwner(getOwnerWindow());
+        confirmacion.initModality(Modality.APPLICATION_MODAL);
+
+        Optional<ButtonType> resultado = confirmacion.showAndWait();
+        if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
+            try {
+                apiService.eliminarFacturaEmitida(factura.getId());
+                cargarFacturasEmitidas();
+                mostrarInfo("Factura Eliminada", 
+                        "La factura " + factura.getNumeroFactura() + " se ha eliminado correctamente");
+            } catch (Exception e) {
+                log.error("Error al eliminar factura", e);
+                mostrarError("Error", "No se pudo eliminar la factura: " + e.getMessage());
+            }
+        }
     }
 
     // === ACCIONES FACTURAS RECIBIDAS ===
@@ -1360,44 +1479,6 @@ public class FacturacionController {
     }
 
     // === MÉTODOS AUXILIARES ===
-
-    private String enviarFacturaManual(String json) throws IOException {
-        java.net.URL url = new java.net.URL("https://lavadero-sepulveda-production.up.railway.app/api/facturas/manual");
-        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setConnectTimeout(15000);
-        conn.setReadTimeout(15000);
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Accept", "application/json");
-        conn.setDoOutput(true);
-
-        try (java.io.OutputStream os = conn.getOutputStream()) {
-            os.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        }
-
-        int responseCode = conn.getResponseCode();
-        java.io.BufferedReader reader;
-        if (responseCode >= 400) {
-            reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(conn.getErrorStream(), java.nio.charset.StandardCharsets.UTF_8));
-        } else {
-            reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
-        }
-
-        StringBuilder response = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            response.append(line);
-        }
-        reader.close();
-
-        if (responseCode >= 400) {
-            throw new IOException("Error en la API (" + responseCode + "): " + response);
-        }
-
-        return response.toString();
-    }
 
     private String escapeJson(String text) {
         if (text == null)

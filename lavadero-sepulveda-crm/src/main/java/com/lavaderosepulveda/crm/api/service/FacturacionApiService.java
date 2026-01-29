@@ -269,6 +269,32 @@ public class FacturacionApiService {
                 });
         }
 
+        public void eliminarFacturaEmitida(Long id) throws IOException {
+                doDelete("/api/facturas/" + id);
+        }
+
+        public FacturaEmitidaDTO crearFacturaEmitida(String json) throws IOException {
+                String response = doPost("/api/facturas/manual", json);
+                return objectMapper.readValue(response, FacturaEmitidaDTO.class);
+        }
+
+        public FacturaEmitidaDTO crearFacturaEmitidaConParametros(String json, String numeroFactura, String fechaEmision) throws IOException {
+                StringBuilder urlBuilder = new StringBuilder("/api/facturas/manual");
+                boolean primeraParam = true;
+                
+                if (numeroFactura != null && !numeroFactura.isEmpty()) {
+                        urlBuilder.append("?numeroFactura=").append(encode(numeroFactura));
+                        primeraParam = false;
+                }
+                
+                if (fechaEmision != null && !fechaEmision.isEmpty()) {
+                        urlBuilder.append(primeraParam ? "?" : "&").append("fechaEmision=").append(encode(fechaEmision));
+                }
+                
+                String response = doPost(urlBuilder.toString(), json);
+                return objectMapper.readValue(response, FacturaEmitidaDTO.class);
+        }
+
         // ==================== FACTURAS RECIBIDAS ====================
 
         public List<FacturaRecibidaDTO> obtenerFacturasRecibidas() throws IOException {
