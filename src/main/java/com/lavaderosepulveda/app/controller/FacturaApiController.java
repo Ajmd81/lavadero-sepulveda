@@ -108,6 +108,50 @@ public class FacturaApiController {
     // ========================================
 
     /**
+     * POST /api/facturas
+     * Crear factura manual genérica (redirección al método manual)
+     * Permite crear facturas sin especificar la ruta /manual
+     */
+    @PostMapping
+    public ResponseEntity<FacturaDTO> crear(@RequestBody FacturaDTO facturaDTO) {
+        try {
+            log.info("📋 Creando factura desde POST /api/facturas");
+            TipoFactura tipo = TipoFactura.valueOf(facturaDTO.getTipo());
+
+            List<LineaFactura> lineas = new ArrayList<>();
+            if (facturaDTO.getLineas() != null) {
+                for (FacturaDTO.LineaFacturaDTO lineaDTO : facturaDTO.getLineas()) {
+                    LineaFactura linea = new LineaFactura();
+                    linea.setConcepto(lineaDTO.getConcepto());
+                    linea.setCantidad(lineaDTO.getCantidad() != null ? lineaDTO.getCantidad() : 1);
+                    linea.setPrecioUnitario(lineaDTO.getPrecioUnitario());
+                    linea.calcularSubtotal();
+                    lineas.add(linea);
+                }
+            }
+
+            Factura factura = facturaService.crearFacturaManual(
+                    tipo,
+                    facturaDTO.getClienteNombre(),
+                    facturaDTO.getClienteNif(),
+                    facturaDTO.getClienteDireccion(),
+                    facturaDTO.getClienteTelefono(),
+                    facturaDTO.getClienteEmail(),
+                    lineas);
+
+            // Guardar la factura
+            factura = facturaRepository.save(factura);
+            log.info("✅ Factura creada: ID={}, Número={}, Fecha={}", 
+                    factura.getId(), factura.getNumero(), factura.getFecha());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(convertirADTO(factura));
+        } catch (Exception e) {
+            log.error("❌ Error al crear factura: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    /**
      * POST /api/facturas/simplificada/cita/{citaId}
      * Crear factura simplificada desde una cita
      */
