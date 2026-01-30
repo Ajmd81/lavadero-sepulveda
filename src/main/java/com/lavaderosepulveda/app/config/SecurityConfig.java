@@ -41,6 +41,7 @@ public class SecurityConfig {
                 "http://127.0.0.1:8080",           // Desarrollo local alternativo
                 "https://lavadero-sepulveda-production.up.railway.app", // Railway production
                 "https://www.lavaderosepulveda.es", // Dominio custom
+                "https://lavadero-sepulveda.vercel.app", // Frontend Vercel
                 "http://localhost:5173",           // Frontend dev (Vite)
                 "http://localhost:3000"            // Frontend dev alternativo
         ));
