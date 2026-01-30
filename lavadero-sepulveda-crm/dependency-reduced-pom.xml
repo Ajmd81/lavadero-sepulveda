@@ -43,6 +43,23 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-jpackage-plugin</artifactId>
+        <version>0.1.6</version>
+        <configuration>
+          <mainClass>com.lavaderosepulveda.crm.LavaderoSepulvedaCRMApplication</mainClass>
+          <appName>Lavadero Sepulveda CRM</appName>
+          <vendor>Lavadero Sepulveda</vendor>
+          <appVersion>1.0.0</appVersion>
+          <icon>src/main/resources/images/logo_crm.png</icon>
+          <type>exe</type>
+          <java-options>
+            <option>-Xmx2048m</option>
+          </java-options>
+          <win-menu>true</win-menu>
+          <win-menu-group>Lavadero Sepulveda</win-menu-group>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <dependencies>

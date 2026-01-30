@@ -1,0 +1,72 @@
+# 🚀 INSTRUCCIONES PARA EJECUTAR LA APLICACIÓN
+
+## PASO 1: Descargar JavaFX SDK (Hacer UNA SOLA VEZ)
+
+1. **Abre tu navegador** y ve a:
+   ```
+   https://gluonhq.com/products/javafx/
+   ```
+
+2. **Descarga la versión que coincida con tu Java:**
+   - Si tienes Java 25: Descarga JavaFX 25 para macOS
+   - Si tienes Java 21: Descarga JavaFX 21.0.1 para macOS
+
+   Puedes verificar tu versión de Java con:
+   ```bash
+   java -version
+   ```
+
+3. **Extrae el ZIP en tu carpeta Home:**
+   - Para Java 25: `~/javafx-sdk-25`
+   - Para Java 21: `~/javafx-sdk-21.0.1`
+   
+   Verifica que está bien:
+   ```bash
+   # Para Java 25
+   ls ~/javafx-sdk-25/lib/javafx-controls-25.jar
+   
+   # Para Java 21
+   ls ~/javafx-sdk-21.0.1/lib/javafx-controls-21.0.1.jar
+   ```
+
+---
+
+## PASO 2: Ejecutar la Aplicación
+
+Abre Terminal y copia-pega esto:
+
+```bash
+cd ~/Desktop/LavaderoCompleto/lavadero-sepulveda/lavadero-sepulveda-crm
+./setup-complete.sh
+```
+
+**La aplicación debería abrirse automáticamente en unos segundos.**
+
+---
+
+## Si algo falla:
+
+### ❌ "No se puede abrir setup-complete.sh"
+```bash
+chmod +x ~/Desktop/LavaderoCompleto/lavadero-sepulveda/lavadero-sepulveda-crm/setup-complete.sh
+```
+
+Luego intenta de nuevo.
+
+### ❌ "Module javafx.controls not found"
+Verifica que el JavaFX SDK está en el lugar correcto con la versión que corresponde a tu Java.
+
+### ❌ "java: command not found"
+Instala Java (ya tienes Java 25, así que este error no debería ocurrir).
+
+---
+
+## ✅ Listo!
+
+Una vez descargado JavaFX SDK, solo necesitas ejecutar:
+```bash
+./setup-complete.sh
+```
+
+Cada vez que quieras abrir la app.
+

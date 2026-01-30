@@ -1,0 +1,8 @@
+#!/bin/bash
+# Wrapper para ejecutar Lavadero Sepulveda CRM
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+JAR_PATH="$SCRIPT_DIR/target/lavadero-sepulveda-crm-1.0.0.jar"
+
+# Ejecutar con opciones para macOS
+exec java -XstartOnFirstThread -Xmx2048m -jar "$JAR_PATH" "$@"

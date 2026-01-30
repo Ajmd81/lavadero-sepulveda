@@ -107,7 +107,32 @@ public class FacturacionApiService {
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode >= 400) {
-                        throw new IOException("Error en la API: " + responseCode);
+                        String errorBody = "";
+                        try {
+                                BufferedReader reader = new BufferedReader(
+                                        new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
+                                StringBuilder response = new StringBuilder();
+                                String line;
+                                while ((line = reader.readLine()) != null) {
+                                        response.append(line);
+                                }
+                                reader.close();
+                                errorBody = response.toString();
+                                
+                                // Intentar parsear el JSON para extraer el mensaje
+                                try {
+                                        Map<String, Object> errorJson = objectMapper.readValue(errorBody, Map.class);
+                                        String mensaje = (String) errorJson.get("error");
+                                        if (mensaje != null && !mensaje.isEmpty()) {
+                                                errorBody = mensaje;
+                                        }
+                                } catch (Exception jsonException) {
+                                        // Si no es JSON, usar el body completo
+                                }
+                        } catch (Exception e) {
+                                errorBody = "No se pudo leer el detalle del error";
+                        }
+                        throw new IOException("Error en la API: " + errorBody);
                 }
         }
 
