@@ -69,11 +69,6 @@ public class FacturaService {
         Factura factura = facturaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Factura no encontrada con ID: " + id));
         
-        // Validar que no sea pagada
-        if (factura.getEstado() == EstadoFactura.PAGADA) {
-            throw new RuntimeException("No se puede eliminar una factura pagada. Estado actual: " + factura.getEstado());
-        }
-        
         // Desmarcar las citas asociadas como facturadas (solo si tienen citaId)
         if (factura.getLineas() != null && !factura.getLineas().isEmpty()) {
             for (LineaFactura linea : factura.getLineas()) {
