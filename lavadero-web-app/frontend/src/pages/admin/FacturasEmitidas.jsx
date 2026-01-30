@@ -485,6 +485,7 @@ const FacturasEmitidas = () => {
                 <th className="px-4 py-2 text-left font-semibold">Nº Factura</th>
                 <th className="px-4 py-2 text-left font-semibold">Fecha</th>
                 <th className="px-4 py-2 text-left font-semibold">Cliente</th>
+                <th className="px-4 py-2 text-left font-semibold">Concepto</th>
                 <th className="px-4 py-2 text-left font-semibold">Tipo</th>
                 <th className="px-4 py-2 text-right font-semibold">Total</th>
                 <th className="px-4 py-2 text-center font-semibold">Estado</th>
@@ -497,6 +498,11 @@ const FacturasEmitidas = () => {
                   <td className="px-4 py-3 font-semibold text-blue-600">{factura.numero}</td>
                   <td className="px-4 py-3">{formatearFecha(factura.fecha)}</td>
                   <td className="px-4 py-3">{factura.clienteNombre}</td>
+                  <td className="px-4 py-3 max-w-xs truncate text-sm text-gray-600">
+                    {factura.lineas && factura.lineas.length > 0 
+                      ? factura.lineas.map(l => l.concepto).join(', ')
+                      : '-'}
+                  </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 bg-gray-200 rounded text-xs font-semibold">
                       {factura.tipo}
