@@ -7,6 +7,8 @@ const facturaService = {
   create: (facturaData) => api.post('/facturas', facturaData),
   createManual: (facturaData, params) => 
     api.post('/facturas/manual', facturaData, { params }),
+  update: (id, facturaData) => 
+    api.put(`/facturas/${id}`, facturaData),
   delete: (id) => api.delete(`/facturas/${id}`),
 
   // Búsquedas

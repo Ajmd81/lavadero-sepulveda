@@ -293,9 +293,19 @@ const FacturasEmitidas = () => {
       setLoading(true);
       
       if (editandoFactura) {
-        // No se puede editar facturas ya creadas, mostrar mensaje
-        alert('⚠️ No se pueden editar facturas ya creadas. Si necesitas cambiarla, elimínala y crea una nueva.');
-        return;
+        // Actualizar factura existente
+        const params = {};
+        
+        // Convertir fecha de yyyy-MM-dd a dd/MM/yyyy si es necesario
+        if (formData.fecha && formData.fecha.includes('-')) {
+          const [year, month, day] = formData.fecha.split('-');
+          params.fechaEmision = `${day}/${month}/${year}`;
+          console.log(`📅 Fecha convertida: ${formData.fecha} → ${params.fechaEmision}`);
+        }
+
+        console.log('📤 Actualizando factura:', { id: editandoFactura, data: formData });
+        await facturaService.update(editandoFactura, formData);
+        alert('✅ Factura actualizada correctamente');
       } else {
         // Crear nueva factura con número y fecha personalizados
         const params = {};

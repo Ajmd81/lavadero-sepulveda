@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -268,6 +269,82 @@ public class FacturaApiController {
             return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
         } catch (Exception e) {
             log.error("Error al crear factura manual: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * PUT /api/facturas/{id} - Actualizar una factura existente
+     * Actualiza los datos básicos y las líneas de la factura
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<FacturaDTO> actualizar(
+            @PathVariable Long id,
+            @RequestBody FacturaDTO facturaDTO) {
+        try {
+            Factura facturaExistente = facturaRepository.findById(id)
+                    .orElseThrow(() -> new Exception("Factura no encontrada"));
+
+            // Actualizar datos básicos
+            if (facturaDTO.getClienteNombre() != null) {
+                facturaExistente.setClienteNombre(facturaDTO.getClienteNombre());
+            }
+            if (facturaDTO.getClienteNif() != null) {
+                facturaExistente.setClienteNif(facturaDTO.getClienteNif());
+            }
+            if (facturaDTO.getClienteDireccion() != null) {
+                facturaExistente.setClienteDireccion(facturaDTO.getClienteDireccion());
+            }
+            if (facturaDTO.getClienteEmail() != null) {
+                facturaExistente.setClienteEmail(facturaDTO.getClienteEmail());
+            }
+            if (facturaDTO.getClienteTelefono() != null) {
+                facturaExistente.setClienteTelefono(facturaDTO.getClienteTelefono());
+            }
+
+            // Actualizar líneas
+            if (facturaDTO.getLineas() != null) {
+                // Eliminar líneas existentes
+                facturaExistente.getLineas().clear();
+
+                // Agregar nuevas líneas
+                for (FacturaDTO.LineaFacturaDTO lineaDTO : facturaDTO.getLineas()) {
+                    LineaFactura linea = new LineaFactura();
+                    linea.setConcepto(lineaDTO.getConcepto());
+                    linea.setCantidad(lineaDTO.getCantidad() != null ? lineaDTO.getCantidad() : 1);
+                    linea.setPrecioUnitario(lineaDTO.getPrecioUnitario());
+                    linea.calcularSubtotal();
+                    linea.setFactura(facturaExistente);
+                    facturaExistente.getLineas().add(linea);
+                }
+            }
+
+            // Recalcular totales
+            BigDecimal baseImponible = facturaExistente.getLineas().stream()
+                    .map(LineaFactura::getSubtotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            facturaExistente.setBaseImponible(baseImponible);
+            
+            // Aplicar IVA si se proporciona
+            if (facturaDTO.getTipoIva() != null) {
+                facturaExistente.setTipoIva(facturaDTO.getTipoIva());
+                BigDecimal iva = baseImponible.multiply(facturaDTO.getTipoIva()).divide(new BigDecimal(100));
+                facturaExistente.setImporteIva(iva);
+                facturaExistente.setTotal(baseImponible.add(iva));
+            } else {
+                facturaExistente.setTotal(baseImponible);
+            }
+
+            facturaExistente = facturaRepository.save(facturaExistente);
+            
+            log.info("✅ Factura actualizada: id='{}', numero='{}', cliente='{}'",
+                    facturaExistente.getId(), facturaExistente.getNumero(), facturaExistente.getClienteNombre());
+
+            FacturaDTO resultado = convertirADTO(facturaExistente);
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            log.error("Error al actualizar factura: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
