@@ -40,11 +40,24 @@ public class FacturaApiController {
 
     /**
      * GET /api/facturas
-     * Obtener todas las facturas
+     * Obtener todas las facturas (ordenadas por número por defecto)
      */
     @GetMapping
-    public ResponseEntity<List<FacturaDTO>> listarFacturas() {
+    public ResponseEntity<List<FacturaDTO>> listarFacturas(
+            @RequestParam(value = "ordenar", required = false, defaultValue = "numero") String ordenar) {
         List<Factura> facturas = facturaService.obtenerTodas();
+        
+        // Ordenar según parámetro
+        if ("numero".equalsIgnoreCase(ordenar)) {
+            facturas.sort((a, b) -> {
+                String numA = a.getNumero() != null ? a.getNumero() : "";
+                String numB = b.getNumero() != null ? b.getNumero() : "";
+                return numB.compareTo(numA); // Orden descendente (más nuevo primero)
+            });
+        } else if ("fecha".equalsIgnoreCase(ordenar)) {
+            facturas.sort((a, b) -> b.getFecha().compareTo(a.getFecha())); // Más reciente primero
+        }
+        
         List<FacturaDTO> facturasDTO = facturas.stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
