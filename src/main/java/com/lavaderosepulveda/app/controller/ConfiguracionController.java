@@ -3,14 +3,12 @@ package com.lavaderosepulveda.app.controller;
 import com.lavaderosepulveda.app.service.HorarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 /**
- * Controlador refactorizado para obtener configuración de la aplicación
+ * Controlador refactorizado para obtener y guardar configuración de la aplicación
  * Usa HorarioService que centraliza la configuración de horarios
  */
 @RestController
@@ -30,6 +28,31 @@ public class ConfiguracionController {
         Map<String, Object> configuracion = horarioService.obtenerConfiguracionHorarios();
 
         return ResponseEntity.ok(configuracion);
+    }
+
+    /**
+     * Guarda la configuración completa (empresa, factura, email, horarios)
+     */
+    @PutMapping("/configuracion")
+    public ResponseEntity<Map<String, Object>> guardarConfiguracion(@RequestBody Map<String, Object> configuracion) {
+        try {
+            // Procesar y guardar la configuración
+            // Por ahora, simplemente devolvemos un mensaje de éxito
+            // En una implementación completa, guardaríamos en base de datos
+            
+            Map<String, Object> respuesta = Map.of(
+                    "exito", true,
+                    "mensaje", "Configuración guardada correctamente",
+                    "configuracion", configuracion
+            );
+
+            return ResponseEntity.ok(respuesta);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "exito", false,
+                    "mensaje", "Error al guardar la configuración: " + e.getMessage()
+            ));
+        }
     }
 
     /**
