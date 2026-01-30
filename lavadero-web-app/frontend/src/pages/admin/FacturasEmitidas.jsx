@@ -50,27 +50,38 @@ const FacturasEmitidas = () => {
       const response = await facturaService.getAll();
       let facturasData = response.data || [];
 
-      facturasData = facturasData.sort((a, b) => {
-        let fechaA = a.fecha;
-        let fechaB = b.fecha;
+      // Validar que sea un array
+      if (!Array.isArray(facturasData)) {
+        console.warn('⚠️ response.data no es un array:', typeof facturasData, facturasData);
+        facturasData = [];
+      }
 
-        if (fechaA && fechaA.includes('/')) {
-          const [d, m, y] = fechaA.split('/');
-          fechaA = `${y}-${m}-${d}`;
-        }
-        if (fechaB && fechaB.includes('/')) {
-          const [d, m, y] = fechaB.split('/');
-          fechaB = `${y}-${m}-${d}`;
-        }
+      // Las facturas ya vienen ordenadas por número del backend
+      // Solo ordenamos por fecha si es necesario
+      if (facturasData.length > 0 && facturasData[0].fecha) {
+        facturasData = facturasData.sort((a, b) => {
+          let fechaA = a.fecha;
+          let fechaB = b.fecha;
 
-        return fechaB.localeCompare(fechaA);
-      });
+          if (fechaA && fechaA.includes('/')) {
+            const [d, m, y] = fechaA.split('/');
+            fechaA = `${y}-${m}-${d}`;
+          }
+          if (fechaB && fechaB.includes('/')) {
+            const [d, m, y] = fechaB.split('/');
+            fechaB = `${y}-${m}-${d}`;
+          }
+
+          return fechaB.localeCompare(fechaA);
+        });
+      }
 
       setFacturas(facturasData);
       setError(null);
     } catch (err) {
       setError('Error al cargar las facturas: ' + err.message);
-      console.error(err);
+      console.error('❌ Error cargar facturas:', err);
+      setFacturas([]);
     } finally {
       setLoading(false);
     }
@@ -80,9 +91,18 @@ const FacturasEmitidas = () => {
   const cargarClientes = async () => {
     try {
       const response = await clienteService.getAll();
-      setClientes(response.data || []);
+      let clientesData = response.data || [];
+      
+      // Validar que sea un array
+      if (!Array.isArray(clientesData)) {
+        console.warn('⚠️ response.data no es un array:', typeof clientesData);
+        clientesData = [];
+      }
+      
+      setClientes(clientesData);
     } catch (err) {
-      console.error('Error al cargar clientes:', err);
+      console.error('❌ Error al cargar clientes:', err);
+      setClientes([]);
     }
   };
 
