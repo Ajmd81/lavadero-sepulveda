@@ -253,12 +253,54 @@ Tu **lavadero-web-app** (backend) es **FUNCIONAL Y ESTABLE**. Los cambios recien
 ✅ CORS centralizado  
 ✅ Compatibilidad de campos mejorada  
 
-**Recomendación:** Mantener el backend actual y agregar gradualmente endpoints de Contabilidad y Dashboard según sea necesario.
+**Estado Actual:**
+- **Backend (src/):** ✅ 100% Funcional y Compilable
+- **CRM (lavadero-sepulveda-crm/):** ✅ Consumiendo correctamente la API del backend
+- **Frontend Web (lavadero-web-app/frontend/):** ⚠️ Existe una aplicación React lista para usar
+
+**Recomendación:** El backend está listo para producción. Si necesitas una interfaz web moderna (web app), ya existe una estructura de React en `lavadero-web-app/frontend/` que puedes mejorar.
+
+---
+
+## 🚀 Estructura Actual del Proyecto
+
+```
+lavadero-sepulveda/
+├── src/                              # Backend REST API (Spring Boot)
+│   ├── main/java/com/lavaderosepulveda/app/
+│   │   ├── controller/               # Controladores REST
+│   │   ├── service/                  # Lógica de negocio
+│   │   ├── repository/               # Acceso a datos
+│   │   ├── model/                    # Entidades JPA
+│   │   └── config/                   # Configuración de Spring
+│   └── resources/                    # Archivos de configuración
+│
+├── lavadero-sepulveda-crm/          # Cliente JavaFX (Escritorio)
+│   └── src/main/java/               # Código del CRM
+│
+└── lavadero-web-app/                # Frontend Web (React)
+    └── frontend/                     # Aplicación React + Vite
+        ├── src/
+        │   ├── pages/               # Páginas (Dashboard, Citas, etc)
+        │   ├── components/          # Componentes React
+        │   ├── services/            # Llamadas a API
+        │   └── context/             # Estado global
+        └── package.json             # Dependencias NPM
+```
+
+---
+
+## 📞 Próximos Pasos
+
+1. **Backend:** Ya está listo. Desplegar en Railway y usar.
+2. **CRM:** Ya funciona con el backend. Usar para administración.
+3. **Web App:** Mejorar el frontend React si quieres una interfaz web moderna.
 
 ---
 
 ## 📞 Contacto & Soporte
 
-Si necesitas ayuda para implementar alguna de las mejoras sugeridas, contáctame.
+Si necesitas ayuda para mejorar el frontend React o desplegar la web app, contáctame.
 
 **Generado:** 30 de enero de 2026
+**Estado:** ✅ Backend Estable y Funcional
