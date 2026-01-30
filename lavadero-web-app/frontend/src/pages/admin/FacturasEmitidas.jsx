@@ -39,8 +39,19 @@ const FacturasEmitidas = () => {
   });
 
   useEffect(() => {
-    cargarFacturas();
-    cargarClientes();
+    // Inicializar datos en componente
+    const inicializar = async () => {
+      try {
+        await cargarClientes();
+        await cargarFacturas();
+      } catch (err) {
+        console.error('❌ Error en inicialización:', err);
+        setFacturas([]);
+        setClientes([]);
+      }
+    };
+    
+    inicializar();
   }, []);
 
   // Cargar todas las facturas
