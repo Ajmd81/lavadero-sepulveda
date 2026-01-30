@@ -8,6 +8,9 @@ const FacturasEmitidas = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalCobrarAbierto, setModalCobrarAbierto] = useState(false);
+  const [facturaParaCobrar, setFacturaParaCobrar] = useState(null);
+  const [metodoPagoCobro, setMetodoPagoCobro] = useState('EFECTIVO');
   const [editandoFactura, setEditandoFactura] = useState(null);
   const [formData, setFormData] = useState({
     numero: '',
@@ -256,18 +259,39 @@ const FacturasEmitidas = () => {
     }
 
     try {
+      setLoading(true);
+      
       if (editandoFactura) {
-        await facturaService.update(editandoFactura, formData);
-        alert('Factura actualizada correctamente');
+        // No se puede editar facturas ya creadas, mostrar mensaje
+        alert('⚠️ No se pueden editar facturas ya creadas. Si necesitas cambiarla, elimínala y crea una nueva.');
+        return;
       } else {
-        await facturaService.create(formData);
-        alert('Factura creada correctamente');
+        // Crear nueva factura con número y fecha personalizados
+        const params = {};
+        
+        if (formData.numero) {
+          params.numeroFactura = formData.numero;
+        }
+        
+        // Convertir fecha de yyyy-MM-dd a dd/MM/yyyy
+        if (formData.fecha) {
+          const [year, month, day] = formData.fecha.split('-');
+          params.fechaEmision = `${day}/${month}/${year}`;
+          console.log(`📅 Fecha convertida: ${formData.fecha} → ${params.fechaEmision}`);
+        }
+
+        console.log('📤 Enviando factura:', { data: formData, params });
+        await facturaService.createManual(formData, params);
+        alert('✅ Factura creada correctamente');
       }
+      
       cerrarModal();
-      cargarFacturas();
+      await cargarFacturas();
     } catch (err) {
-      alert('Error al guardar factura: ' + err.message);
-      console.error(err);
+      console.error('Error al guardar factura:', err);
+      alert('❌ Error al guardar factura: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -284,6 +308,44 @@ const FacturasEmitidas = () => {
     } catch (err) {
       alert('Error al eliminar factura: ' + err.message);
       console.error(err);
+    }
+  };
+
+  // Abrir modal para cobrar factura
+  const abrirModalCobrar = (factura) => {
+    setFacturaParaCobrar(factura);
+    setMetodoPagoCobro('EFECTIVO');
+    setModalCobrarAbierto(true);
+  };
+
+  // Cerrar modal de cobro
+  const cerrarModalCobrar = () => {
+    setModalCobrarAbierto(false);
+    setFacturaParaCobrar(null);
+    setMetodoPagoCobro('EFECTIVO');
+  };
+
+  // Procesar pago de factura
+  const procesarPago = async () => {
+    if (!facturaParaCobrar) {
+      alert('Error: no hay factura seleccionada');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await facturaService.marcarComoPagada(facturaParaCobrar.id, {
+        metodoPago: metodoPagoCobro
+      });
+      
+      alert(`✅ Factura ${facturaParaCobrar.numero} marcada como pagada (${metodoPagoCobro})`);
+      cerrarModalCobrar();
+      await cargarFacturas();
+    } catch (err) {
+      console.error('Error al procesar pago:', err);
+      alert('❌ Error al marcar como pagada: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -424,9 +486,18 @@ const FacturasEmitidas = () => {
                     >
                       Editar
                     </button>
+                    {factura.estado === 'PENDIENTE' && (
+                      <button
+                        onClick={() => abrirModalCobrar(factura)}
+                        className="text-green-600 hover:text-green-800 font-semibold text-sm"
+                        title="Cobrar factura"
+                      >
+                        💰 Cobrar
+                      </button>
+                    )}
                     <button
                       onClick={() => descargarPdf(factura.id, factura.numero)}
-                      className="text-green-600 hover:text-green-800 font-semibold text-sm"
+                      className="text-orange-600 hover:text-orange-800 font-semibold text-sm"
                     >
                       PDF
                     </button>
@@ -812,6 +883,62 @@ const FacturasEmitidas = () => {
                 className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
               >
                 {editandoFactura ? 'Actualizar Factura' : 'Crear Factura'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para cobrar factura */}
+      {modalCobrarAbierto && facturaParaCobrar && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">💰 Registrar Pago</h3>
+            
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600">Factura Nº</p>
+              <p className="text-xl font-bold text-blue-600 mb-2">{facturaParaCobrar.numero}</p>
+              <p className="text-sm text-gray-600">Cliente</p>
+              <p className="text-lg font-semibold text-gray-800 mb-2">{facturaParaCobrar.clienteNombre}</p>
+              <p className="text-sm text-gray-600">Importe a Cobrar</p>
+              <p className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat('es-ES', {
+                  style: 'currency',
+                  currency: 'EUR',
+                }).format(facturaParaCobrar.total)}
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Método de Pago
+              </label>
+              <select
+                value={metodoPagoCobro}
+                onChange={(e) => setMetodoPagoCobro(e.target.value)}
+                className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="EFECTIVO">💵 Efectivo</option>
+                <option value="TARJETA">💳 Tarjeta</option>
+                <option value="BIZUM">📱 Bizum</option>
+                <option value="TRANSFERENCIA">🏦 Transferencia Bancaria</option>
+                <option value="DOMICILIACION">📋 Domiciliación</option>
+              </select>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={cerrarModalCobrar}
+                className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={procesarPago}
+                disabled={loading}
+                className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors shadow-md"
+              >
+                {loading ? 'Procesando...' : '✓ Confirmar Pago'}
               </button>
             </div>
           </div>

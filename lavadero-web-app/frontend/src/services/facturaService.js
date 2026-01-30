@@ -20,8 +20,11 @@ const facturaService = {
   getPendientes: () => api.get('/facturas/pendientes'),
   getHoy: () => api.get('/facturas/hoy'),
 
-  // Operaciones
-  marcarComoPagada: (id) => api.put(`/facturas/${id}/pagar`),
+  // Operaciones - Pagos
+  marcarComoPagada: (id, dataPago) => 
+    api.put(`/facturas/${id}/pagar`, dataPago),
+
+  // Otros
   getResumen: () => api.get('/facturas/resumen'),
   getEmisor: () => api.get('/facturas/emisor'),
 
