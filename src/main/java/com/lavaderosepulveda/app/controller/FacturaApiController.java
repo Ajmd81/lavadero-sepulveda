@@ -424,8 +424,8 @@ public class FacturaApiController {
         dto.setId(factura.getId());
         // ✅ CORREGIDO: Usar 'numero' para compatibilidad con cliente FacturaEmitidaDTO que espera 'numeroFactura' (mapeado via @JsonAlias)
         dto.setNumero(factura.getNumero());
-        // ✅ CORREGIDO: Usar 'fecha' para compatibilidad con cliente FacturaEmitidaDTO que espera 'fechaEmision' (mapeado via @JsonAlias)
-        dto.setFecha(DateTimeFormatUtils.formatearFechaCorta(factura.getFecha()));
+        // ✅ CORREGIDO: Usar LocalDate directamente - Jackson lo formateará con @JsonFormat(pattern="dd/MM/yyyy")
+        dto.setFecha(factura.getFecha());
         dto.setTipo(factura.getTipo().name());
         dto.setEstado(factura.getEstado().name());
         dto.setMetodoPago(factura.getMetodoPago() != null ? factura.getMetodoPago().name() : null);
@@ -445,9 +445,7 @@ public class FacturaApiController {
         dto.setTotal(factura.getTotal());
 
         // Otros
-        dto.setFechaPago(
-                factura.getFechaPago() != null ? DateTimeFormatUtils.formatearFechaCorta(factura.getFechaPago())
-                        : null);
+        dto.setFechaPago(factura.getFechaPago());
         dto.setObservaciones(factura.getObservaciones());
 
         // Líneas

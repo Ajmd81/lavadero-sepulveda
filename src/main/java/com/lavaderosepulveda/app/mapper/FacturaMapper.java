@@ -32,10 +32,8 @@ public class FacturaMapper {
         dto.setId(factura.getId());
         dto.setNumero(factura.getNumero());
         
-        // Formatear fecha
-        if (factura.getFecha() != null) {
-            dto.setFecha(DateTimeFormatUtils.formatearFechaCorta(factura.getFecha()));
-        }
+        // Pasar LocalDate directamente - Jackson lo formateará con @JsonFormat
+        dto.setFecha(factura.getFecha());
         
         // Enums a String
         if (factura.getTipo() != null) {
@@ -78,9 +76,7 @@ public class FacturaMapper {
         dto.setTotal(factura.getTotal());
         
         // Otros
-        if (factura.getFechaPago() != null) {
-            dto.setFechaPago(DateTimeFormatUtils.formatearFechaCorta(factura.getFechaPago()));
-        }
+        dto.setFechaPago(factura.getFechaPago());
         dto.setObservaciones(factura.getObservaciones());
 
         return dto;
@@ -117,10 +113,8 @@ public class FacturaMapper {
         factura.setId(dto.getId());
         factura.setNumero(dto.getNumero());
         
-        // Parsear fecha
-        if (dto.getFecha() != null && !dto.getFecha().isEmpty()) {
-            factura.setFecha(DateTimeFormatUtils.parsearFechaCorta(dto.getFecha()));
-        }
+        // Asignar LocalDate directamente
+        factura.setFecha(dto.getFecha());
         
         // String a Enums
         if (dto.getTipo() != null) {
@@ -145,9 +139,7 @@ public class FacturaMapper {
         factura.setTotal(dto.getTotal());
         
         // Otros
-        if (dto.getFechaPago() != null && !dto.getFechaPago().isEmpty()) {
-            factura.setFechaPago(DateTimeFormatUtils.parsearFechaCorta(dto.getFechaPago()));
-        }
+        factura.setFechaPago(dto.getFechaPago());
         factura.setObservaciones(dto.getObservaciones());
 
         return factura;

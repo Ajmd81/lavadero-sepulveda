@@ -1,11 +1,13 @@
 package com.lavaderosepulveda.app.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.lavaderosepulveda.app.model.enums.EstadoFactura;
 import com.lavaderosepulveda.app.model.enums.MetodoPago;
 import com.lavaderosepulveda.app.model.enums.TipoFactura;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 public class FacturaDTO {
@@ -15,8 +17,9 @@ public class FacturaDTO {
     @JsonAlias({"numeroFactura", "numero_factura"})
     private String numero;
     
-    @JsonAlias({"fechaEmision", "fecha_emision"})
-    private String fecha;
+    @JsonAlias({"fechaEmision", "fecha_emision", "fecha"})
+    @JsonFormat(pattern = "dd/MM/yyyy", shape = JsonFormat.Shape.STRING)
+    private LocalDate fecha;
     
     private String tipo;
     private String estado;
@@ -47,7 +50,8 @@ public class FacturaDTO {
     private BigDecimal total;
     
     // Otros
-    private String fechaPago;
+    @JsonFormat(pattern = "dd/MM/yyyy", shape = JsonFormat.Shape.STRING)
+    private LocalDate fechaPago;
     private String observaciones;
 
     // Constructores
@@ -71,11 +75,11 @@ public class FacturaDTO {
         this.numero = numero;
     }
 
-    public String getFecha() {
+    public LocalDate getFecha() {
         return fecha;
     }
 
-    public void setFecha(String fecha) {
+    public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
     }
 
@@ -191,11 +195,11 @@ public class FacturaDTO {
         this.total = total;
     }
 
-    public String getFechaPago() {
+    public LocalDate getFechaPago() {
         return fechaPago;
     }
 
-    public void setFechaPago(String fechaPago) {
+    public void setFechaPago(LocalDate fechaPago) {
         this.fechaPago = fechaPago;
     }
 
