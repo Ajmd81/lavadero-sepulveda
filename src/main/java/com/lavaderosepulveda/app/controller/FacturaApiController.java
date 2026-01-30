@@ -12,6 +12,10 @@ import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,25 +48,40 @@ public class FacturaApiController {
      * Obtener todas las facturas (ordenadas por número por defecto)
      */
     @GetMapping
-    public ResponseEntity<List<FacturaDTO>> listarFacturas(
+    public ResponseEntity<Map<String, Object>> listarFacturas(
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "20") int size,
             @RequestParam(value = "ordenar", required = false, defaultValue = "numero") String ordenar) {
-        List<Factura> facturas = facturaService.obtenerTodas();
         
-        // Ordenar según parámetro
-        if ("numero".equalsIgnoreCase(ordenar)) {
-            facturas.sort((a, b) -> {
-                String numA = a.getNumero() != null ? a.getNumero() : "";
-                String numB = b.getNumero() != null ? b.getNumero() : "";
-                return numB.compareTo(numA); // Orden descendente (más nuevo primero)
-            });
-        } else if ("fecha".equalsIgnoreCase(ordenar)) {
-            facturas.sort((a, b) -> b.getFecha().compareTo(a.getFecha())); // Más reciente primero
+        // Configurar ordenamiento
+        Sort.Direction direction = Sort.Direction.DESC;
+        String orderByField = "numero";
+        
+        if ("fecha".equalsIgnoreCase(ordenar)) {
+            orderByField = "fecha";
+            direction = Sort.Direction.DESC;
         }
         
-        List<FacturaDTO> facturasDTO = facturas.stream()
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderByField));
+        Page<Factura> pageFacturas = facturaRepository.findAll(pageable);
+        
+        // Convertir a DTO
+        List<FacturaDTO> facturasDTO = pageFacturas.getContent().stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(facturasDTO);
+        
+        // Crear respuesta con información de paginación
+        Map<String, Object> respuesta = Map.of(
+            "content", facturasDTO,
+            "totalElements", pageFacturas.getTotalElements(),
+            "totalPages", pageFacturas.getTotalPages(),
+            "currentPage", pageFacturas.getNumber(),
+            "pageSize", pageFacturas.getSize(),
+            "hasNext", pageFacturas.hasNext(),
+            "hasPrevious", pageFacturas.hasPrevious()
+        );
+        
+        return ResponseEntity.ok(respuesta);
     }
 
     /**

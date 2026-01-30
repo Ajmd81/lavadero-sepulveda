@@ -2,7 +2,8 @@ import api from './api';
 
 const facturaService = {
   // CRUD Básico
-  getAll: () => api.get('/facturas'),
+  getAll: (page = 0, size = 20, ordenar = 'numero') => 
+    api.get('/facturas', { params: { page, size, ordenar } }),
   getById: (id) => api.get(`/facturas/${id}`),
   create: (facturaData) => api.post('/facturas', facturaData),
   createManual: (facturaData, params) => 

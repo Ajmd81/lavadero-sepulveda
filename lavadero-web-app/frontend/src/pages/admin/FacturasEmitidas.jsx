@@ -12,6 +12,9 @@ const FacturasEmitidas = () => {
   const [facturaParaCobrar, setFacturaParaCobrar] = useState(null);
   const [metodoPagoCobro, setMetodoPagoCobro] = useState('EFECTIVO');
   const [editandoFactura, setEditandoFactura] = useState(null);
+  const [paginaActual, setPaginaActual] = useState(0);
+  const [totalPaginas, setTotalPaginas] = useState(0);
+  const [totalFacturas, setTotalFacturas] = useState(0);
   const [formData, setFormData] = useState({
     numero: '',
     fecha: '',
@@ -55,46 +58,40 @@ const FacturasEmitidas = () => {
   }, []);
 
   // Cargar todas las facturas
-  const cargarFacturas = async () => {
+  const cargarFacturas = async (page = 0) => {
     setLoading(true);
     try {
-      const response = await facturaService.getAll();
-      let facturasData = response.data || [];
+      const response = await facturaService.getAll(page, 20, 'numero');
+      const data = response.data;
 
-      // Validar que sea un array
-      if (!Array.isArray(facturasData)) {
-        console.warn('⚠️ response.data no es un array:', typeof facturasData, facturasData);
-        facturasData = [];
+      if (data && data.content && Array.isArray(data.content)) {
+        setFacturas(data.content);
+        setTotalPaginas(data.totalPages);
+        setTotalFacturas(data.totalElements);
+        setPaginaActual(data.currentPage);
+        setError(null);
+      } else {
+        console.warn('⚠️ Formato de respuesta inesperado:', data);
+        setFacturas([]);
+        setTotalPaginas(0);
+        setTotalFacturas(0);
       }
-
-      // Las facturas ya vienen ordenadas por número del backend
-      // Solo ordenamos por fecha si es necesario
-      if (facturasData.length > 0 && facturasData[0].fecha) {
-        facturasData = facturasData.sort((a, b) => {
-          let fechaA = a.fecha;
-          let fechaB = b.fecha;
-
-          if (fechaA && fechaA.includes('/')) {
-            const [d, m, y] = fechaA.split('/');
-            fechaA = `${y}-${m}-${d}`;
-          }
-          if (fechaB && fechaB.includes('/')) {
-            const [d, m, y] = fechaB.split('/');
-            fechaB = `${y}-${m}-${d}`;
-          }
-
-          return fechaB.localeCompare(fechaA);
-        });
-      }
-
-      setFacturas(facturasData);
-      setError(null);
     } catch (err) {
       setError('Error al cargar las facturas: ' + err.message);
       console.error('❌ Error cargar facturas:', err);
       setFacturas([]);
+      setTotalPaginas(0);
+      setTotalFacturas(0);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const irAlaPagina = (page) => {
+    if (page >= 0 && page < totalPaginas) {
+      cargarFacturas(page);
+    }
+  };
     }
   };
 
@@ -560,6 +557,49 @@ const FacturasEmitidas = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Controles de paginación */}
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-between mt-6 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="text-sm text-gray-600">
+              Mostrando <span className="font-semibold">{paginaActual * 20 + 1}</span> a <span className="font-semibold">{Math.min((paginaActual + 1) * 20, totalFacturas)}</span> de <span className="font-semibold">{totalFacturas}</span> facturas
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => irAlaPagina(paginaActual - 1)}
+                disabled={paginaActual === 0}
+                className="px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+              >
+                ← Anterior
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPaginas }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => irAlaPagina(i)}
+                    className={`px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                      paginaActual === i
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => irAlaPagina(paginaActual + 1)}
+                disabled={paginaActual >= totalPaginas - 1}
+                className="px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        )}
       )}
 
       {/* Modal para crear/editar factura */}
