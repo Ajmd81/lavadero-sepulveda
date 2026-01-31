@@ -498,10 +498,22 @@ const FacturasEmitidas = () => {
     }
   };
 
+  const totalVentas = facturas.reduce((sum, factura) => sum + (parseFloat(factura.total) || 0), 0);
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Facturas Emitidas</h2>
+        <div className="flex items-center gap-3">
+          <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/assets/icons/invoice.png" alt="Facturas Emitidas" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Facturas Emitidas</h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Total de ventas: {formatearMoneda(totalVentas)}
+            </p>
+          </div>
+        </div>
         <button
           onClick={abrirModalNuevo}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
