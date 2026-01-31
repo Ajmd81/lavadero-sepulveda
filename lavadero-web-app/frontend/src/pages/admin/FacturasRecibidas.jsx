@@ -245,24 +245,51 @@ const FacturasRecibidas = () => {
   const guardarFactura = async (e) => {
     e.preventDefault();
 
-    if (!formData.numeroFactura || !formData.proveedorNombre || !formData.total) {
-      alert('Por favor completa los campos obligatorios');
+    if (!formData.numeroFactura || !formData.proveedorNombre) {
+      alert('Por favor completa: Número de Factura y Proveedor');
+      return;
+    }
+
+    if (formData.lineas.length === 0) {
+      alert('Por favor agrega al menos una línea de concepto');
       return;
     }
 
     try {
+      // Preparar los datos para enviar al backend
+      const datosEnvio = {
+        numeroFactura: formData.numeroFactura,
+        proveedorId: formData.proveedorId || null,
+        proveedorNombre: formData.proveedorNombre,
+        proveedorNif: formData.proveedorNif || '',
+        fechaFactura: formData.fechaFactura || new Date().toISOString().split('T')[0],
+        fechaVencimiento: formData.fechaVencimiento || '',
+        fechaPago: formData.fechaPago || '',
+        categoria: formData.categoria || 'SUMINISTROS',
+        concepto: formData.concepto || '',
+        baseImponible: parseFloat(formData.baseImponible) || 0,
+        tipoIva: parseFloat(formData.tipoIva) || 21,
+        cuotaIva: parseFloat(formData.cuotaIva) || 0,
+        tipoIrpf: parseFloat(formData.tipoIrpf) || 0,
+        cuotaIrpf: parseFloat(formData.cuotaIrpf) || 0,
+        total: parseFloat(formData.total) || 0,
+        estado: formData.estado || 'PENDIENTE',
+        metodoPago: formData.metodoPago || 'TRANSFERENCIA',
+        notas: formData.notas || ''
+      };
+
       if (editandoFactura) {
-        await facturaRecibidaService.update(editandoFactura, formData);
+        await facturaRecibidaService.update(editandoFactura, datosEnvio);
         alert('Factura actualizada correctamente');
       } else {
-        await facturaRecibidaService.create(formData);
+        await facturaRecibidaService.create(datosEnvio);
         alert('Factura creada correctamente');
       }
       cerrarModal();
       cargarFacturas();
     } catch (err) {
-      alert('Error al guardar factura: ' + err.message);
-      console.error(err);
+      console.error('Error completo:', err.response?.data || err.message);
+      alert('Error al guardar factura: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -720,6 +747,7 @@ const FacturasRecibidas = () => {
                         <option value="EFECTIVO">Efectivo</option>
                         <option value="TARJETA">Tarjeta</option>
                         <option value="CHEQUE">Cheque</option>
+                        <option value="DOMICILIACION">Domiciliación</option>
                       </select>
                     </div>
                   </div>

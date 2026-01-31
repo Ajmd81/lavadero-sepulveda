@@ -696,6 +696,7 @@ const FacturasEmitidas = () => {
                         <option value="TARJETA">Tarjeta</option>
                         <option value="TRANSFERENCIA">Transferencia</option>
                         <option value="BIZUM">Bizum</option>
+                        <option value="DOMICILIACION">Domiciliación</option>
                       </select>
                     </div>
                   </div>
