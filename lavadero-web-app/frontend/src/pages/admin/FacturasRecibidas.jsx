@@ -35,6 +35,7 @@ const FacturasRecibidas = () => {
     concepto: '',
     cantidad: 1,
     precioUnitario: '',
+    tipoIva: '21',
   });
 
   useEffect(() => {
@@ -120,6 +121,7 @@ const FacturasRecibidas = () => {
       concepto: '',
       cantidad: 1,
       precioUnitario: '',
+      tipoIva: '21',
     });
     setEditandoFactura(null);
     setModalAbierto(true);
@@ -131,6 +133,7 @@ const FacturasRecibidas = () => {
       concepto: '',
       cantidad: 1,
       precioUnitario: '',
+      tipoIva: '21',
     });
     setEditandoFactura(factura.id);
     setModalAbierto(true);
@@ -167,6 +170,7 @@ const FacturasRecibidas = () => {
     const cantidad = parseFloat(nuevaLinea.cantidad);
     const precioUnitario = parseFloat(nuevaLinea.precioUnitario);
     const subtotal = cantidad * precioUnitario;
+    const tipoIvaLinea = parseFloat(nuevaLinea.tipoIva) || 21;
 
     const linea = {
       id: Date.now(),
@@ -174,6 +178,7 @@ const FacturasRecibidas = () => {
       cantidad: cantidad,
       precioUnitario: precioUnitario,
       subtotal: subtotal,
+      tipoIva: tipoIvaLinea,
     };
     
     const nuevasLineas = [...formData.lineas, linea];
@@ -181,21 +186,28 @@ const FacturasRecibidas = () => {
       ...prev,
       lineas: nuevasLineas,
     }));
-    recalcularTotales(nuevasLineas, formData.tipoIva);
+    recalcularTotales(nuevasLineas);
     
     setNuevaLinea({
       concepto: '',
       cantidad: 1,
       precioUnitario: '',
+      tipoIva: '21',
     });
   };
 
-  // Recalcular totales
-  const recalcularTotales = (lineas, tipoIva) => {
+  // Recalcular totales - ahora cada línea tiene su propio IVA
+  const recalcularTotales = (lineas) => {
     const baseImponible = lineas.reduce((sum, linea) => sum + linea.subtotal, 0);
-    const iva = parseFloat(tipoIva) || 21;
-    const cuotaIva = (baseImponible * iva) / 100;
-    const total = baseImponible + cuotaIva;
+    
+    // Calcular IVA por línea según su tipoIva
+    const cuotaIvaTotal = lineas.reduce((sum, linea) => {
+      const tipoIva = linea.tipoIva || 21;
+      const ivaLinea = (linea.subtotal * tipoIva) / 100;
+      return sum + ivaLinea;
+    }, 0);
+    
+    const total = baseImponible + cuotaIvaTotal;
 
     // Concatenar conceptos para el campo concepto
     const conceptosConcatenados = lineas.map(l => l.concepto).join(' | ');
@@ -203,10 +215,11 @@ const FacturasRecibidas = () => {
     setFormData(prev => ({
       ...prev,
       baseImponible: baseImponible.toFixed(2),
-      cuotaIva: cuotaIva.toFixed(2),
+      cuotaIva: cuotaIvaTotal.toFixed(2),
       total: total.toFixed(2),
       concepto: conceptosConcatenados,
     }));
+  };
   };
 
   const eliminarLinea = (lineaId) => {
@@ -215,7 +228,7 @@ const FacturasRecibidas = () => {
       ...prev,
       lineas: nuevasLineas,
     }));
-    recalcularTotales(nuevasLineas, formData.tipoIva);
+    recalcularTotales(nuevasLineas);
   };
 
   const handleProveedorChange = (e) => {
@@ -609,7 +622,7 @@ const FacturasRecibidas = () => {
 
                   <div className="bg-orange-50 p-4 rounded-lg mb-4">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                      <div className="md:col-span-5">
+                      <div className="md:col-span-4">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
                           Concepto
                         </label>
@@ -636,9 +649,9 @@ const FacturasRecibidas = () => {
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
                         />
                       </div>
-                      <div className="md:col-span-3">
+                      <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          Precio Unitario (€)
+                          P. Unitario (€)
                         </label>
                         <input
                           type="number"
@@ -648,6 +661,20 @@ const FacturasRecibidas = () => {
                           step="0.01"
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
                           placeholder="0,00"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          IVA (%)
+                        </label>
+                        <input
+                          type="number"
+                          name="tipoIva"
+                          value={nuevaLinea.tipoIva}
+                          onChange={handleNuevaLineaChange}
+                          step="0.01"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                          placeholder="21"
                         />
                       </div>
                       <div className="md:col-span-2">
@@ -669,7 +696,8 @@ const FacturasRecibidas = () => {
                           <tr>
                             <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Concepto</th>
                             <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Cantidad</th>
-                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Precio Unit.</th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">P. Unit.</th>
+                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">IVA %</th>
                             <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Subtotal</th>
                             <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Acción</th>
                           </tr>
@@ -680,6 +708,7 @@ const FacturasRecibidas = () => {
                               <td className="px-4 py-3 text-sm">{linea.concepto}</td>
                               <td className="px-4 py-3 text-sm text-center">{linea.cantidad}</td>
                               <td className="px-4 py-3 text-sm text-right">{linea.precioUnitario.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-sm text-center font-semibold text-orange-600">{(linea.tipoIva || 21).toFixed(2)} %</td>
                               <td className="px-4 py-3 text-sm text-right font-semibold">{linea.subtotal.toFixed(2)} €</td>
                               <td className="px-4 py-3 text-center">
                                 <button
@@ -716,22 +745,6 @@ const FacturasRecibidas = () => {
                         value={formData.baseImponible ? `${formData.baseImponible} €` : '0,00 €'}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
                         readOnly
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
-                        IVA (%)
-                      </label>
-                      <input
-                        type="number"
-                        name="tipoIva"
-                        value={formData.tipoIva}
-                        onChange={(e) => {
-                          handleInputChange(e);
-                          recalcularTotales(formData.lineas, e.target.value);
-                        }}
-                        step="0.01"
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       />
                     </div>
                     <div>
