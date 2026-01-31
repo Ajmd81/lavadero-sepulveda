@@ -18,7 +18,7 @@ const FacturasRecibidas = () => {
     fechaVencimiento: '',
     fechaPago: '',
     categoria: 'SUMINISTROS',
-    concepto: '',
+    lineas: [],
     baseImponible: '',
     tipoIva: '21',
     cuotaIva: '',
@@ -28,6 +28,12 @@ const FacturasRecibidas = () => {
     estado: 'PENDIENTE',
     metodoPago: 'TRANSFERENCIA',
     notas: '',
+  });
+
+  const [nuevaLinea, setNuevaLinea] = useState({
+    concepto: '',
+    cantidad: 1,
+    precioUnitario: '',
   });
 
   useEffect(() => {
@@ -97,7 +103,7 @@ const FacturasRecibidas = () => {
       fechaVencimiento: '',
       fechaPago: '',
       categoria: 'SUMINISTROS',
-      concepto: '',
+      lineas: [],
       baseImponible: '',
       tipoIva: '21',
       cuotaIva: '',
@@ -108,12 +114,22 @@ const FacturasRecibidas = () => {
       metodoPago: 'TRANSFERENCIA',
       notas: '',
     });
+    setNuevaLinea({
+      concepto: '',
+      cantidad: 1,
+      precioUnitario: '',
+    });
     setEditandoFactura(null);
     setModalAbierto(true);
   };
 
   const abrirModalEditar = (factura) => {
     setFormData(factura);
+    setNuevaLinea({
+      concepto: '',
+      cantidad: 1,
+      precioUnitario: '',
+    });
     setEditandoFactura(factura.id);
     setModalAbierto(true);
   };
@@ -128,6 +144,48 @@ const FacturasRecibidas = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleNuevaLineaChange = (e) => {
+    const { name, value } = e.target;
+    setNuevaLinea(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const agregarLinea = (e) => {
+    e.preventDefault();
+    if (!nuevaLinea.concepto || !nuevaLinea.cantidad || !nuevaLinea.precioUnitario) {
+      alert('Por favor completa todos los campos de la línea');
+      return;
+    }
+    
+    const linea = {
+      id: Date.now(),
+      concepto: nuevaLinea.concepto,
+      cantidad: parseFloat(nuevaLinea.cantidad),
+      precioUnitario: parseFloat(nuevaLinea.precioUnitario),
+      total: parseFloat(nuevaLinea.cantidad) * parseFloat(nuevaLinea.precioUnitario),
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      lineas: [...prev.lineas, linea],
+    }));
+    
+    setNuevaLinea({
+      concepto: '',
+      cantidad: 1,
+      precioUnitario: '',
+    });
+  };
+
+  const eliminarLinea = (lineaId) => {
+    setFormData(prev => ({
+      ...prev,
+      lineas: prev.lineas.filter(l => l.id !== lineaId),
     }));
   };
 
@@ -445,6 +503,107 @@ const FacturasRecibidas = () => {
                       </select>
                     </div>
                   </div>
+                </div>
+
+                {/* Sección: Líneas de Factura */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                    Líneas de Factura
+                  </h4>
+
+                  <div className="bg-orange-50 p-4 rounded-lg mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                      <div className="md:col-span-5">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          Concepto
+                        </label>
+                        <input
+                          type="text"
+                          name="concepto"
+                          value={nuevaLinea.concepto}
+                          onChange={handleNuevaLineaChange}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                          placeholder="Descripción del servicio/producto"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          Cantidad
+                        </label>
+                        <input
+                          type="number"
+                          name="cantidad"
+                          value={nuevaLinea.cantidad}
+                          onChange={handleNuevaLineaChange}
+                          step="0.01"
+                          min="1"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          Precio Unitario (€)
+                        </label>
+                        <input
+                          type="number"
+                          name="precioUnitario"
+                          value={nuevaLinea.precioUnitario}
+                          onChange={handleNuevaLineaChange}
+                          step="0.01"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <button
+                          type="button"
+                          onClick={agregarLinea}
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {formData.lineas.length > 0 ? (
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                      <table className="w-full">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Concepto</th>
+                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Cantidad</th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Precio Unit.</th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Subtotal</th>
+                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formData.lineas.map((linea) => (
+                            <tr key={linea.id} className="border-t border-gray-200 hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm">{linea.concepto}</td>
+                              <td className="px-4 py-3 text-sm text-center">{linea.cantidad}</td>
+                              <td className="px-4 py-3 text-sm text-right">{linea.precioUnitario.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-sm text-right font-semibold">{linea.total.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => eliminarLinea(linea.id)}
+                                  className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                                >
+                                  Eliminar
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500">No hay líneas agregadas. Utilice el formulario de arriba para agregar líneas.</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
