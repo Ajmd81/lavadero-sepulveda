@@ -246,12 +246,12 @@ const FacturasRecibidas = () => {
     if (!fecha) return '';
     
     // Si ya está en formato dd/MM/yyyy, devolverlo tal cual
-    if (typeof fecha === 'string' && fecha.includes('/')) {
+    if (typeof fecha === 'string' && fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
       return fecha;
     }
     
     // Si es YYYY-MM-DD (input date), convertir a dd/MM/yyyy
-    if (typeof fecha === 'string' && fecha.includes('-')) {
+    if (typeof fecha === 'string' && fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const [year, month, day] = fecha.split('-');
       return `${day}/${month}/${year}`;
     }
@@ -286,15 +286,22 @@ const FacturasRecibidas = () => {
     }
 
     try {
+      // Formatear fechas correctamente a dd/MM/yyyy
+      const fechaFacturaFormato = formatearFechaParaEnvio(formData.fechaFactura);
+      if (!fechaFacturaFormato) {
+        alert('Por favor ingresa una fecha válida para la factura');
+        return;
+      }
+
       // Preparar los datos para enviar al backend
       const datosEnvio = {
         numeroFactura: formData.numeroFactura.trim(),
         proveedorId: formData.proveedorId ? parseInt(formData.proveedorId) : null,
         proveedorNombre: formData.proveedorNombre.trim(),
         proveedorNif: (formData.proveedorNif || '').trim(),
-        fechaFactura: formatearFechaParaEnvio(formData.fechaFactura) || new Date().toLocaleDateString('es-ES').replaceAll('/', '/'),
-        fechaVencimiento: formatearFechaParaEnvio(formData.fechaVencimiento),
-        fechaPago: formatearFechaParaEnvio(formData.fechaPago),
+        fechaFactura: fechaFacturaFormato,
+        fechaVencimiento: formatearFechaParaEnvio(formData.fechaVencimiento) || '',
+        fechaPago: formatearFechaParaEnvio(formData.fechaPago) || '',
         categoria: formData.categoria || 'SUMINISTROS',
         concepto: formData.concepto || '',
         baseImponible: baseImponibleNum,
