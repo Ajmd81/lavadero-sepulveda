@@ -731,15 +731,17 @@ const FacturasRecibidas = () => {
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
                           IVA (%)
                         </label>
-                        <input
-                          type="number"
+                        <select
                           name="tipoIva"
                           value={nuevaLinea.tipoIva}
                           onChange={handleNuevaLineaChange}
-                          step="0.01"
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
-                          placeholder="21"
-                        />
+                        >
+                          <option value="0">0%</option>
+                          <option value="4">4%</option>
+                          <option value="10">10%</option>
+                          <option value="21">21%</option>
+                        </select>
                       </div>
                       <div className="md:col-span-2">
                         <button

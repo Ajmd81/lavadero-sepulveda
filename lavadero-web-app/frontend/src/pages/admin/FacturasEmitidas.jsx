@@ -962,15 +962,17 @@ const FacturasEmitidas = () => {
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
                         IVA (%)
                       </label>
-                      <input
-                        type="number"
+                      <select
                         name="tipoIva"
                         value={formData.tipoIva}
                         onChange={handleInputChange}
-                        step="0.01"
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="21"
-                      />
+                      >
+                        <option value="0">0%</option>
+                        <option value="4">4%</option>
+                        <option value="10">10%</option>
+                        <option value="21">21%</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
