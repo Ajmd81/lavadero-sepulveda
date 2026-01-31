@@ -100,9 +100,10 @@
                     <!-- Tabla de líneas -->
                     <TableView fx:id="tablaLineas" prefHeight="150">
                         <columns>
-                            <TableColumn fx:id="colConcepto" text="Concepto" prefWidth="300"/>
+                            <TableColumn fx:id="colConcepto" text="Concepto" prefWidth="250"/>
                             <TableColumn fx:id="colCantidad" text="Cant." prefWidth="60"/>
                             <TableColumn fx:id="colPrecioUnitario" text="P. Unitario" prefWidth="100"/>
+                            <TableColumn fx:id="colIva" text="IVA %" prefWidth="60"/>
                             <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="100"/>
                             <TableColumn fx:id="colEliminar" text="" prefWidth="50"/>
                         </columns>
@@ -125,16 +126,21 @@
                         <TextField fx:id="txtPrecioUnitario" promptText="0.00" prefWidth="100"
                                    GridPane.columnIndex="3" GridPane.rowIndex="1"/>
 
+                        <Label text="IVA %:" GridPane.columnIndex="4" GridPane.rowIndex="1"/>
+                        <ComboBox fx:id="cmbIvaLinea" prefWidth="60" promptText="21"
+                                  GridPane.columnIndex="5" GridPane.rowIndex="1"/>
+
                         <Button text="+ Agregar" onAction="#agregarLinea"
                                 style="-fx-background-color: #4CAF50; -fx-text-fill: white;"
-                                GridPane.columnIndex="5" GridPane.rowIndex="1"/>
+                                GridPane.columnIndex="6" GridPane.rowIndex="1"/>
 
                         <columnConstraints>
                             <ColumnConstraints minWidth="80"/>
-                            <ColumnConstraints minWidth="100"/>
                             <ColumnConstraints minWidth="80"/>
-                            <ColumnConstraints hgrow="ALWAYS"/>
-                            <ColumnConstraints minWidth="20"/>
+                            <ColumnConstraints minWidth="80"/>
+                            <ColumnConstraints minWidth="100"/>
+                            <ColumnConstraints minWidth="60"/>
+                            <ColumnConstraints minWidth="60"/>
                             <ColumnConstraints minWidth="100"/>
                         </columnConstraints>
                     </GridPane>

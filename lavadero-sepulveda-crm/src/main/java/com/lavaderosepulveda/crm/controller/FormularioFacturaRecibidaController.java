@@ -41,11 +41,13 @@ public class FormularioFacturaRecibidaController {
     @FXML private TableColumn<LineaFactura, String> colConcepto;
     @FXML private TableColumn<LineaFactura, String> colCantidad;
     @FXML private TableColumn<LineaFactura, String> colPrecioUnitario;
+    @FXML private TableColumn<LineaFactura, String> colIva;
     @FXML private TableColumn<LineaFactura, String> colSubtotal;
     @FXML private TableColumn<LineaFactura, Void> colEliminar;
     @FXML private TextField txtConcepto;
     @FXML private Spinner<Integer> spnCantidad;
     @FXML private TextField txtPrecioUnitario;
+    @FXML private ComboBox<BigDecimal> cmbIvaLinea;
     
     // Importes
     @FXML private Label lblBaseImponible;
@@ -86,6 +88,22 @@ public class FormularioFacturaRecibidaController {
         // Configurar spinner
         spnCantidad.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 9999, 1));
         spnCantidad.setEditable(true);
+        
+        // Configurar combo de IVA por línea
+        cmbIvaLinea.setItems(FXCollections.observableArrayList(
+                BigDecimal.ZERO, new BigDecimal("4"), new BigDecimal("10"), new BigDecimal("21")));
+        cmbIvaLinea.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(BigDecimal value) {
+                return value == null ? "21%" : value.intValue() + "%";
+            }
+
+            @Override
+            public BigDecimal fromString(String string) {
+                return new BigDecimal(string.replace("%", ""));
+            }
+        });
+        cmbIvaLinea.setValue(new BigDecimal("21"));
     }
 
     private void configurarCombos() {
@@ -156,6 +174,8 @@ public class FormularioFacturaRecibidaController {
         colCantidad.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getCantidad())));
         colPrecioUnitario.setCellValueFactory(c -> new SimpleStringProperty(
                 FORMATO_MONEDA.format(c.getValue().getPrecioUnitario())));
+        colIva.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getTipoIva().intValue() + "%"));
         colSubtotal.setCellValueFactory(c -> new SimpleStringProperty(
                 FORMATO_MONEDA.format(c.getValue().getSubtotal())));
         
@@ -225,14 +245,16 @@ public class FormularioFacturaRecibidaController {
         try {
             BigDecimal precio = new BigDecimal(precioStr);
             int cantidad = spnCantidad.getValue();
+            BigDecimal tipoIva = cmbIvaLinea.getValue() != null ? cmbIvaLinea.getValue() : new BigDecimal("21");
             
-            LineaFactura linea = new LineaFactura(concepto, cantidad, precio);
+            LineaFactura linea = new LineaFactura(concepto, cantidad, precio, tipoIva);
             lineas.add(linea);
             
             // Limpiar campos
             txtConcepto.clear();
             txtPrecioUnitario.clear();
             spnCantidad.getValueFactory().setValue(1);
+            cmbIvaLinea.setValue(new BigDecimal("21"));
             
             calcularTotales();
             
@@ -246,15 +268,21 @@ public class FormularioFacturaRecibidaController {
                 .map(LineaFactura::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        BigDecimal tipoIva = cmbTipoIva.getValue() != null ? cmbTipoIva.getValue() : BigDecimal.ZERO;
+        // Calcular IVA por línea
+        BigDecimal cuotaIvaTotal = lineas.stream()
+                .map(linea -> {
+                    BigDecimal subtotal = linea.getSubtotal();
+                    BigDecimal tipoIva = linea.getTipoIva();
+                    return subtotal.multiply(tipoIva).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
         BigDecimal tipoIrpf = cmbTipoIrpf.getValue() != null ? cmbTipoIrpf.getValue() : BigDecimal.ZERO;
-
-        BigDecimal cuotaIva = base.multiply(tipoIva).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
         BigDecimal cuotaIrpf = base.multiply(tipoIrpf).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-        BigDecimal total = base.add(cuotaIva).subtract(cuotaIrpf);
+        BigDecimal total = base.add(cuotaIvaTotal).subtract(cuotaIrpf);
 
         lblBaseImponible.setText(FORMATO_MONEDA.format(base));
-        lblCuotaIva.setText(FORMATO_MONEDA.format(cuotaIva));
+        lblCuotaIva.setText(FORMATO_MONEDA.format(cuotaIvaTotal));
         lblCuotaIrpf.setText(FORMATO_MONEDA.format(cuotaIrpf));
         lblTotal.setText(FORMATO_MONEDA.format(total));
     }
@@ -457,16 +485,19 @@ public class FormularioFacturaRecibidaController {
         private String concepto;
         private int cantidad;
         private BigDecimal precioUnitario;
+        private BigDecimal tipoIva;
         
-        public LineaFactura(String concepto, int cantidad, BigDecimal precioUnitario) {
+        public LineaFactura(String concepto, int cantidad, BigDecimal precioUnitario, BigDecimal tipoIva) {
             this.concepto = concepto;
             this.cantidad = cantidad;
             this.precioUnitario = precioUnitario;
+            this.tipoIva = tipoIva;
         }
         
         public String getConcepto() { return concepto; }
         public int getCantidad() { return cantidad; }
         public BigDecimal getPrecioUnitario() { return precioUnitario; }
+        public BigDecimal getTipoIva() { return tipoIva; }
         
         public BigDecimal getSubtotal() {
             return precioUnitario.multiply(new BigDecimal(cantidad));
