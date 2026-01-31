@@ -7,6 +7,7 @@ const FacturasRecibidas = () => {
   const [facturas, setFacturas] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [metodosPago, setMetodosPago] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -42,6 +43,7 @@ const FacturasRecibidas = () => {
 
   useEffect(() => {
     cargarMetodosPago();
+    cargarCategorias();
     cargarFacturas();
     cargarProveedores();
   }, []);
@@ -105,6 +107,42 @@ const FacturasRecibidas = () => {
         { valor: 'BIZUM', descripcion: 'Bizum' },
         { valor: 'CHEQUE', descripcion: 'Cheque' },
         { valor: 'DOMICILIACION', descripcion: 'Domiciliación' },
+      ]);
+    }
+  };
+
+  const cargarCategorias = async () => {
+    try {
+      const response = await enumsService.obtenerCategoriasGasto();
+      if (response.data && Array.isArray(response.data)) {
+        setCategorias(response.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar categorías:', err);
+      // Fallback a categorías hardcodeadas
+      setCategorias([
+        { valor: 'AGUA', descripcion: 'Agua' },
+        { valor: 'ALQUILER', descripcion: 'Alquiler' },
+        { valor: 'ASOCIACIONES', descripcion: 'Asociaciones' },
+        { valor: 'BANCARIOS', descripcion: 'Gastos bancarios' },
+        { valor: 'COMBUSTIBLE', descripcion: 'Combustible' },
+        { valor: 'GESTORÍA', descripcion: 'Gestoría/Asesoría' },
+        { valor: 'IMPUESTOS', descripcion: 'Impuestos/Tasas' },
+        { valor: 'LUZ', descripcion: 'Electricidad' },
+        { valor: 'MANTENIMIENTO', descripcion: 'Mantenimiento' },
+        { valor: 'MAQUINARIA', descripcion: 'Maquinaria/Equipos' },
+        { valor: 'MATERIAL_OFICINA', descripcion: 'Material oficina' },
+        { valor: 'OTROS', descripcion: 'Otros' },
+        { valor: 'PERSONAL', descripcion: 'Personal/Nóminas' },
+        { valor: 'PRODUCTOS', descripcion: 'Productos' },
+        { valor: 'PUBLICIDAD', descripcion: 'Publicidad/Marketing' },
+        { valor: 'REPARACIONES', descripcion: 'Reparaciones' },
+        { valor: 'SEGURIDAD_SOCIAL', descripcion: 'Seguridad Social' },
+        { valor: 'SEGURIDAD_SOCIAL_A_CARGO_EMPRESA', descripcion: 'Autónomos' },
+        { valor: 'SEGUROS', descripcion: 'Seguros' },
+        { valor: 'SUMINISTROS', descripcion: 'Productos de limpieza' },
+        { valor: 'TELEFONIA', descripcion: 'Telefonía/Internet' },
+        { valor: 'VEHICULOS', descripcion: 'Vehículos' },
       ]);
     }
   };
@@ -629,10 +667,12 @@ const FacturasRecibidas = () => {
                         onChange={handleInputChange}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       >
-                        <option value="SUMINISTROS">Suministros</option>
-                        <option value="SERVICIOS">Servicios</option>
-                        <option value="MANTENIMIENTO">Mantenimiento</option>
-                        <option value="OTROS">Otros</option>
+                        <option value="">-- Selecciona una categoría --</option>
+                        {categorias.map(cat => (
+                          <option key={cat.valor} value={cat.valor}>
+                            {cat.descripcion}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
