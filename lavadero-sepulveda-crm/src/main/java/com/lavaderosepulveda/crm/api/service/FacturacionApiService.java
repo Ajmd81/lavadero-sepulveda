@@ -252,7 +252,7 @@ public class FacturacionApiService {
         // ==================== FACTURAS EMITIDAS ====================
 
         public List<FacturaEmitidaDTO> obtenerFacturasEmitidas() throws IOException {
-                String response = doGet("/api/facturas");
+                String response = doGet("/api/facturas/todas");
                 return objectMapper.readValue(response, new TypeReference<List<FacturaEmitidaDTO>>() {
                 });
         }

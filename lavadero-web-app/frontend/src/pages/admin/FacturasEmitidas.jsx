@@ -300,7 +300,7 @@ const FacturasEmitidas = () => {
   // Recalcular totales
   const recalcularTotales = (lineas, tipoIva) => {
     const baseImponible = lineas.reduce((sum, linea) => sum + linea.subtotal, 0);
-    const iva = parseFloat(tipoIva) || 21;
+    const iva = parseFloat(tipoIva) ?? 21;
     const importeIva = (baseImponible * iva) / 100;
     const total = baseImponible + importeIva;
 

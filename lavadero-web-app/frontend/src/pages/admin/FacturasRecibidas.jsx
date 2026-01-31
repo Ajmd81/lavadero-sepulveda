@@ -232,7 +232,7 @@ const FacturasRecibidas = () => {
     const cantidad = parseFloat(nuevaLinea.cantidad);
     const precioUnitario = parseFloat(nuevaLinea.precioUnitario);
     const subtotal = cantidad * precioUnitario;
-    const tipoIvaLinea = parseFloat(nuevaLinea.tipoIva) || 21;
+    const tipoIvaLinea = parseFloat(nuevaLinea.tipoIva) ?? 21;
 
     const linea = {
       id: Date.now(),
@@ -264,7 +264,7 @@ const FacturasRecibidas = () => {
     
     // Calcular IVA por línea según su tipoIva
     const cuotaIvaTotal = lineas.reduce((sum, linea) => {
-      const tipoIva = linea.tipoIva || 21;
+      const tipoIva = linea.tipoIva ?? 21;
       const ivaLinea = (linea.subtotal * tipoIva) / 100;
       return sum + ivaLinea;
     }, 0);
@@ -380,7 +380,7 @@ const FacturasRecibidas = () => {
         categoria: formData.categoria || 'SUMINISTROS',
         concepto: formData.concepto || '',
         baseImponible: baseImponibleNum,
-        tipoIva: parseFloat(formData.tipoIva) || 21,
+        tipoIva: parseFloat(formData.tipoIva) ?? 21,
         cuotaIva: parseFloat(formData.cuotaIva) || 0,
         tipoIrpf: parseFloat(formData.tipoIrpf) || 0,
         cuotaIrpf: parseFloat(formData.cuotaIrpf) || 0,
@@ -774,7 +774,7 @@ const FacturasRecibidas = () => {
                               <td className="px-4 py-3 text-sm">{linea.concepto}</td>
                               <td className="px-4 py-3 text-sm text-center">{linea.cantidad}</td>
                               <td className="px-4 py-3 text-sm text-right">{linea.precioUnitario.toFixed(2)} €</td>
-                              <td className="px-4 py-3 text-sm text-center font-semibold text-orange-600">{(linea.tipoIva || 21).toFixed(2)} %</td>
+                              <td className="px-4 py-3 text-sm text-center font-semibold text-orange-600">{(linea.tipoIva ?? 21).toFixed(2)} %</td>
                               <td className="px-4 py-3 text-sm text-right font-semibold">{linea.subtotal.toFixed(2)} €</td>
                               <td className="px-4 py-3 text-center">
                                 <button

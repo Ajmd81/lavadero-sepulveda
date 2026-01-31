@@ -85,6 +85,19 @@ public class FacturaApiController {
     }
 
     /**
+     * GET /api/facturas/todas
+     * Obtener todas las facturas como lista simple (sin paginación) - Para JavaFX
+     */
+    @GetMapping("/todas")
+    public ResponseEntity<List<FacturaDTO>> obtenerTodasLasFacturas() {
+        List<Factura> facturas = facturaRepository.findAll();
+        List<FacturaDTO> facturasDTO = facturas.stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(facturasDTO);
+    }
+
+    /**
      * GET /api/facturas/{id}
      * Obtener factura por ID
      */
