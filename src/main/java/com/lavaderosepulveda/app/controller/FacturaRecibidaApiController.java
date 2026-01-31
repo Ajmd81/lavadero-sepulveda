@@ -63,6 +63,13 @@ public class FacturaRecibidaApiController {
         return ResponseEntity.ok(facturaRecibidaService.listarPorPeriodo(fechaInicio, fechaFin));
     }
 
+    @GetMapping("/todas/periodo")
+    public ResponseEntity<List<FacturaRecibidaDTO>> listarTodasPorPeriodo(
+            @RequestParam String fechaInicio,
+            @RequestParam String fechaFin) {
+        return ResponseEntity.ok(facturaRecibidaService.listarPorPeriodo(fechaInicio, fechaFin));
+    }
+
     @GetMapping("/mes/{year}/{month}")
     public ResponseEntity<List<FacturaRecibidaDTO>> listarPorMes(
             @PathVariable int year,

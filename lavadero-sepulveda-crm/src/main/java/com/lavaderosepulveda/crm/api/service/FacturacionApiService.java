@@ -362,7 +362,7 @@ public class FacturacionApiService {
                         throws IOException {
                 String desdeStr = desde.format(DATE_FORMATTER);
                 String hastaStr = hasta.format(DATE_FORMATTER);
-                String response = doGet("/api/facturas-recibidas?desde=" + encode(desdeStr) + "&hasta="
+                String response = doGet("/api/facturas-recibidas/todas/periodo?fechaInicio=" + encode(desdeStr) + "&fechaFin="
                                 + encode(hastaStr));
                 return objectMapper.readValue(response, new TypeReference<List<FacturaRecibidaDTO>>() {
                 });

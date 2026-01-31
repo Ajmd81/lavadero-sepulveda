@@ -324,7 +324,8 @@ public class FormularioFacturaRecibidaController {
 
         // Cargar línea única con el concepto existente
         if (factura.getConcepto() != null && !factura.getConcepto().isEmpty() && factura.getBaseImponible() != null) {
-            LineaFactura linea = new LineaFactura(factura.getConcepto(), 1, factura.getBaseImponible());
+            BigDecimal tipoIva = factura.getTipoIva() != null ? factura.getTipoIva() : new BigDecimal("21");
+            LineaFactura linea = new LineaFactura(factura.getConcepto(), 1, factura.getBaseImponible(), tipoIva);
             lineas.add(linea);
         }
 
