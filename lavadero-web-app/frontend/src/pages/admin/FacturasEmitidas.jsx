@@ -696,6 +696,7 @@ const FacturasEmitidas = () => {
                         <option value="TARJETA">Tarjeta</option>
                         <option value="TRANSFERENCIA">Transferencia</option>
                         <option value="BIZUM">Bizum</option>
+                        <option value="CHEQUE">Cheque</option>
                         <option value="DOMICILIACION">Domiciliación</option>
                       </select>
                     </div>
@@ -1013,6 +1014,7 @@ const FacturasEmitidas = () => {
                 <option value="TARJETA">💳 Tarjeta</option>
                 <option value="BIZUM">📱 Bizum</option>
                 <option value="TRANSFERENCIA">🏦 Transferencia Bancaria</option>
+                <option value="CHEQUE">📄 Cheque</option>
                 <option value="DOMICILIACION">📋 Domiciliación</option>
               </select>
             </div>

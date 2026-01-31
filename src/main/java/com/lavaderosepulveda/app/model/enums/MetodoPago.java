@@ -5,7 +5,8 @@ public enum MetodoPago {
     TARJETA("Tarjeta"),
     BIZUM("Bizum"),
     TRANSFERENCIA("Transferencia"),
-    DOMICILIACION("Domiciliacion");
+    DOMICILIACION("Domiciliación"),
+    CHEQUE("Cheque");
 
     private final String descripcion;
 
