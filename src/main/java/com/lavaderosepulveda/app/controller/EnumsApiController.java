@@ -3,6 +3,7 @@ package com.lavaderosepulveda.app.controller;
 import com.lavaderosepulveda.app.model.enums.CategoriaGasto;
 import com.lavaderosepulveda.app.model.enums.MetodoPago;
 import com.lavaderosepulveda.app.model.enums.EstadoFactura;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,5 +54,19 @@ public class EnumsApiController {
                 })
                 .toList();
         return ResponseEntity.ok(estados);
+    }
+
+    @GetMapping("/tipos-lavado")
+    public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
+        List<Map<String, Object>> tipos = Arrays.stream(TipoLavado.values())
+                .map(tipo -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("valor", tipo.name());
+                    map.put("descripcion", tipo.getDescripcion());
+                    map.put("precio", tipo.getPrecio());
+                    return map;
+                })
+                .toList();
+        return ResponseEntity.ok(tipos);
     }
 }

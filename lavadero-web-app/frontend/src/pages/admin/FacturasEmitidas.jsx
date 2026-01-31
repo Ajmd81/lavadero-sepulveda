@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import facturaService from '../../services/facturaService';
 import clienteService from '../../services/clienteService';
+import enumsService from '../../services/enumsService';
 
 const FacturasEmitidas = () => {
   const [facturas, setFacturas] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [metodosPago, setMetodosPago] = useState([]);
+  const [tiposLavado, setTiposLavado] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -45,6 +48,8 @@ const FacturasEmitidas = () => {
     // Inicializar datos en componente
     const inicializar = async () => {
       try {
+        await cargarMetodosPago();
+        await cargarTiposLavado();
         await cargarClientes();
         await cargarFacturas();
       } catch (err) {
@@ -94,6 +99,38 @@ const FacturasEmitidas = () => {
   };
 
   // Cargar clientes
+  const cargarMetodosPago = async () => {
+    try {
+      const response = await enumsService.obtenerMetodosPago();
+      if (response.data && Array.isArray(response.data)) {
+        setMetodosPago(response.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar métodos de pago:', err);
+      // Fallback
+      setMetodosPago([
+        { valor: 'EFECTIVO', descripcion: 'Efectivo' },
+        { valor: 'TARJETA', descripcion: 'Tarjeta' },
+        { valor: 'TRANSFERENCIA', descripcion: 'Transferencia' },
+        { valor: 'BIZUM', descripcion: 'Bizum' },
+        { valor: 'CHEQUE', descripcion: 'Cheque' },
+        { valor: 'DOMICILIACION', descripcion: 'Domiciliación' },
+      ]);
+    }
+  };
+
+  const cargarTiposLavado = async () => {
+    try {
+      const response = await enumsService.obtenerTiposLavado();
+      if (response.data && Array.isArray(response.data)) {
+        setTiposLavado(response.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar tipos de lavado:', err);
+      setTiposLavado([]);
+    }
+  };
+
   const cargarClientes = async () => {
     try {
       const response = await clienteService.getAll();
@@ -692,12 +729,12 @@ const FacturasEmitidas = () => {
                         onChange={handleInputChange}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
-                        <option value="EFECTIVO">Efectivo</option>
-                        <option value="TARJETA">Tarjeta</option>
-                        <option value="TRANSFERENCIA">Transferencia</option>
-                        <option value="BIZUM">Bizum</option>
-                        <option value="CHEQUE">Cheque</option>
-                        <option value="DOMICILIACION">Domiciliación</option>
+                        <option value="">-- Selecciona un método --</option>
+                        {metodosPago.map((metodo) => (
+                          <option key={metodo.valor} value={metodo.valor}>
+                            {metodo.descripcion}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -798,14 +835,19 @@ const FacturasEmitidas = () => {
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
                           Concepto
                         </label>
-                        <input
-                          type="text"
+                        <select
                           name="concepto"
                           value={nuevaLinea.concepto}
                           onChange={handleNuevaLineaChange}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                          placeholder="Descripción del servicio/producto"
-                        />
+                        >
+                          <option value="">-- Selecciona un servicio --</option>
+                          {tiposLavado.map((tipo) => (
+                            <option key={tipo.valor} value={tipo.valor}>
+                              {tipo.descripcion}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -1010,12 +1052,12 @@ const FacturasEmitidas = () => {
                 onChange={(e) => setMetodoPagoCobro(e.target.value)}
                 className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
-                <option value="EFECTIVO">💵 Efectivo</option>
-                <option value="TARJETA">💳 Tarjeta</option>
-                <option value="BIZUM">📱 Bizum</option>
-                <option value="TRANSFERENCIA">🏦 Transferencia Bancaria</option>
-                <option value="CHEQUE">📄 Cheque</option>
-                <option value="DOMICILIACION">📋 Domiciliación</option>
+                <option value="">-- Selecciona un método --</option>
+                {metodosPago.map((metodo) => (
+                  <option key={metodo.valor} value={metodo.valor}>
+                    {metodo.descripcion}
+                  </option>
+                ))}
               </select>
             </div>
 

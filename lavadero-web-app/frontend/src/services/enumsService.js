@@ -31,6 +31,16 @@ const enumsService = {
       console.error('Error al obtener estados de factura:', error);
       throw error;
     }
+  },
+
+  obtenerTiposLavado: async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/tipos-lavado`);
+      return response;
+    } catch (error) {
+      console.error('Error al obtener tipos de lavado:', error);
+      throw error;
+    }
   }
 };
 

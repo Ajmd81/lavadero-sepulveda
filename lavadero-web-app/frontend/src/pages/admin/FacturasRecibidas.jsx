@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import facturaRecibidaService from '../../services/facturaRecibidaService';
 import proveedorService from '../../services/proveedorService';
+import enumsService from '../../services/enumsService';
 
 const FacturasRecibidas = () => {
   const [facturas, setFacturas] = useState([]);
   const [proveedores, setProveedores] = useState([]);
+  const [metodosPago, setMetodosPago] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -39,6 +41,7 @@ const FacturasRecibidas = () => {
   });
 
   useEffect(() => {
+    cargarMetodosPago();
     cargarFacturas();
     cargarProveedores();
   }, []);
@@ -86,6 +89,26 @@ const FacturasRecibidas = () => {
     }
   };
 
+  const cargarMetodosPago = async () => {
+    try {
+      const response = await enumsService.obtenerMetodosPago();
+      if (response.data && Array.isArray(response.data)) {
+        setMetodosPago(response.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar métodos de pago:', err);
+      // Fallback
+      setMetodosPago([
+        { valor: 'TRANSFERENCIA', descripcion: 'Transferencia' },
+        { valor: 'EFECTIVO', descripcion: 'Efectivo' },
+        { valor: 'TARJETA', descripcion: 'Tarjeta' },
+        { valor: 'BIZUM', descripcion: 'Bizum' },
+        { valor: 'CHEQUE', descripcion: 'Cheque' },
+        { valor: 'DOMICILIACION', descripcion: 'Domiciliación' },
+      ]);
+    }
+  };
+
   const cargarProveedores = async () => {
     try {
       const response = await proveedorService.getActivos();
@@ -94,6 +117,7 @@ const FacturasRecibidas = () => {
       console.error('Error al cargar proveedores:', err);
     }
   };
+
 
   const abrirModalNuevo = () => {
     setFormData({
@@ -220,7 +244,7 @@ const FacturasRecibidas = () => {
       concepto: conceptosConcatenados,
     }));
   };
-  };
+  
 
   const eliminarLinea = (lineaId) => {
     const nuevasLineas = formData.lineas.filter(l => l.id !== lineaId);
@@ -796,12 +820,12 @@ const FacturasRecibidas = () => {
                         onChange={handleInputChange}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       >
-                        <option value="TRANSFERENCIA">Transferencia</option>
-                        <option value="EFECTIVO">Efectivo</option>
-                        <option value="TARJETA">Tarjeta</option>
-                        <option value="BIZUM">Bizum</option>
-                        <option value="CHEQUE">Cheque</option>
-                        <option value="DOMICILIACION">Domiciliación</option>
+                        <option value="">-- Selecciona un método --</option>
+                        {metodosPago.map((metodo) => (
+                          <option key={metodo.valor} value={metodo.valor}>
+                            {metodo.descripcion}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
