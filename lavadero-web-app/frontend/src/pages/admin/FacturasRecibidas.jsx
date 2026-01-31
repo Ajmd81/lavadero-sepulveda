@@ -41,6 +41,17 @@ const FacturasRecibidas = () => {
       const response = await facturaRecibidaService.getAll();
       let facturasData = response.data || [];
 
+      // Si es un objeto con content (paginado), extraer content
+      if (facturasData && facturasData.content && Array.isArray(facturasData.content)) {
+        facturasData = facturasData.content;
+      }
+
+      // Validar que sea un array
+      if (!Array.isArray(facturasData)) {
+        console.warn('⚠️ response.data no es un array:', typeof facturasData);
+        facturasData = [];
+      }
+
       facturasData = facturasData.sort((a, b) => {
         let fechaA = a.fechaFactura;
         let fechaB = b.fechaFactura;

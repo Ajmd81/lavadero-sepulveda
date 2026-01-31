@@ -32,6 +32,17 @@ const Gastos = () => {
       const response = await gastoService.getAll();
       let gastosData = response.data || [];
 
+      // Si es un objeto con content (paginado), extraer content
+      if (gastosData && gastosData.content && Array.isArray(gastosData.content)) {
+        gastosData = gastosData.content;
+      }
+
+      // Validar que sea un array
+      if (!Array.isArray(gastosData)) {
+        console.warn('⚠️ response.data no es un array:', typeof gastosData);
+        gastosData = [];
+      }
+
       gastosData = gastosData.sort((a, b) => {
         let fechaA = a.fecha;
         let fechaB = b.fecha;

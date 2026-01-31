@@ -34,6 +34,17 @@ const Citas = () => {
       const response = await citaService.getAll();
       let citasData = response.data || [];
 
+      // Si es un objeto con content (paginado), extraer content
+      if (citasData && citasData.content && Array.isArray(citasData.content)) {
+        citasData = citasData.content;
+      }
+
+      // Validar que sea un array
+      if (!Array.isArray(citasData)) {
+        console.warn('⚠️ response.data no es un array:', typeof citasData);
+        citasData = [];
+      }
+
       // Ordenar citas por fecha y hora
       citasData = citasData.sort((a, b) => {
         // Convertir fechas a formato YYYY-MM-DD para comparar

@@ -99,6 +99,11 @@ const FacturasEmitidas = () => {
       const response = await clienteService.getAll();
       let clientesData = response.data || [];
       
+      // Si es un objeto con content (paginado), extraer content
+      if (clientesData && clientesData.content && Array.isArray(clientesData.content)) {
+        clientesData = clientesData.content;
+      }
+      
       // Validar que sea un array
       if (!Array.isArray(clientesData)) {
         console.warn('⚠️ response.data no es un array:', typeof clientesData);
