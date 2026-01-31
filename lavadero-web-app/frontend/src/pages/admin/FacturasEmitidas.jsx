@@ -92,8 +92,6 @@ const FacturasEmitidas = () => {
       cargarFacturas(page);
     }
   };
-    }
-  };
 
   // Cargar clientes
   const cargarClientes = async () => {
