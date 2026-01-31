@@ -45,7 +45,7 @@ public class Factura {
     private EstadoFactura estado = EstadoFactura.PENDIENTE;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "metodo_pago", length = 15)
+    @Column(name = "metodo_pago", length = 50)
     private MetodoPago metodoPago;
 
     // Relación con cliente (opcional para factura simplificada)

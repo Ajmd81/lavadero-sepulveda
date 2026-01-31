@@ -66,7 +66,7 @@ public class FacturaRecibida {
     private EstadoFactura estado = EstadoFactura.PENDIENTE;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "metodo_pago")
+    @Column(name = "metodo_pago", length = 50)
     private MetodoPago metodoPago;
 
     @Column(name = "documento_adjunto")
