@@ -38,24 +38,43 @@ const Dashboard = () => {
   const today = format(new Date(), 'yyyy-MM-dd');
   const now = new Date(); // Fecha y hora actual completa para comparación precisa si fuera necesario
 
+  // Extraer arrays de las respuestas
+  const citasArray = Array.isArray(citas?.data) 
+    ? citas.data 
+    : (citas?.data?.content && Array.isArray(citas.data.content) 
+      ? citas.data.content 
+      : []);
+
+  const clientesArray = Array.isArray(clientes?.data) 
+    ? clientes.data 
+    : (clientes?.data?.content && Array.isArray(clientes.data.content) 
+      ? clientes.data.content 
+      : []);
+
+  const facturasArray = Array.isArray(facturas?.data) 
+    ? facturas.data 
+    : (facturas?.data?.content && Array.isArray(facturas.data.content) 
+      ? facturas.data.content 
+      : []);
+
   // Filtrar citas pendientes de HOY
-  const proximasCitas = citas?.data
-    ?.filter(c => c.fecha === today && c.estado !== 'COMPLETADA' && c.estado !== 'CANCELADA')
-    ?.sort((a, b) => {
+  const proximasCitas = citasArray
+    .filter(c => c.fecha === today && c.estado !== 'COMPLETADA' && c.estado !== 'CANCELADA')
+    .sort((a, b) => {
       // Ordenar primero por fecha
       if (a.fecha !== b.fecha) return a.fecha.localeCompare(b.fecha);
       // Luego por hora si la fecha es igual
       return a.hora.localeCompare(b.hora);
     })
-    ?.slice(0, 5) // Mostrar solo las próximas 5
+    .slice(0, 5) // Mostrar solo las próximas 5
     || [];
 
-  const totalClientes = clientes?.data?.length || 0;
-  const totalFacturas = facturas?.data?.length || 0;
+  const totalClientes = clientesArray.length || 0;
+  const totalFacturas = facturasArray.length || 0;
 
-  const facturacionMes = facturas?.data
-    ?.filter(f => f.fecha?.startsWith(format(new Date(), 'yyyy-MM')))
-    ?.reduce((sum, f) => sum + (f.total || 0), 0) || 0;
+  const facturacionMes = facturasArray
+    .filter(f => f.fecha?.startsWith(format(new Date(), 'yyyy-MM')))
+    .reduce((sum, f) => sum + (f.total || 0), 0) || 0;
 
   const stats = [
     {

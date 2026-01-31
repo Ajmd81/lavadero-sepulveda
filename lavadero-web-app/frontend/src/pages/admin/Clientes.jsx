@@ -29,6 +29,13 @@ const Clientes = () => {
     queryFn: () => clienteService.getAll(),
   });
 
+  // Extraer array de clientes de la respuesta (manejar tanto respuestas paginadas como directas)
+  const clientesArray = Array.isArray(clientes?.data) 
+    ? clientes.data 
+    : (clientes?.data?.content && Array.isArray(clientes.data.content) 
+      ? clientes.data.content 
+      : []);
+
   const guardarMutation = useMutation({
     mutationFn: async (cliente) => {
       if (selectedCliente) {
@@ -62,7 +69,7 @@ const Clientes = () => {
     }
   });
 
-  const filteredClientes = clientes?.data?.filter(cliente =>
+  const filteredClientes = clientesArray.filter(cliente =>
     cliente.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.apellidos?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.telefono?.includes(searchTerm) ||

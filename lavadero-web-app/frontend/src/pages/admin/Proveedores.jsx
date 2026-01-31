@@ -14,6 +14,13 @@ const Proveedores = () => {
     queryFn: () => proveedorService.getAll(),
   });
 
+  // Extraer array de proveedores de la respuesta (manejar tanto respuestas paginadas como directas)
+  const proveedoresArray = Array.isArray(proveedores?.data) 
+    ? proveedores.data 
+    : (proveedores?.data?.content && Array.isArray(proveedores.data.content) 
+      ? proveedores.data.content 
+      : []);
+
   const deleteMutation = useMutation({
     mutationFn: (id) => proveedorService.delete(id),
     onSuccess: () => {
@@ -22,7 +29,7 @@ const Proveedores = () => {
     },
   });
 
-  const filteredProveedores = proveedores?.data?.filter(proveedor =>
+  const filteredProveedores = proveedoresArray.filter(proveedor =>
     proveedor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     proveedor.telefono?.includes(searchTerm) ||
     proveedor.email?.toLowerCase().includes(searchTerm.toLowerCase())
