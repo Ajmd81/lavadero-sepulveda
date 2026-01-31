@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import gastoService from '../../services/gastoService';
+import enumsService from '../../services/enumsService';
 
 const Gastos = () => {
   const [gastos, setGastos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -23,8 +25,45 @@ const Gastos = () => {
   });
 
   useEffect(() => {
+    cargarCategorias();
     cargarGastos();
   }, []);
+
+  const cargarCategorias = async () => {
+    try {
+      const response = await enumsService.obtenerCategoriasGasto();
+      if (response.data && Array.isArray(response.data)) {
+        setCategorias(response.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar categorías:', err);
+      // Fallback a categorías hardcodeadas si falla el backend
+      setCategorias([
+        { valor: 'AGUA', descripcion: 'Agua' },
+        { valor: 'ALQUILER', descripcion: 'Alquiler' },
+        { valor: 'ASOCIACIONES', descripcion: 'Asociaciones' },
+        { valor: 'BANCARIOS', descripcion: 'Gastos bancarios' },
+        { valor: 'COMBUSTIBLE', descripcion: 'Combustible' },
+        { valor: 'GESTORÍA', descripcion: 'Gestoría/Asesoría' },
+        { valor: 'IMPUESTOS', descripcion: 'Impuestos/Tasas' },
+        { valor: 'LUZ', descripcion: 'Electricidad' },
+        { valor: 'MANTENIMIENTO', descripcion: 'Mantenimiento' },
+        { valor: 'MAQUINARIA', descripcion: 'Maquinaria/Equipos' },
+        { valor: 'MATERIAL_OFICINA', descripcion: 'Material oficina' },
+        { valor: 'OTROS', descripcion: 'Otros' },
+        { valor: 'PERSONAL', descripcion: 'Personal/Nóminas' },
+        { valor: 'PRODUCTOS', descripcion: 'Productos' },
+        { valor: 'PUBLICIDAD', descripcion: 'Publicidad/Marketing' },
+        { valor: 'REPARACIONES', descripcion: 'Reparaciones' },
+        { valor: 'SEGURIDAD_SOCIAL', descripcion: 'Seguridad Social' },
+        { valor: 'SEGURIDAD_SOCIAL_A_CARGO_EMPRESA', descripcion: 'Autónomos' },
+        { valor: 'SEGUROS', descripcion: 'Seguros' },
+        { valor: 'SUMINISTROS', descripcion: 'Productos de limpieza' },
+        { valor: 'TELEFONIA', descripcion: 'Telefonía/Internet' },
+        { valor: 'VEHICULOS', descripcion: 'Vehículos' },
+      ]);
+    }
+  };
 
   const cargarGastos = async () => {
     setLoading(true);
@@ -345,12 +384,12 @@ const Gastos = () => {
                         onChange={handleInputChange}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       >
-                        <option value="MANTENIMIENTO">Mantenimiento</option>
-                        <option value="SUMINISTROS">Suministros</option>
-                        <option value="PERSONAL">Personal</option>
-                        <option value="SERVICIOS">Servicios</option>
-                        <option value="TRANSPORTE">Transporte</option>
-                        <option value="OTROS">Otros</option>
+                        <option value="">-- Selecciona una categoría --</option>
+                        {categorias.map((cat) => (
+                          <option key={cat.valor} value={cat.valor}>
+                            {cat.descripcion}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
