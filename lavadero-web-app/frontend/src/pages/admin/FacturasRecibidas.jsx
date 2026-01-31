@@ -242,6 +242,23 @@ const FacturasRecibidas = () => {
     }
   };
 
+  const formatearFechaParaEnvio = (fecha) => {
+    if (!fecha) return '';
+    
+    // Si ya está en formato dd/MM/yyyy, devolverlo tal cual
+    if (typeof fecha === 'string' && fecha.includes('/')) {
+      return fecha;
+    }
+    
+    // Si es YYYY-MM-DD (input date), convertir a dd/MM/yyyy
+    if (typeof fecha === 'string' && fecha.includes('-')) {
+      const [year, month, day] = fecha.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    
+    return '';
+  };
+
   const guardarFactura = async (e) => {
     e.preventDefault();
 
@@ -255,28 +272,43 @@ const FacturasRecibidas = () => {
       return;
     }
 
+    const baseImponibleNum = parseFloat(formData.baseImponible) || 0;
+    const totalNum = parseFloat(formData.total) || 0;
+
+    if (baseImponibleNum <= 0) {
+      alert('La Base Imponible debe ser mayor a 0');
+      return;
+    }
+
+    if (totalNum <= 0) {
+      alert('El Total debe ser mayor a 0');
+      return;
+    }
+
     try {
       // Preparar los datos para enviar al backend
       const datosEnvio = {
-        numeroFactura: formData.numeroFactura,
-        proveedorId: formData.proveedorId || null,
-        proveedorNombre: formData.proveedorNombre,
-        proveedorNif: formData.proveedorNif || '',
-        fechaFactura: formData.fechaFactura || new Date().toISOString().split('T')[0],
-        fechaVencimiento: formData.fechaVencimiento || '',
-        fechaPago: formData.fechaPago || '',
+        numeroFactura: formData.numeroFactura.trim(),
+        proveedorId: formData.proveedorId ? parseInt(formData.proveedorId) : null,
+        proveedorNombre: formData.proveedorNombre.trim(),
+        proveedorNif: (formData.proveedorNif || '').trim(),
+        fechaFactura: formatearFechaParaEnvio(formData.fechaFactura) || new Date().toLocaleDateString('es-ES').replaceAll('/', '/'),
+        fechaVencimiento: formatearFechaParaEnvio(formData.fechaVencimiento),
+        fechaPago: formatearFechaParaEnvio(formData.fechaPago),
         categoria: formData.categoria || 'SUMINISTROS',
         concepto: formData.concepto || '',
-        baseImponible: parseFloat(formData.baseImponible) || 0,
+        baseImponible: baseImponibleNum,
         tipoIva: parseFloat(formData.tipoIva) || 21,
         cuotaIva: parseFloat(formData.cuotaIva) || 0,
         tipoIrpf: parseFloat(formData.tipoIrpf) || 0,
         cuotaIrpf: parseFloat(formData.cuotaIrpf) || 0,
-        total: parseFloat(formData.total) || 0,
+        total: totalNum,
         estado: formData.estado || 'PENDIENTE',
         metodoPago: formData.metodoPago || 'TRANSFERENCIA',
-        notas: formData.notas || ''
+        notas: (formData.notas || '').trim()
       };
+
+      console.log('Enviando datos:', datosEnvio);
 
       if (editandoFactura) {
         await facturaRecibidaService.update(editandoFactura, datosEnvio);
@@ -289,6 +321,7 @@ const FacturasRecibidas = () => {
       cargarFacturas();
     } catch (err) {
       console.error('Error completo:', err.response?.data || err.message);
+      console.error('Detalles del error:', err.response?.data?.errors || err.response?.data?.message);
       alert('Error al guardar factura: ' + (err.response?.data?.message || err.message));
     }
   };
