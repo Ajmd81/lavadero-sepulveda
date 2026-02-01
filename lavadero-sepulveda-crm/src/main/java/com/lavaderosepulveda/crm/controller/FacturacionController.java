@@ -6,6 +6,7 @@ import com.lavaderosepulveda.crm.model.entity.*;
 import com.lavaderosepulveda.crm.model.enums.*;
 import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -1148,15 +1149,23 @@ public class FacturacionController {
 
         Optional<ButtonType> resultado = confirmacion.showAndWait();
         if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
-            try {
-                apiService.eliminarFacturaEmitida(factura.getId());
-                cargarFacturasEmitidas();
-                mostrarInfo("Factura Eliminada", 
-                        "La factura " + factura.getNumeroFactura() + " se ha eliminado correctamente");
-            } catch (Exception e) {
-                log.error("Error al eliminar factura", e);
-                mostrarError("Error", "No se pudo eliminar la factura: " + e.getMessage());
-            }
+            new Thread(() -> {
+                try {
+                    apiService.eliminarFacturaEmitida(factura.getId());
+                    // Eliminar de la lista local sin recargar todo (evita timeout)
+                    Platform.runLater(() -> {
+                        listaEmitidas.remove(factura);
+                        actualizarTotalesEmitidas();
+                        mostrarInfo("Factura Eliminada", 
+                                "La factura " + factura.getNumeroFactura() + " se ha eliminado correctamente");
+                    });
+                } catch (Exception e) {
+                    log.error("Error al eliminar factura", e);
+                    Platform.runLater(() -> 
+                        mostrarError("Error", "No se pudo eliminar la factura: " + e.getMessage())
+                    );
+                }
+            }).start();
         }
     }
 

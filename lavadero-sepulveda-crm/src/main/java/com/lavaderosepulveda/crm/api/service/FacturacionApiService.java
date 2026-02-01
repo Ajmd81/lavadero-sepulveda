@@ -8,6 +8,8 @@ import com.lavaderosepulveda.crm.model.entity.*;
 import com.lavaderosepulveda.crm.model.enums.*;
 import com.lavaderosepulveda.crm.model.dto.ClienteDTO;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,6 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class FacturacionApiService {
 
         private static FacturacionApiService instance;
@@ -295,7 +298,14 @@ public class FacturacionApiService {
         }
 
         public void eliminarFacturaEmitida(Long id) throws IOException {
-                doDelete("/api/facturas/" + id);
+                log.info("🗑️ Intentando eliminar factura con ID: {}", id);
+                try {
+                        doDelete("/api/facturas/" + id);
+                        log.info("✅ Factura {} eliminada exitosamente", id);
+                } catch (IOException e) {
+                        log.error("❌ Error al eliminar factura {}: {}", id, e.getMessage());
+                        throw e;
+                }
         }
 
         public FacturaEmitidaDTO crearFacturaEmitida(String json) throws IOException {

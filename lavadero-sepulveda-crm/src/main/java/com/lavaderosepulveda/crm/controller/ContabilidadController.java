@@ -258,30 +258,55 @@ public class ContabilidadController implements Initializable {
         LocalDate hasta = dpHasta != null ? dpHasta.getValue() : LocalDate.now();
 
         if (desde == null || hasta == null) {
+            log.warn("Fechas nulas: desde={}, hasta={}", desde, hasta);
             mostrarAlerta("Error", "Debe seleccionar un rango de fechas", Alert.AlertType.WARNING);
             return;
         }
 
-        log.info("Cargando datos de contabilidad desde {} hasta {}", desde, hasta);
+        log.info("📊 Cargando datos de contabilidad desde {} hasta {}", desde, hasta);
         final LocalDate desdeF = desde;
         final LocalDate hastaF = hasta;
 
         CompletableFuture.runAsync(() -> {
             try {
+                log.debug("Obteniendo facturas emitidas del servidor...");
                 facturasEmitidas = facturacionService.obtenerFacturasEmitidas();
+                log.info("✅ Se obtuvieron {} facturas emitidas", facturasEmitidas.size());
 
                 List<FacturaEmitidaDTO> facturasFiltradas = facturasEmitidas.stream()
                         .filter(f -> {
                             LocalDate fechaFactura = parseFecha(f.getFechaEmision());
-                            return fechaFactura != null && !fechaFactura.isBefore(desdeF)
+                            boolean cumple = fechaFactura != null && !fechaFactura.isBefore(desdeF)
                                     && !fechaFactura.isAfter(hastaF);
+                            if (!cumple && fechaFactura != null) {
+                                log.debug("Factura {} filtrada: fecha={}", f.getNumeroFactura(), fechaFactura);
+                            }
+                            return cumple;
                         })
                         .collect(Collectors.toList());
 
+                log.info("📋 Facturas filtradas para el período: {}", facturasFiltradas.size());
+
                 Platform.runLater(() -> {
-                    actualizarTarjetas(facturasFiltradas);
-                    actualizarTablaResumenMensual(facturasFiltradas);
-                    actualizarTablaPorCliente(facturasFiltradas);
+                    try {
+                        log.debug("Actualizando tarjetas con datos...");
+                        actualizarTarjetas(facturasFiltradas);
+                        log.debug("✅ Tarjetas actualizadas");
+
+                        log.debug("Actualizando tabla de resumen mensual...");
+                        actualizarTablaResumenMensual(facturasFiltradas);
+                        log.debug("✅ Tabla de resumen mensual actualizada");
+
+                        log.debug("Actualizando tabla por cliente...");
+                        actualizarTablaPorCliente(facturasFiltradas);
+                        log.debug("✅ Tabla por cliente actualizada");
+
+                        log.info("🎉 Interfaz de contabilidad cargada exitosamente");
+                    } catch (Exception e) {
+                        log.error("❌ Error actualizando interfaz: {}", e.getMessage(), e);
+                        mostrarAlerta("Error", "Error al actualizar interfaz: " + e.getMessage(),
+                                Alert.AlertType.ERROR);
+                    }
                 });
 
             } catch (Exception e) {
@@ -293,17 +318,25 @@ public class ContabilidadController implements Initializable {
     }
 
     private LocalDate parseFecha(String fechaStr) {
-        if (fechaStr == null || fechaStr.isEmpty())
+        if (fechaStr == null || fechaStr.isEmpty()) {
+            log.debug("❌ Fecha nula o vacía");
             return null;
+        }
         try {
+            LocalDate result;
             if (fechaStr.contains("T")) {
-                return LocalDate.parse(fechaStr.substring(0, 10));
+                result = LocalDate.parse(fechaStr.substring(0, 10));
+                log.debug("✅ Fecha ISO parseada: {} → {}", fechaStr, result);
             } else if (fechaStr.contains("/")) {
-                return LocalDate.parse(fechaStr, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                result = LocalDate.parse(fechaStr, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                log.debug("✅ Fecha dd/MM/yyyy parseada: {} → {}", fechaStr, result);
             } else {
-                return LocalDate.parse(fechaStr);
+                result = LocalDate.parse(fechaStr);
+                log.debug("✅ Fecha default parseada: {} → {}", fechaStr, result);
             }
+            return result;
         } catch (Exception e) {
+            log.error("❌ Error al parsear fecha '{}': {}", fechaStr, e.getMessage());
             return null;
         }
     }
