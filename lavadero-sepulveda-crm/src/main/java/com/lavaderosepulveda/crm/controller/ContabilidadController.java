@@ -111,6 +111,7 @@ public class ContabilidadController implements Initializable {
     private DateTimeFormatter monthFormatter;
     private DateTimeFormatter dateFormatter;
     private List<FacturaEmitidaDTO> facturasEmitidas;
+    private volatile boolean cargando = false; // Flag para evitar cargas simultáneas
 
     // Colores para PDF (iText 7/8)
     private static final DeviceRgb COLOR_VERDE = new DeviceRgb(46, 125, 50);
@@ -254,6 +255,12 @@ public class ContabilidadController implements Initializable {
 
     @FXML
     private void cargarDatos() {
+        // Prevenir cargas simultáneas
+        if (cargando) {
+            log.warn("⚠️ Carga de datos ya en progreso, ignorando nueva solicitud");
+            return;
+        }
+
         LocalDate desde = dpDesde != null ? dpDesde.getValue() : LocalDate.now().withDayOfMonth(1);
         LocalDate hasta = dpHasta != null ? dpHasta.getValue() : LocalDate.now();
 
@@ -264,6 +271,7 @@ public class ContabilidadController implements Initializable {
         }
 
         log.info("📊 Cargando datos de contabilidad desde {} hasta {}", desde, hasta);
+        cargando = true; // Marcar como cargando
         final LocalDate desdeF = desde;
         final LocalDate hastaF = hasta;
 
@@ -306,13 +314,18 @@ public class ContabilidadController implements Initializable {
                         log.error("❌ Error actualizando interfaz: {}", e.getMessage(), e);
                         mostrarAlerta("Error", "Error al actualizar interfaz: " + e.getMessage(),
                                 Alert.AlertType.ERROR);
+                    } finally {
+                        cargando = false; // Marcar como no cargando
                     }
                 });
 
             } catch (Exception e) {
                 log.error("Error cargando datos de contabilidad", e);
-                Platform.runLater(() -> mostrarAlerta("Error", "No se pudieron cargar los datos: " + e.getMessage(),
-                        Alert.AlertType.ERROR));
+                Platform.runLater(() -> {
+                    mostrarAlerta("Error", "No se pudieron cargar los datos: " + e.getMessage(),
+                            Alert.AlertType.ERROR);
+                    cargando = false; // Marcar como no cargando
+                });
             }
         });
     }
