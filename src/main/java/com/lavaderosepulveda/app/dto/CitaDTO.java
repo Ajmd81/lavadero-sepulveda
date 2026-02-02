@@ -1,6 +1,7 @@
 package com.lavaderosepulveda.app.dto;
 
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -33,9 +34,11 @@ public class CitaDTO {
     private TipoLavado tipoLavado;
 
     @NotNull(message = "La fecha es obligatoria")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fecha;
 
     @NotNull(message = "La hora es obligatoria")
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime hora;
 
     // Campos adicionales para gestión de estado y pagos
