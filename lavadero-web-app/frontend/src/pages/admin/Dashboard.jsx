@@ -57,6 +57,12 @@ const Dashboard = () => {
       ? facturas.data.content 
       : []);
 
+  console.log(`📊 Facturas cargadas en Dashboard:`, facturasArray.length);
+  if (facturasArray.length > 0) {
+    console.log(`📊 Primera factura:`, facturasArray[0]);
+    console.log(`📊 Última factura:`, facturasArray[facturasArray.length - 1]);
+  }
+
   // Filtrar citas pendientes de HOY
   const proximasCitas = citasArray
     .filter(c => c.fecha === today && c.estado !== 'COMPLETADA' && c.estado !== 'CANCELADA')
@@ -72,9 +78,56 @@ const Dashboard = () => {
   const totalClientes = clientesArray.length || 0;
   const totalFacturas = facturasArray.length || 0;
 
+  // Calcular facturación del mes actual
+  const mesActual = new Date().getMonth() + 1; // 1-12
+  const anioActual = new Date().getFullYear();
+  
+  console.log(`📊 Calculando facturación para ${mesActual}/${anioActual}`);
+  console.log(`📊 Total facturas disponibles: ${facturasArray.length}`);
+  
   const facturacionMes = facturasArray
-    .filter(f => f.fecha?.startsWith(format(new Date(), 'yyyy-MM')))
-    .reduce((sum, f) => sum + (f.total || 0), 0) || 0;
+    .filter(f => {
+      if (!f.fecha) return false;
+      
+      let fechaStr = f.fecha;
+      
+      // Si es objeto Date, convertir a string
+      if (fechaStr instanceof Date) {
+        fechaStr = format(fechaStr, 'yyyy-MM-dd');
+      }
+      
+      // Convertir string a objeto para comparar
+      let mes, anio;
+      
+      if (fechaStr.includes('/')) {
+        // Formato dd/MM/yyyy
+        const partes = fechaStr.split('/');
+        mes = parseInt(partes[1]);
+        anio = parseInt(partes[2]);
+      } else if (fechaStr.includes('-')) {
+        // Formato yyyy-MM-dd o yyyy-MM-ddTHH:mm:ss
+        const fechaSolo = fechaStr.split('T')[0];
+        const partes = fechaSolo.split('-');
+        anio = parseInt(partes[0]);
+        mes = parseInt(partes[1]);
+      } else {
+        return false;
+      }
+      
+      const coincide = mes === mesActual && anio === anioActual;
+      if (coincide) {
+        console.log(`✅ Factura del mes actual: ${f.numero} - ${f.fecha} - €${f.total}`);
+      }
+      
+      return coincide;
+    })
+    .reduce((sum, f) => {
+      // Convertir total a número (puede venir como string o BigDecimal)
+      const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
+      return sum + total;
+    }, 0);
+  
+  console.log(`📊 Facturación del mes: €${facturacionMes.toFixed(2)}`);
 
   const stats = [
     {
