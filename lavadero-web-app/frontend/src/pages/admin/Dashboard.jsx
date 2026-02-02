@@ -10,7 +10,7 @@ import { es } from 'date-fns/locale';
 const Dashboard = () => {
   const { data: citas, isLoading: loadingCitas } = useQuery({
     queryKey: ['citas-dashboard'],
-    queryFn: () => citaService.getAll(),
+    queryFn: () => citaService.getAll(), // Este endpoint ya devuelve todas las citas sin paginación
   });
 
   const { data: clientes } = useQuery({
@@ -20,7 +20,7 @@ const Dashboard = () => {
 
   const { data: facturas } = useQuery({
     queryKey: ['facturas-dashboard'],
-    queryFn: () => facturaService.getAll(),
+    queryFn: () => facturaService.getAll(0, 1000), // Obtener todas las facturas (máx 1000)
   });
 
   const formatDate = (dateString) => {
