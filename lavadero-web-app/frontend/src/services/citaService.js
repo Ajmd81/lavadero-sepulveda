@@ -3,6 +3,10 @@ import api from './api';
 const citaService = {
   // CRUD Básico
   getAll: () => api.get('/citas'),
+  getAllPaginado: (page = 0, size = 10, sortBy = 'fecha', sortDir = 'desc') => 
+    api.get('/citas/paginado', { 
+      params: { page, size, sortBy, sortDir } 
+    }),
   getById: (id) => api.get(`/citas/${id}`),
   create: (citaData) => api.post('/citas', citaData),
   update: (id, citaData) => api.put(`/citas/${id}`, citaData),
@@ -20,18 +24,20 @@ const citaService = {
   getEnProceso: () => api.get('/citas/en-proceso'),
   getHoy: () => api.get('/citas/hoy'),
   
-  // ⭐ NUEVO: Cambiar estado de una cita
+  // Cambiar estado
   cambiarEstado: (id, nuevoEstado) => api.put(`/citas/${id}/estado/${nuevoEstado}`),
 
   // Cliente
   getByClienteId: (clienteId) => api.get(`/citas/cliente-id/${clienteId}`),
   getByClienteTelefono: (telefono) => api.get(`/citas/cliente/${telefono}`),
 
-  // Disponibilidad
+  // Disponibilidad y horarios
   checkDisponibilidad: (fecha, hora) =>
     api.get('/citas/verificar-disponibilidad', { params: { fecha, hora } }),
   getHorariosDisponibles: (fecha) =>
     api.get('/citas/horarios-disponibles', { params: { fecha } }),
+  getHorariosConfigurados: () => 
+    api.get('/horarios-configurados'),
   getDisponibilidadMensual: (mes, anio, tipoLavado) =>
     api.get('/citas/disponibilidad-mensual', { params: { mes, anio, tipoLavado } }),
   
