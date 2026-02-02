@@ -19,6 +19,9 @@ const citaService = {
   getNoFacturadas: () => api.get('/citas/no-facturadas'),
   getEnProceso: () => api.get('/citas/en-proceso'),
   getHoy: () => api.get('/citas/hoy'),
+  
+  // ⭐ NUEVO: Cambiar estado de una cita
+  cambiarEstado: (id, nuevoEstado) => api.put(`/citas/${id}/estado/${nuevoEstado}`),
 
   // Cliente
   getByClienteId: (clienteId) => api.get(`/citas/cliente-id/${clienteId}`),

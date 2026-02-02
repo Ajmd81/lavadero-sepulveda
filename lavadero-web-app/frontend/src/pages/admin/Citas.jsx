@@ -21,6 +21,13 @@ const Citas = () => {
     observaciones: '',
   });
 
+  // ⭐ Horarios disponibles (de hora en hora)
+  const horariosDisponibles = [
+    '08:00', '09:00', '10:00', '11:00', '12:00', 
+    '13:00', '14:00', '15:00', '16:00', '17:00', 
+    '18:00', '19:00', '20:00'
+  ];
+
   // Cargar citas al montar componente
   useEffect(() => {
     cargarCitas();
@@ -91,8 +98,8 @@ const Citas = () => {
   // Cargar tipos de lavado
   const cargarTiposLavado = async () => {
     try {
-      const response = await citaService.getTiposLavado?.();
-      if (response?.data) {
+      const response = await citaService.getTiposLavado();
+      if (response?.data && Array.isArray(response.data)) {
         setTiposLavado(response.data);
       }
     } catch (err) {
@@ -140,17 +147,17 @@ const Citas = () => {
       }
     }
 
-    // Convertir hora a formato HH:mm
+    // ⭐ Convertir hora a formato HH:00 (solo hora en punto)
     let horaFormato = '';
     if (cita.hora) {
       if (typeof cita.hora === 'string') {
-        // Si es string, tomar solo HH:mm
-        horaFormato = cita.hora.substring(0, 5);
+        // Si es string, tomar solo HH:mm y redondear a hora en punto
+        const horaParts = cita.hora.substring(0, 5).split(':');
+        horaFormato = `${horaParts[0]}:00`;
       } else if (cita.hora instanceof Date) {
         // Si es un objeto Date
         const hours = String(cita.hora.getHours()).padStart(2, '0');
-        const minutes = String(cita.hora.getMinutes()).padStart(2, '0');
-        horaFormato = `${hours}:${minutes}`;
+        horaFormato = `${hours}:00`;
       }
     }
 
@@ -188,20 +195,30 @@ const Citas = () => {
   // Guardar cita (crear o actualizar)
   const guardarCita = async (e) => {
     e.preventDefault();
+    
     try {
+      // ⭐ Preparar datos asegurando que hora esté en formato correcto
+      const datosAEnviar = {
+        ...formData,
+        hora: formData.hora // Ya viene en formato HH:00 del select
+      };
+
+      console.log('Datos a enviar:', datosAEnviar);
+
       if (editingCita) {
         // Actualizar cita existente
-        await citaService.update(editingCita.id, formData);
+        await citaService.update(editingCita.id, datosAEnviar);
       } else {
         // Crear nueva cita
-        await citaService.create(formData);
+        await citaService.create(datosAEnviar);
       }
+      
       await cargarCitas();
       cerrarModal();
       setError(null);
     } catch (err) {
       setError('Error al guardar la cita: ' + err.message);
-      console.error(err);
+      console.error('Error completo:', err);
     }
   };
 
@@ -214,49 +231,34 @@ const Citas = () => {
     try {
       let day, month, year;
 
-      // Si es string
       if (typeof fecha === 'string') {
-        // Formato ISO (YYYY-MM-DD)
-        if (fecha.includes('-') && !fecha.includes('/')) {
-          const partes = fecha.split('T')[0].split('-');
-          if (partes.length === 3) {
-            year = parseInt(partes[0]);
-            month = parseInt(partes[1]);
-            day = parseInt(partes[2]);
-          }
-        }
-        // Formato DD/MM/YYYY (lo que viene del backend)
-        else if (fecha.includes('/')) {
+        if (fecha.includes('/')) {
+          // Formato DD/MM/YYYY
           const partes = fecha.split('/');
-          if (partes.length === 3) {
-            day = parseInt(partes[0]);
-            month = parseInt(partes[1]);
-            year = parseInt(partes[2]);
-          }
+          day = partes[0];
+          month = partes[1];
+          year = partes[2];
+        } else if (fecha.includes('-')) {
+          // Formato YYYY-MM-DD o ISO
+          const fechaSolo = fecha.split('T')[0];
+          const partes = fechaSolo.split('-');
+          year = partes[0];
+          month = partes[1];
+          day = partes[2];
+        } else {
+          return fecha;
         }
       } else if (fecha instanceof Date) {
-        if (isNaN(fecha.getTime())) {
-          console.warn('Objeto Date inválido:', fecha);
-          return '—';
-        }
-        day = fecha.getDate();
-        month = fecha.getMonth() + 1;
+        day = String(fecha.getDate()).padStart(2, '0');
+        month = String(fecha.getMonth() + 1).padStart(2, '0');
         year = fecha.getFullYear();
       } else {
-        console.warn('Tipo de fecha no reconocido:', typeof fecha, fecha);
         return '—';
       }
 
-      // Validar valores
-      if (!isNaN(year) && !isNaN(month) && !isNaN(day) &&
-        month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
-      } else {
-        console.warn('Valores fuera de rango:', { day, month, year });
-        return '—';
-      }
-    } catch (err) {
-      console.error('Error formateando fecha:', fecha, err);
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      console.error('Error formateando fecha:', error, fecha);
       return '—';
     }
   };
@@ -275,9 +277,10 @@ const Citas = () => {
     }
   };
 
-  // Cambiar estado de cita
+  // ⭐ Cambiar estado de cita - CORREGIDO
   const cambiarEstado = async (id, nuevoEstado) => {
     try {
+      console.log(`Cambiando estado de cita ${id} a ${nuevoEstado}`);
       await citaService.cambiarEstado(id, nuevoEstado);
       await cargarCitas();
       setError(null);
@@ -467,14 +470,21 @@ const Citas = () => {
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   required
                 />
-                <input
-                  type="time"
+                {/* ⭐ SELECT en lugar de INPUT TIME para horarios fijos */}
+                <select
                   name="hora"
                   value={formData.hora}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   required
-                />
+                >
+                  <option value="">Seleccionar hora</option>
+                  {horariosDisponibles.map(hora => (
+                    <option key={hora} value={hora}>
+                      {hora}
+                    </option>
+                  ))}
+                </select>
                 <select
                   name="tipoLavado"
                   value={formData.tipoLavado}
@@ -485,7 +495,7 @@ const Citas = () => {
                   <option value="">Seleccionar tipo de lavado</option>
                   {tiposLavado.map(tipo => (
                     <option key={tipo.id} value={tipo.id}>
-                      {tipo.nombre} - ${tipo.precio}
+                      {tipo.descripcion} - €{tipo.precio.toFixed(2)}
                     </option>
                   ))}
                 </select>
