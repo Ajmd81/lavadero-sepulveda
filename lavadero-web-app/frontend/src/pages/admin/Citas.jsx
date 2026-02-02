@@ -9,11 +9,6 @@ const Citas = () => {
   const [editingCita, setEditingCita] = useState(null);
   const [tiposLavado, setTiposLavado] = useState([]);
 
-  // ⭐ NUEVO: Estados para disponibilidad
-  const [horariosDisponibles, setHorariosDisponibles] = useState([]);
-  const [loadingHorarios, setLoadingHorarios] = useState(false);
-  const [validandoDisponibilidad, setValidandoDisponibilidad] = useState(false);
-
   // Estados del formulario
   const [formData, setFormData] = useState({
     nombre: '',
@@ -26,8 +21,8 @@ const Citas = () => {
     observaciones: '',
   });
 
-  // Horarios base (todos los posibles)
-  const todosLosHorarios = [
+  // ⭐ Horarios disponibles (de hora en hora)
+  const horariosDisponibles = [
     '08:00', '09:00', '10:00', '11:00', '12:00', 
     '13:00', '14:00', '15:00', '16:00', '17:00', 
     '18:00', '19:00', '20:00'
@@ -38,16 +33,6 @@ const Citas = () => {
     cargarCitas();
     cargarTiposLavado();
   }, []);
-
-  // ⭐ NUEVO: Cargar horarios disponibles cuando cambia la fecha
-  useEffect(() => {
-    if (formData.fecha) {
-      cargarHorariosDisponibles(formData.fecha);
-    } else {
-      // Si no hay fecha, mostrar todos los horarios
-      setHorariosDisponibles(todosLosHorarios);
-    }
-  }, [formData.fecha]);
 
   // Cargar todas las citas
   const cargarCitas = async () => {
@@ -69,9 +54,11 @@ const Citas = () => {
 
       // Ordenar citas por fecha y hora
       citasData = citasData.sort((a, b) => {
+        // Convertir fechas a formato YYYY-MM-DD para comparar
         let fechaA = a.fecha;
         let fechaB = b.fecha;
 
+        // Si es DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaA && fechaA.includes('/')) {
           const [d, m, y] = fechaA.split('/');
           fechaA = `${y}-${m}-${d}`;
@@ -81,14 +68,17 @@ const Citas = () => {
           fechaB = `${y}-${m}-${d}`;
         }
 
+        // Usar ISO format para comparación
         fechaA = fechaA ? fechaA.split('T')[0] : '0000-00-00';
         fechaB = fechaB ? fechaB.split('T')[0] : '0000-00-00';
 
+        // Comparar fechas primero
         const comparacionFecha = fechaA.localeCompare(fechaB);
         if (comparacionFecha !== 0) {
           return comparacionFecha;
         }
 
+        // Si fechas son iguales, comparar por hora
         const horaA = a.hora ? a.hora.substring(0, 5) : '00:00';
         const horaB = b.hora ? b.hora.substring(0, 5) : '00:00';
 
@@ -117,63 +107,6 @@ const Citas = () => {
     }
   };
 
-  // ⭐ NUEVO: Cargar horarios disponibles para una fecha
-  const cargarHorariosDisponibles = async (fecha) => {
-    if (!fecha) {
-      setHorariosDisponibles(todosLosHorarios);
-      return;
-    }
-
-    setLoadingHorarios(true);
-    try {
-      const response = await citaService.getHorariosDisponibles(fecha);
-      let horarios = response.data || [];
-
-      console.log('📅 Horarios disponibles para', fecha, ':', horarios);
-
-      // Si estamos editando, añadir la hora actual de la cita aunque esté ocupada
-      if (editingCita && editingCita.hora) {
-        const horaActual = editingCita.hora.substring(0, 5);
-        if (!horarios.includes(horaActual)) {
-          horarios.push(horaActual);
-          horarios.sort();
-          console.log('✅ Hora actual de la cita añadida:', horaActual);
-        }
-      }
-
-      // Si no hay horarios disponibles, mostrar todos pero con advertencia
-      if (horarios.length === 0) {
-        console.warn('⚠️ No hay horarios disponibles para esta fecha');
-        setHorariosDisponibles(todosLosHorarios);
-      } else {
-        setHorariosDisponibles(horarios);
-      }
-    } catch (err) {
-      console.error('Error cargando horarios disponibles:', err);
-      // En caso de error, mostrar todos los horarios
-      setHorariosDisponibles(todosLosHorarios);
-    } finally {
-      setLoadingHorarios(false);
-    }
-  };
-
-  // ⭐ NUEVO: Validar disponibilidad de un horario específico
-  const validarDisponibilidad = async (fecha, hora) => {
-    try {
-      const response = await citaService.checkDisponibilidad(fecha, hora);
-      // IMPORTANTE: El backend devuelve true si está OCUPADO, false si está DISPONIBLE
-      const estaOcupado = response.data;
-      
-      console.log(`🔍 Validando ${fecha} ${hora}: ${estaOcupado ? 'OCUPADO' : 'DISPONIBLE'}`);
-      
-      return !estaOcupado; // Invertimos para que devuelva true si está disponible
-    } catch (err) {
-      console.error('Error validando disponibilidad:', err);
-      // En caso de error, asumimos que está disponible para no bloquear
-      return true;
-    }
-  };
-
   // Abrir modal para crear nueva cita
   const abrirModalNuevo = () => {
     setEditingCita(null);
@@ -187,7 +120,6 @@ const Citas = () => {
       modeloVehiculo: '',
       observaciones: '',
     });
-    setHorariosDisponibles(todosLosHorarios);
     setShowModal(true);
   };
 
@@ -195,14 +127,19 @@ const Citas = () => {
   const abrirModalEditar = (cita) => {
     setEditingCita(cita);
 
-    console.log('📝 Editando cita:', cita);
+    // Debug: Ver qué viene en la cita
+    console.log('Cita completa:', cita);
+    console.log('Fecha recibida:', cita.fecha, 'Tipo:', typeof cita.fecha);
+    console.log('Hora recibida:', cita.hora, 'Tipo:', typeof cita.hora);
 
     // Convertir fecha a formato YYYY-MM-DD
     let fechaFormato = '';
     if (cita.fecha) {
       if (typeof cita.fecha === 'string') {
+        // Si es string, tomar solo la parte de fecha (antes de T)
         fechaFormato = cita.fecha.split('T')[0];
       } else if (cita.fecha instanceof Date) {
+        // Si es un objeto Date
         const year = cita.fecha.getFullYear();
         const month = String(cita.fecha.getMonth() + 1).padStart(2, '0');
         const day = String(cita.fecha.getDate()).padStart(2, '0');
@@ -210,17 +147,22 @@ const Citas = () => {
       }
     }
 
-    // Convertir hora a formato HH:00
+    // ⭐ Convertir hora a formato HH:00 (solo hora en punto)
     let horaFormato = '';
     if (cita.hora) {
       if (typeof cita.hora === 'string') {
+        // Si es string, tomar solo HH:mm y redondear a hora en punto
         const horaParts = cita.hora.substring(0, 5).split(':');
         horaFormato = `${horaParts[0]}:00`;
       } else if (cita.hora instanceof Date) {
+        // Si es un objeto Date
         const hours = String(cita.hora.getHours()).padStart(2, '0');
         horaFormato = `${hours}:00`;
       }
     }
+
+    console.log('Fecha convertida:', fechaFormato);
+    console.log('Hora convertida:', horaFormato);
 
     setFormData({
       nombre: cita.nombre || '',
@@ -232,93 +174,43 @@ const Citas = () => {
       modeloVehiculo: cita.modeloVehiculo || '',
       observaciones: cita.observaciones || '',
     });
-    
     setShowModal(true);
-    // Los horarios se cargarán automáticamente por el useEffect
   };
 
   // Cerrar modal
   const cerrarModal = () => {
     setShowModal(false);
     setEditingCita(null);
-    setError(null);
   };
 
   // Manejar cambios en el formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    // Si cambia la fecha, resetear la hora
-    if (name === 'fecha') {
-      setFormData(prev => ({
-        ...prev,
-        fecha: value,
-        hora: '' // Resetear hora cuando cambia la fecha
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  // ⭐ MEJORADO: Guardar cita con validación de disponibilidad
+  // Guardar cita (crear o actualizar)
   const guardarCita = async (e) => {
     e.preventDefault();
     
     try {
-      // Validar campos requeridos
-      if (!formData.fecha || !formData.hora) {
-        setError('Por favor, selecciona fecha y hora');
-        return;
-      }
-
-      // ⭐ VALIDAR DISPONIBILIDAD antes de guardar
-      setValidandoDisponibilidad(true);
-      
-      // Si estamos editando, solo validamos si cambió la fecha u hora
-      let debeValidarDisponibilidad = true;
-      if (editingCita) {
-        const fechaOriginal = editingCita.fecha.split('T')[0];
-        const horaOriginal = editingCita.hora.substring(0, 5);
-        const horaFormateada = formData.hora;
-        
-        // Si no cambió fecha ni hora, no validar
-        if (fechaOriginal === formData.fecha && horaOriginal === horaFormateada) {
-          debeValidarDisponibilidad = false;
-          console.log('✅ Fecha y hora no cambiaron, saltando validación');
-        }
-      }
-
-      if (debeValidarDisponibilidad) {
-        const disponible = await validarDisponibilidad(formData.fecha, formData.hora);
-        
-        if (!disponible) {
-          setError(`❌ El horario ${formData.hora} del día ${formatearFecha(formData.fecha)} ya está ocupado. Por favor, selecciona otro horario.`);
-          setValidandoDisponibilidad(false);
-          return;
-        }
-        
-        console.log('✅ Horario disponible, procediendo a guardar');
-      }
-
-      setValidandoDisponibilidad(false);
-
-      // Preparar datos para enviar
+      // ⭐ Preparar datos asegurando que hora esté en formato correcto
       const datosAEnviar = {
         ...formData,
-        hora: formData.hora
+        hora: formData.hora // Ya viene en formato HH:00 del select
       };
 
-      console.log('💾 Guardando cita:', datosAEnviar);
+      console.log('Datos a enviar:', datosAEnviar);
 
       if (editingCita) {
+        // Actualizar cita existente
         await citaService.update(editingCita.id, datosAEnviar);
-        console.log('✅ Cita actualizada');
       } else {
+        // Crear nueva cita
         await citaService.create(datosAEnviar);
-        console.log('✅ Cita creada');
       }
       
       await cargarCitas();
@@ -326,8 +218,7 @@ const Citas = () => {
       setError(null);
     } catch (err) {
       setError('Error al guardar la cita: ' + err.message);
-      console.error('❌ Error completo:', err);
-      setValidandoDisponibilidad(false);
+      console.error('Error completo:', err);
     }
   };
 
@@ -342,11 +233,13 @@ const Citas = () => {
 
       if (typeof fecha === 'string') {
         if (fecha.includes('/')) {
+          // Formato DD/MM/YYYY
           const partes = fecha.split('/');
           day = partes[0];
           month = partes[1];
           year = partes[2];
         } else if (fecha.includes('-')) {
+          // Formato YYYY-MM-DD o ISO
           const fechaSolo = fecha.split('T')[0];
           const partes = fechaSolo.split('-');
           year = partes[0];
@@ -384,7 +277,7 @@ const Citas = () => {
     }
   };
 
-  // Cambiar estado de cita
+  // ⭐ Cambiar estado de cita - CORREGIDO
   const cambiarEstado = async (id, nuevoEstado) => {
     try {
       console.log(`Cambiando estado de cita ${id} a ${nuevoEstado}`);
@@ -405,11 +298,13 @@ const Citas = () => {
     return citas.filter(cita => {
       let fechaCita = cita.fecha;
 
+      // Convertir fecha si viene en formato DD/MM/YYYY
       if (fechaCita && fechaCita.includes('/')) {
         const [d, m, y] = fechaCita.split('/');
         fechaCita = `${y}-${m}-${d}`;
       }
 
+      // Tomar solo la parte de la fecha (sin hora)
       if (fechaCita) {
         fechaCita = fechaCita.split('T')[0];
       }
@@ -561,63 +456,34 @@ const Citas = () => {
                 <input
                   type="email"
                   name="email"
-                  placeholder="Email"
+                  placeholder="Email (opcional)"
                   value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                />
+                <input
+                  type="date"
+                  name="fecha"
+                  value={formData.fecha}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   required
                 />
-                
-                {/* ⭐ Input de fecha */}
-                <div>
-                  <input
-                    type="date"
-                    name="fecha"
-                    value={formData.fecha}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Selecciona primero la fecha para ver horarios disponibles
-                  </p>
-                </div>
-
-                {/* ⭐ Select de hora con disponibilidad dinámica */}
-                <div>
-                  <select
-                    name="hora"
-                    value={formData.hora}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
-                    disabled={!formData.fecha || loadingHorarios}
-                  >
-                    <option value="">
-                      {!formData.fecha 
-                        ? 'Primero selecciona una fecha' 
-                        : loadingHorarios 
-                        ? 'Cargando horarios...' 
-                        : 'Seleccionar hora'}
+                {/* ⭐ SELECT en lugar de INPUT TIME para horarios fijos */}
+                <select
+                  name="hora"
+                  value={formData.hora}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  required
+                >
+                  <option value="">Seleccionar hora</option>
+                  {horariosDisponibles.map(hora => (
+                    <option key={hora} value={hora}>
+                      {hora}
                     </option>
-                    {horariosDisponibles.map(hora => (
-                      <option key={hora} value={hora}>
-                        {hora}
-                      </option>
-                    ))}
-                  </select>
-                  {formData.fecha && horariosDisponibles.length === 0 && !loadingHorarios && (
-                    <p className="text-xs text-red-600 mt-1">
-                      ⚠️ No hay horarios disponibles para esta fecha
-                    </p>
-                  )}
-                  {formData.fecha && horariosDisponibles.length > 0 && (
-                    <p className="text-xs text-green-600 mt-1">
-                      ✅ {horariosDisponibles.length} horario(s) disponible(s)
-                    </p>
-                  )}
-                </div>
-
+                  ))}
+                </select>
                 <select
                   name="tipoLavado"
                   value={formData.tipoLavado}
@@ -649,28 +515,16 @@ const Citas = () => {
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   rows="3"
                 />
-                
-                {/* ⭐ Botones con estado de validación */}
                 <div className="flex gap-4">
                   <button
                     type="submit"
-                    disabled={validandoDisponibilidad || loadingHorarios}
-                    className={`flex-1 px-4 py-2 rounded text-white font-medium
-                      ${validandoDisponibilidad || loadingHorarios
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-green-600 hover:bg-green-700'
-                      }`}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
                   >
-                    {validandoDisponibilidad 
-                      ? '🔍 Validando...' 
-                      : editingCita 
-                      ? 'Actualizar' 
-                      : 'Crear'}
+                    {editingCita ? 'Actualizar' : 'Crear'}
                   </button>
                   <button
                     type="button"
                     onClick={cerrarModal}
-                    disabled={validandoDisponibilidad}
                     className="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
                   >
                     Cancelar
