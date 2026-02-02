@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -241,26 +242,89 @@ public class FacturaApiController {
      * - numeroFactura: Número de factura personalizado
      * - fechaEmision: Fecha de emisión en formato dd/MM/yyyy
      */
+
     @PostMapping("/manual")
-    public ResponseEntity<FacturaDTO> crearManual(
+    public ResponseEntity<?> crearManual(
             @RequestBody FacturaDTO facturaDTO,
             @RequestParam(value = "numeroFactura", required = false) String numeroFactura,
             @RequestParam(value = "fechaEmision", required = false) String fechaEmision) {
         try {
-            TipoFactura tipo = TipoFactura.valueOf(facturaDTO.getTipo());
-
-            List<LineaFactura> lineas = new ArrayList<>();
-            if (facturaDTO.getLineas() != null) {
-                for (FacturaDTO.LineaFacturaDTO lineaDTO : facturaDTO.getLineas()) {
-                    LineaFactura linea = new LineaFactura();
-                    linea.setConcepto(lineaDTO.getConcepto());
-                    linea.setCantidad(lineaDTO.getCantidad() != null ? lineaDTO.getCantidad() : 1);
-                    linea.setPrecioUnitario(lineaDTO.getPrecioUnitario());
-                    linea.calcularSubtotal();
-                    lineas.add(linea);
-                }
+            log.info("📥 Recibiendo factura manual: {}", facturaDTO);
+            log.info("📥 Parámetros: numeroFactura={}, fechaEmision={}", numeroFactura, fechaEmision);
+            
+            // Validar tipo de factura
+            if (facturaDTO.getTipo() == null || facturaDTO.getTipo().isEmpty()) {
+                log.error("❌ Tipo de factura no proporcionado");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "El tipo de factura es obligatorio",
+                    "field", "tipo"
+                ));
+            }
+            
+            TipoFactura tipo;
+            try {
+                tipo = TipoFactura.valueOf(facturaDTO.getTipo());
+            } catch (IllegalArgumentException e) {
+                log.error("❌ Tipo de factura inválido: {}", facturaDTO.getTipo());
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Tipo de factura inválido: " + facturaDTO.getTipo(),
+                    "field", "tipo",
+                    "validValues", Arrays.toString(TipoFactura.values())
+                ));
+            }
+            
+            // Validar cliente
+            if (facturaDTO.getClienteNombre() == null || facturaDTO.getClienteNombre().isEmpty()) {
+                log.error("❌ Nombre de cliente no proporcionado");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "El nombre del cliente es obligatorio",
+                    "field", "clienteNombre"
+                ));
             }
 
+            // Validar y crear líneas
+            List<LineaFactura> lineas = new ArrayList<>();
+            if (facturaDTO.getLineas() == null || facturaDTO.getLineas().isEmpty()) {
+                log.error("❌ No se proporcionaron líneas de factura");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Debe incluir al menos una línea en la factura",
+                    "field", "lineas"
+                ));
+            }
+            
+            for (int i = 0; i < facturaDTO.getLineas().size(); i++) {
+                FacturaDTO.LineaFacturaDTO lineaDTO = facturaDTO.getLineas().get(i);
+                
+                // Validar concepto
+                if (lineaDTO.getConcepto() == null || lineaDTO.getConcepto().isEmpty()) {
+                    log.error("❌ Línea {} sin concepto", i + 1);
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "error", "La línea " + (i + 1) + " no tiene concepto",
+                        "field", "lineas[" + i + "].concepto"
+                    ));
+                }
+                
+                // Validar precio unitario
+                if (lineaDTO.getPrecioUnitario() == null) {
+                    log.error("❌ Línea {} sin precio unitario", i + 1);
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "error", "La línea " + (i + 1) + " no tiene precio unitario",
+                        "field", "lineas[" + i + "].precioUnitario"
+                    ));
+                }
+                
+                LineaFactura linea = new LineaFactura();
+                linea.setConcepto(lineaDTO.getConcepto());
+                linea.setCantidad(lineaDTO.getCantidad() != null ? lineaDTO.getCantidad() : 1);
+                linea.setPrecioUnitario(lineaDTO.getPrecioUnitario());
+                linea.calcularSubtotal();
+                lineas.add(linea);
+                
+                log.debug("✅ Línea {}: {} x {} = {}", 
+                    i + 1, lineaDTO.getConcepto(), lineaDTO.getCantidad(), linea.getSubtotal());
+            }
+
+            // Crear factura
             Factura factura = facturaService.crearFacturaManual(
                     tipo,
                     facturaDTO.getClienteNombre(),
@@ -273,7 +337,7 @@ public class FacturaApiController {
             // Aplicar número de factura personalizado si se proporciona
             if (numeroFactura != null && !numeroFactura.isEmpty()) {
                 factura.setNumero(numeroFactura);
-                log.info("✅ Número de factura personalizado aplicado: {} (será: {})", numeroFactura, factura.getNumero());
+                log.info("✅ Número de factura personalizado aplicado: {}", numeroFactura);
             }
 
             // Aplicar fecha de emisión personalizada si se proporciona
@@ -281,7 +345,7 @@ public class FacturaApiController {
                 try {
                     LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaEmision);
                     factura.setFecha(fecha);
-                    log.info("✅ Fecha de emisión personalizada aplicada: {} -> {} (será: {})", fechaEmision, fecha, factura.getFecha());
+                    log.info("✅ Fecha de emisión personalizada aplicada: {} -> {}", fechaEmision, fecha);
                 } catch (Exception e) {
                     log.warn("❌ Formato de fecha inválido '{}', se usará la fecha actual: {}", fechaEmision, e.getMessage());
                 }
@@ -290,18 +354,19 @@ public class FacturaApiController {
             // Guardar los cambios con parámetros personalizados
             factura = facturaRepository.save(factura);
             
-            // Log de verificación POST-SAVE
-            log.info("📋 Factura guardada: numero='{}', fecha='{}', id={}", 
-                    factura.getNumero(), factura.getFecha(), factura.getId());
+            log.info("📋 Factura guardada: numero='{}', fecha='{}', total={}, id={}", 
+                    factura.getNumero(), factura.getFecha(), factura.getTotal(), factura.getId());
 
             FacturaDTO resultado = convertirADTO(factura);
-            log.info("📤 DTO retornado: numero='{}', fecha='{}', numeroFactura (esperado: '{}')", 
-                    resultado.getNumero(), resultado.getFecha(), numeroFactura);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
+            
         } catch (Exception e) {
-            log.error("Error al crear factura manual: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            log.error("❌ Error inesperado al crear factura manual: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Error al crear la factura: " + e.getMessage(),
+                "type", e.getClass().getSimpleName()
+            ));
         }
     }
 

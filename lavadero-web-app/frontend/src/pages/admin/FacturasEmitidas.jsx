@@ -329,6 +329,32 @@ const FacturasEmitidas = () => {
     try {
       setLoading(true);
       
+      // Preparar datos limpios para enviar al backend
+      const lineasLimpias = formData.lineas.map(linea => ({
+        concepto: linea.concepto,
+        cantidad: parseInt(linea.cantidad) || 1,
+        precioUnitario: parseFloat(linea.precioUnitario) || 0,
+        subtotal: parseFloat(linea.subtotal) || 0
+        // NO incluir id de frontend (Date.now()) - el backend generará su propio ID
+      }));
+
+      const datosLimpios = {
+        tipo: formData.tipo || 'SIMPLIFICADA',
+        estado: formData.estado || 'PENDIENTE',
+        metodoPago: formData.metodoPago || 'EFECTIVO',
+        clienteNombre: formData.clienteNombre,
+        clienteNif: formData.clienteNif || null,
+        clienteDireccion: formData.clienteDireccion || null,
+        clienteEmail: formData.clienteEmail || null,
+        clienteTelefono: formData.clienteTelefono || null,
+        lineas: lineasLimpias,
+        baseImponible: parseFloat(formData.baseImponible) || 0,
+        tipoIva: parseFloat(formData.tipoIva) || 21,
+        importeIva: parseFloat(formData.importeIva) || 0,
+        total: parseFloat(formData.total) || 0,
+        observaciones: formData.observaciones || null
+      };
+      
       if (editandoFactura) {
         // Actualizar factura existente
         const params = {};
@@ -340,8 +366,8 @@ const FacturasEmitidas = () => {
           console.log(`📅 Fecha convertida: ${formData.fecha} → ${params.fechaEmision}`);
         }
 
-        console.log('📤 Actualizando factura:', { id: editandoFactura, data: formData });
-        await facturaService.update(editandoFactura, formData);
+        console.log('📤 Actualizando factura:', { id: editandoFactura, data: datosLimpios });
+        await facturaService.update(editandoFactura, datosLimpios);
         alert('✅ Factura actualizada correctamente');
       } else {
         // Crear nueva factura con número y fecha personalizados
@@ -358,16 +384,48 @@ const FacturasEmitidas = () => {
           console.log(`📅 Fecha convertida: ${formData.fecha} → ${params.fechaEmision}`);
         }
 
-        console.log('📤 Enviando factura:', { data: formData, params });
-        await facturaService.createManual(formData, params);
+        console.log('📤 Enviando factura:', { data: datosLimpios, params });
+        console.log('📤 JSON a enviar:', JSON.stringify(datosLimpios, null, 2));
+        await facturaService.createManual(datosLimpios, params);
         alert('✅ Factura creada correctamente');
       }
       
       cerrarModal();
       await cargarFacturas();
     } catch (err) {
-      console.error('Error al guardar factura:', err);
-      alert('❌ Error al guardar factura: ' + (err.response?.data?.error || err.message));
+      console.error('❌ Error al guardar factura:', err);
+      console.error('❌ Response completo:', err.response);
+      console.error('❌ Response data:', err.response?.data);
+      console.error('❌ Response status:', err.response?.status);
+      
+      // Extraer mensaje de error detallado
+      let errorMessage = 'Error desconocido';
+      
+      if (err.response?.data) {
+        const responseData = err.response.data;
+        
+        // Si es un objeto con detalles
+        if (typeof responseData === 'object') {
+          errorMessage = responseData.message 
+            || responseData.error 
+            || responseData.details
+            || JSON.stringify(responseData);
+            
+          // Si hay errores de validación, mostrarlos
+          if (responseData.errors) {
+            errorMessage += '\n\nErrores de validación:\n' + 
+              Object.entries(responseData.errors)
+                .map(([field, msg]) => `- ${field}: ${msg}`)
+                .join('\n');
+          }
+        } else {
+          errorMessage = String(responseData);
+        }
+      } else {
+        errorMessage = err.message;
+      }
+      
+      alert('❌ Error al guardar factura:\n\n' + errorMessage);
     } finally {
       setLoading(false);
     }
