@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import api from '../../services/api';
+import facturaService from '../../services/facturaService';
 
 const Contabilidad = () => {
   const [periodo, setPeriodo] = useState('Este mes');
@@ -8,11 +8,11 @@ const Contabilidad = () => {
   const [fechaHasta, setFechaHasta] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [todasFacturas, setTodasFacturas] = useState([]);
   const [datos, setDatos] = useState(null);
   const [resumenMensual, setResumenMensual] = useState([]);
   const [resumenCliente, setResumenCliente] = useState([]);
 
-  // Calcular rango de fechas según período
   const calcularFechas = (periodoSeleccionado) => {
     const hoy = new Date();
     let desde, hasta;
@@ -30,8 +30,6 @@ const Contabilidad = () => {
         const trimestre = Math.floor(hoy.getMonth() / 3);
         desde = new Date(hoy.getFullYear(), trimestre * 3, 1);
         hasta = new Date(hoy.getFullYear(), trimestre * 3 + 3, 0);
-        console.log(`DEBUG Trimestre: ${trimestre}, mes actual: ${hoy.getMonth()}`);
-        console.log(`DEBUG Desde: ${desde.toISOString()}, Hasta: ${hasta.toISOString()}`);
         break;
       }
       case 'Este año':
@@ -42,16 +40,12 @@ const Contabilidad = () => {
         return null;
     }
 
-    const resultado = {
+    return {
       desde: desde.toISOString().split('T')[0],
       hasta: hasta.toISOString().split('T')[0]
     };
-
-    console.log(`Período: ${periodoSeleccionado}`, resultado);
-    return resultado;
   };
 
-  // Actualizar fechas cuando cambia el período
   useEffect(() => {
     if (periodo !== 'Personalizado') {
       const fechas = calcularFechas(periodo);
@@ -62,7 +56,40 @@ const Contabilidad = () => {
     }
   }, [periodo]);
 
-  // Cargar datos de contabilidad
+  useEffect(() => {
+    cargarTodasFacturas();
+  }, []);
+
+  const cargarTodasFacturas = async () => {
+    try {
+      const response = await facturaService.getAll(0, 1000);
+      const facturas = response.data.content || response.data || [];
+      setTodasFacturas(facturas);
+    } catch (err) {
+      console.error('Error cargando facturas:', err);
+      setTodasFacturas([]);
+    }
+  };
+
+  const parsearFecha = (fechaStr) => {
+    if (!fechaStr) return null;
+    
+    if (fechaStr instanceof Date) {
+      return fechaStr;
+    }
+    
+    if (fechaStr.includes('/')) {
+      const [dia, mes, anio] = fechaStr.split('/');
+      return new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+    } else if (fechaStr.includes('-')) {
+      const fechaSolo = fechaStr.split('T')[0];
+      const [anio, mes, dia] = fechaSolo.split('-');
+      return new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+    }
+    
+    return null;
+  };
+
   const cargarDatos = async () => {
     if (!fechaDesde || !fechaHasta) {
       setError('Debe seleccionar un rango de fechas válido');
@@ -71,100 +98,121 @@ const Contabilidad = () => {
 
     setLoading(true);
     setError(null);
+    
     try {
-      const response = await api.get('/contabilidad/resumen', {
-        params: {
-          desde: fechaDesde,
-          hasta: fechaHasta
-        }
+      const desde = new Date(fechaDesde);
+      const hasta = new Date(fechaHasta);
+      
+      const facturasFiltradas = todasFacturas.filter(f => {
+        const fechaFactura = parsearFecha(f.fecha);
+        return fechaFactura && fechaFactura >= desde && fechaFactura <= hasta;
       });
 
-      if (response.data) {
-        setDatos(response.data);
-        procesarDatos(response.data);
-      }
+      const ingresosTotales = facturasFiltradas.reduce((sum, f) => {
+        const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
+        return sum + total;
+      }, 0);
+
+      const baseImponible = facturasFiltradas.reduce((sum, f) => {
+        const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible) || 0;
+        return sum + base;
+      }, 0);
+
+      const ivaRepercutido = facturasFiltradas.reduce((sum, f) => {
+        const iva = typeof f.importeIva === 'number' ? f.importeIva : parseFloat(f.importeIva) || 0;
+        return sum + iva;
+      }, 0);
+
+      const datosCalculados = {
+        ingresosTotales,
+        baseImponible,
+        ivaRepercutido,
+        numFacturas: facturasFiltradas.length
+      };
+
+      setDatos(datosCalculados);
+      procesarDatos(facturasFiltradas);
+      
     } catch (err) {
-      console.error('Error cargando datos de contabilidad:', err);
-      setError('Error al cargar los datos: ' + (err.response?.data?.message || err.message));
+      console.error('Error procesando datos:', err);
+      setError('Error al procesar los datos: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Procesar datos para gráficos
-  const procesarDatos = (datosRecibidos) => {
-    if (datosRecibidos.resumenMensual) {
-      const mensual = datosRecibidos.resumenMensual.map(item => ({
-        mes: new Date(item.mes).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
-        ingresos: parseFloat(item.total) || 0,
-        base: parseFloat(item.base) || 0,
-        iva: parseFloat(item.iva) || 0
+  const procesarDatos = (facturas) => {
+    const facturasPorMes = {};
+    
+    facturas.forEach(f => {
+      const fechaFactura = parsearFecha(f.fecha);
+      if (fechaFactura) {
+        const mesKey = `${fechaFactura.getFullYear()}-${String(fechaFactura.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (!facturasPorMes[mesKey]) {
+          facturasPorMes[mesKey] = {
+            mes: mesKey,
+            total: 0,
+            base: 0,
+            iva: 0
+          };
+        }
+        
+        const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
+        const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible) || 0;
+        const iva = typeof f.importeIva === 'number' ? f.importeIva : parseFloat(f.importeIva) || 0;
+        
+        facturasPorMes[mesKey].total += total;
+        facturasPorMes[mesKey].base += base;
+        facturasPorMes[mesKey].iva += iva;
+      }
+    });
+
+    const mensual = Object.values(facturasPorMes)
+      .sort((a, b) => a.mes.localeCompare(b.mes))
+      .map(item => {
+        const [anio, mes] = item.mes.split('-');
+        const fecha = new Date(parseInt(anio), parseInt(mes) - 1, 1);
+        return {
+          mes: fecha.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
+          ingresos: item.total,
+          base: item.base,
+          iva: item.iva
+        };
+      });
+    
+    setResumenMensual(mensual);
+
+    const facturasPorCliente = {};
+    
+    facturas.forEach(f => {
+      const nombreCliente = f.clienteNombre || 'Sin nombre';
+      
+      if (!facturasPorCliente[nombreCliente]) {
+        facturasPorCliente[nombreCliente] = {
+          nombreCliente,
+          total: 0,
+          numFacturas: 0
+        };
+      }
+      
+      const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
+      facturasPorCliente[nombreCliente].total += total;
+      facturasPorCliente[nombreCliente].numFacturas++;
+    });
+
+    const clientes = Object.values(facturasPorCliente)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10)
+      .map(item => ({
+        cliente: item.nombreCliente,
+        total: item.total,
+        facturas: item.numFacturas
       }));
-      setResumenMensual(mensual);
-    }
-
-    if (datosRecibidos.resumenCliente) {
-      const clientes = datosRecibidos.resumenCliente
-        .sort((a, b) => parseFloat(b.total) - parseFloat(a.total))
-        .slice(0, 10)
-        .map(item => ({
-          cliente: item.nombreCliente,
-          total: parseFloat(item.total) || 0,
-          facturas: item.numFacturas || 0
-        }));
-      setResumenCliente(clientes);
-    }
+    
+    setResumenCliente(clientes);
   };
 
-  // Exportar a Excel
-  const exportarExcel = async () => {
-    try {
-      const response = await api.get('/contabilidad/exportar-excel', {
-        params: {
-          desde: fechaDesde,
-          hasta: fechaHasta
-        },
-        responseType: 'blob'
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `contabilidad_${fechaDesde}_${fechaHasta}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (err) {
-      console.error('Error exportando Excel:', err);
-      setError('Error al exportar Excel: ' + err.message);
-    }
-  };
-
-  // Exportar a PDF
-  const exportarPDF = async () => {
-    try {
-      const response = await api.get('/contabilidad/exportar-pdf', {
-        params: {
-          desde: fechaDesde,
-          hasta: fechaHasta
-        },
-        responseType: 'blob'
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `contabilidad_${fechaDesde}_${fechaHasta}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (err) {
-      console.error('Error exportando PDF:', err);
-      setError('Error al exportar PDF: ' + err.message);
-    }
-  };
-
-  // Formatear moneda
   const formatearMoneda = (valor) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
@@ -181,7 +229,6 @@ const Contabilidad = () => {
         <h1 className="text-3xl font-bold text-gray-900">Contabilidad</h1>
       </div>
 
-      {/* Panel de Filtros */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div>
@@ -231,34 +278,14 @@ const Contabilidad = () => {
             </button>
           </div>
         </div>
-
-        {/* Botones de Exportación */}
-        <div className="flex gap-2">
-          <button
-            onClick={exportarExcel}
-            disabled={!datos}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
-          >
-            📊 Exportar Excel
-          </button>
-          <button
-            onClick={exportarPDF}
-            disabled={!datos}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded disabled:opacity-50"
-          >
-            📄 Exportar PDF
-          </button>
-        </div>
       </div>
 
-      {/* Mensajes */}
       {error && (
         <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
           {error}
         </div>
       )}
 
-      {/* Tarjetas de Resumen */}
       {datos && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
@@ -283,7 +310,6 @@ const Contabilidad = () => {
         </div>
       )}
 
-      {/* Gráficos */}
       {resumenMensual.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-gray-50 rounded-lg p-4">
@@ -317,9 +343,7 @@ const Contabilidad = () => {
         </div>
       )}
 
-      {/* Tablas de Detalle */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tabla Resumen Mensual */}
         {resumenMensual.length > 0 && (
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="text-lg font-semibold mb-4">Resumen Mensual</h3>
@@ -346,7 +370,6 @@ const Contabilidad = () => {
           </div>
         )}
 
-        {/* Tabla Top Clientes */}
         {resumenCliente.length > 0 && (
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="text-lg font-semibold mb-4">Top 10 Clientes</h3>
@@ -376,7 +399,6 @@ const Contabilidad = () => {
         )}
       </div>
 
-      {/* Estado sin datos */}
       {!loading && !datos && (
         <div className="text-center py-12">
           <p className="text-gray-500">Selecciona un período y haz clic en "Cargar" para ver los datos</p>
