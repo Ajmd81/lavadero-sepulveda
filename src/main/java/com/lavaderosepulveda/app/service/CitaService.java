@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -260,6 +262,13 @@ public class CitaService {
             throw new IllegalArgumentException("El ID del cliente no puede ser nulo");
         }
         return citaRepository.findByClienteIdOrderByFechaDescHoraDesc(clienteId);
+    }
+
+    /**
+     * Obtener citas paginadas
+     */
+    public Page<Cita> obtenerCitasPaginadas(Pageable pageable) {
+        return citaRepository.findAll(pageable);
     }
 
     /**
