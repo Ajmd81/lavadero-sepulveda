@@ -28,7 +28,7 @@ public class HorariosConfig {
         tarde.setFin(0);
 
         sabado.setInicio(9);
-        sabado.setFin(14);
+        sabado.setFin(13);
     }
 
     // Getters y Setters
