@@ -1,7 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, subMonths } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, subMonths, parseISO, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   LineChart, Line, PieChart, Pie, Cell, BarChart, Bar,
@@ -11,8 +9,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, Euro, Receipt,
   CreditCard, Calendar, FileText, AlertCircle
 } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+import facturaService from '../../services/facturaService';
 
 const COLORES_GRAFICO = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -21,6 +18,41 @@ const ResumenFinanciero = () => {
   const [fechaDesde, setFechaDesde] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [fechaHasta, setFechaHasta] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [mostrarPersonalizado, setMostrarPersonalizado] = useState(false);
+  const [facturas, setFacturas] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Cargar facturas al montar y cuando cambien las fechas
+  useEffect(() => {
+    cargarFacturas();
+  }, [fechaDesde, fechaHasta]);
+
+  const cargarFacturas = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('📊 Cargando facturas para resumen financiero...');
+      const response = await facturaService.getAll(0, 1000);
+      
+      let facturasData = [];
+      if (Array.isArray(response)) {
+        facturasData = response;
+      } else if (response?.content && Array.isArray(response.content)) {
+        facturasData = response.content;
+      } else if (response?.data) {
+        facturasData = Array.isArray(response.data) ? response.data : response.data.content || [];
+      }
+
+      console.log(`✅ ${facturasData.length} facturas cargadas`);
+      setFacturas(facturasData);
+    } catch (err) {
+      console.error('❌ Error cargando facturas:', err);
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Aplicar filtro predefinido
   const aplicarFiltro = (tipo) => {
@@ -55,17 +87,127 @@ const ResumenFinanciero = () => {
     setMostrarPersonalizado(false);
   };
 
-  // Query para obtener resumen
-  const { data: resumen, isLoading, error } = useQuery({
-    queryKey: ['resumen-financiero', fechaDesde, fechaHasta],
-    queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/resumen-financiero`, {
-        params: { desde: fechaDesde, hasta: fechaHasta }
-      });
-      return data;
-    },
-    enabled: !!fechaDesde && !!fechaHasta,
+  const parsearFecha = (fechaStr) => {
+    if (!fechaStr) return null;
+    try {
+      if (fechaStr.includes('/')) {
+        const [dia, mes, anio] = fechaStr.split('/');
+        return new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+      }
+      if (fechaStr.includes('-')) {
+        return parseISO(fechaStr);
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // Filtrar facturas por rango de fechas
+  const facturasFiltradas = facturas.filter(factura => {
+    const fechaFactura = parsearFecha(factura.fecha);
+    if (!fechaFactura) return false;
+
+    const inicio = new Date(fechaDesde);
+    const fin = new Date(fechaHasta);
+
+    return isWithinInterval(fechaFactura, { start: inicio, end: fin });
   });
+
+  // CALCULAR RESUMEN
+  const totalIngresos = facturasFiltradas.reduce((sum, f) => {
+    const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
+    return sum + total;
+  }, 0);
+
+  const numFacturasEmitidas = facturasFiltradas.length;
+
+  const baseImponible = facturasFiltradas.reduce((sum, f) => {
+    const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
+    return sum + base;
+  }, 0);
+
+  const ivaRepercutido = totalIngresos - baseImponible;
+
+  // Pendientes de cobro (estado PENDIENTE)
+  const pendientesCobro = facturasFiltradas
+    .filter(f => f.estado === 'PENDIENTE')
+    .map(f => ({
+      cliente: f.clienteNombre || 'Sin nombre',
+      factura: f.numero || 'S/N',
+      importe: typeof f.total === 'number' ? f.total : parseFloat(f.total || 0)
+    }));
+
+  const totalPendienteCobro = pendientesCobro.reduce((sum, p) => sum + p.importe, 0);
+
+  // Evolución mensual de ingresos
+  const facturasPorMes = facturasFiltradas.reduce((acc, factura) => {
+    const fechaFactura = parsearFecha(factura.fecha);
+    if (!fechaFactura) return acc;
+    
+    const mes = format(fechaFactura, 'MMM yyyy', { locale: es });
+    const mesKey = format(fechaFactura, 'yyyy-MM');
+    
+    if (!acc[mesKey]) {
+      acc[mesKey] = {
+        mes,
+        mesKey,
+        ingresos: 0
+      };
+    }
+    
+    const total = typeof factura.total === 'number' ? factura.total : parseFloat(factura.total || 0);
+    acc[mesKey].ingresos += total;
+    
+    return acc;
+  }, {});
+
+  const evolucionMensual = Object.values(facturasPorMes)
+    .sort((a, b) => a.mesKey.localeCompare(b.mesKey))
+    .map(({ mes, ingresos }) => ({ mes, ingresos, gastos: 0 }));
+
+  // Agrupar por cliente (para "distribución")
+  const ingresosPorCliente = facturasFiltradas.reduce((acc, factura) => {
+    const cliente = factura.clienteNombre || 'Sin nombre';
+    if (!acc[cliente]) {
+      acc[cliente] = {
+        categoria: cliente,
+        total: 0,
+        cantidad: 0
+      };
+    }
+    
+    const total = typeof factura.total === 'number' ? factura.total : parseFloat(factura.total || 0);
+    acc[cliente].total += total;
+    acc[cliente].cantidad += 1;
+    
+    return acc;
+  }, {});
+
+  const top10Clientes = Object.values(ingresosPorCliente)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  // Crear objeto resumen compatible con el diseño original
+  const resumen = {
+    totalIngresos,
+    numFacturasEmitidas,
+    totalGastos: 0, // No tenemos gastos
+    numGastos: 0,
+    beneficio: totalIngresos, // Sin gastos, beneficio = ingresos
+    margenPorcentaje: 100, // Sin gastos, margen = 100%
+    baseImponible,
+    ivaRepercutido,
+    baseGastos: 0,
+    ivaSoportado: 0,
+    liquidacionIva: ivaRepercutido, // Sin gastos, liquidación = IVA repercutido
+    evolucionMensual,
+    gastosPorCategoria: top10Clientes, // Usamos top 10 clientes en lugar de gastos
+    totalPendienteCobro,
+    pendientesCobro,
+    totalPendientePago: 0,
+    pendientesPago: []
+  };
 
   // Formatear moneda
   const formatCurrency = (value) => {
@@ -228,29 +370,31 @@ const ResumenFinanciero = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           titulo="Ingresos Totales"
-          valor={formatCurrency(resumen?.totalIngresos)}
+          valor={formatCurrency(resumen.totalIngresos)}
           icon={TrendingUp}
           color="text-green-600"
-          subvalor={`${resumen?.numFacturasEmitidas || 0} facturas emitidas`}
-        />
-        <KPICard
-          titulo="Gastos Totales"
-          valor={formatCurrency(resumen?.totalGastos)}
-          icon={TrendingDown}
-          color="text-red-600"
-          subvalor={`${resumen?.numGastos || 0} gastos registrados`}
+          subvalor={`${resumen.numFacturasEmitidas} facturas emitidas`}
         />
         <KPICard
           titulo="Beneficio Neto"
-          valor={formatCurrency(resumen?.beneficio)}
+          valor={formatCurrency(resumen.beneficio)}
           icon={Euro}
-          color={resumen?.beneficio >= 0 ? 'text-blue-600' : 'text-red-600'}
+          color={resumen.beneficio >= 0 ? 'text-blue-600' : 'text-red-600'}
+          subvalor="Ingresos totales"
         />
         <KPICard
-          titulo="Margen de Beneficio"
-          valor={formatPercentage(resumen?.margenPorcentaje)}
-          icon={Euro}
-          color={resumen?.margenPorcentaje >= 0 ? 'text-purple-600' : 'text-red-600'}
+          titulo="Base Imponible"
+          valor={formatCurrency(resumen.baseImponible)}
+          icon={FileText}
+          color="text-purple-600"
+          subvalor="Sin IVA"
+        />
+        <KPICard
+          titulo="IVA Repercutido"
+          valor={formatCurrency(resumen.ivaRepercutido)}
+          icon={Receipt}
+          color="text-orange-600"
+          subvalor="21% IVA"
         />
       </div>
 
@@ -258,27 +402,26 @@ const ResumenFinanciero = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Evolución Mensual */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Evolución Mensual</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Evolución de Ingresos</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={resumen?.evolucionMensual || []}>
+            <LineChart data={resumen.evolucionMensual}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" />
               <YAxis />
               <Tooltip formatter={(value) => formatCurrency(value)} />
               <Legend />
               <Line type="monotone" dataKey="ingresos" stroke="#10b981" strokeWidth={2} name="Ingresos" />
-              <Line type="monotone" dataKey="gastos" stroke="#ef4444" strokeWidth={2} name="Gastos" />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Distribución de Gastos */}
+        {/* Top 10 Clientes */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Distribución de Gastos por Categoría</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Top 10 Clientes</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={resumen?.gastosPorCategoria || []}
+                data={resumen.gastosPorCategoria}
                 dataKey="total"
                 nameKey="categoria"
                 cx="50%"
@@ -286,7 +429,7 @@ const ResumenFinanciero = () => {
                 outerRadius={100}
                 label={(entry) => `${entry.categoria}: ${formatCurrency(entry.total)}`}
               >
-                {(resumen?.gastosPorCategoria || []).map((entry, index) => (
+                {resumen.gastosPorCategoria.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORES_GRAFICO[index % COLORES_GRAFICO.length]} />
                 ))}
               </Pie>
@@ -302,47 +445,39 @@ const ResumenFinanciero = () => {
           <FileText className="mr-2" size={20} />
           Detalle de IVA
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
             <p className="text-sm text-gray-600">Base Imponible</p>
-            <p className="text-xl font-bold text-green-700">{formatCurrency(resumen?.baseImponible)}</p>
+            <p className="text-xl font-bold text-green-700">{formatCurrency(resumen.baseImponible)}</p>
           </div>
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
             <p className="text-sm text-gray-600">IVA Repercutido</p>
-            <p className="text-xl font-bold text-green-700">{formatCurrency(resumen?.ivaRepercutido)}</p>
-          </div>
-          <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-            <p className="text-sm text-gray-600">Base Gastos</p>
-            <p className="text-xl font-bold text-red-700">{formatCurrency(resumen?.baseGastos)}</p>
-          </div>
-          <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-            <p className="text-sm text-gray-600">IVA Soportado</p>
-            <p className="text-xl font-bold text-red-700">{formatCurrency(resumen?.ivaSoportado)}</p>
+            <p className="text-xl font-bold text-green-700">{formatCurrency(resumen.ivaRepercutido)}</p>
           </div>
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm text-gray-600">Liquidación IVA</p>
-            <p className={`text-xl font-bold ${resumen?.liquidacionIva >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-              {formatCurrency(resumen?.liquidacionIva)}
+            <p className="text-xl font-bold text-blue-700">
+              {formatCurrency(resumen.liquidacionIva)}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Tabla de Gastos por Categoría */}
-      {resumen?.gastosPorCategoria && resumen.gastosPorCategoria.length > 0 && (
+      {/* Tabla de Top 10 Clientes */}
+      {resumen.gastosPorCategoria && resumen.gastosPorCategoria.length > 0 && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900">Gastos Detallados por Categoría</h3>
+            <h3 className="text-lg font-bold text-gray-900">Top 10 Clientes por Facturación</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Categoría
+                    Cliente
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cantidad
+                    Facturas
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total
@@ -371,7 +506,7 @@ const ResumenFinanciero = () => {
                       {formatCurrency(cat.total)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
-                      {formatPercentage((cat.total / resumen.totalGastos) * 100)}
+                      {formatPercentage((cat.total / resumen.totalIngresos) * 100)}
                     </td>
                   </tr>
                 ))}
@@ -383,7 +518,7 @@ const ResumenFinanciero = () => {
                     {resumen.gastosPorCategoria.reduce((sum, cat) => sum + cat.cantidad, 0)}
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-gray-900">
-                    {formatCurrency(resumen.totalGastos)}
+                    {formatCurrency(resumen.totalIngresos)}
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-gray-900">100%</td>
                 </tr>
@@ -393,9 +528,8 @@ const ResumenFinanciero = () => {
         </div>
       )}
 
-      {/* Pendientes de Cobro y Pago */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pendientes de Cobro */}
+      {/* Pendientes de Cobro */}
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-6 bg-green-50 border-b border-green-200">
             <h3 className="text-lg font-bold text-green-900 flex items-center">
@@ -403,10 +537,10 @@ const ResumenFinanciero = () => {
               Pendientes de Cobro
             </h3>
             <p className="text-2xl font-bold text-green-700 mt-2">
-              {formatCurrency(resumen?.totalPendienteCobro)}
+              {formatCurrency(resumen.totalPendienteCobro)}
             </p>
           </div>
-          {resumen?.pendientesCobro && resumen.pendientesCobro.length > 0 ? (
+          {resumen.pendientesCobro && resumen.pendientesCobro.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -431,90 +565,11 @@ const ResumenFinanciero = () => {
             </div>
           ) : (
             <div className="p-6 text-center text-gray-500">
-              <p>No hay facturas pendientes de cobro</p>
-            </div>
-          )}
-        </div>
-
-        {/* Pendientes de Pago */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="p-6 bg-red-50 border-b border-red-200">
-            <h3 className="text-lg font-bold text-red-900 flex items-center">
-              <CreditCard className="mr-2" size={20} />
-              Pendientes de Pago
-            </h3>
-            <p className="text-2xl font-bold text-red-700 mt-2">
-              {formatCurrency(resumen?.totalPendientePago)}
-            </p>
-          </div>
-          {resumen?.pendientesPago && resumen.pendientesPago.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proveedor</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Factura</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Importe</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {resumen.pendientesPago.map((pendiente, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">{pendiente.proveedor}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{pendiente.factura}</td>
-                      <td className="px-6 py-4 text-sm text-right font-medium text-red-700">
-                        {formatCurrency(pendiente.importe)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-6 text-center text-gray-500">
-              <p>No hay facturas pendientes de pago</p>
+              <p>No hay facturas pendientes de cobro en este período</p>
             </div>
           )}
         </div>
       </div>
-
-      {/* IVA Trimestral */}
-      {resumen?.ivaTrimestral && resumen.ivaTrimestral.length > 0 && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900">Liquidación IVA por Trimestre</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trimestre</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">IVA Repercutido</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">IVA Soportado</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Liquidación</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {resumen.ivaTrimestral.map((trimestre, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{trimestre.trimestre}</td>
-                    <td className="px-6 py-4 text-sm text-right text-green-700">
-                      {formatCurrency(trimestre.ivaRepercutido)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-right text-red-700">
-                      {formatCurrency(trimestre.ivaSoportado)}
-                    </td>
-                    <td className={`px-6 py-4 text-sm text-right font-bold ${trimestre.liquidacion >= 0 ? 'text-blue-700' : 'text-red-700'
-                      }`}>
-                      {formatCurrency(trimestre.liquidacion)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
