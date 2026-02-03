@@ -17,6 +17,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import java.time.DayOfWeek;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
@@ -56,6 +62,47 @@ public class CitaApiController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(citasDTO);
+    }
+
+    /**
+     * GET /api/citas/paginado
+     * Obtener citas con paginación y ordenamiento
+     * IMPORTANTE: Este método debe estar ANTES de @GetMapping("/citas/{id}")
+     */
+    @GetMapping("/citas/paginado")
+    public ResponseEntity<Page<CitaDTO>> listarCitasPaginado(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "fecha") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
+        try {
+            logger.debug("Obteniendo citas paginadas: page={}, size={}, sortBy={}, sortDir={}", 
+                         page, size, sortBy, sortDir);
+            
+            // Crear ordenamiento
+            Sort sort = sortDir.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending() 
+                : Sort.by(sortBy).descending();
+            
+            // Crear Pageable
+            Pageable pageable = PageRequest.of(page, size, sort);
+            
+            // Obtener página de citas
+            Page<Cita> citasPage = citaService.obtenerCitasPaginadas(pageable);
+            
+            // Convertir a DTOs
+            Page<CitaDTO> citasDTOPage = citasPage.map(citaMapper::toDTO);
+            
+            logger.debug("Citas paginadas obtenidas: {} de {}", 
+                         citasDTOPage.getNumberOfElements(), citasDTOPage.getTotalElements());
+            
+            return ResponseEntity.ok(citasDTOPage);
+            
+        } catch (Exception e) {
+            logger.error("Error en paginación de citas: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**
@@ -613,6 +660,43 @@ public class CitaApiController {
             response.put("error", e.getMessage());
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * GET /api/horarios-configurados
+     * Obtener todos los horarios configurados del sistema
+     */
+    @GetMapping("/horarios-configurados")
+    public ResponseEntity<?> obtenerHorariosConfigurados() {
+        try {
+            logger.debug("Obteniendo horarios configurados del sistema");
+            
+            // Usar un lunes como referencia para obtener horarios regulares
+            LocalDate fechaEjemplo = LocalDate.now();
+            while (fechaEjemplo.getDayOfWeek() == DayOfWeek.SATURDAY || 
+                   fechaEjemplo.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                fechaEjemplo = fechaEjemplo.plusDays(1);
+            }
+            
+            // Obtener horarios del servicio
+            List<LocalTime> horarios = horarioService.generarHorariosPorDia(fechaEjemplo);
+            
+            // Formatear a strings
+            List<String> horariosFormateados = horarios.stream()
+                    .map(DateTimeFormatUtils::formatearHoraCorta)
+                    .sorted()
+                    .collect(Collectors.toList());
+            
+            logger.debug("Horarios configurados: {}", horariosFormateados);
+            return ResponseEntity.ok(horariosFormateados);
+            
+        } catch (Exception e) {
+            logger.error("Error obteniendo horarios configurados: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", "Error al obtener horarios configurados",
+                "message", e.getMessage()
+            ));
         }
     }
 
