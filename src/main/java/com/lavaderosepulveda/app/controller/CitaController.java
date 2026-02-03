@@ -169,54 +169,6 @@ public class CitaController {
         }
     }
 
-    @GetMapping("/citas/paginado")
-    public ResponseEntity<Page<CitaDTO>> listarCitasPaginado(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "fecha") String sortBy,
-        @RequestParam(defaultValue = "asc") String sortDir) {
-
-        try{
-            logger.debug("Obteniendo citas paginadas: page={}, size={}, sortBy={}, sortDir={}",
-                page, size, sortBy, sortDir);
-
-            Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<Cita> citasPage = citaService.obtenerCitasPaginadas(pageable);
-            Page<CitaDTO> citaDTOPage = citasPage.map(citaMapper::toDto);
-            logger.debug("Citas paginadas obtenidas: {} de {}", citaDTOPage.getNumberOfElements(), citaDTOPage.getTotalElements());
-            return ResponseEntity.ok(citaDTOPage);
-        }
-        catch(Exception e){
-            logger.error("Error obteniendo citas paginadas: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @GetMapping("horarios-configurados")
-    public ResponseEntity<?> obtenerHorariosConfigurados() {
-        try {
-            loger.debug("Obteniendo horarios configurados");
-            LocalDate fechaEjemplo = LocalDate.now(); // Fecha de ejemplo para obtener horarios
-            while (fechaEjemplo.getDayOfWeek() == DayOfWeek.SATURDAY ||
-                   fechaEjemplo.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                fechaEjemplo = fechaEjemplo.plusDays(1);
-            }
-
-            List<LocalTime> horarios = horarioService.generarHorariosPorDia(fechaEjemplo);
-            List<String> horariosFormateados = horarios.stream()
-                    .map(DateTimeFormatUtils::formatearHoraCorta)
-                    .sorted()
-                    .collect(Collectors.toList());
-
-            logger.debug("Horarios configurados obtenidos: {}", horariosFormateados);
-            return ResponseEntity.ok(horariosFormateados);
-        } catch (Exception e) {
-            logger.error("Error obteniendo horarios configurados: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Error interno del servidor");
-        }
-    }
-    
     /**
      * Método privado para envío de email - Centralizado
      */
