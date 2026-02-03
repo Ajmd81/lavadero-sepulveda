@@ -10,6 +10,8 @@ import {
   CreditCard, Calendar, FileText, AlertCircle
 } from 'lucide-react';
 import facturaService from '../../services/facturaService';
+import facturaRecibidaService from '../../services/facturaRecibidaService';
+import gastoService from '../../services/gastoService';
 
 const COLORES_GRAFICO = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -19,36 +21,66 @@ const ResumenFinanciero = () => {
   const [fechaHasta, setFechaHasta] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [mostrarPersonalizado, setMostrarPersonalizado] = useState(false);
   const [facturas, setFacturas] = useState([]);
+  const [facturasRecibidas, setFacturasRecibidas] = useState([]);
+  const [gastos, setGastos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cargar facturas al montar y cuando cambien las fechas
+  // Cargar datos al montar y cuando cambien las fechas
   useEffect(() => {
-    cargarFacturas();
+    cargarTodosDatos();
   }, [fechaDesde, fechaHasta]);
 
-  const cargarFacturas = async () => {
+  const cargarTodosDatos = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      console.log('📊 Cargando facturas para resumen financiero...');
-      const response = await facturaService.getAll(0, 1000);
+      console.log('📊 Cargando datos para resumen financiero...');
       
+      // Cargar en paralelo
+      const [facturasResp, facturasRecibidasResp, gastosResp] = await Promise.all([
+        facturaService.getAll(0, 1000),
+        facturaRecibidaService.getAll(),
+        gastoService.getAll()
+      ]);
+      
+      // Procesar facturas emitidas
       let facturasData = [];
-      if (Array.isArray(response)) {
-        facturasData = response;
-      } else if (response?.content && Array.isArray(response.content)) {
-        facturasData = response.content;
-      } else if (response?.data) {
-        facturasData = Array.isArray(response.data) ? response.data : response.data.content || [];
+      if (Array.isArray(facturasResp)) {
+        facturasData = facturasResp;
+      } else if (facturasResp?.content && Array.isArray(facturasResp.content)) {
+        facturasData = facturasResp.content;
+      } else if (facturasResp?.data) {
+        facturasData = Array.isArray(facturasResp.data) ? facturasResp.data : facturasResp.data.content || [];
       }
 
-      console.log(`✅ ${facturasData.length} facturas cargadas`);
+      // Procesar facturas recibidas
+      let facturasRecibidasData = facturasRecibidasResp?.data || [];
+      if (facturasRecibidasData?.content && Array.isArray(facturasRecibidasData.content)) {
+        facturasRecibidasData = facturasRecibidasData.content;
+      }
+      if (!Array.isArray(facturasRecibidasData)) {
+        facturasRecibidasData = [];
+      }
+
+      // Procesar gastos
+      let gastosData = gastosResp?.data || [];
+      if (gastosData?.content && Array.isArray(gastosData.content)) {
+        gastosData = gastosData.content;
+      }
+      if (!Array.isArray(gastosData)) {
+        gastosData = [];
+      }
+
+      console.log(`✅ Cargados: ${facturasData.length} facturas, ${facturasRecibidasData.length} facturas recibidas, ${gastosData.length} gastos`);
+      
       setFacturas(facturasData);
+      setFacturasRecibidas(facturasRecibidasData);
+      setGastos(gastosData);
     } catch (err) {
-      console.error('❌ Error cargando facturas:', err);
-      setError(err);
+      console.error('❌ Error cargando datos:', err);
+      setError('Error al cargar los datos');
     } finally {
       setIsLoading(false);
     }
@@ -103,18 +135,24 @@ const ResumenFinanciero = () => {
     }
   };
 
-  // Filtrar facturas por rango de fechas
-  const facturasFiltradas = facturas.filter(factura => {
-    const fechaFactura = parsearFecha(factura.fecha);
-    if (!fechaFactura) return false;
+  // Filtrar por rango de fechas
+  const filtrarPorFecha = (items) => {
+    return items.filter(item => {
+      const fechaItem = parsearFecha(item.fecha || item.fechaFactura);
+      if (!fechaItem) return false;
 
-    const inicio = new Date(fechaDesde);
-    const fin = new Date(fechaHasta);
+      const inicio = new Date(fechaDesde);
+      const fin = new Date(fechaHasta);
 
-    return isWithinInterval(fechaFactura, { start: inicio, end: fin });
-  });
+      return isWithinInterval(fechaItem, { start: inicio, end: fin });
+    });
+  };
 
-  // CALCULAR RESUMEN
+  const facturasFiltradas = filtrarPorFecha(facturas);
+  const facturasRecibidasFiltradas = filtrarPorFecha(facturasRecibidas);
+  const gastosFiltrados = filtrarPorFecha(gastos);
+
+  // CALCULAR RESUMEN - INGRESOS
   const totalIngresos = facturasFiltradas.reduce((sum, f) => {
     const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
     return sum + total;
@@ -129,6 +167,34 @@ const ResumenFinanciero = () => {
 
   const ivaRepercutido = totalIngresos - baseImponible;
 
+  // CALCULAR RESUMEN - GASTOS
+  const totalGastos = gastosFiltrados.reduce((sum, g) => {
+    const importe = typeof g.importe === 'number' ? g.importe : parseFloat(g.importe || 0);
+    return sum + importe;
+  }, 0);
+
+  const baseGastos = facturasRecibidasFiltradas.reduce((sum, f) => {
+    const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
+    return sum + base;
+  }, 0);
+
+  const totalFacturasRecibidas = facturasRecibidasFiltradas.reduce((sum, f) => {
+    const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
+    return sum + total;
+  }, 0);
+
+  const ivaSoportado = totalFacturasRecibidas - baseGastos;
+
+  const totalGastosCombinado = totalGastos + totalFacturasRecibidas;
+  const numGastos = gastosFiltrados.length + facturasRecibidasFiltradas.length;
+
+  // CALCULAR BENEFICIO Y MARGEN
+  const beneficio = totalIngresos - totalGastosCombinado;
+  const margenPorcentaje = totalIngresos > 0 ? (beneficio / totalIngresos) * 100 : 0;
+
+  // LIQUIDACIÓN IVA
+  const liquidacionIva = ivaRepercutido - ivaSoportado;
+
   // Pendientes de cobro (estado PENDIENTE)
   const pendientesCobro = facturasFiltradas
     .filter(f => f.estado === 'PENDIENTE')
@@ -140,73 +206,108 @@ const ResumenFinanciero = () => {
 
   const totalPendienteCobro = pendientesCobro.reduce((sum, p) => sum + p.importe, 0);
 
-  // Evolución mensual de ingresos
-  const facturasPorMes = facturasFiltradas.reduce((acc, factura) => {
-    const fechaFactura = parsearFecha(factura.fecha);
-    if (!fechaFactura) return acc;
-    
-    const mes = format(fechaFactura, 'MMM yyyy', { locale: es });
-    const mesKey = format(fechaFactura, 'yyyy-MM');
-    
-    if (!acc[mesKey]) {
-      acc[mesKey] = {
-        mes,
-        mesKey,
-        ingresos: 0
-      };
-    }
-    
-    const total = typeof factura.total === 'number' ? factura.total : parseFloat(factura.total || 0);
-    acc[mesKey].ingresos += total;
-    
-    return acc;
-  }, {});
+  // Pendientes de pago
+  const pendientesPago = facturasRecibidasFiltradas
+    .filter(f => f.estado === 'PENDIENTE')
+    .map(f => ({
+      proveedor: f.proveedorNombre || 'Sin nombre',
+      factura: f.numeroFactura || 'S/N',
+      importe: typeof f.total === 'number' ? f.total : parseFloat(f.total || 0)
+    }));
 
-  const evolucionMensual = Object.values(facturasPorMes)
-    .sort((a, b) => a.mesKey.localeCompare(b.mesKey))
-    .map(({ mes, ingresos }) => ({ mes, ingresos, gastos: 0 }));
+  const totalPendientePago = pendientesPago.reduce((sum, p) => sum + p.importe, 0);
 
-  // Agrupar por cliente (para "distribución")
-  const ingresosPorCliente = facturasFiltradas.reduce((acc, factura) => {
-    const cliente = factura.clienteNombre || 'Sin nombre';
-    if (!acc[cliente]) {
-      acc[cliente] = {
-        categoria: cliente,
-        total: 0,
-        cantidad: 0
-      };
-    }
-    
-    const total = typeof factura.total === 'number' ? factura.total : parseFloat(factura.total || 0);
-    acc[cliente].total += total;
-    acc[cliente].cantidad += 1;
-    
-    return acc;
-  }, {});
+  // Evolución mensual
+  const evolucionMensual = (() => {
+    const meses = {};
 
-  const top10Clientes = Object.values(ingresosPorCliente)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10);
+    // Ingresos por mes
+    facturasFiltradas.forEach(factura => {
+      const fechaFactura = parsearFecha(factura.fecha);
+      if (!fechaFactura) return;
+      
+      const mesKey = format(fechaFactura, 'yyyy-MM');
+      const mes = format(fechaFactura, 'MMM yyyy', { locale: es });
+      
+      if (!meses[mesKey]) {
+        meses[mesKey] = { mes, mesKey, ingresos: 0, gastos: 0 };
+      }
+      
+      const total = typeof factura.total === 'number' ? factura.total : parseFloat(factura.total || 0);
+      meses[mesKey].ingresos += total;
+    });
+
+    // Gastos por mes
+    [...facturasRecibidasFiltradas, ...gastosFiltrados].forEach(item => {
+      const fechaItem = parsearFecha(item.fecha || item.fechaFactura);
+      if (!fechaItem) return;
+      
+      const mesKey = format(fechaItem, 'yyyy-MM');
+      const mes = format(fechaItem, 'MMM yyyy', { locale: es });
+      
+      if (!meses[mesKey]) {
+        meses[mesKey] = { mes, mesKey, ingresos: 0, gastos: 0 };
+      }
+      
+      const importe = typeof item.total === 'number' ? item.total : 
+                     typeof item.importe === 'number' ? item.importe :
+                     parseFloat(item.total || item.importe || 0);
+      meses[mesKey].gastos += importe;
+    });
+
+    return Object.values(meses)
+      .sort((a, b) => a.mesKey.localeCompare(b.mesKey))
+      .map(({ mes, ingresos, gastos }) => ({ mes, ingresos, gastos }));
+  })();
+
+  // Gastos por categoría
+  const gastosPorCategoria = (() => {
+    const categorias = {};
+
+    // Facturas recibidas
+    facturasRecibidasFiltradas.forEach(factura => {
+      const cat = factura.categoria || 'OTROS';
+      if (!categorias[cat]) {
+        categorias[cat] = { categoria: cat, total: 0, cantidad: 0 };
+      }
+      const total = typeof factura.total === 'number' ? factura.total : parseFloat(factura.total || 0);
+      categorias[cat].total += total;
+      categorias[cat].cantidad += 1;
+    });
+
+    // Gastos
+    gastosFiltrados.forEach(gasto => {
+      const cat = gasto.categoria || 'OTROS';
+      if (!categorias[cat]) {
+        categorias[cat] = { categoria: cat, total: 0, cantidad: 0 };
+      }
+      const importe = typeof gasto.importe === 'number' ? gasto.importe : parseFloat(gasto.importe || 0);
+      categorias[cat].total += importe;
+      categorias[cat].cantidad += 1;
+    });
+
+    return Object.values(categorias).sort((a, b) => b.total - a.total);
+  })();
 
   // Crear objeto resumen compatible con el diseño original
   const resumen = {
     totalIngresos,
     numFacturasEmitidas,
-    totalGastos: 0, // No tenemos gastos
-    numGastos: 0,
-    beneficio: totalIngresos, // Sin gastos, beneficio = ingresos
-    margenPorcentaje: 100, // Sin gastos, margen = 100%
+    totalGastos: totalGastosCombinado,
+    numGastos,
+    beneficio,
+    margenPorcentaje,
     baseImponible,
     ivaRepercutido,
-    baseGastos: 0,
-    ivaSoportado: 0,
-    liquidacionIva: ivaRepercutido, // Sin gastos, liquidación = IVA repercutido
+    baseGastos,
+    ivaSoportado,
+    liquidacionIva,
     evolucionMensual,
-    gastosPorCategoria: top10Clientes, // Usamos top 10 clientes en lugar de gastos
+    gastosPorCategoria,
     totalPendienteCobro,
     pendientesCobro,
-    totalPendientePago: 0,
-    pendientesPago: []
+    totalPendientePago,
+    pendientesPago
   };
 
   // Formatear moneda
@@ -257,7 +358,7 @@ const ResumenFinanciero = () => {
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center text-red-800">
           <AlertCircle className="mr-2" size={20} />
-          <span>Error al cargar el resumen financiero: {error.message}</span>
+          <span>Error al cargar el resumen financiero: {error}</span>
         </div>
       </div>
     );
@@ -376,25 +477,23 @@ const ResumenFinanciero = () => {
           subvalor={`${resumen.numFacturasEmitidas} facturas emitidas`}
         />
         <KPICard
+          titulo="Gastos Totales"
+          valor={formatCurrency(resumen.totalGastos)}
+          icon={TrendingDown}
+          color="text-red-600"
+          subvalor={`${resumen.numGastos} gastos registrados`}
+        />
+        <KPICard
           titulo="Beneficio Neto"
           valor={formatCurrency(resumen.beneficio)}
           icon={Euro}
           color={resumen.beneficio >= 0 ? 'text-blue-600' : 'text-red-600'}
-          subvalor="Ingresos totales"
         />
         <KPICard
-          titulo="Base Imponible"
-          valor={formatCurrency(resumen.baseImponible)}
-          icon={FileText}
-          color="text-purple-600"
-          subvalor="Sin IVA"
-        />
-        <KPICard
-          titulo="IVA Repercutido"
-          valor={formatCurrency(resumen.ivaRepercutido)}
-          icon={Receipt}
-          color="text-orange-600"
-          subvalor="21% IVA"
+          titulo="Margen de Beneficio"
+          valor={formatPercentage(resumen.margenPorcentaje)}
+          icon={Euro}
+          color={resumen.margenPorcentaje >= 0 ? 'text-purple-600' : 'text-red-600'}
         />
       </div>
 
@@ -402,7 +501,7 @@ const ResumenFinanciero = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Evolución Mensual */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Evolución de Ingresos</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Evolución Mensual</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={resumen.evolucionMensual}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -411,13 +510,14 @@ const ResumenFinanciero = () => {
               <Tooltip formatter={(value) => formatCurrency(value)} />
               <Legend />
               <Line type="monotone" dataKey="ingresos" stroke="#10b981" strokeWidth={2} name="Ingresos" />
+              <Line type="monotone" dataKey="gastos" stroke="#ef4444" strokeWidth={2} name="Gastos" />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Top 10 Clientes */}
+        {/* Distribución de Gastos */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Top 10 Clientes</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Distribución de Gastos por Categoría</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -445,7 +545,7 @@ const ResumenFinanciero = () => {
           <FileText className="mr-2" size={20} />
           Detalle de IVA
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
             <p className="text-sm text-gray-600">Base Imponible</p>
             <p className="text-xl font-bold text-green-700">{formatCurrency(resumen.baseImponible)}</p>
@@ -454,30 +554,38 @@ const ResumenFinanciero = () => {
             <p className="text-sm text-gray-600">IVA Repercutido</p>
             <p className="text-xl font-bold text-green-700">{formatCurrency(resumen.ivaRepercutido)}</p>
           </div>
+          <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+            <p className="text-sm text-gray-600">Base Gastos</p>
+            <p className="text-xl font-bold text-red-700">{formatCurrency(resumen.baseGastos)}</p>
+          </div>
+          <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+            <p className="text-sm text-gray-600">IVA Soportado</p>
+            <p className="text-xl font-bold text-red-700">{formatCurrency(resumen.ivaSoportado)}</p>
+          </div>
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm text-gray-600">Liquidación IVA</p>
-            <p className="text-xl font-bold text-blue-700">
+            <p className={`text-xl font-bold ${resumen.liquidacionIva >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
               {formatCurrency(resumen.liquidacionIva)}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Tabla de Top 10 Clientes */}
+      {/* Tabla de Gastos por Categoría */}
       {resumen.gastosPorCategoria && resumen.gastosPorCategoria.length > 0 && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900">Top 10 Clientes por Facturación</h3>
+            <h3 className="text-lg font-bold text-gray-900">Gastos Detallados por Categoría</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cliente
+                    Categoría
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Facturas
+                    Cantidad
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total
@@ -506,7 +614,7 @@ const ResumenFinanciero = () => {
                       {formatCurrency(cat.total)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
-                      {formatPercentage((cat.total / resumen.totalIngresos) * 100)}
+                      {formatPercentage((cat.total / resumen.totalGastos) * 100)}
                     </td>
                   </tr>
                 ))}
@@ -518,7 +626,7 @@ const ResumenFinanciero = () => {
                     {resumen.gastosPorCategoria.reduce((sum, cat) => sum + cat.cantidad, 0)}
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-gray-900">
-                    {formatCurrency(resumen.totalIngresos)}
+                    {formatCurrency(resumen.totalGastos)}
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-gray-900">100%</td>
                 </tr>
@@ -528,8 +636,9 @@ const ResumenFinanciero = () => {
         </div>
       )}
 
-      {/* Pendientes de Cobro */}
-      <div className="grid grid-cols-1 gap-6">
+      {/* Pendientes de Cobro y Pago */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pendientes de Cobro */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-6 bg-green-50 border-b border-green-200">
             <h3 className="text-lg font-bold text-green-900 flex items-center">
@@ -565,7 +674,48 @@ const ResumenFinanciero = () => {
             </div>
           ) : (
             <div className="p-6 text-center text-gray-500">
-              <p>No hay facturas pendientes de cobro en este período</p>
+              <p>No hay facturas pendientes de cobro</p>
+            </div>
+          )}
+        </div>
+
+        {/* Pendientes de Pago */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-6 bg-red-50 border-b border-red-200">
+            <h3 className="text-lg font-bold text-red-900 flex items-center">
+              <CreditCard className="mr-2" size={20} />
+              Pendientes de Pago
+            </h3>
+            <p className="text-2xl font-bold text-red-700 mt-2">
+              {formatCurrency(resumen.totalPendientePago)}
+            </p>
+          </div>
+          {resumen.pendientesPago && resumen.pendientesPago.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proveedor</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Factura</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Importe</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {resumen.pendientesPago.map((pendiente, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm text-gray-900">{pendiente.proveedor}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{pendiente.factura}</td>
+                      <td className="px-6 py-4 text-sm text-right font-medium text-red-700">
+                        {formatCurrency(pendiente.importe)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-6 text-center text-gray-500">
+              <p>No hay facturas pendientes de pago</p>
             </div>
           )}
         </div>

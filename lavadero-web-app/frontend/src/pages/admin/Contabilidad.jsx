@@ -1,407 +1,390 @@
-import { useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useState, useEffect } from 'react';
+import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { es } from 'date-fns/locale';
 import facturaService from '../../services/facturaService';
+import facturaRecibidaService from '../../services/facturaRecibidaService';
+import gastoService from '../../services/gastoService';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Contabilidad = () => {
-  const [periodo, setPeriodo] = useState('Este mes');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [facturas, setFacturas] = useState([]);
+  const [facturasRecibidas, setFacturasRecibidas] = useState([]);
+  const [gastos, setGastos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [todasFacturas, setTodasFacturas] = useState([]);
-  const [datos, setDatos] = useState(null);
-  const [resumenMensual, setResumenMensual] = useState([]);
-  const [resumenCliente, setResumenCliente] = useState([]);
-
-  const calcularFechas = (periodoSeleccionado) => {
-    const hoy = new Date();
-    let desde, hasta;
-
-    switch (periodoSeleccionado) {
-      case 'Este mes':
-        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-        break;
-      case 'Mes anterior':
-        desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-        hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
-        break;
-      case 'Este trimestre': {
-        const trimestre = Math.floor(hoy.getMonth() / 3);
-        desde = new Date(hoy.getFullYear(), trimestre * 3, 1);
-        hasta = new Date(hoy.getFullYear(), trimestre * 3 + 3, 0);
-        break;
-      }
-      case 'Este año':
-        desde = new Date(hoy.getFullYear(), 0, 1);
-        hasta = new Date(hoy.getFullYear(), 11, 31);
-        break;
-      default:
-        return null;
-    }
-
-    return {
-      desde: desde.toISOString().split('T')[0],
-      hasta: hasta.toISOString().split('T')[0]
-    };
-  };
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
 
   useEffect(() => {
-    if (periodo !== 'Personalizado') {
-      const fechas = calcularFechas(periodo);
-      if (fechas) {
-        setFechaDesde(fechas.desde);
-        setFechaHasta(fechas.hasta);
-      }
-    }
-  }, [periodo]);
-
-  useEffect(() => {
-    cargarTodasFacturas();
+    cargarTodosDatos();
   }, []);
 
-  const cargarTodasFacturas = async () => {
+  const cargarTodosDatos = async () => {
     try {
-      const response = await facturaService.getAll(0, 1000);
-      const facturas = response.data.content || response.data || [];
-      setTodasFacturas(facturas);
-    } catch (err) {
-      console.error('Error cargando facturas:', err);
-      setTodasFacturas([]);
+      setLoading(true);
+      setError(null);
+      
+      console.log('📊 Cargando datos para contabilidad...');
+      
+      const [facturasResp, facturasRecibidasResp, gastosResp] = await Promise.all([
+        facturaService.getAll(0, 1000),
+        facturaRecibidaService.getAll(),
+        gastoService.getAll()
+      ]);
+      
+      // Procesar facturas emitidas
+      let facturasData = [];
+      if (Array.isArray(facturasResp)) {
+        facturasData = facturasResp;
+      } else if (facturasResp?.content && Array.isArray(facturasResp.content)) {
+        facturasData = facturasResp.content;
+      } else if (facturasResp?.data) {
+        facturasData = Array.isArray(facturasResp.data) ? facturasResp.data : facturasResp.data.content || [];
+      }
+
+      // Procesar facturas recibidas
+      let facturasRecibidasData = facturasRecibidasResp?.data || [];
+      if (facturasRecibidasData?.content && Array.isArray(facturasRecibidasData.content)) {
+        facturasRecibidasData = facturasRecibidasData.content;
+      }
+      if (!Array.isArray(facturasRecibidasData)) {
+        facturasRecibidasData = [];
+      }
+
+      // Procesar gastos
+      let gastosData = gastosResp?.data || [];
+      if (gastosData?.content && Array.isArray(gastosData.content)) {
+        gastosData = gastosData.content;
+      }
+      if (!Array.isArray(gastosData)) {
+        gastosData = [];
+      }
+
+      console.log(`✅ ${facturasData.length} facturas, ${facturasRecibidasData.length} facturas recibidas, ${gastosData.length} gastos`);
+      
+      setFacturas(facturasData);
+      setFacturasRecibidas(facturasRecibidasData);
+      setGastos(gastosData);
+      
+    } catch (error) {
+      console.error('❌ Error cargando datos:', error);
+      setError('Error al cargar los datos');
+    } finally {
+      setLoading(false);
     }
   };
 
   const parsearFecha = (fechaStr) => {
     if (!fechaStr) return null;
     
-    if (fechaStr instanceof Date) {
-      return fechaStr;
-    }
-    
-    if (fechaStr.includes('/')) {
-      const [dia, mes, anio] = fechaStr.split('/');
-      return new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
-    } else if (fechaStr.includes('-')) {
-      const fechaSolo = fechaStr.split('T')[0];
-      const [anio, mes, dia] = fechaSolo.split('-');
-      return new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
-    }
-    
-    return null;
-  };
-
-  const cargarDatos = async () => {
-    if (!fechaDesde || !fechaHasta) {
-      setError('Debe seleccionar un rango de fechas válido');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    
     try {
-      const desde = new Date(fechaDesde);
-      const hasta = new Date(fechaHasta);
-      
-      const facturasFiltradas = todasFacturas.filter(f => {
-        const fechaFactura = parsearFecha(f.fecha);
-        return fechaFactura && fechaFactura >= desde && fechaFactura <= hasta;
-      });
-
-      const ingresosTotales = facturasFiltradas.reduce((sum, f) => {
-        const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
-        return sum + total;
-      }, 0);
-
-      const baseImponible = facturasFiltradas.reduce((sum, f) => {
-        const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible) || 0;
-        return sum + base;
-      }, 0);
-
-      const ivaRepercutido = facturasFiltradas.reduce((sum, f) => {
-        const iva = typeof f.importeIva === 'number' ? f.importeIva : parseFloat(f.importeIva) || 0;
-        return sum + iva;
-      }, 0);
-
-      const datosCalculados = {
-        ingresosTotales,
-        baseImponible,
-        ivaRepercutido,
-        numFacturas: facturasFiltradas.length
-      };
-
-      setDatos(datosCalculados);
-      procesarDatos(facturasFiltradas);
-      
-    } catch (err) {
-      console.error('Error procesando datos:', err);
-      setError('Error al procesar los datos: ' + err.message);
-    } finally {
-      setLoading(false);
+      if (fechaStr.includes('/')) {
+        const [dia, mes, anio] = fechaStr.split('/');
+        return new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+      }
+      if (fechaStr.includes('-')) {
+        return parseISO(fechaStr);
+      }
+      return null;
+    } catch (error) {
+      return null;
     }
   };
 
-  const procesarDatos = (facturas) => {
-    const facturasPorMes = {};
+  const filtrarPorFecha = (items) => {
+    if (!fechaInicio && !fechaFin) return items;
     
-    facturas.forEach(f => {
-      const fechaFactura = parsearFecha(f.fecha);
-      if (fechaFactura) {
-        const mesKey = `${fechaFactura.getFullYear()}-${String(fechaFactura.getMonth() + 1).padStart(2, '0')}`;
-        
-        if (!facturasPorMes[mesKey]) {
-          facturasPorMes[mesKey] = {
-            mes: mesKey,
-            total: 0,
-            base: 0,
-            iva: 0
-          };
-        }
-        
-        const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
-        const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible) || 0;
-        const iva = typeof f.importeIva === 'number' ? f.importeIva : parseFloat(f.importeIva) || 0;
-        
-        facturasPorMes[mesKey].total += total;
-        facturasPorMes[mesKey].base += base;
-        facturasPorMes[mesKey].iva += iva;
-      }
-    });
+    return items.filter(item => {
+      const fechaItem = parsearFecha(item.fecha || item.fechaFactura);
+      if (!fechaItem) return false;
 
-    const mensual = Object.values(facturasPorMes)
-      .sort((a, b) => a.mes.localeCompare(b.mes))
-      .map(item => {
-        const [anio, mes] = item.mes.split('-');
-        const fecha = new Date(parseInt(anio), parseInt(mes) - 1, 1);
-        return {
-          mes: fecha.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
-          ingresos: item.total,
-          base: item.base,
-          iva: item.iva
-        };
-      });
-    
-    setResumenMensual(mensual);
+      const inicio = fechaInicio ? new Date(fechaInicio) : null;
+      const fin = fechaFin ? new Date(fechaFin) : null;
 
-    const facturasPorCliente = {};
-    
-    facturas.forEach(f => {
-      const nombreCliente = f.clienteNombre || 'Sin nombre';
-      
-      if (!facturasPorCliente[nombreCliente]) {
-        facturasPorCliente[nombreCliente] = {
-          nombreCliente,
-          total: 0,
-          numFacturas: 0
-        };
+      if (inicio && fin) {
+        return isWithinInterval(fechaItem, { start: inicio, end: fin });
+      } else if (inicio) {
+        return fechaItem >= inicio;
+      } else if (fin) {
+        return fechaItem <= fin;
       }
       
-      const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
-      facturasPorCliente[nombreCliente].total += total;
-      facturasPorCliente[nombreCliente].numFacturas++;
+      return true;
     });
+  };
 
-    const clientes = Object.values(facturasPorCliente)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10)
-      .map(item => ({
-        cliente: item.nombreCliente,
-        total: item.total,
-        facturas: item.numFacturas
-      }));
+  const facturasFiltradas = filtrarPorFecha(facturas);
+  const facturasRecibidasFiltradas = filtrarPorFecha(facturasRecibidas);
+  const gastosFiltrados = filtrarPorFecha(gastos);
+
+  // Calcular estadísticas
+  const ingresosTotales = facturasFiltradas.reduce((sum, f) => {
+    const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
+    return sum + total;
+  }, 0);
+
+  const baseImponible = facturasFiltradas.reduce((sum, f) => {
+    const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
+    return sum + base;
+  }, 0);
+
+  const ivaRepercutido = ingresosTotales - baseImponible;
+
+  // Gastos totales
+  const gastosFacturasRecibidas = facturasRecibidasFiltradas.reduce((sum, f) => {
+    const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
+    return sum + total;
+  }, 0);
+
+  const gastosSimples = gastosFiltrados.reduce((sum, g) => {
+    const importe = typeof g.importe === 'number' ? g.importe : parseFloat(g.importe || 0);
+    return sum + importe;
+  }, 0);
+
+  const totalGastos = gastosFacturasRecibidas + gastosSimples;
+
+  const baseGastos = facturasRecibidasFiltradas.reduce((sum, f) => {
+    const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
+    return sum + base;
+  }, 0);
+
+  const ivaSoportado = gastosFacturasRecibidas - baseGastos;
+
+  // Agrupar por mes
+  const facturasPorMes = facturasFiltradas.reduce((acc, factura) => {
+    const fechaFactura = parsearFecha(factura.fecha);
+    if (!fechaFactura) return acc;
     
-    setResumenCliente(clientes);
-  };
+    const mes = format(fechaFactura, 'yyyy-MM');
+    if (!acc[mes]) {
+      acc[mes] = {
+        mes,
+        ingresos: 0,
+        gastos: 0,
+        cantidad: 0
+      };
+    }
+    
+    const total = typeof factura.total === 'number' ? factura.total : parseFloat(factura.total || 0);
+    acc[mes].ingresos += total;
+    acc[mes].cantidad += 1;
+    
+    return acc;
+  }, {});
 
-  const formatearMoneda = (valor) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(valor || 0);
-  };
+  // Agregar gastos al agrupamiento por mes
+  [...facturasRecibidasFiltradas, ...gastosFiltrados].forEach(item => {
+    const fechaItem = parsearFecha(item.fecha || item.fechaFactura);
+    if (!fechaItem) return;
+    
+    const mes = format(fechaItem, 'yyyy-MM');
+    if (!facturasPorMes[mes]) {
+      facturasPorMes[mes] = {
+        mes,
+        ingresos: 0,
+        gastos: 0,
+        cantidad: 0
+      };
+    }
+    
+    const importe = typeof item.total === 'number' ? item.total : 
+                   typeof item.importe === 'number' ? item.importe :
+                   parseFloat(item.total || item.importe || 0);
+    facturasPorMes[mes].gastos += importe;
+  });
+
+  const datosMensuales = Object.values(facturasPorMes)
+    .sort((a, b) => a.mes.localeCompare(b.mes))
+    .map(item => ({
+      mes: format(new Date(item.mes + '-01'), 'MMM yyyy', { locale: es }),
+      ingresos: item.ingresos,
+      gastos: item.gastos,
+      cantidad: item.cantidad
+    }));
+
+  // Top 10 clientes
+  const facturasPorCliente = facturasFiltradas.reduce((acc, factura) => {
+    const cliente = factura.clienteNombre || 'Sin nombre';
+    if (!acc[cliente]) {
+      acc[cliente] = {
+        cliente,
+        total: 0,
+        cantidad: 0
+      };
+    }
+    
+    const total = typeof factura.total === 'number' ? factura.total : parseFloat(factura.total || 0);
+    acc[cliente].total += total;
+    acc[cliente].cantidad += 1;
+    
+    return acc;
+  }, {});
+
+  const top10Clientes = Object.values(facturasPorCliente)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Cargando datos financieros...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="flex items-start">
+          <svg className="w-6 h-6 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="ml-3">
+            <h3 className="text-red-800 font-semibold">Error al cargar datos</h3>
+            <p className="text-red-600 mt-1">{error}</p>
+            <button
+              onClick={cargarTodosDatos}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src="/assets/icons/contabilidad.png" alt="Contabilidad" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-        </div>
-        <h1 className="text-3xl font-bold text-gray-900">Contabilidad</h1>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-gray-800">Resumen Contable</h1>
 
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      {/* Filtros de fecha */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold mb-4">Filtros</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Período</label>
-            <select
-              value={periodo}
-              onChange={(e) => setPeriodo(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            >
-              <option>Este mes</option>
-              <option>Mes anterior</option>
-              <option>Este trimestre</option>
-              <option>Este año</option>
-              <option>Personalizado</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Desde</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
             <input
               type="date"
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
-              disabled={periodo !== 'Personalizado'}
-              className="w-full border border-gray-300 rounded px-3 py-2 disabled:bg-gray-100"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
             />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Hasta</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
             <input
               type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-              disabled={periodo !== 'Personalizado'}
-              className="w-full border border-gray-300 rounded px-3 py-2 disabled:bg-gray-100"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
             />
           </div>
-
-          <div className="flex items-end gap-2">
+          <div className="flex items-end">
             <button
-              onClick={cargarDatos}
-              disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
+              onClick={() => {
+                setFechaInicio('');
+                setFechaFin('');
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
             >
-              {loading ? 'Cargando...' : 'Cargar'}
+              Limpiar Filtros
             </button>
           </div>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
+      {/* Tarjetas de resumen */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-linear-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">Ingresos Totales</h3>
+          <p className="text-3xl font-bold mt-2">€{ingresosTotales.toFixed(2)}</p>
+          <p className="text-sm mt-2 opacity-75">{facturasFiltradas.length} facturas</p>
         </div>
-      )}
 
-      {datos && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-            <p className="text-sm text-gray-600 mb-2">Ingresos Totales</p>
-            <p className="text-2xl font-bold text-green-700">{formatearMoneda(datos.ingresosTotales)}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-            <p className="text-sm text-gray-600 mb-2">Base Imponible</p>
-            <p className="text-2xl font-bold text-blue-700">{formatearMoneda(datos.baseImponible)}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-            <p className="text-sm text-gray-600 mb-2">IVA Repercutido</p>
-            <p className="text-2xl font-bold text-orange-700">{formatearMoneda(datos.ivaRepercutido)}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-            <p className="text-sm text-gray-600 mb-2">Nº Facturas</p>
-            <p className="text-2xl font-bold text-purple-700">{datos.numFacturas || 0}</p>
-          </div>
+        <div className="bg-linear-to-r from-red-500 to-red-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">Gastos Totales</h3>
+          <p className="text-3xl font-bold mt-2">€{totalGastos.toFixed(2)}</p>
+          <p className="text-sm mt-2 opacity-75">{facturasRecibidasFiltradas.length + gastosFiltrados.length} gastos</p>
         </div>
-      )}
 
-      {resumenMensual.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-4">Ingresos Mensuales</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={resumenMensual}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatearMoneda(value)} />
-                <Legend />
-                <Line type="monotone" dataKey="ingresos" stroke="#10b981" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-4">Desglose: Base e IVA</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={resumenMensual}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatearMoneda(value)} />
-                <Legend />
-                <Bar dataKey="base" fill="#3b82f6" />
-                <Bar dataKey="iva" fill="#f97316" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="bg-linear-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">Beneficio Neto</h3>
+          <p className="text-3xl font-bold mt-2">€{(ingresosTotales - totalGastos).toFixed(2)}</p>
+          <p className="text-sm mt-2 opacity-75">Ingresos - Gastos</p>
         </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {resumenMensual.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-4">Resumen Mensual</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse border border-gray-300">
-                <thead className="bg-blue-600 text-white">
-                  <tr>
-                    <th className="border border-gray-300 px-3 py-2 text-left text-sm">Mes</th>
-                    <th className="border border-gray-300 px-3 py-2 text-right text-sm">Ingresos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resumenMensual.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-white">
-                      <td className="border border-gray-300 px-3 py-2 text-sm">{item.mes}</td>
-                      <td className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">
-                        {formatearMoneda(item.ingresos)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {resumenCliente.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-4">Top 10 Clientes</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse border border-gray-300">
-                <thead className="bg-blue-600 text-white">
-                  <tr>
-                    <th className="border border-gray-300 px-3 py-2 text-left text-sm">Cliente</th>
-                    <th className="border border-gray-300 px-3 py-2 text-center text-sm">Facturas</th>
-                    <th className="border border-gray-300 px-3 py-2 text-right text-sm">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resumenCliente.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-white">
-                      <td className="border border-gray-300 px-3 py-2 text-sm truncate">{item.cliente}</td>
-                      <td className="border border-gray-300 px-3 py-2 text-center text-sm">{item.facturas}</td>
-                      <td className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">
-                        {formatearMoneda(item.total)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
 
-      {!loading && !datos && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Selecciona un período y haz clic en "Cargar" para ver los datos</p>
+      {/* Tarjetas de IVA */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-linear-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">Base Imponible</h3>
+          <p className="text-3xl font-bold mt-2">€{baseImponible.toFixed(2)}</p>
+          <p className="text-sm mt-2 opacity-75">Sin IVA</p>
+        </div>
+
+        <div className="bg-linear-to-r from-orange-500 to-orange-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">IVA Repercutido</h3>
+          <p className="text-3xl font-bold mt-2">€{ivaRepercutido.toFixed(2)}</p>
+          <p className="text-sm mt-2 opacity-75">De ventas</p>
+        </div>
+
+        <div className="bg-linear-to-r from-purple-500 to-purple-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">IVA Soportado</h3>
+          <p className="text-3xl font-bold mt-2">€{ivaSoportado.toFixed(2)}</p>
+          <p className="text-sm mt-2 opacity-75">De compras</p>
+        </div>
+      </div>
+
+      {/* Gráfico de ingresos y gastos por mes */}
+      {datosMensuales.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Evolución de Ingresos y Gastos</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={datosMensuales}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" />
+              <YAxis />
+              <Tooltip formatter={(value) => `€${value.toFixed(2)}`} />
+              <Legend />
+              <Bar dataKey="ingresos" fill="#3B82F6" name="Ingresos" />
+              <Bar dataKey="gastos" fill="#EF4444" name="Gastos" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Top 10 clientes */}
+      {top10Clientes.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Top 10 Clientes</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facturas</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {top10Clientes.map((cliente, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {cliente.cliente}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {cliente.cantidad}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                      €{cliente.total.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

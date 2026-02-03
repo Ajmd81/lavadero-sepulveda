@@ -1,14 +1,13 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import {
     Download, FileText, Calendar, AlertCircle, CheckCircle,
     Calculator, TrendingUp, TrendingDown, Info
 } from 'lucide-react';
-import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
+import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, parseISO, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+import facturaService from '../../services/facturaService';
+import facturaRecibidaService from '../../services/facturaRecibidaService';
+import gastoService from '../../services/gastoService';
 
 const ModelosFiscales = () => {
     const currentYear = new Date().getFullYear();
@@ -18,70 +17,201 @@ const ModelosFiscales = () => {
     const [trimestre, setTrimestre] = useState(currentQuarter);
     const [año, setAño] = useState(currentYear);
     const [mensaje, setMensaje] = useState(null);
+    const [facturas, setFacturas] = useState([]);
+    const [facturasRecibidas, setFacturasRecibidas] = useState([]);
+    const [gastos, setGastos] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [datosModelo, setDatosModelo] = useState(null);
 
-    // Calcular fechas del período
-    const getFechasPeriodo = () => {
-        const date = new Date(año, (trimestre - 1) * 3, 1);
-        return {
-            desde: format(startOfQuarter(date), 'yyyy-MM-dd'),
-            hasta: format(endOfQuarter(date), 'yyyy-MM-dd')
-        };
-    };
+    useEffect(() => {
+        cargarTodosDatos();
+    }, []);
 
-    const getFechasAño = () => {
-        const date = new Date(año, 0, 1);
-        return {
-            desde: format(startOfYear(date), 'yyyy-MM-dd'),
-            hasta: format(endOfYear(date), 'yyyy-MM-dd')
-        };
-    };
+    useEffect(() => {
+        if (facturas.length > 0) {
+            calcularModelo();
+        }
+    }, [facturas, facturasRecibidas, gastos, modeloSeleccionado, trimestre, año]);
 
-    // Query para obtener datos del modelo
-    const { data: datosModelo, isLoading, refetch } = useQuery({
-        queryKey: ['modelo-fiscal', modeloSeleccionado, trimestre, año],
-        queryFn: async () => {
-            const { data } = await axios.get(`${API_URL}/modelos-fiscales/${modeloSeleccionado}`, {
-                params: {
-                    anio: año,
-                    trimestre: trimestre
-                }
-            });
-            return data;
-        },
-        enabled: !!modeloSeleccionado
-    });
-
-    // Generar PDF del modelo
-    const generarPDF = async () => {
+    const cargarTodosDatos = async () => {
         try {
-            const fechas = modeloSeleccionado === '303' ? getFechasPeriodo() : getFechasAño();
-            const response = await axios.get(`${API_URL}/modelos-fiscales/${modeloSeleccionado}/pdf`, {
-                params: {
-                    desde: fechas.desde,
-                    hasta: fechas.hasta,
-                    trimestre: modeloSeleccionado === '303' ? trimestre : undefined
-                },
-                responseType: 'blob'
-            });
+            setIsLoading(true);
+            console.log('📊 Cargando datos para modelos fiscales...');
+            
+            const [facturasResp, facturasRecibidasResp, gastosResp] = await Promise.all([
+                facturaService.getAll(0, 1000),
+                facturaRecibidaService.getAll(),
+                gastoService.getAll()
+            ]);
+            
+            // Procesar facturas emitidas
+            let facturasData = [];
+            if (Array.isArray(facturasResp)) {
+                facturasData = facturasResp;
+            } else if (facturasResp?.content && Array.isArray(facturasResp.content)) {
+                facturasData = facturasResp.content;
+            } else if (facturasResp?.data) {
+                facturasData = Array.isArray(facturasResp.data) ? facturasResp.data : facturasResp.data.content || [];
+            }
 
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Modelo_${modeloSeleccionado}_${trimestre}T_${año}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.parentNode.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            // Procesar facturas recibidas
+            let facturasRecibidasData = facturasRecibidasResp?.data || [];
+            if (facturasRecibidasData?.content && Array.isArray(facturasRecibidasData.content)) {
+                facturasRecibidasData = facturasRecibidasData.content;
+            }
+            if (!Array.isArray(facturasRecibidasData)) {
+                facturasRecibidasData = [];
+            }
 
-            setMensaje({ tipo: 'exito', texto: 'PDF generado correctamente' });
-            setTimeout(() => setMensaje(null), 3000);
+            // Procesar gastos
+            let gastosData = gastosResp?.data || [];
+            if (gastosData?.content && Array.isArray(gastosData.content)) {
+                gastosData = gastosData.content;
+            }
+            if (!Array.isArray(gastosData)) {
+                gastosData = [];
+            }
+
+            console.log(`✅ Cargados: ${facturasData.length} facturas, ${facturasRecibidasData.length} facturas recibidas, ${gastosData.length} gastos`);
+            
+            setFacturas(facturasData);
+            setFacturasRecibidas(facturasRecibidasData);
+            setGastos(gastosData);
         } catch (error) {
-            setMensaje({ tipo: 'error', texto: 'Error al generar el PDF' });
+            console.error('❌ Error cargando datos:', error);
+            setMensaje({ tipo: 'error', texto: 'Error al cargar los datos' });
             setTimeout(() => setMensaje(null), 5000);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    // Formatear moneda
+    const parsearFecha = (fechaStr) => {
+        if (!fechaStr) return null;
+        try {
+            if (fechaStr.includes('/')) {
+                const [dia, mes, anio] = fechaStr.split('/');
+                return new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+            }
+            if (fechaStr.includes('-')) {
+                return parseISO(fechaStr);
+            }
+            return null;
+        } catch (error) {
+            return null;
+        }
+    };
+
+    const getFechasPeriodo = () => {
+        const date = new Date(año, (trimestre - 1) * 3, 1);
+        return {
+            desde: startOfQuarter(date),
+            hasta: endOfQuarter(date)
+        };
+    };
+
+    const calcularModelo = () => {
+        const fechas = getFechasPeriodo();
+        
+        // Filtrar por período
+        const filtrarPorFecha = (items) => items.filter(item => {
+            const fechaItem = parsearFecha(item.fecha || item.fechaFactura);
+            if (!fechaItem) return false;
+            return isWithinInterval(fechaItem, { start: fechas.desde, end: fechas.hasta });
+        });
+
+        const facturasPeriodo = filtrarPorFecha(facturas);
+        const facturasRecibidasPeriodo = filtrarPorFecha(facturasRecibidas);
+        const gastosPeriodo = filtrarPorFecha(gastos);
+
+        console.log(`Calculando modelo ${modeloSeleccionado} para ${trimestre}T ${año}`);
+        console.log(`Facturas: ${facturasPeriodo.length}, Facturas recibidas: ${facturasRecibidasPeriodo.length}, Gastos: ${gastosPeriodo.length}`);
+
+        // CALCULAR MODELO 303 - IVA
+        if (modeloSeleccionado === '303') {
+            // INGRESOS
+            const baseIngresos = facturasPeriodo.reduce((sum, f) => {
+                const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
+                return sum + base;
+            }, 0);
+
+            const totalIngresos = facturasPeriodo.reduce((sum, f) => {
+                const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
+                return sum + total;
+            }, 0);
+
+            const ivaRepercutido = totalIngresos - baseIngresos;
+
+            // GASTOS - Facturas Recibidas
+            const baseGastos = facturasRecibidasPeriodo.reduce((sum, f) => {
+                const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
+                return sum + base;
+            }, 0);
+
+            const totalFacturasRecibidas = facturasRecibidasPeriodo.reduce((sum, f) => {
+                const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
+                return sum + total;
+            }, 0);
+
+            const ivaSoportado = totalFacturasRecibidas - baseGastos;
+            const liquidacion = ivaRepercutido - ivaSoportado;
+
+            setDatosModelo({
+                baseIngresos,
+                ivaRepercutido,
+                baseGastos,
+                ivaSoportado,
+                liquidacion
+            });
+        }
+
+        // CALCULAR MODELO 130 - IRPF
+        else if (modeloSeleccionado === '130') {
+            const ingresosTrimestre = facturasPeriodo.reduce((sum, f) => {
+                const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
+                return sum + total;
+            }, 0);
+
+            // Gastos = Facturas recibidas + Gastos simples
+            const gastosFacturasRecibidas = facturasRecibidasPeriodo.reduce((sum, f) => {
+                const total = typeof f.total === 'number' ? f.total : parseFloat(f.total || 0);
+                return sum + total;
+            }, 0);
+
+            const gastosSimples = gastosPeriodo.reduce((sum, g) => {
+                const importe = typeof g.importe === 'number' ? g.importe : parseFloat(g.importe || 0);
+                return sum + importe;
+            }, 0);
+
+            const gastosDeducibles = gastosFacturasRecibidas + gastosSimples;
+            const beneficio = ingresosTrimestre - gastosDeducibles;
+            const pagoACuenta = beneficio > 0 ? beneficio * 0.20 : 0; // 20% del beneficio
+
+            setDatosModelo({
+                ingresosTrimestre,
+                gastosDeducibles,
+                beneficio,
+                pagoACuenta
+            });
+        }
+
+        // CALCULAR MODELO 111 - Retenciones
+        else if (modeloSeleccionado === '111') {
+            setDatosModelo({
+                totalRetenciones: 0,
+                numeroPerceptores: 0
+            });
+        }
+    };
+
+    const generarPDF = async () => {
+        setMensaje({ 
+            tipo: 'error', 
+            texto: 'La generación de PDF no está disponible actualmente. Esta funcionalidad requiere un endpoint en el backend.' 
+        });
+        setTimeout(() => setMensaje(null), 5000);
+    };
+
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-ES', {
             style: 'currency',
@@ -206,11 +336,12 @@ const ModelosFiscales = () => {
                 </div>
 
                 <button
-                    onClick={() => refetch()}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    onClick={calcularModelo}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                     <Calculator size={20} />
-                    Calcular Modelo
+                    {isLoading ? 'Calculando...' : 'Recalcular Modelo'}
                 </button>
             </div>
 
@@ -240,31 +371,31 @@ const ModelosFiscales = () => {
                                     <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                                         <p className="text-sm text-gray-600 mb-1">IVA Repercutido</p>
                                         <p className="text-2xl font-bold text-green-700">
-                                            {formatCurrency(datosModelo?.ivaRepercutido)}
+                                            {formatCurrency(datosModelo.ivaRepercutido)}
                                         </p>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Base: {formatCurrency(datosModelo?.baseIngresos)}
+                                            Base: {formatCurrency(datosModelo.baseIngresos)}
                                         </p>
                                     </div>
 
                                     <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                                         <p className="text-sm text-gray-600 mb-1">IVA Soportado</p>
                                         <p className="text-2xl font-bold text-red-700">
-                                            {formatCurrency(datosModelo?.ivaSoportado)}
+                                            {formatCurrency(datosModelo.ivaSoportado)}
                                         </p>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Base: {formatCurrency(datosModelo?.baseGastos)}
+                                            Base: {formatCurrency(datosModelo.baseGastos)}
                                         </p>
                                     </div>
 
                                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                                         <p className="text-sm text-gray-600 mb-1">Resultado</p>
-                                        <p className={`text-2xl font-bold ${datosModelo?.liquidacion >= 0 ? 'text-blue-700' : 'text-red-700'
+                                        <p className={`text-2xl font-bold ${datosModelo.liquidacion >= 0 ? 'text-blue-700' : 'text-red-700'
                                             }`}>
-                                            {formatCurrency(datosModelo?.liquidacion)}
+                                            {formatCurrency(datosModelo.liquidacion)}
                                         </p>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            {datosModelo?.liquidacion >= 0 ? 'A ingresar' : 'A compensar'}
+                                            {datosModelo.liquidacion >= 0 ? 'A ingresar' : 'A compensar'}
                                         </p>
                                     </div>
 
@@ -294,13 +425,13 @@ const ModelosFiscales = () => {
                                                     <tr>
                                                         <td className="py-2 text-gray-600">Régimen General (21%)</td>
                                                         <td className="py-2 text-right font-medium">
-                                                            {formatCurrency(datosModelo?.baseIngresos)}
+                                                            {formatCurrency(datosModelo.baseIngresos)}
                                                         </td>
                                                     </tr>
                                                     <tr>
                                                         <td className="py-2 text-gray-600">IVA repercutido (21%)</td>
                                                         <td className="py-2 text-right font-bold text-green-700">
-                                                            {formatCurrency(datosModelo?.ivaRepercutido)}
+                                                            {formatCurrency(datosModelo.ivaRepercutido)}
                                                         </td>
                                                     </tr>
                                                 </tbody>
@@ -318,13 +449,13 @@ const ModelosFiscales = () => {
                                                     <tr>
                                                         <td className="py-2 text-gray-600">Bienes corrientes</td>
                                                         <td className="py-2 text-right font-medium">
-                                                            {formatCurrency(datosModelo?.baseGastos)}
+                                                            {formatCurrency(datosModelo.baseGastos)}
                                                         </td>
                                                     </tr>
                                                     <tr>
                                                         <td className="py-2 text-gray-600">IVA soportado</td>
                                                         <td className="py-2 text-right font-bold text-red-700">
-                                                            {formatCurrency(datosModelo?.ivaSoportado)}
+                                                            {formatCurrency(datosModelo.ivaSoportado)}
                                                         </td>
                                                     </tr>
                                                 </tbody>
@@ -338,12 +469,12 @@ const ModelosFiscales = () => {
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <div className="flex justify-between items-center">
                                             <span className="text-lg font-bold text-gray-900">RESULTADO DE LA LIQUIDACIÓN</span>
-                                            <span className={`text-3xl font-bold ${datosModelo?.liquidacion >= 0 ? 'text-blue-700' : 'text-green-700'
+                                            <span className={`text-3xl font-bold ${datosModelo.liquidacion >= 0 ? 'text-blue-700' : 'text-green-700'
                                                 }`}>
-                                                {formatCurrency(datosModelo?.liquidacion)}
+                                                {formatCurrency(datosModelo.liquidacion)}
                                             </span>
                                         </div>
-                                        {datosModelo?.liquidacion >= 0 ? (
+                                        {datosModelo.liquidacion >= 0 ? (
                                             <p className="text-sm text-gray-600 mt-2">
                                                 <Info size={16} className="inline mr-1" />
                                                 Cantidad a ingresar en la Agencia Tributaria
@@ -365,7 +496,7 @@ const ModelosFiscales = () => {
                                     <li>• La declaración del Modelo 303 debe presentarse dentro de los 20 primeros días naturales del mes siguiente al trimestre</li>
                                     <li>• Los datos mostrados son calculados automáticamente desde las facturas y gastos registrados</li>
                                     <li>• Revisa que todas las facturas del período estén correctamente registradas</li>
-                                    <li>• Puedes descargar el PDF para su presentación telemática</li>
+                                    <li>• ✅ Incluye IVA soportado de facturas recibidas</li>
                                 </ul>
                             </div>
                         </>
@@ -388,33 +519,42 @@ const ModelosFiscales = () => {
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                                     <p className="text-sm text-gray-600 mb-1">Ingresos del Trimestre</p>
                                     <p className="text-2xl font-bold text-green-700">
-                                        {formatCurrency(datosModelo?.ingresosTrimestre)}
+                                        {formatCurrency(datosModelo.ingresosTrimestre)}
                                     </p>
                                 </div>
 
                                 <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                                     <p className="text-sm text-gray-600 mb-1">Gastos Deducibles</p>
                                     <p className="text-2xl font-bold text-red-700">
-                                        {formatCurrency(datosModelo?.gastosDeducibles)}
+                                        {formatCurrency(datosModelo.gastosDeducibles)}
+                                    </p>
+                                </div>
+
+                                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                    <p className="text-sm text-gray-600 mb-1">Beneficio Neto</p>
+                                    <p className="text-2xl font-bold text-purple-700">
+                                        {formatCurrency(datosModelo.beneficio)}
                                     </p>
                                 </div>
 
                                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                                     <p className="text-sm text-gray-600 mb-1">Pago a Cuenta (20%)</p>
                                     <p className="text-2xl font-bold text-blue-700">
-                                        {formatCurrency(datosModelo?.pagoACuenta)}
+                                        {formatCurrency(datosModelo.pagoACuenta)}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                <p className="text-sm text-yellow-800">
+                            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p className="text-sm text-blue-800">
                                     <Info size={16} className="inline mr-1" />
                                     El Modelo 130 es obligatorio para autónomos en estimación directa. Se aplica un 20% sobre el beneficio neto.
+                                    <br />
+                                    ✅ Incluye gastos de facturas recibidas y gastos registrados
                                 </p>
                             </div>
                         </div>
@@ -441,14 +581,14 @@ const ModelosFiscales = () => {
                                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                                     <p className="text-sm text-gray-600 mb-1">Total Retenciones</p>
                                     <p className="text-2xl font-bold text-blue-700">
-                                        {formatCurrency(datosModelo?.totalRetenciones)}
+                                        {formatCurrency(datosModelo.totalRetenciones)}
                                     </p>
                                 </div>
 
                                 <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                                     <p className="text-sm text-gray-600 mb-1">Número de Perceptores</p>
                                     <p className="text-2xl font-bold text-purple-700">
-                                        {datosModelo?.numeroPerceptores || 0}
+                                        {datosModelo.numeroPerceptores || 0}
                                     </p>
                                 </div>
                             </div>
@@ -457,6 +597,8 @@ const ModelosFiscales = () => {
                                 <p className="text-sm text-blue-800">
                                     <Info size={16} className="inline mr-1" />
                                     Declara las retenciones practicadas a trabajadores y profesionales durante el trimestre.
+                                    <br />
+                                    ⚠️ Nota: No hay datos de retenciones disponibles en el sistema actual.
                                 </p>
                             </div>
                         </div>
@@ -469,7 +611,7 @@ const ModelosFiscales = () => {
                 <div className="bg-white rounded-lg shadow p-12">
                     <div className="flex flex-col items-center justify-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                        <p className="text-gray-600">Calculando modelo fiscal...</p>
+                        <p className="text-gray-600">Cargando datos...</p>
                     </div>
                 </div>
             )}
