@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import facturaService from '../../services/facturaService';
 import facturaRecibidaService from '../../services/facturaRecibidaService';
@@ -98,15 +98,21 @@ const Contabilidad = () => {
       const fechaItem = parsearFecha(item.fecha || item.fechaFactura);
       if (!fechaItem) return false;
 
-      const inicio = fechaInicio ? new Date(fechaInicio) : null;
-      const fin = fechaFin ? new Date(fechaFin) : null;
-
-      if (inicio && fin) {
-        return isWithinInterval(fechaItem, { start: inicio, end: fin });
-      } else if (inicio) {
-        return fechaItem >= inicio;
-      } else if (fin) {
-        return fechaItem <= fin;
+      // Normalizar todas las fechas a medianoche para comparación justa
+      const fechaItemNormalizada = new Date(fechaItem.getFullYear(), fechaItem.getMonth(), fechaItem.getDate());
+      
+      if (fechaInicio && fechaFin) {
+        const inicio = new Date(fechaInicio);
+        const fin = new Date(fechaFin);
+        fin.setHours(23, 59, 59, 999); // Incluir todo el día final
+        return fechaItemNormalizada >= inicio && fechaItemNormalizada <= fin;
+      } else if (fechaInicio) {
+        const inicio = new Date(fechaInicio);
+        return fechaItemNormalizada >= inicio;
+      } else if (fechaFin) {
+        const fin = new Date(fechaFin);
+        fin.setHours(23, 59, 59, 999); // Incluir todo el día final
+        return fechaItemNormalizada <= fin;
       }
       
       return true;
@@ -143,12 +149,16 @@ const Contabilidad = () => {
 
   const totalGastos = gastosFacturasRecibidas + gastosSimples;
 
-  const baseGastos = facturasRecibidasFiltradas.reduce((sum, f) => {
+  const baseFacturasRecibidas = facturasRecibidasFiltradas.reduce((sum, f) => {
     const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
     return sum + base;
   }, 0);
 
-  const ivaSoportado = gastosFacturasRecibidas - baseGastos;
+  // Base Gastos = Base Facturas Recibidas + Gastos Simples (sin IVA)
+  const baseGastos = baseFacturasRecibidas + gastosSimples;
+  
+  // IVA Soportado = Solo de facturas recibidas
+  const ivaSoportado = gastosFacturasRecibidas - baseFacturasRecibidas;
 
   // Agrupar por mes
   const facturasPorMes = facturasFiltradas.reduce((acc, factura) => {
@@ -297,19 +307,19 @@ const Contabilidad = () => {
 
       {/* Tarjetas de resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-linear-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
           <h3 className="text-sm font-semibold opacity-90">Ingresos Totales</h3>
           <p className="text-3xl font-bold mt-2">€{ingresosTotales.toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-75">{facturasFiltradas.length} facturas</p>
         </div>
 
-        <div className="bg-linear-to-r from-red-500 to-red-600 rounded-lg shadow p-6 text-white">
+        <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow p-6 text-white">
           <h3 className="text-sm font-semibold opacity-90">Gastos Totales</h3>
           <p className="text-3xl font-bold mt-2">€{totalGastos.toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-75">{facturasRecibidasFiltradas.length + gastosFiltrados.length} gastos</p>
         </div>
 
-        <div className="bg-linear-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
           <h3 className="text-sm font-semibold opacity-90">Beneficio Neto</h3>
           <p className="text-3xl font-bold mt-2">€{(ingresosTotales - totalGastos).toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-75">Ingresos - Gastos</p>
@@ -318,19 +328,19 @@ const Contabilidad = () => {
 
       {/* Tarjetas de IVA */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-linear-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
           <h3 className="text-sm font-semibold opacity-90">Base Imponible</h3>
           <p className="text-3xl font-bold mt-2">€{baseImponible.toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-75">Sin IVA</p>
         </div>
 
-        <div className="bg-linear-to-r from-orange-500 to-orange-600 rounded-lg shadow p-6 text-white">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg shadow p-6 text-white">
           <h3 className="text-sm font-semibold opacity-90">IVA Repercutido</h3>
           <p className="text-3xl font-bold mt-2">€{ivaRepercutido.toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-75">De ventas</p>
         </div>
 
-        <div className="bg-linear-to-r from-purple-500 to-purple-600 rounded-lg shadow p-6 text-white">
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow p-6 text-white">
           <h3 className="text-sm font-semibold opacity-90">IVA Soportado</h3>
           <p className="text-3xl font-bold mt-2">€{ivaSoportado.toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-75">De compras</p>
