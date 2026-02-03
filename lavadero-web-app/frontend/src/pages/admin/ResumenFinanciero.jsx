@@ -173,7 +173,7 @@ const ResumenFinanciero = () => {
     return sum + importe;
   }, 0);
 
-  const baseGastos = facturasRecibidasFiltradas.reduce((sum, f) => {
+  const baseFacturasRecibidas = facturasRecibidasFiltradas.reduce((sum, f) => {
     const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
     return sum + base;
   }, 0);
@@ -183,7 +183,10 @@ const ResumenFinanciero = () => {
     return sum + total;
   }, 0);
 
-  const ivaSoportado = totalFacturasRecibidas - baseGastos;
+  const ivaSoportado = totalFacturasRecibidas - baseFacturasRecibidas;
+  
+  // Base Gastos = Base de Facturas Recibidas + Gastos Simples (sin IVA)
+  const baseGastos = baseFacturasRecibidas + totalGastos;
 
   const totalGastosCombinado = totalGastos + totalFacturasRecibidas;
   const numGastos = gastosFiltrados.length + facturasRecibidasFiltradas.length;

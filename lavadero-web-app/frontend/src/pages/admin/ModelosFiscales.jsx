@@ -142,8 +142,8 @@ const ModelosFiscales = () => {
 
             const ivaRepercutido = totalIngresos - baseIngresos;
 
-            // GASTOS - Facturas Recibidas
-            const baseGastos = facturasRecibidasPeriodo.reduce((sum, f) => {
+            // GASTOS - Facturas Recibidas + Gastos Simples
+            const baseFacturasRecibidas = facturasRecibidasPeriodo.reduce((sum, f) => {
                 const base = typeof f.baseImponible === 'number' ? f.baseImponible : parseFloat(f.baseImponible || 0);
                 return sum + base;
             }, 0);
@@ -153,7 +153,16 @@ const ModelosFiscales = () => {
                 return sum + total;
             }, 0);
 
-            const ivaSoportado = totalFacturasRecibidas - baseGastos;
+            const gastosSimples = gastosPeriodo.reduce((sum, g) => {
+                const importe = typeof g.importe === 'number' ? g.importe : parseFloat(g.importe || 0);
+                return sum + importe;
+            }, 0);
+
+            // Base Gastos = Base Facturas Recibidas + Gastos Simples (sin IVA)
+            const baseGastos = baseFacturasRecibidas + gastosSimples;
+            
+            // IVA Soportado = Solo de facturas recibidas (gastos simples no tienen IVA)
+            const ivaSoportado = totalFacturasRecibidas - baseFacturasRecibidas;
             const liquidacion = ivaRepercutido - ivaSoportado;
 
             setDatosModelo({
