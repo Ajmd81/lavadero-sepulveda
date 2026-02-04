@@ -491,12 +491,39 @@ const FacturasEmitidas = () => {
   };
 
   // ✅ FUNCIÓN GENERAR PDF CON CONFIGURACIÓN
-
-  const generarPdf = async (facturaId) => {
+    const generarPdf = async (facturaId) => {
     try {
       // 1. Obtener configuración del sistema
-      const configResponse = await axios.get(`${API_URL}/configuracion`);
-      const config = configResponse.data;
+      const configResponse = await axios.get(`${API_URL}/config/plantilla-factura`);
+      const plantilla = configResponse.data;
+      
+      // Mapear datos del backend al formato esperado por el PDF
+      const config = {
+        empresa: {
+          nombre: plantilla.emisorNombre || 'NOMBRE EMPRESA',
+          cif: plantilla.emisorNif || '',
+          direccion: plantilla.emisorDireccion || '',
+          codigoPostal: plantilla.emisorCodigoPostal || '',
+          ciudad: plantilla.emisorCiudad || '',
+          provincia: plantilla.emisorProvincia || '',
+          telefono: plantilla.emisorTelefono || '',
+          email: plantilla.emisorEmail || '',
+          web: plantilla.emisorWeb || '',
+          logoBase64: plantilla.logoBase64 || ''
+        },
+        factura: {
+          colorPrimario: plantilla.colorPrimario || '#3b82f6',
+          colorSecundario: plantilla.colorSecundario || '#1e40af',
+          incluirLogo: plantilla.mostrarLogo !== false,
+          textoEncabezado: '',
+          textoPie: plantilla.textoGracias || 'Gracias por confiar en nosotros',
+          terminosCondiciones: plantilla.pieFactura || '',
+          informacionBancaria: '',
+          iban: plantilla.cuentaBancaria || '',
+          mostrarIVA: true,
+          tipoIVA: 21
+        }
+      };
       
       // 2. Obtener factura completa
       const facturaResponse = await facturaService.getById(facturaId);
@@ -937,7 +964,7 @@ const FacturasEmitidas = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => generarPdf(factura.id, factura.numero)}
+                      onClick={() => generarPdf(factura.id)}
                       className="text-orange-600 hover:text-orange-800 font-semibold text-sm"
                     >
                       PDF
