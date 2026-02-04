@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import {
   Building2, FileText, Mail, Settings as SettingsIcon,
-  Save, Upload, X, AlertCircle, CheckCircle, Eye, Image as ImageIcon
+  Save, Upload, X, AlertCircle, CheckCircle, Eye
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
@@ -12,83 +12,73 @@ const Configuracion = () => {
   const queryClient = useQueryClient();
   const [tabActiva, setTabActiva] = useState('empresa');
   const [mensaje, setMensaje] = useState(null);
-  const [previsualizacion, setPrevisualizacion] = useState(false);
-
-  // Estados para configuración de empresa
-  const [configEmpresa, setConfigEmpresa] = useState({
-    nombre: '',
-    cif: '',
-    direccion: '',
-    codigoPostal: '',
-    ciudad: '',
-    provincia: '',
-    telefono: '',
-    email: '',
-    web: '',
-    logoBase64: ''
-  });
-
-  // Estados para configuración de factura
-  const [configFactura, setConfigFactura] = useState({
-    prefijoFactura: 'F',
-    siguienteNumero: 1,
-    serie: new Date().getFullYear().toString(),
-    formatoNumero: '{PREFIJO}-{SERIE}-{NUMERO}',
-    incluirLogo: true,
-    colorPrimario: '#3b82f6',
-    colorSecundario: '#1e40af',
-    mostrarQR: false,
-    textoEncabezado: '',
-    textoPie: 'Gracias por confiar en nuestros servicios',
-    terminosCondiciones: 'El pago de esta factura implica la aceptación de las condiciones generales de venta.',
-    informacionBancaria: '',
-    iban: '',
-    mostrarIVA: true,
-    tipoIVA: 21,
-    recargoEquivalencia: false,
-    porcentajeRecargo: 5.2
-  });
-
-  // Estados para configuración de email
-  const [configEmail, setConfigEmail] = useState({
-    asuntoConfirmacion: 'Confirmación de reserva - Lavadero Sepúlveda',
-    plantillaConfirmacion: '',
-    enviarCopiaPropietario: true,
-    emailCopia: ''
-  });
 
   // Query para obtener configuración
   const { data: configuracion, isLoading } = useQuery({
-    queryKey: ['configuracion'],
+    queryKey: ['plantilla-factura'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/configuracion`);
+      const { data } = await axios.get(`${API_URL}/config/plantilla-factura`);
       return data;
     }
   });
 
-  // Cargar datos cuando se obtienen
-  useEffect(() => {
-    if (configuracion) {
-      if (configuracion.empresa) {
-        setConfigEmpresa(prev => ({ ...prev, ...configuracion.empresa }));
-      }
-      if (configuracion.factura) {
-        setConfigFactura(prev => ({ ...prev, ...configuracion.factura }));
-      }
-      if (configuracion.email) {
-        setConfigEmail(prev => ({ ...prev, ...configuracion.email }));
-      }
-    }
-  }, [configuracion]);
+  // ✅ Estado inicializado con valores por defecto
+  const [config, setConfig] = useState(() => ({
+    // Datos empresa (backend)
+    emisorNombre: '',
+    emisorNif: '',
+    emisorDireccion: '',
+    emisorCodigoPostal: '',
+    emisorCiudad: '',
+    emisorProvincia: '',
+    emisorTelefono: '',
+    emisorEmail: '',
+    emisorWeb: '',
+    logoBase64: '',
+    // Datos factura (backend)
+    colorPrimario: '#2196F3',
+    colorSecundario: '#1976D2',
+    mostrarLogo: true,
+    textoGracias: 'Gracias por confiar en nosotros',
+    pieFactura: '',
+    cuentaBancaria: ''
+  }));
+
+  // ✅ Usar los datos de la query directamente SI existen, si no usar el estado local
+  const configActual = configuracion || config;
 
   // Mutation para guardar configuración
   const guardarMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.put(`${API_URL}/configuracion`, data);
+      const backendData = {
+        id: 1,
+        ...data,
+        // Valores por defecto para campos obligatorios del backend
+        logoAncho: 150,
+        logoAlto: 60,
+        colorTexto: '#333333',
+        colorTextoClaro: '#666666',
+        colorFondo: '#FFFFFF',
+        colorFondoAlt: '#F5F5F5',
+        colorBorde: '#E0E0E0',
+        colorExito: '#4CAF50',
+        tituloFactura: 'FACTURA',
+        tituloFacturaSimplificada: 'FACTURA SIMPLIFICADA',
+        condicionesPago: 'Pago al contado',
+        textoIva: 'IVA incluido según normativa vigente',
+        mostrarDatosContacto: true,
+        mostrarCuentaBancaria: data.cuentaBancaria ? true : false,
+        mostrarCondicionesPago: true,
+        mostrarTextoGracias: true,
+        mostrarMarcaAgua: false,
+        usarFilasAlternas: true
+      };
+
+      const response = await axios.post(`${API_URL}/config/plantilla-factura`, backendData);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['configuracion']);
+      queryClient.invalidateQueries(['plantilla-factura']);
       setMensaje({ tipo: 'exito', texto: 'Configuración guardada correctamente' });
       setTimeout(() => setMensaje(null), 3000);
     },
@@ -101,26 +91,19 @@ const Configuracion = () => {
     }
   });
 
-  // Manejar cambios en formularios
-  const handleChangeEmpresa = (e) => {
-    const { name, value } = e.target;
-    setConfigEmpresa(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleChangeFactura = (e) => {
+  // ✅ Handler único para todos los cambios
+  const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setConfigFactura(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleChangeEmail = (e) => {
-    const { name, value, type, checked } = e.target;
-    setConfigEmail(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    const newValue = type === 'checkbox' ? checked : value;
+    
+    // Actualizar usando la configuración actual como base
+    setConfig(prev => {
+      const base = configuracion || prev;
+      return {
+        ...base,
+        [name]: newValue
+      };
+    });
   };
 
   // Subir logo
@@ -134,7 +117,10 @@ const Configuracion = () => {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setConfigEmpresa(prev => ({ ...prev, logoBase64: reader.result }));
+        setConfig(prev => {
+          const base = configuracion || prev;
+          return { ...base, logoBase64: reader.result };
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -142,32 +128,22 @@ const Configuracion = () => {
 
   // Eliminar logo
   const handleEliminarLogo = () => {
-    setConfigEmpresa(prev => ({ ...prev, logoBase64: '' }));
+    setConfig(prev => {
+      const base = configuracion || prev;
+      return { ...base, logoBase64: '' };
+    });
   };
 
   // Guardar configuración
   const handleGuardar = () => {
-    const dataToSave = {
-      empresa: configEmpresa,
-      factura: configFactura,
-      email: configEmail
-    };
-    guardarMutation.mutate(dataToSave);
-  };
-
-  // Generar preview de número de factura
-  const generarPreviewNumero = () => {
-    return configFactura.formatoNumero
-      .replace('{PREFIJO}', configFactura.prefijoFactura)
-      .replace('{SERIE}', configFactura.serie)
-      .replace('{NUMERO}', String(configFactura.siguienteNumero).padStart(4, '0'));
+    // Guardar la configuración actual (merge de data del servidor + cambios locales)
+    guardarMutation.mutate(configActual);
   };
 
   // Tabs
   const tabs = [
     { id: 'empresa', label: 'Datos Empresa', icon: Building2 },
     { id: 'factura', label: 'Plantilla Facturas', icon: FileText },
-    { id: 'email', label: 'Configuración Email', icon: Mail },
     { id: 'sistema', label: 'Sistema', icon: SettingsIcon }
   ];
 
@@ -196,8 +172,9 @@ const Configuracion = () => {
 
       {/* Mensajes */}
       {mensaje && (
-        <div className={`rounded-lg p-4 flex items-center justify-between ${mensaje.tipo === 'exito' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-          }`}>
+        <div className={`rounded-lg p-4 flex items-center justify-between ${
+          mensaje.tipo === 'exito' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+        }`}>
           <div className="flex items-center">
             {mensaje.tipo === 'exito' ? (
               <CheckCircle className="text-green-600 mr-2" size={20} />
@@ -224,10 +201,11 @@ const Configuracion = () => {
                 <button
                   key={tab.id}
                   onClick={() => setTabActiva(tab.id)}
-                  className={`flex items-center px-6 py-4 font-medium transition-colors whitespace-nowrap ${tabActiva === tab.id
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                  className={`flex items-center px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                    tabActiva === tab.id
+                      ? 'border-b-2 border-blue-600 text-blue-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
                   <Icon size={20} className="mr-2" />
                   {tab.label}
@@ -250,9 +228,9 @@ const Configuracion = () => {
                     </label>
                     <input
                       type="text"
-                      name="nombre"
-                      value={configEmpresa.nombre}
-                      onChange={handleChangeEmpresa}
+                      name="emisorNombre"
+                      value={configActual.emisorNombre}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
@@ -264,9 +242,9 @@ const Configuracion = () => {
                     </label>
                     <input
                       type="text"
-                      name="cif"
-                      value={configEmpresa.cif}
-                      onChange={handleChangeEmpresa}
+                      name="emisorNif"
+                      value={configActual.emisorNif}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
@@ -278,9 +256,9 @@ const Configuracion = () => {
                     </label>
                     <input
                       type="text"
-                      name="direccion"
-                      value={configEmpresa.direccion}
-                      onChange={handleChangeEmpresa}
+                      name="emisorDireccion"
+                      value={configActual.emisorDireccion}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
@@ -292,9 +270,9 @@ const Configuracion = () => {
                     </label>
                     <input
                       type="text"
-                      name="codigoPostal"
-                      value={configEmpresa.codigoPostal}
-                      onChange={handleChangeEmpresa}
+                      name="emisorCodigoPostal"
+                      value={configActual.emisorCodigoPostal}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -305,9 +283,9 @@ const Configuracion = () => {
                     </label>
                     <input
                       type="text"
-                      name="ciudad"
-                      value={configEmpresa.ciudad}
-                      onChange={handleChangeEmpresa}
+                      name="emisorCiudad"
+                      value={configActual.emisorCiudad}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -318,50 +296,48 @@ const Configuracion = () => {
                     </label>
                     <input
                       type="text"
-                      name="provincia"
-                      value={configEmpresa.provincia}
-                      onChange={handleChangeEmpresa}
+                      name="emisorProvincia"
+                      value={configActual.emisorProvincia}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Teléfono *
+                      Teléfono
                     </label>
                     <input
                       type="tel"
-                      name="telefono"
-                      value={configEmpresa.telefono}
-                      onChange={handleChangeEmpresa}
+                      name="emisorTelefono"
+                      value={configActual.emisorTelefono}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email *
+                      Email
                     </label>
                     <input
                       type="email"
-                      name="email"
-                      value={configEmpresa.email}
-                      onChange={handleChangeEmpresa}
+                      name="emisorEmail"
+                      value={configActual.emisorEmail}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
                     />
                   </div>
 
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Página Web
                     </label>
                     <input
                       type="url"
-                      name="web"
-                      value={configEmpresa.web}
-                      onChange={handleChangeEmpresa}
+                      name="emisorWeb"
+                      value={configActual.emisorWeb}
+                      onChange={handleChange}
                       placeholder="https://www.ejemplo.com"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -391,11 +367,11 @@ const Configuracion = () => {
                     </label>
                   </div>
 
-                  {configEmpresa.logoBase64 && (
+                  {configActual.logoBase64 && (
                     <div className="flex-1">
                       <div className="border border-gray-300 rounded-lg p-4 relative">
                         <img
-                          src={configEmpresa.logoBase64}
+                          src={configActual.logoBase64}
                           alt="Logo"
                           className="max-w-full h-32 object-contain mx-auto"
                         />
@@ -416,80 +392,6 @@ const Configuracion = () => {
           {/* Tab Plantilla Facturas */}
           {tabActiva === 'factura' && (
             <div className="space-y-6">
-              {/* Numeración */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Numeración de Facturas</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Prefijo
-                    </label>
-                    <input
-                      type="text"
-                      name="prefijoFactura"
-                      value={configFactura.prefijoFactura}
-                      onChange={handleChangeFactura}
-                      placeholder="F"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Serie (Año)
-                    </label>
-                    <input
-                      type="text"
-                      name="serie"
-                      value={configFactura.serie}
-                      onChange={handleChangeFactura}
-                      placeholder="2025"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Siguiente Número
-                    </label>
-                    <input
-                      type="number"
-                      name="siguienteNumero"
-                      value={configFactura.siguienteNumero}
-                      onChange={handleChangeFactura}
-                      min="1"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Vista Previa
-                    </label>
-                    <div className="px-3 py-2 bg-blue-50 border border-blue-300 rounded-lg font-mono text-blue-900">
-                      {generarPreviewNumero()}
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Formato de Numeración
-                    </label>
-                    <input
-                      type="text"
-                      name="formatoNumero"
-                      value={configFactura.formatoNumero}
-                      onChange={handleChangeFactura}
-                      placeholder="{PREFIJO}-{SERIE}-{NUMERO}"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Variables disponibles: {'{PREFIJO}'}, {'{SERIE}'}, {'{NUMERO}'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {/* Diseño */}
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Diseño y Colores</h3>
@@ -498,9 +400,9 @@ const Configuracion = () => {
                     <label className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        name="incluirLogo"
-                        checked={configFactura.incluirLogo}
-                        onChange={handleChangeFactura}
+                        name="mostrarLogo"
+                        checked={configActual.mostrarLogo}
+                        onChange={handleChange}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                       />
                       <span className="text-sm font-medium text-gray-700">Incluir logo en factura</span>
@@ -515,14 +417,17 @@ const Configuracion = () => {
                       <input
                         type="color"
                         name="colorPrimario"
-                        value={configFactura.colorPrimario}
-                        onChange={handleChangeFactura}
+                        value={configActual.colorPrimario}
+                        onChange={handleChange}
                         className="w-12 h-10 rounded border border-gray-300"
                       />
                       <input
                         type="text"
-                        value={configFactura.colorPrimario}
-                        onChange={(e) => setConfigFactura(prev => ({ ...prev, colorPrimario: e.target.value }))}
+                        value={configActual.colorPrimario}
+                        onChange={(e) => setConfig(prev => {
+                          const base = configuracion || prev;
+                          return { ...base, colorPrimario: e.target.value };
+                        })}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                       />
                     </div>
@@ -536,14 +441,17 @@ const Configuracion = () => {
                       <input
                         type="color"
                         name="colorSecundario"
-                        value={configFactura.colorSecundario}
-                        onChange={handleChangeFactura}
+                        value={configActual.colorSecundario}
+                        onChange={handleChange}
                         className="w-12 h-10 rounded border border-gray-300"
                       />
                       <input
                         type="text"
-                        value={configFactura.colorSecundario}
-                        onChange={(e) => setConfigFactura(prev => ({ ...prev, colorSecundario: e.target.value }))}
+                        value={configActual.colorSecundario}
+                        onChange={(e) => setConfig(prev => {
+                          const base = configuracion || prev;
+                          return { ...base, colorSecundario: e.target.value };
+                        })}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                       />
                     </div>
@@ -557,26 +465,12 @@ const Configuracion = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Texto del Encabezado
-                    </label>
-                    <textarea
-                      name="textoEncabezado"
-                      value={configFactura.textoEncabezado}
-                      onChange={handleChangeFactura}
-                      rows="2"
-                      placeholder="Texto opcional en el encabezado de la factura"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Texto del Pie de Página
                     </label>
                     <textarea
-                      name="textoPie"
-                      value={configFactura.textoPie}
-                      onChange={handleChangeFactura}
+                      name="textoGracias"
+                      value={configActual.textoGracias}
+                      onChange={handleChange}
                       rows="2"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -587,9 +481,9 @@ const Configuracion = () => {
                       Términos y Condiciones
                     </label>
                     <textarea
-                      name="terminosCondiciones"
-                      value={configFactura.terminosCondiciones}
-                      onChange={handleChangeFactura}
+                      name="pieFactura"
+                      value={configActual.pieFactura}
+                      onChange={handleChange}
                       rows="3"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -597,152 +491,16 @@ const Configuracion = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Información Bancaria
-                    </label>
-                    <textarea
-                      name="informacionBancaria"
-                      value={configFactura.informacionBancaria}
-                      onChange={handleChangeFactura}
-                      rows="2"
-                      placeholder="Banco, titular de la cuenta, etc."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      IBAN
+                      Cuenta Bancaria / IBAN
                     </label>
                     <input
                       type="text"
-                      name="iban"
-                      value={configFactura.iban}
-                      onChange={handleChangeFactura}
+                      name="cuentaBancaria"
+                      value={configActual.cuentaBancaria}
+                      onChange={handleChange}
                       placeholder="ES00 0000 0000 0000 0000 0000"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
                     />
-                  </div>
-                </div>
-              </div>
-
-              {/* IVA */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Configuración de IVA</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        name="mostrarIVA"
-                        checked={configFactura.mostrarIVA}
-                        onChange={handleChangeFactura}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">Mostrar desglose de IVA</span>
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      % IVA por defecto
-                    </label>
-                    <select
-                      name="tipoIVA"
-                      value={configFactura.tipoIVA}
-                      onChange={handleChangeFactura}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="0">0% (Exento)</option>
-                      <option value="4">4% (Superreducido)</option>
-                      <option value="10">10% (Reducido)</option>
-                      <option value="21">21% (General)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        name="recargoEquivalencia"
-                        checked={configFactura.recargoEquivalencia}
-                        onChange={handleChangeFactura}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">Recargo de equivalencia</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botón de previsualización */}
-              <div className="pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setPrevisualizacion(true)}
-                  className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  <Eye size={20} className="mr-2" />
-                  Previsualizar Factura
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Tab Email */}
-          {tabActiva === 'email' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Configuración de Emails</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Asunto del Email de Confirmación
-                    </label>
-                    <input
-                      type="text"
-                      name="asuntoConfirmacion"
-                      value={configEmail.asuntoConfirmacion}
-                      onChange={handleChangeEmail}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="flex items-center space-x-2 mb-4">
-                      <input
-                        type="checkbox"
-                        name="enviarCopiaPropietario"
-                        checked={configEmail.enviarCopiaPropietario}
-                        onChange={handleChangeEmail}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">
-                        Enviar copia de confirmaciones al propietario
-                      </span>
-                    </label>
-
-                    {configEmail.enviarCopiaPropietario && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email para copias
-                        </label>
-                        <input
-                          type="email"
-                          name="emailCopia"
-                          value={configEmail.emailCopia}
-                          onChange={handleChangeEmail}
-                          placeholder="propietario@lavadero.com"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-900">
-                      <strong>Nota:</strong> La plantilla de email de confirmación se puede personalizar
-                      modificando el archivo <code className="bg-blue-100 px-2 py-1 rounded">confirmacion-cita.html</code>
-                      en la carpeta de templates del backend.
-                    </p>
                   </div>
                 </div>
               </div>
@@ -762,29 +520,8 @@ const Configuracion = () => {
 
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <p className="text-sm text-gray-600">Última Actualización</p>
-                    <p className="text-lg font-bold text-gray-900">Enero 2025</p>
+                    <p className="text-lg font-bold text-gray-900">Febrero 2026</p>
                   </div>
-
-                  <div className="p-4 bg-gray-50 rounded-lg md:col-span-2">
-                    <p className="text-sm text-gray-600">Base de Datos</p>
-                    <p className="text-lg font-bold text-gray-900">PostgreSQL</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <h4 className="font-bold text-yellow-900 mb-2">⚠️ Zona de Mantenimiento</h4>
-                <p className="text-sm text-yellow-800 mb-4">
-                  Las operaciones de mantenimiento pueden afectar al funcionamiento del sistema.
-                  Realízalas con precaución.
-                </p>
-                <div className="space-y-2">
-                  <button className="w-full md:w-auto px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
-                    Limpiar Caché
-                  </button>
-                  <button className="w-full md:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ml-0 md:ml-2">
-                    Reiniciar Numeración (Peligroso)
-                  </button>
                 </div>
               </div>
             </div>
