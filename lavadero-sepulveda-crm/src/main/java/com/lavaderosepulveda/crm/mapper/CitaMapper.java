@@ -25,7 +25,7 @@ public class CitaMapper {
 
     private static final Logger log = LoggerFactory.getLogger(CitaMapper.class);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     // Mapa de precios por tipo de lavado (debe coincidir con TipoLavado del
     // backend)
