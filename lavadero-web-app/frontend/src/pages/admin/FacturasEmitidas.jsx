@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import facturaService from '../../services/facturaService';
 import clienteService from '../../services/clienteService';
 import enumsService from '../../services/enumsService';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import axios from 'axios';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+
 
 const FacturasEmitidas = () => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
   const [facturas, setFacturas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [metodosPago, setMetodosPago] = useState([]);
@@ -508,7 +511,6 @@ const FacturasEmitidas = () => {
 
       // Usar colores de configuración o defaults
       const colorPrimario = config.factura?.colorPrimario || '#3b82f6';
-      const colorSecundario = config.factura?.colorSecundario || '#1e40af';
       
       // Convertir hex a RGB
       const hexToRgb = (hex) => {
@@ -646,8 +648,8 @@ const FacturasEmitidas = () => {
         ? factura.lineas.map(linea => [
             linea.concepto || 'Sin concepto',
             linea.cantidad?.toFixed(2) || '1',
-            `${linea.precioUnitario?.toFixed(2)} €` || '0,00 €',
-            `${linea.subtotal?.toFixed(2)} €` || '0,00 €'
+            `${(linea.precioUnitario || 0).toFixed(2)} €`,
+            `${(linea.subtotal || 0).toFixed(2)} €`
           ])
         : [['Sin líneas registradas', '-', '-', '-']];
 
@@ -786,25 +788,6 @@ const FacturasEmitidas = () => {
     }
   };
 
-
-  /**
-   * // Descargar PDF
-    const descargarPdf = async (id, numero) => {
-      try {
-        const response = await facturaService.generarPdf(id);
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `factura_${numero}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentElement.removeChild(link);
-      } catch (err) {
-        alert('Error al descargar PDF: ' + err.message);
-        console.error(err);
-      }
-    };
-   */
 
   // Formatear fecha
   const formatearFecha = (fecha) => {
@@ -954,7 +937,7 @@ const FacturasEmitidas = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => descargarPdf(factura.id, factura.numero)}
+                      onClick={() => generarPdf(factura.id, factura.numero)}
                       className="text-orange-600 hover:text-orange-800 font-semibold text-sm"
                     >
                       PDF

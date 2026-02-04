@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import facturaService from '../../services/facturaService';
 import facturaRecibidaService from '../../services/facturaRecibidaService';
@@ -86,7 +86,8 @@ const Contabilidad = () => {
         return parseISO(fechaStr);
       }
       return null;
-    } catch (error) {
+    } catch (err) {
+      console.error('Error: ',err);
       return null;
     }
   };

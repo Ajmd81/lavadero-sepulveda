@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.20",
-    "axios": "^1.13.2",
+    "axios": "^1.13.4",
     "date-fns": "^4.1.0",
     "formik": "^2.4.9",
+    "jspdf": "^4.1.0",
+    "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-big-calendar": "^1.19.4",
