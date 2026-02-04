@@ -305,7 +305,7 @@ const Contabilidad = () => {
         </div>
       </div>
 
-      {/* Tarjetas de resumen */}
+      {/* Fila 1: Principales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
           <h3 className="text-sm font-semibold opacity-90">Ingresos Totales</h3>
@@ -326,14 +326,29 @@ const Contabilidad = () => {
         </div>
       </div>
 
-      {/* Tarjetas de IVA */}
+      {/* Fila 2: Bases Imponibles */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
-          <h3 className="text-sm font-semibold opacity-90">Base Imponible</h3>
+        <div className="bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">Base Imponible Ventas</h3>
           <p className="text-3xl font-bold mt-2">€{baseImponible.toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-75">Sin IVA</p>
         </div>
 
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">Base Gastos</h3>
+          <p className="text-3xl font-bold mt-2">€{baseGastos.toFixed(2)}</p>
+          <p className="text-sm mt-2 opacity-75">Sin IVA</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">Liquidación IVA</h3>
+          <p className="text-3xl font-bold mt-2">€{(ivaRepercutido - ivaSoportado).toFixed(2)}</p>
+          <p className="text-sm mt-2 opacity-75">{(ivaRepercutido - ivaSoportado) >= 0 ? 'A ingresar' : 'A compensar'}</p>
+        </div>
+      </div>
+
+      {/* Fila 3: IVA */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg shadow p-6 text-white">
           <h3 className="text-sm font-semibold opacity-90">IVA Repercutido</h3>
           <p className="text-3xl font-bold mt-2">€{ivaRepercutido.toFixed(2)}</p>
@@ -344,6 +359,12 @@ const Contabilidad = () => {
           <h3 className="text-sm font-semibold opacity-90">IVA Soportado</h3>
           <p className="text-3xl font-bold mt-2">€{ivaSoportado.toFixed(2)}</p>
           <p className="text-sm mt-2 opacity-75">De compras</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-lg shadow p-6 text-white">
+          <h3 className="text-sm font-semibold opacity-90">Margen Beneficio</h3>
+          <p className="text-3xl font-bold mt-2">{ingresosTotales > 0 ? ((ingresosTotales - totalGastos) / ingresosTotales * 100).toFixed(2) : 0}%</p>
+          <p className="text-sm mt-2 opacity-75">Beneficio / Ingresos</p>
         </div>
       </div>
 
