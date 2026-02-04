@@ -787,22 +787,24 @@ const FacturasEmitidas = () => {
   };
 
 
-  // Descargar PDF
-  const descargarPdf = async (id, numero) => {
-    try {
-      const response = await facturaService.generarPdf(id);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `factura_${numero}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentElement.removeChild(link);
-    } catch (err) {
-      alert('Error al descargar PDF: ' + err.message);
-      console.error(err);
-    }
-  };
+  /**
+   * // Descargar PDF
+    const descargarPdf = async (id, numero) => {
+      try {
+        const response = await facturaService.generarPdf(id);
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `factura_${numero}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentElement.removeChild(link);
+      } catch (err) {
+        alert('Error al descargar PDF: ' + err.message);
+        console.error(err);
+      }
+    };
+   */
 
   // Formatear fecha
   const formatearFecha = (fecha) => {
