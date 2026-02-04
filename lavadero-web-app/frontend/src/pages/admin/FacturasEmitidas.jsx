@@ -546,7 +546,7 @@ const FacturasEmitidas = () => {
         try {
           const logoWidth = 35;
           const logoHeight = 35;
-          doc.addImage(config.empresa.logoBase64, 'PNG', margin, yPos -20, logoWidth, logoHeight);
+          doc.addImage(config.empresa.logoBase64, 'PNG', margin, yPos -10, logoWidth, logoHeight);
         } catch (err) {
           console.warn('Error añadiendo logo:', err);
         }
