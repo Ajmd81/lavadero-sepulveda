@@ -3,6 +3,7 @@ import facturaService from '../../services/facturaService';
 import clienteService from '../../services/clienteService';
 import enumsService from '../../services/enumsService';
 import axios from 'axios';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 const FacturasEmitidas = () => {
   const [facturas, setFacturas] = useState([]);
