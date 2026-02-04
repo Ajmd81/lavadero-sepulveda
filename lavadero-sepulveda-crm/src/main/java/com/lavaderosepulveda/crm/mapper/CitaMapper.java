@@ -24,7 +24,7 @@ import java.util.Map;
 public class CitaMapper {
 
     private static final Logger log = LoggerFactory.getLogger(CitaMapper.class);
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     // Mapa de precios por tipo de lavado (debe coincidir con TipoLavado del
@@ -32,18 +32,18 @@ public class CitaMapper {
     private static final Map<String, Double> PRECIOS_LAVADO = new HashMap<>();
 
     static {
-        PRECIOS_LAVADO.put("LAVADO_COMPLETO_TURISMO", 23.0);
-        PRECIOS_LAVADO.put("LAVADO_INTERIOR_TURISMO", 16.0);
-        PRECIOS_LAVADO.put("LAVADO_EXTERIOR_TURISMO", 12.0);
+        PRECIOS_LAVADO.put("LAVADO_COMPLETO_TURISMO", 25.0);
+        PRECIOS_LAVADO.put("LAVADO_INTERIOR_TURISMO", 17.0);
+        PRECIOS_LAVADO.put("LAVADO_EXTERIOR_TURISMO", 13.0);
         PRECIOS_LAVADO.put("LAVADO_COMPLETO_RANCHERA", 26.0);
         PRECIOS_LAVADO.put("LAVADO_INTERIOR_RANCHERA", 18.0);
         PRECIOS_LAVADO.put("LAVADO_EXTERIOR_RANCHERA", 13.0);
-        PRECIOS_LAVADO.put("LAVADO_COMPLETO_MONOVOLUMEN", 28.0);
-        PRECIOS_LAVADO.put("LAVADO_INTERIOR_MONOVOLUMEN", 19.0);
-        PRECIOS_LAVADO.put("LAVADO_EXTERIOR_MONOVOLUMEN", 14.0);
-        PRECIOS_LAVADO.put("LAVADO_COMPLETO_TODOTERRENO", 31.0);
-        PRECIOS_LAVADO.put("LAVADO_INTERIOR_TODOTERRENO", 20.0);
-        PRECIOS_LAVADO.put("LAVADO_EXTERIOR_TODOTERRENO", 16.0);
+        PRECIOS_LAVADO.put("LAVADO_COMPLETO_MONOVOLUMEN", 30.0);
+        PRECIOS_LAVADO.put("LAVADO_INTERIOR_MONOVOLUMEN", 20.0);
+        PRECIOS_LAVADO.put("LAVADO_EXTERIOR_MONOVOLUMEN", 15.0);
+        PRECIOS_LAVADO.put("LAVADO_COMPLETO_TODOTERRENO", 35.0);
+        PRECIOS_LAVADO.put("LAVADO_INTERIOR_TODOTERRENO", 22.0);
+        PRECIOS_LAVADO.put("LAVADO_EXTERIOR_TODOTERRENO", 18.0);
         PRECIOS_LAVADO.put("LAVADO_COMPLETO_FURGONETA_PEQUEÑA", 30.0);
         PRECIOS_LAVADO.put("LAVADO_INTERIOR_FURGONETA_PEQUEÑA", 20.0);
         PRECIOS_LAVADO.put("LAVADO_EXTERIOR_FURGONETA_PEQUEÑA", 15.0);
