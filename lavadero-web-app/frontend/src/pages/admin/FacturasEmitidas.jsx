@@ -490,38 +490,31 @@ const FacturasEmitidas = () => {
     }
   };
 
-  // ✅ FUNCIÓN GENERAR PDF CON CONFIGURACIÓN
-    const generarPdf = async (facturaId) => {
+  // ✅ FUNCIÓN GENERAR PDF FORMATO JAVAFX
+  const generarPdf = async (facturaId) => {
     try {
       // 1. Obtener configuración del sistema
       const configResponse = await axios.get(`${API_URL}/config/plantilla-factura`);
       const plantilla = configResponse.data;
       
-      // Mapear datos del backend al formato esperado por el PDF
+      // Mapear datos del backend al formato esperado
       const config = {
         empresa: {
-          nombre: plantilla.emisorNombre || 'NOMBRE EMPRESA',
-          cif: plantilla.emisorNif || '',
+          nombre: plantilla.emisorNombre || 'Antonio Jesús Martínez Díaz',
+          cif: plantilla.emisorNif || '44372738L',
           direccion: plantilla.emisorDireccion || '',
           codigoPostal: plantilla.emisorCodigoPostal || '',
           ciudad: plantilla.emisorCiudad || '',
           provincia: plantilla.emisorProvincia || '',
           telefono: plantilla.emisorTelefono || '',
           email: plantilla.emisorEmail || '',
-          web: plantilla.emisorWeb || '',
           logoBase64: plantilla.logoBase64 || ''
         },
         factura: {
-          colorPrimario: plantilla.colorPrimario || '#3b82f6',
-          colorSecundario: plantilla.colorSecundario || '#1e40af',
-          incluirLogo: plantilla.mostrarLogo !== false,
-          textoEncabezado: '',
+          colorPrimario: plantilla.colorPrimario || '#2196F3',
+          mostrarLogo: plantilla.mostrarLogo !== false,
           textoPie: plantilla.textoGracias || 'Gracias por confiar en nosotros',
-          terminosCondiciones: plantilla.pieFactura || '',
-          informacionBancaria: '',
-          iban: plantilla.cuentaBancaria || '',
-          mostrarIVA: true,
-          tipoIVA: 21
+          iban: plantilla.cuentaBancaria || ''
         }
       };
       
@@ -536,9 +529,6 @@ const FacturasEmitidas = () => {
       const margin = 20;
       let yPos = 20;
 
-      // Usar colores de configuración o defaults
-      const colorPrimario = config.factura?.colorPrimario || '#3b82f6';
-      
       // Convertir hex a RGB
       const hexToRgb = (hex) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -546,135 +536,127 @@ const FacturasEmitidas = () => {
           r: parseInt(result[1], 16),
           g: parseInt(result[2], 16),
           b: parseInt(result[3], 16)
-        } : { r: 59, g: 130, b: 246 }; // Default blue
+        } : { r: 33, g: 150, b: 243 }; // Default blue
       };
 
-      const primaryRgb = hexToRgb(colorPrimario);
+      const primaryRgb = hexToRgb(config.factura.colorPrimario);
 
-      // ========== LOGO (si está configurado) ==========
-      if (config.factura?.incluirLogo && config.empresa?.logoBase64) {
+      // ========== LOGO ARRIBA DERECHA (pequeño) ==========
+      if (config.factura.mostrarLogo && config.empresa.logoBase64) {
         try {
-          doc.addImage(config.empresa.logoBase64, 'PNG', margin, yPos, 40, 20);
-          yPos += 25;
+          const logoWidth = 35;
+          const logoHeight = 35;
+          const logoX = pageWidth - margin - logoWidth;
+          doc.addImage(config.empresa.logoBase64, 'PNG', logoX, yPos, logoWidth, logoHeight);
         } catch (err) {
           console.warn('Error añadiendo logo:', err);
-          yPos += 5;
         }
       }
 
-      // ========== ENCABEZADO EMPRESA ==========
-      doc.setFontSize(20);
+      // ========== TÍTULO "FACTURA" GRANDE DERECHA ==========
+      doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.text(config.empresa?.nombre || 'NOMBRE EMPRESA', margin, yPos);
+      doc.text('FACTURA', pageWidth - margin, yPos + 5, { align: 'right' });
       
-      yPos += 7;
-      doc.setFontSize(10);
+      yPos += 12;
+      
+      // Número y fecha a la derecha
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Nº: ${factura.numero}`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += 6;
+      doc.text(`Fecha: ${formatearFecha(factura.fecha)}`, pageWidth - margin, yPos, { align: 'right' });
+      
+      // ========== LÍNEA SEPARADORA ==========
+      yPos += 8;
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.setLineWidth(0.8);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+
+      // ========== DATOS EMPRESA IZQUIERDA (compacto) ==========
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(60, 60, 60);
+      doc.text(config.empresa.nombre, margin, yPos);
+      
+      yPos += 6;
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(80, 80, 80);
       
-      if (config.empresa?.direccion) {
+      if (config.empresa.cif) {
+        doc.text(`NIF: ${config.empresa.cif}`, margin, yPos);
+        yPos += 4.5;
+      }
+      
+      if (config.empresa.direccion) {
         const direccionCompleta = [
           config.empresa.direccion,
           config.empresa.codigoPostal && config.empresa.ciudad 
             ? `${config.empresa.codigoPostal} ${config.empresa.ciudad}` 
-            : config.empresa.ciudad || config.empresa.codigoPostal,
-          config.empresa.provincia
+            : config.empresa.ciudad || config.empresa.codigoPostal
         ].filter(Boolean).join(', ');
         
         doc.text(direccionCompleta, margin, yPos);
-        yPos += 5;
+        yPos += 4.5;
       }
       
-      const contacto = [];
-      if (config.empresa?.telefono) contacto.push(`Tel: ${config.empresa.telefono}`);
-      if (config.empresa?.email) contacto.push(`Email: ${config.empresa.email}`);
-      if (contacto.length > 0) {
-        doc.text(contacto.join(' | '), margin, yPos);
-        yPos += 5;
+      if (config.empresa.telefono) {
+        doc.text(`Tel: ${config.empresa.telefono}`, margin, yPos);
+        yPos += 4.5;
       }
       
-      if (config.empresa?.cif) {
-        doc.text(`CIF: ${config.empresa.cif}`, margin, yPos);
-        yPos += 5;
+      if (config.empresa.email) {
+        doc.text(config.empresa.email, margin, yPos);
+        yPos += 4.5;
       }
+
+      yPos += 6;
+
+      // ========== BLOQUE CLIENTE CON FONDO AZUL ==========
+      const clienteHeaderHeight = 6;
+      doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.rect(margin, yPos, pageWidth - 2 * margin, clienteHeaderHeight, 'F');
       
-      if (config.empresa?.web) {
-        doc.text(config.empresa.web, margin, yPos);
-        yPos += 5;
-      }
-
-      // ========== TEXTO ENCABEZADO PERSONALIZADO ==========
-      if (config.factura?.textoEncabezado) {
-        yPos += 3;
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        const lineasEncabezado = doc.splitTextToSize(config.factura.textoEncabezado, pageWidth - 2 * margin);
-        doc.text(lineasEncabezado, margin, yPos);
-        yPos += (lineasEncabezado.length * 4) + 2;
-      }
-
-      // ========== LÍNEA SEPARADORA ==========
-      yPos += 3;
-      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.setLineWidth(0.5);
-      doc.line(margin, yPos, pageWidth - margin, yPos);
-      yPos += 8;
-
-      // ========== TÍTULO Y DATOS FACTURA ==========
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.text(`FACTURA ${factura.numero}`, margin, yPos);
-
-      // Datos derecha
+      // Texto "CLIENTE" en blanco
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(60, 60, 60);
-      const fechaTexto = `Fecha: ${formatearFecha(factura.fecha)}`;
-      const estadoTexto = `Estado: ${factura.estado}`;
-      doc.text(fechaTexto, pageWidth - margin - 50, yPos - 2);
-      doc.text(estadoTexto, pageWidth - margin - 50, yPos + 3);
-
-      yPos += 12;
-
-      // ========== DATOS DEL CLIENTE ==========
-      doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.text('CLIENTE:', margin, yPos);
-      yPos += 7;
-
+      doc.setTextColor(255, 255, 255);
+      doc.text('CLIENTE', margin + 3, yPos + 4);
+      
+      yPos += 9;
+      
+      // Datos del cliente
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('helvetica', 'bold');
       doc.setTextColor(60, 60, 60);
-      doc.text(factura.clienteNombre || 'Sin nombre', margin, yPos);
+      doc.text(factura.clienteNombre || 'Sin nombre', margin + 3, yPos);
+      
       yPos += 5;
-
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      
       if (factura.clienteNif) {
-        doc.text(`NIF: ${factura.clienteNif}`, margin, yPos);
-        yPos += 5;
+        doc.text(factura.clienteNif, margin + 3, yPos);
+        yPos += 4.5;
       }
+      
       if (factura.clienteDireccion) {
-        doc.text(factura.clienteDireccion, margin, yPos);
-        yPos += 5;
-      }
-      if (factura.clienteTelefono) {
-        doc.text(`Tel: ${factura.clienteTelefono}`, margin, yPos);
-        yPos += 5;
-      }
-      if (factura.clienteEmail) {
-        doc.text(`Email: ${factura.clienteEmail}`, margin, yPos);
-        yPos += 5;
+        const direccionCliente = doc.splitTextToSize(factura.clienteDireccion, pageWidth - 2 * margin - 6);
+        doc.text(direccionCliente, margin + 3, yPos);
+        yPos += (direccionCliente.length * 4.5);
       }
 
-      yPos += 5;
+      yPos += 8;
 
       // ========== TABLA DE LÍNEAS ==========
       const lineasTabla = factura.lineas && factura.lineas.length > 0
         ? factura.lineas.map(linea => [
             linea.concepto || 'Sin concepto',
-            linea.cantidad?.toFixed(2) || '1',
+            linea.cantidad?.toString() || '1',
             `${(linea.precioUnitario || 0).toFixed(2)} €`,
             `${(linea.subtotal || 0).toFixed(2)} €`
           ])
@@ -682,23 +664,24 @@ const FacturasEmitidas = () => {
 
       doc.autoTable({
         startY: yPos,
-        head: [['Concepto', 'Cantidad', 'P. Unitario', 'Subtotal']],
+        head: [['Concepto', 'Cant.', 'Precio', 'Importe']],
         body: lineasTabla,
         theme: 'grid',
         headStyles: {
           fillColor: [primaryRgb.r, primaryRgb.g, primaryRgb.b],
           textColor: 255,
           fontStyle: 'bold',
-          halign: 'center'
+          halign: 'center',
+          fontSize: 10
         },
         styles: {
-          fontSize: 10,
-          cellPadding: 5,
+          fontSize: 9,
+          cellPadding: 4,
           textColor: [60, 60, 60]
         },
         columnStyles: {
           0: { cellWidth: 'auto', halign: 'left' },
-          1: { halign: 'center', cellWidth: 25 },
+          1: { halign: 'center', cellWidth: 20 },
           2: { halign: 'right', cellWidth: 30 },
           3: { halign: 'right', cellWidth: 30 }
         },
@@ -707,107 +690,83 @@ const FacturasEmitidas = () => {
 
       yPos = doc.lastAutoTable.finalY + 10;
 
-      // ========== TOTALES ==========
+      // ========== TOTALES ALINEADOS DERECHA ==========
       const totalesX = pageWidth - margin - 60;
-
+      
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(60, 60, 60);
 
       // Base Imponible
       doc.text('Base Imponible:', totalesX, yPos);
-      doc.text(`${parseFloat(factura.baseImponible || 0).toFixed(2)} €`, totalesX + 40, yPos, { align: 'right' });
+      doc.text(`${parseFloat(factura.baseImponible || 0).toFixed(2)} €`, totalesX + 55, yPos, { align: 'right' });
       yPos += 6;
 
-      // IVA (si está configurado para mostrarse)
-      if (config.factura?.mostrarIVA !== false) {
-        doc.text(`IVA (${factura.tipoIva || config.factura?.tipoIVA || 21}%):`, totalesX, yPos);
-        doc.text(`${parseFloat(factura.importeIva || 0).toFixed(2)} €`, totalesX + 40, yPos, { align: 'right' });
-        yPos += 8;
-      }
+      // IVA
+      doc.text(`IVA (${factura.tipoIva || 21}%):`, totalesX, yPos);
+      doc.text(`${parseFloat(factura.importeIva || 0).toFixed(2)} €`, totalesX + 55, yPos, { align: 'right' });
+      
+      yPos += 2;
+      doc.setLineWidth(0.3);
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.line(totalesX, yPos, totalesX + 55, yPos);
+      yPos += 5;
 
       // TOTAL
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
       doc.text('TOTAL:', totalesX, yPos);
-      doc.text(`${parseFloat(factura.total || 0).toFixed(2)} €`, totalesX + 40, yPos, { align: 'right' });
+      doc.text(`${parseFloat(factura.total || 0).toFixed(2)} €`, totalesX + 55, yPos, { align: 'right' });
 
-      yPos += 10;
+      yPos += 15;
 
-      // ========== OBSERVACIONES DE LA FACTURA ==========
-      if (factura.observaciones) {
-        yPos += 5;
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(60, 60, 60);
-        doc.text('Observaciones:', margin, yPos);
-        yPos += 5;
-        doc.setFont('helvetica', 'normal');
-        const obs = doc.splitTextToSize(factura.observaciones, pageWidth - 2 * margin);
-        doc.text(obs, margin, yPos);
-        yPos += (obs.length * 5);
+      // ========== TEXTO LEGAL RGPD (compacto) ==========
+      const textoLegal = "De conformidad con el artículo 13 de la sección 2 del Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de estos datos, le informamos que el responsable del tratamiento es " + config.empresa.nombre + ", que dicho tratamiento se lleva a cabo para la gestión contable, fiscal y administrativa y para el envío de comunicaciones comerciales sobre productos y servicios de la empresa que puedan ser de su interés. La base legal que permite legitimar este tratamiento es la ejecución del contrato de venta. Se comunicarán datos a terceros para poder llevar a cabo las finalidades objeto de este contrato. Puede usted acceder, rectificar y suprimir sus datos, así como otros derechos, dirigiéndose por escrito a " + config.empresa.email + ". Puede usted obtener información ampliada sobre protección de datos solicitándola a " + config.empresa.email + ".";
+      
+      // Verificar espacio
+      if (yPos > pageHeight - 80) {
+        doc.addPage();
+        yPos = 20;
       }
 
-      // ========== INFORMACIÓN BANCARIA ==========
-      if (config.factura?.informacionBancaria || config.factura?.iban) {
-        yPos += 8;
-        
-        // Verificar si hay espacio suficiente
-        if (yPos > pageHeight - 60) {
-          doc.addPage();
-          yPos = 20;
-        }
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      const lineasLegal = doc.splitTextToSize(textoLegal, pageWidth - 2 * margin);
+      doc.text(lineasLegal, margin, yPos);
+      yPos += (lineasLegal.length * 2.5) + 5;
 
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-        doc.text('INFORMACIÓN BANCARIA:', margin, yPos);
-        yPos += 6;
-
-        doc.setFont('helvetica', 'normal');
+      // ========== FORMA DE PAGO ==========
+      if (factura.metodoPago) {
         doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(60, 60, 60);
-
-        if (config.factura.informacionBancaria) {
-          const infoLineas = doc.splitTextToSize(config.factura.informacionBancaria, pageWidth - 2 * margin);
-          doc.text(infoLineas, margin, yPos);
-          yPos += (infoLineas.length * 4) + 2;
-        }
-
-        if (config.factura.iban) {
-          doc.setFont('helvetica', 'bold');
-          doc.text(`IBAN: ${config.factura.iban}`, margin, yPos);
-          yPos += 5;
-        }
-      }
-
-      // ========== TÉRMINOS Y CONDICIONES ==========
-      if (config.factura?.terminosCondiciones) {
-        yPos += 5;
         
-        // Verificar espacio
-        if (yPos > pageHeight - 50) {
-          doc.addPage();
-          yPos = 20;
-        }
-
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'italic');
-        doc.setTextColor(100, 100, 100);
-        const terminos = doc.splitTextToSize(config.factura.terminosCondiciones, pageWidth - 2 * margin);
-        doc.text(terminos, margin, yPos);
+        // Mapear método de pago a texto legible
+        const metodoPagoTexto = {
+          'EFECTIVO': 'Efectivo',
+          'TARJETA': 'Tarjeta',
+          'TRANSFERENCIA': 'Transferencia',
+          'BIZUM': 'Bizum',
+          'CHEQUE': 'Cheque',
+          'DOMICILIACION': 'Domiciliación'
+        };
+        
+        const textoPago = `Forma de pago: ${metodoPagoTexto[factura.metodoPago] || factura.metodoPago}`;
+        doc.text(textoPago, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 6;
       }
 
       // ========== PIE DE PÁGINA ==========
-      const textoPie = config.factura?.textoPie || 'Gracias por confiar en nosotros';
-      doc.setFontSize(9);
+      const textoPie = config.factura.textoPie || 'Gracias por confiar en nosotros';
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
       doc.text(textoPie, pageWidth / 2, pageHeight - 15, { align: 'center' });
 
       // ========== DESCARGAR ==========
-      doc.save(`factura_${factura.numero}.pdf`);
+      doc.save(`factura_${factura.numero.replace(/\//g, '_')}.pdf`);
 
     } catch (err) {
       console.error('Error generando PDF:', err);
@@ -815,8 +774,7 @@ const FacturasEmitidas = () => {
     }
   };
 
-
-  // Formatear fecha
+  // Función auxiliar para formatear fecha
   const formatearFecha = (fecha) => {
     if (!fecha) return '—';
 
