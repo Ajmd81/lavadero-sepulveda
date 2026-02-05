@@ -6,7 +6,7 @@ import {
   FiPlus, FiEdit2, FiTrash2, FiEye, FiFileText, 
   FiFilter, FiSearch, FiCheck, FiClock 
 } from 'react-icons/fi';
-import '../../styles/AlbaranesList.css';
+import '../../AlbaranesList.css';
 
 const AlbaranesList = () => {
   const navigate = useNavigate();

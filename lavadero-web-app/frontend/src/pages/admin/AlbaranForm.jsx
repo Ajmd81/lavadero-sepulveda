@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { albaranService } from '../../services/albaranService';
 import { clienteService } from '../../services/clienteService';
 import { FiSave, FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
-import '../../styles/AlbaranForm.css';
+import '../../AlbaranForm.css';
 
 const AlbaranForm = () => {
   const navigate = useNavigate();
