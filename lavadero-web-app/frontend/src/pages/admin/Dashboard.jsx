@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { Users, Calendar, FileText, Euro, TrendingUp, AlertCircle } from 'lucide-react';
-
+import { Users, Calendar, FileText, Euro, AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
 import citaService from '../../services/citaService';
 import clienteService from '../../services/clienteService';
 import facturaService from '../../services/facturaService';
-import { format } from 'date-fns';
 
 const Dashboard = () => {
   const { data: citas, isLoading: loadingCitas } = useQuery({
@@ -28,14 +27,13 @@ const Dashboard = () => {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
       return format(date, 'dd/MM/yyyy');
-    } catch {  // ✅ Quitar (error)
+    } catch {
       return dateString;
     }
   };
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  // Extraer arrays de las respuestas - ASEGURAR QUE SIEMPRE SEAN ARRAYS
   const citasArray = Array.isArray(citas?.data) 
     ? citas.data 
     : (citas?.data?.content && Array.isArray(citas.data.content) 
@@ -54,13 +52,6 @@ const Dashboard = () => {
       ? facturas.data.content 
       : []);
 
-  console.log(`📊 Facturas cargadas en Dashboard:`, facturasArray.length);
-  if (facturasArray.length > 0) {
-    console.log(`📊 Primera factura:`, facturasArray[0]);
-    console.log(`📊 Última factura:`, facturasArray[facturasArray.length - 1]);
-  }
-
-  // CORRECCIÓN: Filtrar citas pendientes de HOY - ASEGURAR QUE SIEMPRE SEA ARRAY
   const proximasCitas = (citasArray || [])
     .filter(c => c.fecha === today && c.estado !== 'COMPLETADA' && c.estado !== 'CANCELADA')
     .sort((a, b) => {
@@ -72,12 +63,8 @@ const Dashboard = () => {
   const totalClientes = clientesArray.length || 0;
   const totalFacturas = facturasArray.length || 0;
 
-  // Calcular facturación del mes actual
   const mesActual = new Date().getMonth() + 1;
   const anioActual = new Date().getFullYear();
-  
-  console.log(`📊 Calculando facturación para ${mesActual}/${anioActual}`);
-  console.log(`📊 Total facturas disponibles: ${facturasArray.length}`);
   
   const facturacionMes = (facturasArray || [])
     .filter(f => {
@@ -104,19 +91,12 @@ const Dashboard = () => {
         return false;
       }
       
-      const coincide = mes === mesActual && anio === anioActual;
-      if (coincide) {
-        console.log(`✅ Factura del mes actual: ${f.numero} - ${f.fecha} - €${f.total}`);
-      }
-      
-      return coincide;
+      return mes === mesActual && anio === anioActual;
     })
     .reduce((sum, f) => {
       const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
       return sum + total;
     }, 0);
-  
-  console.log(`📊 Facturación del mes: €${facturacionMes.toFixed(2)}`);
 
   const stats = [
     {
@@ -147,7 +127,6 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white rounded-lg shadow p-6" style={{ marginBottom: '40px' }}>
         <div className="flex items-center gap-3">
           <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -157,7 +136,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6">
         {stats.map((stat, index) => (
           <div
@@ -178,7 +156,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Próximas Citas */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b">
           <h2 className="text-xl font-bold text-gray-800">Próximas Citas</h2>
@@ -215,7 +192,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Alertas y Notificaciones */}
       <div className="bg-white rounded-lg shadow" style={{ marginTop: '30px' }}>
         <div className="p-6 border-b">
           <h2 className="text-xl font-bold text-gray-800">Avisos Importantes</h2>
