@@ -5,12 +5,11 @@ import citaService from '../../services/citaService';
 import clienteService from '../../services/clienteService';
 import facturaService from '../../services/facturaService';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 const Dashboard = () => {
   const { data: citas, isLoading: loadingCitas } = useQuery({
     queryKey: ['citas-dashboard'],
-    queryFn: () => citaService.getAll(), // Este endpoint ya devuelve todas las citas sin paginación
+    queryFn: () => citaService.getAll(),
   });
 
   const { data: clientes } = useQuery({
@@ -20,25 +19,23 @@ const Dashboard = () => {
 
   const { data: facturas } = useQuery({
     queryKey: ['facturas-dashboard'],
-    queryFn: () => facturaService.getAll(0, 1000), // Obtener todas las facturas (máx 1000)
+    queryFn: () => facturaService.getAll(0, 1000),
   });
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      // Verificar si la fecha es válida
       if (isNaN(date.getTime())) return dateString;
       return format(date, 'dd/MM/yyyy');
-    } catch (error) {
+    } catch {  // ✅ Quitar (error)
       return dateString;
     }
   };
 
   const today = format(new Date(), 'yyyy-MM-dd');
-  const now = new Date(); // Fecha y hora actual completa para comparación precisa si fuera necesario
 
-  // Extraer arrays de las respuestas
+  // Extraer arrays de las respuestas - ASEGURAR QUE SIEMPRE SEAN ARRAYS
   const citasArray = Array.isArray(citas?.data) 
     ? citas.data 
     : (citas?.data?.content && Array.isArray(citas.data.content) 
@@ -63,49 +60,42 @@ const Dashboard = () => {
     console.log(`📊 Última factura:`, facturasArray[facturasArray.length - 1]);
   }
 
-  // Filtrar citas pendientes de HOY
-  const proximasCitas = citasArray
+  // CORRECCIÓN: Filtrar citas pendientes de HOY - ASEGURAR QUE SIEMPRE SEA ARRAY
+  const proximasCitas = (citasArray || [])
     .filter(c => c.fecha === today && c.estado !== 'COMPLETADA' && c.estado !== 'CANCELADA')
     .sort((a, b) => {
-      // Ordenar primero por fecha
       if (a.fecha !== b.fecha) return a.fecha.localeCompare(b.fecha);
-      // Luego por hora si la fecha es igual
       return a.hora.localeCompare(b.hora);
     })
-    .slice(0, 5) // Mostrar solo las próximas 5
-    || [];
+    .slice(0, 5);
 
   const totalClientes = clientesArray.length || 0;
   const totalFacturas = facturasArray.length || 0;
 
   // Calcular facturación del mes actual
-  const mesActual = new Date().getMonth() + 1; // 1-12
+  const mesActual = new Date().getMonth() + 1;
   const anioActual = new Date().getFullYear();
   
   console.log(`📊 Calculando facturación para ${mesActual}/${anioActual}`);
   console.log(`📊 Total facturas disponibles: ${facturasArray.length}`);
   
-  const facturacionMes = facturasArray
+  const facturacionMes = (facturasArray || [])
     .filter(f => {
       if (!f.fecha) return false;
       
       let fechaStr = f.fecha;
       
-      // Si es objeto Date, convertir a string
       if (fechaStr instanceof Date) {
         fechaStr = format(fechaStr, 'yyyy-MM-dd');
       }
       
-      // Convertir string a objeto para comparar
       let mes, anio;
       
       if (fechaStr.includes('/')) {
-        // Formato dd/MM/yyyy
         const partes = fechaStr.split('/');
         mes = parseInt(partes[1]);
         anio = parseInt(partes[2]);
       } else if (fechaStr.includes('-')) {
-        // Formato yyyy-MM-dd o yyyy-MM-ddTHH:mm:ss
         const fechaSolo = fechaStr.split('T')[0];
         const partes = fechaSolo.split('-');
         anio = parseInt(partes[0]);
@@ -122,7 +112,6 @@ const Dashboard = () => {
       return coincide;
     })
     .reduce((sum, f) => {
-      // Convertir total a número (puede venir como string o BigDecimal)
       const total = typeof f.total === 'number' ? f.total : parseFloat(f.total) || 0;
       return sum + total;
     }, 0);
@@ -132,7 +121,7 @@ const Dashboard = () => {
   const stats = [
     {
       icon: Calendar,
-      label: 'Próximas Citas', // Changed label
+      label: 'Próximas Citas',
       value: proximasCitas.length,
       color: 'bg-blue-500',
     },
@@ -167,15 +156,13 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         </div>
       </div>
-      {/* Stats Grid */}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6">
         {stats.map((stat, index) => (
           <div
             key={index}
-            className={`bg-white rounded-lg shadow p-6 ${stat.label === 'Próximas Citas' ? 'pt-12' : ''
-              } ${stat.label === 'Facturación Mes' ? 'pb-12' : ''
-              }`}
+            className={`bg-white rounded-lg shadow p-6 ${stat.label === 'Próximas Citas' ? 'pt-12' : ''} ${stat.label === 'Facturación Mes' ? 'pb-12' : ''}`}
             style={stat.label === 'Facturación Mes' ? { marginBottom: '40px' } : {}}
           >
             <div className="flex items-center justify-between">
@@ -213,10 +200,11 @@ const Dashboard = () => {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-blue-600">{cita.hora}</p>
-                    <span className={`inline-block px-2 py-1 text-xs rounded ${cita.estado === 'COMPLETADA' ? 'bg-green-100 text-green-800' :
+                    <span className={`inline-block px-2 py-1 text-xs rounded ${
+                      cita.estado === 'COMPLETADA' ? 'bg-green-100 text-green-800' :
                       cita.estado === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      'bg-gray-100 text-gray-800'
+                    }`}>
                       {cita.estado}
                     </span>
                   </div>
