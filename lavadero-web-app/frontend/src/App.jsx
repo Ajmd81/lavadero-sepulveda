@@ -17,6 +17,9 @@ import Contabilidad from './pages/admin/Contabilidad';
 import ResumenFinanciero from './pages/admin/ResumenFinanciero';
 import ModelosFiscales from './pages/admin/ModelosFiscales';
 import Configuracion from './pages/admin/Configuracion';
+import AlbaranesList from './pages/facturacion/AlbaranesList';
+import AlbaranForm from './pages/facturacion/AlbaranForm';
+import AlbaranDetail from './pages/facturacion/AlbaranDetail';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +48,10 @@ function App() {
               <Route path="citas" element={<Citas />} />
               <Route path="calendario" element={<Calendario />} />
               <Route path="facturacion" element={<Facturacion />} />
+              <Route path="/facturacion/albaranes" element={<AlbaranesList />} />
+              <Route path="/facturacion/albaranes/nuevo" element={<AlbaranForm />} />
+              <Route path="/facturacion/albaranes/:id" element={<AlbaranDetail />} />
+              <Route path="/facturacion/albaranes/:id/editar" element={<AlbaranForm />} />
               <Route path="proveedores" element={<Proveedores />} />
               <Route path="gastos" element={<Gastos />} />
               <Route path="contabilidad" element={<Contabilidad />} />
