@@ -17,9 +17,9 @@ import Contabilidad from './pages/admin/Contabilidad';
 import ResumenFinanciero from './pages/admin/ResumenFinanciero';
 import ModelosFiscales from './pages/admin/ModelosFiscales';
 import Configuracion from './pages/admin/Configuracion';
-import AlbaranesList from './pages/facturacion/AlbaranesList';
-import AlbaranForm from './pages/facturacion/AlbaranForm';
-import AlbaranDetail from './pages/facturacion/AlbaranDetail';
+import AlbaranesList from './pages/admin/AlbaranesList';
+import AlbaranForm from './pages/admin/AlbaranForm';
+import AlbaranDetail from './pages/admin/AlbaranDetail';
 
 const queryClient = new QueryClient({
   defaultOptions: {
