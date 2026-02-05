@@ -11,8 +11,6 @@ import Clientes from './pages/admin/Clientes';
 import Citas from './pages/admin/Citas';
 import Calendario from './pages/admin/Calendario';
 import Facturacion from './pages/admin/Facturacion';
-import AlbaranForm from './pages/admin/AlbaranForm';
-import AlbaranDetail from './pages/admin/AlbaranDetail';
 import Proveedores from './pages/admin/Proveedores';
 import Gastos from './pages/admin/Gastos';
 import Contabilidad from './pages/admin/Contabilidad';
@@ -47,7 +45,7 @@ function App() {
               <Route path="citas" element={<Citas />} />
               <Route path="calendario" element={<Calendario />} />
               <Route path="facturacion" element={<Facturacion />} />
-              {/* ← Ya no necesitas rutas de albaranes, todo está en Facturacion */}
+              {/* ← Albaranes ya están integrados en Facturacion */}
               <Route path="proveedores" element={<Proveedores />} />
               <Route path="gastos" element={<Gastos />} />
               <Route path="contabilidad" element={<Contabilidad />} />
