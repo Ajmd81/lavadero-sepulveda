@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { albaranService } from '../../services/albaranService';
 import { FiArrowLeft, FiEdit2, FiFileText, FiPrinter } from 'react-icons/fi';
-import '../../AlbaranDetail.css';
 
 const AlbaranDetail = () => {
   const { id } = useParams();
