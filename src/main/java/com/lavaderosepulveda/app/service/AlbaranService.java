@@ -8,6 +8,7 @@ import com.lavaderosepulveda.app.model.LineaAlbaran;
 import com.lavaderosepulveda.app.repository.AlbaranRepository;
 import com.lavaderosepulveda.app.repository.ClienteRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AlbaranService {
     
     private final AlbaranRepository albaranRepository;
@@ -26,13 +28,15 @@ public class AlbaranService {
     @Transactional(readOnly = true)
     public List<AlbaranDTO> findAll() {
         try {
-            return albaranRepository.findAll().stream()
+            log.info("Iniciando búsqueda de todos los albaranes");
+            List<Albaran> albaranes = albaranRepository.findAllWithRelations();
+            log.info("Se encontraron {} albaranes", albaranes.size());
+            return albaranes.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
         } catch (Exception e) {
-            System.err.println("Error en findAll: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error al obtener albaranes: " + e.getMessage());
+            log.error("Error al obtener albaranes", e);
+            throw new RuntimeException("Error al obtener albaranes: " + e.getMessage(), e);
         }
     }
     
@@ -163,50 +167,62 @@ public class AlbaranService {
     }
     
     private AlbaranDTO convertToDTO(Albaran albaran) {
-        AlbaranDTO dto = new AlbaranDTO();
-        dto.setId(albaran.getId());
-        dto.setNumero(albaran.getNumero());
-        
-        // Manejar cliente nulo
-        if (albaran.getCliente() != null) {
-            dto.setClienteId(albaran.getCliente().getId());
-            dto.setClienteNombre(albaran.getCliente().getNombre());
+        try {
+            AlbaranDTO dto = new AlbaranDTO();
+            dto.setId(albaran.getId());
+            dto.setNumero(albaran.getNumero());
+            
+            // Manejar cliente nulo
+            if (albaran.getCliente() != null) {
+                dto.setClienteId(albaran.getCliente().getId());
+                dto.setClienteNombre(albaran.getCliente().getNombre());
+            } else {
+                log.warn("Albarán {} tiene cliente nulo", albaran.getId());
+            }
+            
+            dto.setFecha(albaran.getFecha());
+            dto.setBaseImponible(albaran.getBaseImponible());
+            dto.setIva(albaran.getIva());
+            dto.setTotal(albaran.getTotal());
+            dto.setEstado(albaran.getEstado() != null ? albaran.getEstado().name() : "PENDIENTE");
+            
+            // Manejar factura nula
+            if (albaran.getFactura() != null) {
+                dto.setFacturaId(albaran.getFactura().getId());
+            }
+            
+            // Manejar líneas nulas
+            if (albaran.getLineas() != null && !albaran.getLineas().isEmpty()) {
+                List<LineaAlbaranDTO> lineasDTO = albaran.getLineas().stream()
+                    .map(this::convertLineaToDTO)
+                    .collect(Collectors.toList());
+                dto.setLineas(lineasDTO);
+            } else {
+                dto.setLineas(new ArrayList<>());
+            }
+            
+            return dto;
+        } catch (Exception e) {
+            log.error("Error al convertir Albarán a DTO: {}", albaran.getId(), e);
+            throw new RuntimeException("Error al convertir albarán: " + e.getMessage(), e);
         }
-        
-        dto.setFecha(albaran.getFecha());
-        dto.setBaseImponible(albaran.getBaseImponible());
-        dto.setIva(albaran.getIva());
-        dto.setTotal(albaran.getTotal());
-        dto.setEstado(albaran.getEstado() != null ? albaran.getEstado().name() : "PENDIENTE");
-        
-        // Manejar factura nula
-        if (albaran.getFactura() != null) {
-            dto.setFacturaId(albaran.getFactura().getId());
-        }
-        
-        // Manejar líneas nulas
-        if (albaran.getLineas() != null) {
-            List<LineaAlbaranDTO> lineasDTO = albaran.getLineas().stream()
-                .map(this::convertLineaToDTO)
-                .collect(Collectors.toList());
-            dto.setLineas(lineasDTO);
-        } else {
-            dto.setLineas(new ArrayList<>());
-        }
-        
-        return dto;
     }
     
     private LineaAlbaranDTO convertLineaToDTO(LineaAlbaran linea) {
-        LineaAlbaranDTO dto = new LineaAlbaranDTO();
-        dto.setId(linea.getId());
-        dto.setConcepto(linea.getConcepto());
-        dto.setCantidad(linea.getCantidad());
-        dto.setPrecioUnitario(linea.getPrecioUnitario());
-        dto.setTipoIva(linea.getTipoIva());
-        dto.setSubtotal(linea.getSubtotal());
-        dto.setIva(linea.getIva());
-        dto.setTotal(linea.getTotal());
-        return dto;
+        try {
+            LineaAlbaranDTO dto = new LineaAlbaranDTO();
+            dto.setId(linea.getId());
+            dto.setConcepto(linea.getConcepto());
+            dto.setCantidad(linea.getCantidad());
+            dto.setPrecioUnitario(linea.getPrecioUnitario());
+            dto.setTipoIva(linea.getTipoIva());
+            dto.setSubtotal(linea.getSubtotal());
+            dto.setIva(linea.getIva());
+            dto.setTotal(linea.getTotal());
+            return dto;
+        } catch (Exception e) {
+            log.error("Error al convertir LineaAlbaran a DTO", e);
+            throw new RuntimeException("Error al convertir línea de albarán: " + e.getMessage(), e);
+        }
     }
 }

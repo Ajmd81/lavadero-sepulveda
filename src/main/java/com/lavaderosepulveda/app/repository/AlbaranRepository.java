@@ -12,6 +12,9 @@ import java.util.Optional;
 @Repository
 public interface AlbaranRepository extends JpaRepository<Albaran, Long> {
     
+    @Query("SELECT DISTINCT a FROM Albaran a LEFT JOIN FETCH a.cliente LEFT JOIN FETCH a.lineas ORDER BY a.fecha DESC")
+    List<Albaran> findAllWithRelations();
+    
     Optional<Albaran> findByNumero(String numero);
     
     List<Albaran> findByClienteIdOrderByFechaDesc(Long clienteId);
