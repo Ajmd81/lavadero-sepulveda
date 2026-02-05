@@ -2,11 +2,13 @@ import { useState } from 'react';
 import FacturasEmitidas from './FacturasEmitidas';
 import FacturasRecibidas from './FacturasRecibidas';
 import Gastos from './Gastos';
+import AlbaranesList from './AlbaranesList';
 
 const Facturacion = () => {
   const [tabActiva, setTabActiva] = useState('emitidas');
 
   const pestanas = [
+    { id: 'albaranes', label: 'Albaranes', icon: '/assets/icons/facturacion.png' },
     { id: 'emitidas', label: 'Facturas Emitidas', icon: '/assets/icons/facturacion.png' },
     { id: 'recibidas', label: 'Facturas Recibidas', icon: '/assets/icons/facturaEmitida.png' },
     { id: 'gastos', label: 'Gastos', icon: '/assets/icons/invoice.png' },
@@ -42,6 +44,7 @@ const Facturacion = () => {
       </div>
 
       <div>
+        {tabActiva === 'albaranes' && <AlbaranesList />}
         {tabActiva === 'emitidas' && <FacturasEmitidas />}
         {tabActiva === 'recibidas' && <FacturasRecibidas />}
         {tabActiva === 'gastos' && <Gastos />}
