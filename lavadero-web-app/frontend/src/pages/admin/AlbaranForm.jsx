@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { albaranService } from '../../services/albaranService';
-import { clienteService } from '../../services/clienteService';
+import clienteService from '../../services/clienteService';
 import { FiSave, FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
 
 const AlbaranForm = () => {
