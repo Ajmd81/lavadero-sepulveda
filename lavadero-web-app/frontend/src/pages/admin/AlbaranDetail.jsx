@@ -41,14 +41,14 @@ const AlbaranDetail = () => {
   return (
     <div className="albaran-detail-container">
       <div className="detail-actions no-print">
-        <button className="btn btn-secondary" onClick={() => navigate('/facturacion/albaranes')}>
+        <button className="btn btn-secondary" onClick={() => navigate('/admin/facturacion')}>
           <FiArrowLeft /> Volver
         </button>
         <div>
           {albaran.estado !== 'FACTURADO' && (
             <button 
               className="btn btn-primary"
-              onClick={() => navigate(`/facturacion/albaranes/${id}/editar`)}
+              onClick={() => navigate(`/admin/facturacion/albaranes/${id}/editar`)}
             >
               <FiEdit2 /> Editar
             </button>

@@ -75,7 +75,7 @@ const AlbaranForm = () => {
       } else {
         await albaranService.create(formData);
       }
-      navigate('/facturacion/albaranes');
+      navigate('/admin/facturacion');
     } catch (error) {
       console.error('Error guardando albarán:', error);
       alert('Error al guardar el albarán');
@@ -293,7 +293,7 @@ const AlbaranForm = () => {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => navigate('/facturacion/albaranes')}
+            onClick={() => navigate('/admin/facturacion')}
           >
             <FiX /> Cancelar
           </button>

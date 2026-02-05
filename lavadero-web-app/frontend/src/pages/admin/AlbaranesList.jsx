@@ -40,7 +40,6 @@ const AlbaranesList = () => {
   const filterAlbaranes = () => {
     let filtered = [...albaranes];
 
-    // Filtrar por búsqueda
     if (searchTerm) {
       filtered = filtered.filter(alb =>
         alb.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -48,7 +47,6 @@ const AlbaranesList = () => {
       );
     }
 
-    // Filtrar por estado
     if (estadoFilter !== 'TODOS') {
       filtered = filtered.filter(alb => alb.estado === estadoFilter);
     }
@@ -106,7 +104,7 @@ const AlbaranesList = () => {
         </div>
         <button 
           className="btn btn-primary"
-          onClick={() => navigate('/facturacion/albaranes/nuevo')}
+          onClick={() => navigate('/admin/facturacion/albaranes/nuevo')}
         >
           <FiPlus /> Nuevo Albarán
         </button>
@@ -196,7 +194,7 @@ const AlbaranesList = () => {
                   <td className="actions-cell">
                     <button
                       className="btn-icon btn-view"
-                      onClick={() => navigate(`/facturacion/albaranes/${albaran.id}`)}
+                      onClick={() => navigate(`/admin/facturacion/albaranes/${albaran.id}`)}
                       title="Ver detalle"
                     >
                       <FiEye />
@@ -206,7 +204,7 @@ const AlbaranesList = () => {
                       <>
                         <button
                           className="btn-icon btn-edit"
-                          onClick={() => navigate(`/facturacion/albaranes/${albaran.id}/editar`)}
+                          onClick={() => navigate(`/admin/facturacion/albaranes/${albaran.id}/editar`)}
                           title="Editar"
                         >
                           <FiEdit2 />
