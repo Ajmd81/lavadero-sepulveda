@@ -2,10 +2,10 @@ import { useState } from 'react';
 import FacturasEmitidas from './FacturasEmitidas';
 import FacturasRecibidas from './FacturasRecibidas';
 import Gastos from './Gastos';
-import AlbaranesList from './AlbaranesList';
+import AlbaranesEmitidos from './AlbaranesEmitidos';
 
 const Facturacion = () => {
-  const [tabActiva, setTabActiva] = useState('emitidas');
+  const [tabActiva, setTabActiva] = useState('albaranes');
 
   const pestanas = [
     { id: 'albaranes', label: 'Albaranes', icon: '/assets/icons/facturacion.png' },
@@ -31,10 +31,11 @@ const Facturacion = () => {
             <button
               key={pestana.id}
               onClick={() => setTabActiva(pestana.id)}
-              className={`flex-1 px-6 py-4 font-semibold text-center transition-colors flex items-center justify-center gap-2 ${tabActiva === pestana.id
-                ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+              className={`flex-1 px-6 py-4 font-semibold text-center transition-colors flex items-center justify-center gap-2 ${
+                tabActiva === pestana.id
+                  ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
             >
               <img src={pestana.icon} alt={pestana.label} className="w-6 h-6 object-contain" />
               {pestana.label}
@@ -44,7 +45,7 @@ const Facturacion = () => {
       </div>
 
       <div>
-        {tabActiva === 'albaranes' && <AlbaranesList />}
+        {tabActiva === 'albaranes' && <AlbaranesEmitidos />}
         {tabActiva === 'emitidas' && <FacturasEmitidas />}
         {tabActiva === 'recibidas' && <FacturasRecibidas />}
         {tabActiva === 'gastos' && <Gastos />}

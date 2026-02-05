@@ -47,12 +47,7 @@ function App() {
               <Route path="citas" element={<Citas />} />
               <Route path="calendario" element={<Calendario />} />
               <Route path="facturacion" element={<Facturacion />} />
-              
-              {/* Rutas de Albaranes - ORDEN IMPORTANTE */}
-              <Route path="facturacion/albaranes/nuevo" element={<AlbaranForm />} />
-              <Route path="facturacion/albaranes/:id/editar" element={<AlbaranForm />} />
-              <Route path="facturacion/albaranes/:id" element={<AlbaranDetail />} />
-              
+              {/* ← Ya no necesitas rutas de albaranes, todo está en Facturacion */}
               <Route path="proveedores" element={<Proveedores />} />
               <Route path="gastos" element={<Gastos />} />
               <Route path="contabilidad" element={<Contabilidad />} />
