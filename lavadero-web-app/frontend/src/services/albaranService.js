@@ -1,6 +1,6 @@
 import api from './api';
 
-const API_URL = '/api/albaranes';
+const API_URL = '/albaranes';
 
 export const albaranService = {
   // Obtener todos los albaranes
