@@ -1,7 +1,7 @@
-// src/pages/facturacion/AlbaranDetail.jsx
+// src/pages/admin/AlbaranDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { albaranService } from '../services/albaranService';
+import { albaranService } from '../../services/albaranService';
 import { FiArrowLeft, FiEdit2, FiFileText, FiPrinter } from 'react-icons/fi';
 import '../../styles/AlbaranDetail.css';
 

@@ -1,7 +1,7 @@
-// src/pages/facturacion/AlbaranesList.jsx
+// src/pages/admin/AlbaranesList.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { albaranService } from '../services/albaranService';
+import { albaranService } from '../../services/albaranService';
 import { 
   FiPlus, FiEdit2, FiTrash2, FiEye, FiFileText, 
   FiFilter, FiSearch, FiCheck, FiClock 
