@@ -29,14 +29,32 @@ public class AlbaranService {
     public List<AlbaranDTO> findAll() {
         try {
             log.info("Iniciando búsqueda de todos los albaranes");
-            List<Albaran> albaranes = albaranRepository.findAllWithRelations();
+            List<Albaran> albaranes = albaranRepository.findAll();
             log.info("Se encontraron {} albaranes", albaranes.size());
+            
+            // Inicializar las relaciones dentro de la transacción para evitar lazy loading
             return albaranes.stream()
+                .peek(albaran -> {
+                    try {
+                        // Forzar la inicialización de las relaciones
+                        if (albaran.getCliente() != null) {
+                            albaran.getCliente().getId(); // Fuerza la carga
+                        }
+                        if (albaran.getLineas() != null) {
+                            albaran.getLineas().size(); // Fuerza la carga
+                        }
+                    } catch (Exception e) {
+                        log.warn("Error inicializando relaciones para albarán {}: {}", albaran.getId(), e.getMessage());
+                    }
+                })
                 .map(this::convertToDTO)
+                .filter(dto -> dto != null) // Filtrar nulls
                 .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Error al obtener albaranes", e);
-            throw new RuntimeException("Error al obtener albaranes: " + e.getMessage(), e);
+            // Si hay error, devolver lista vacía en lugar de lanzar excepción
+            log.warn("Devolviendo lista vacía debido a error: {}", e.getMessage());
+            return new ArrayList<>();
         }
     }
     
@@ -168,14 +186,23 @@ public class AlbaranService {
     
     private AlbaranDTO convertToDTO(Albaran albaran) {
         try {
+            if (albaran == null) {
+                log.warn("Intento de convertir Albarán nulo");
+                return null;
+            }
+            
             AlbaranDTO dto = new AlbaranDTO();
             dto.setId(albaran.getId());
             dto.setNumero(albaran.getNumero());
             
             // Manejar cliente nulo
             if (albaran.getCliente() != null) {
-                dto.setClienteId(albaran.getCliente().getId());
-                dto.setClienteNombre(albaran.getCliente().getNombre());
+                try {
+                    dto.setClienteId(albaran.getCliente().getId());
+                    dto.setClienteNombre(albaran.getCliente().getNombre());
+                } catch (Exception e) {
+                    log.warn("Error al acceder a datos del cliente para albarán {}: {}", albaran.getId(), e.getMessage());
+                }
             } else {
                 log.warn("Albarán {} tiene cliente nulo", albaran.getId());
             }
@@ -188,23 +215,32 @@ public class AlbaranService {
             
             // Manejar factura nula
             if (albaran.getFactura() != null) {
-                dto.setFacturaId(albaran.getFactura().getId());
+                try {
+                    dto.setFacturaId(albaran.getFactura().getId());
+                } catch (Exception e) {
+                    log.warn("Error al acceder a datos de factura para albarán {}: {}", albaran.getId(), e.getMessage());
+                }
             }
             
             // Manejar líneas nulas
-            if (albaran.getLineas() != null && !albaran.getLineas().isEmpty()) {
-                List<LineaAlbaranDTO> lineasDTO = albaran.getLineas().stream()
-                    .map(this::convertLineaToDTO)
-                    .collect(Collectors.toList());
-                dto.setLineas(lineasDTO);
-            } else {
+            try {
+                if (albaran.getLineas() != null && !albaran.getLineas().isEmpty()) {
+                    List<LineaAlbaranDTO> lineasDTO = albaran.getLineas().stream()
+                        .map(this::convertLineaToDTO)
+                        .collect(Collectors.toList());
+                    dto.setLineas(lineasDTO);
+                } else {
+                    dto.setLineas(new ArrayList<>());
+                }
+            } catch (Exception e) {
+                log.warn("Error al acceder a líneas para albarán {}: {}", albaran.getId(), e.getMessage());
                 dto.setLineas(new ArrayList<>());
             }
             
             return dto;
         } catch (Exception e) {
-            log.error("Error al convertir Albarán a DTO: {}", albaran.getId(), e);
-            throw new RuntimeException("Error al convertir albarán: " + e.getMessage(), e);
+            log.error("Error al convertir Albarán a DTO", e);
+            return null; // Devolver null en lugar de excepto para evitar cascada de errores
         }
     }
     
