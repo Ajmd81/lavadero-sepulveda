@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,9 +25,15 @@ public class AlbaranService {
     
     @Transactional(readOnly = true)
     public List<AlbaranDTO> findAll() {
-        return albaranRepository.findAll().stream()
-            .map(this::convertToDTO)
-            .collect(Collectors.toList());
+        try {
+            return albaranRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error en findAll: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al obtener albaranes: " + e.getMessage());
+        }
     }
     
     @Transactional(readOnly = true)
@@ -159,19 +166,33 @@ public class AlbaranService {
         AlbaranDTO dto = new AlbaranDTO();
         dto.setId(albaran.getId());
         dto.setNumero(albaran.getNumero());
-        dto.setClienteId(albaran.getCliente().getId());
-        dto.setClienteNombre(albaran.getCliente().getNombre());
+        
+        // Manejar cliente nulo
+        if (albaran.getCliente() != null) {
+            dto.setClienteId(albaran.getCliente().getId());
+            dto.setClienteNombre(albaran.getCliente().getNombre());
+        }
+        
         dto.setFecha(albaran.getFecha());
         dto.setBaseImponible(albaran.getBaseImponible());
         dto.setIva(albaran.getIva());
         dto.setTotal(albaran.getTotal());
-        dto.setEstado(albaran.getEstado().name());
-        dto.setFacturaId(albaran.getFactura() != null ? albaran.getFactura().getId() : null);
+        dto.setEstado(albaran.getEstado() != null ? albaran.getEstado().name() : "PENDIENTE");
         
-        List<LineaAlbaranDTO> lineasDTO = albaran.getLineas().stream()
-            .map(this::convertLineaToDTO)
-            .collect(Collectors.toList());
-        dto.setLineas(lineasDTO);
+        // Manejar factura nula
+        if (albaran.getFactura() != null) {
+            dto.setFacturaId(albaran.getFactura().getId());
+        }
+        
+        // Manejar líneas nulas
+        if (albaran.getLineas() != null) {
+            List<LineaAlbaranDTO> lineasDTO = albaran.getLineas().stream()
+                .map(this::convertLineaToDTO)
+                .collect(Collectors.toList());
+            dto.setLineas(lineasDTO);
+        } else {
+            dto.setLineas(new ArrayList<>());
+        }
         
         return dto;
     }
