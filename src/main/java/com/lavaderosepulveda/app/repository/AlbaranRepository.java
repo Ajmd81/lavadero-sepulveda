@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.repository;
 
-import com.lavadero.backend.model.Albaran;
-import com.lavadero.backend.model.Albaran.EstadoAlbaran;
+import com.lavaderosepulveda.app.model.Albaran;
+import com.lavaderosepulveda.app.model.Albaran.EstadoAlbaran;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

@@ -1,12 +1,12 @@
 package com.lavaderosepulveda.app.service;
 
-import com.lavadero.backend.dto.AlbaranDTO;
-import com.lavadero.backend.dto.LineaAlbaranDTO;
-import com.lavadero.backend.model.Albaran;
-import com.lavadero.backend.model.Cliente;
-import com.lavadero.backend.model.LineaAlbaran;
-import com.lavadero.backend.repository.AlbaranRepository;
-import com.lavadero.backend.repository.ClienteRepository;
+import com.lavaderosepulveda.app.dto.AlbaranDTO;
+import com.lavaderosepulveda.app.dto.LineaAlbaranDTO;
+import com.lavaderosepulveda.app.model.Albaran;
+import com.lavaderosepulveda.app.model.Cliente;
+import com.lavaderosepulveda.app.model.LineaAlbaran;
+import com.lavaderosepulveda.app.repository.AlbaranRepository;
+import com.lavaderosepulveda.app.repository.ClienteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
