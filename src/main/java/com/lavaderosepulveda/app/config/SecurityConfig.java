@@ -90,11 +90,6 @@ public class SecurityConfig {
                 // ✅ CRÍTICO: Aplicar configuración CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 
-                // Agregar headers de seguridad
-                .headers(headers -> headers
-                        .referrerPolicy(referrer -> referrer.policy(org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER_WHEN_DOWNGRADE))
-                )
-
                 .authorizeHttpRequests(authz -> authz
                         // API y chatbot públicos
                         .requestMatchers("/api/**").permitAll()
