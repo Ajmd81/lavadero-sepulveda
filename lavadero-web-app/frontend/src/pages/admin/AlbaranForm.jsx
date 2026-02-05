@@ -10,7 +10,7 @@ const AlbaranForm = () => {
   const { id } = useParams();
   const isEdit = !!id;
 
-  const [clientes, setClientes] = useState([]);
+  const [clientes, setClientes] = useState([]); // ← Array vacío por defecto
   const [formData, setFormData] = useState({
     clienteId: '',
     fecha: new Date().toISOString().split('T')[0],
@@ -35,9 +35,24 @@ const AlbaranForm = () => {
   const loadClientes = async () => {
     try {
       const data = await clienteService.getAll();
-      setClientes(data);
+      console.log('Clientes cargados:', data);
+      
+      // Extraer array correctamente según la estructura de respuesta
+      let clientesArray = [];
+      
+      if (Array.isArray(data)) {
+        clientesArray = data;
+      } else if (data?.data && Array.isArray(data.data)) {
+        clientesArray = data.data;
+      } else if (data?.data?.content && Array.isArray(data.data.content)) {
+        clientesArray = data.data.content;
+      }
+      
+      console.log('Clientes array:', clientesArray);
+      setClientes(clientesArray);
     } catch (error) {
       console.error('Error cargando clientes:', error);
+      setClientes([]); // Array vacío en caso de error
     }
   };
 
@@ -47,7 +62,7 @@ const AlbaranForm = () => {
       setFormData({
         clienteId: data.clienteId,
         fecha: data.fecha,
-        lineas: data.lineas
+        lineas: data.lineas || []
       });
     } catch (error) {
       console.error('Error cargando albarán:', error);
@@ -78,7 +93,7 @@ const AlbaranForm = () => {
       navigate('/admin/facturacion');
     } catch (error) {
       console.error('Error guardando albarán:', error);
-      alert('Error al guardar el albarán');
+      alert('Error al guardar el albarán: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -159,7 +174,7 @@ const AlbaranForm = () => {
                 required
               >
                 <option value="">Seleccionar cliente...</option>
-                {clientes.map(cliente => (
+                {(clientes || []).map(cliente => (
                   <option key={cliente.id} value={cliente.id}>
                     {cliente.nombre}
                   </option>
