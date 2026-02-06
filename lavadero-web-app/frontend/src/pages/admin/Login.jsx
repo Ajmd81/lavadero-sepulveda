@@ -43,9 +43,9 @@ const Login = () => {
           <div className="relative">
             {/* Header - Logo y Título */}
             <div className="text-center mb-10 animate-fadeInUp">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl mb-6 shadow-lg shadow-blue-500/50 relative group/logo">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl mb-6 shadow-lg shadow-blue-500/50 relative group/logo p-2">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl opacity-0 group-hover/logo:opacity-100 transition-opacity duration-300 blur-xl"></div>
-                <LogIn className="text-white drop-shadow-lg relative" size={40} />
+                <img src="/assets/icons/logo_crm.png" alt="Logo Lavadero" className="relative w-full h-full object-contain drop-shadow-lg" />
               </div>
               
               <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-600 to-blue-800 bg-clip-text text-transparent mb-2">
