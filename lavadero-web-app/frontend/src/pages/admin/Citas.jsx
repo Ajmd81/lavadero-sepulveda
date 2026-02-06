@@ -404,12 +404,12 @@ const Citas = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Gestión de Citas</h1>
-              <p className="text-gray-600">Citas pendientes hoy: <span className="font-semibold text-blue-600">{citasHoy()}</span> | Total: {totalElements} citas</p>
+              <p className="text-base text-gray-600">Citas pendientes hoy: <span className="font-semibold text-blue-600">{citasHoy()}</span> | Total: {totalElements} citas</p>
             </div>
           </div>
           <button
             onClick={abrirModalNuevo}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium"
           >
             + Nueva Cita
           </button>
@@ -418,7 +418,7 @@ const Citas = () => {
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
-          <span className="text-red-800">{error}</span>
+          <span className="text-red-800 text-base">{error}</span>
         </div>
       )}
 
@@ -427,11 +427,11 @@ const Citas = () => {
           <div className="text-center py-8">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-500">Cargando citas...</span>
+              <span className="ml-3 text-gray-500 text-base">Cargando citas...</span>
             </div>
           </div>
         ) : citas.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 text-base">
             No hay citas registradas
           </div>
         ) : (
@@ -440,28 +440,28 @@ const Citas = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Cliente</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Teléfono</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Fecha</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Hora</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Tipo Lavado</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Modelo Vehículo</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Estado</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">Acciones</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Cliente</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Teléfono</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Fecha</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Hora</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Tipo Lavado</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Modelo Vehículo</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Estado</th>
+                    <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {citas.map((cita) => (
                     <tr key={cita.id} className={`${esCitaDeHoy(cita.fecha) ? 'bg-blue-100 hover:bg-blue-200' : 'hover:bg-gray-50'}`}>
-                      <td className="border border-gray-300 px-4 py-2">{cita.nombre}</td>
-                      <td className="border border-gray-300 px-4 py-2">{cita.telefono}</td>
-                      <td className="border border-gray-300 px-4 py-2">
+                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.nombre}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.telefono}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">
                         {formatearFecha(cita.fecha)}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2">{cita.hora?.substring(0, 5)}</td>
-                      <td className="border border-gray-300 px-4 py-2">{cita.tipoLavado}</td>
-                      <td className="border border-gray-300 px-4 py-2">{cita.modeloVehiculo}</td>
-                      <td className="border border-gray-300 px-4 py-2">
+                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.hora?.substring(0, 5)}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.tipoLavado}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.modeloVehiculo}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">
                         <span className={`px-3 py-1 rounded text-sm font-medium ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
                             cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800' :
                               cita.estado === 'COMPLETADA' ? 'bg-blue-100 text-blue-800' :
@@ -470,12 +470,12 @@ const Citas = () => {
                           {cita.estado}
                         </span>
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">
+                      <td className="border border-gray-300 px-4 py-3 text-center text-base">
                         <div className="flex items-center justify-center gap-2 flex-wrap">
                           <select
                             value={cita.estado}
                             onChange={(e) => cambiarEstado(cita.id, e.target.value)}
-                            className={`px-2 py-1 rounded text-sm font-medium border cursor-pointer ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800 border-green-300' :
+                            className={`px-3 py-2 rounded text-base font-medium border cursor-pointer ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800 border-green-300' :
                                 cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800 border-red-300' :
                                   cita.estado === 'COMPLETADA' ? 'bg-blue-100 text-blue-800 border-blue-300' :
                                     'bg-yellow-100 text-yellow-800 border-yellow-300'
@@ -488,13 +488,13 @@ const Citas = () => {
                           </select>
                           <button
                             onClick={() => abrirModalEditar(cita)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-base font-medium"
                           >
                             Editar
                           </button>
                           <button
                             onClick={() => eliminarCita(cita.id)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-base font-medium"
                           >
                             Eliminar
                           </button>
@@ -509,20 +509,20 @@ const Citas = () => {
             <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
-                  <p className="text-sm text-gray-700">
+                  <p className="text-base text-gray-700">
                     Mostrando <span className="font-medium">{getPaginaInicio()}</span> a <span className="font-medium">{getPaginaFin()}</span> de{' '}
                     <span className="font-medium">{totalElements}</span> resultados
                   </p>
 
                   <div className="flex items-center gap-2">
-                    <label htmlFor="pageSize" className="text-sm text-gray-700">
+                    <label htmlFor="pageSize" className="text-base text-gray-700">
                       Por página:
                     </label>
                     <select
                       id="pageSize"
                       value={pageSize}
                       onChange={(e) => cambiarTamanoPagina(Number(e.target.value))}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                      className="border border-gray-300 rounded px-3 py-2 text-base"
                     >
                       <option value={5}>5</option>
                       <option value={10}>10</option>
@@ -536,7 +536,7 @@ const Citas = () => {
                   <button
                     onClick={() => irAPagina(0)}
                     disabled={currentPage === 0}
-                    className={`px-3 py-1 rounded ${currentPage === 0
+                    className={`px-4 py-2 rounded text-base ${currentPage === 0
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                       }`}
@@ -546,7 +546,7 @@ const Citas = () => {
                   <button
                     onClick={() => irAPagina(currentPage - 1)}
                     disabled={currentPage === 0}
-                    className={`px-3 py-1 rounded ${currentPage === 0
+                    className={`px-4 py-2 rounded text-base ${currentPage === 0
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                       }`}
@@ -565,7 +565,7 @@ const Citas = () => {
                           <button
                             key={index}
                             onClick={() => irAPagina(index)}
-                            className={`px-3 py-1 rounded ${currentPage === index
+                            className={`px-3 py-2 rounded text-base ${currentPage === index
                                 ? 'bg-blue-600 text-white'
                                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                               }`}
@@ -583,7 +583,7 @@ const Citas = () => {
                   <button
                     onClick={() => irAPagina(currentPage + 1)}
                     disabled={currentPage === totalPages - 1}
-                    className={`px-3 py-1 rounded ${currentPage === totalPages - 1
+                    className={`px-4 py-2 rounded text-base ${currentPage === totalPages - 1
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                       }`}
@@ -593,7 +593,7 @@ const Citas = () => {
                   <button
                     onClick={() => irAPagina(totalPages - 1)}
                     disabled={currentPage === totalPages - 1}
-                    className={`px-3 py-1 rounded ${currentPage === totalPages - 1
+                    className={`px-4 py-2 rounded text-base ${currentPage === totalPages - 1
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                       }`}
