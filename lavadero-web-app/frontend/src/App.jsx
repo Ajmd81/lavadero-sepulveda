@@ -6,6 +6,7 @@ import AdminLayout from './components/layout/AdminLayout';
 
 // Pages
 import Login from './pages/admin/Login';
+import MiPerfil from './pages/admin/MiPerfil';
 import Dashboard from './pages/admin/Dashboard';
 import Clientes from './pages/admin/Clientes';
 import Citas from './pages/admin/Citas';
@@ -45,13 +46,13 @@ function App() {
               <Route path="citas" element={<Citas />} />
               <Route path="calendario" element={<Calendario />} />
               <Route path="facturacion" element={<Facturacion />} />
-              {/* ← Albaranes ya están integrados en Facturacion */}
               <Route path="proveedores" element={<Proveedores />} />
               <Route path="gastos" element={<Gastos />} />
               <Route path="contabilidad" element={<Contabilidad />} />
               <Route path="resumen-financiero" element={<ResumenFinanciero />} />
               <Route path="modelos-fiscales" element={<ModelosFiscales />} />
               <Route path="configuracion" element={<Configuracion />} />
+              <Route path="mi-perfil" element={<MiPerfil />} />
             </Route>
 
             <Route path="/" element={<Navigate to="/admin" replace />} />
