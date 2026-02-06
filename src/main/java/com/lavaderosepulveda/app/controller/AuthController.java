@@ -65,6 +65,26 @@ public class AuthController {
         }
         return ResponseEntity.status(401).body("Token inválido");
     }
+
+    // Actualizar datos personales (nombre y email)
+    @PutMapping("/perfil/datos")
+    public ResponseEntity<?> actualizarDatos(@RequestBody Map<String, String> payload) {
+        String username = payload.get("username");
+        String nombreCompleto = payload.get("nombreCompleto");
+        String email = payload.get("email");    
+
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+        }
+
+        Usuario usuario = usuarioOpt.get();
+        usuario.setNombreCompleto(nombreCompleto);
+        usuario.setEmail(email);
+        usuarioRepository.save(usuario);    
+
+        return ResponseEntity.ok(Map.of("message", "Datos actualizados"));
+    }
     
     // Cambiar username
     @PutMapping("/perfil/username")

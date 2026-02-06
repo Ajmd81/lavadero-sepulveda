@@ -2,21 +2,37 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FiUser, FiLock } from 'react-icons/fi';
+import { FiUser, FiLock, FiMail } from 'react-icons/fi';
 
 const MiPerfil = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
-  // ✅ Inicializar directamente con el valor del usuario
   const [usernameForm, setUsernameForm] = useState(user?.username || '');
+  const [emailForm, setEmailForm] = useState('contacto@lavaderosepulveda.es');
+  const [nombreForm, setNombreForm] = useState('Antonio Jesús Martínez Díaz');
+  
   const [passwordForm, setPasswordForm] = useState({
     passwordActual: '',
     passwordNueva: '',
     passwordConfirm: ''
   });
 
-  // ✅ NO USAR useEffect para setUsernameForm
+  const handleActualizarDatos = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await api.put('/auth/perfil/datos', {
+        username: user.username,
+        nombreCompleto: nombreForm,
+        email: emailForm
+      });
+      
+      alert('✅ Datos actualizados correctamente');
+    } catch (error) {
+      alert('❌ ' + (error.response?.data?.error || error.message));
+    }
+  };
 
   const handleCambiarUsername = async (e) => {
     e.preventDefault();
@@ -79,6 +95,52 @@ const MiPerfil = () => {
         </div>
       </div>
 
+      {/* Datos Personales */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <FiUser className="text-blue-600" />
+          Datos Personales
+        </h2>
+        
+        <form onSubmit={handleActualizarDatos} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre Completo
+            </label>
+            <input
+              type="text"
+              value={nombreForm}
+              onChange={(e) => setNombreForm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="Tu nombre completo"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <div className="relative">
+              <FiMail className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="email"
+                value={emailForm}
+                onChange={(e) => setEmailForm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="tu@email.com"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+          >
+            Guardar Cambios
+          </button>
+        </form>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Cambiar Username */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -127,7 +189,7 @@ const MiPerfil = () => {
               </label>
               <input
                 type="password"
-                placeholder="Introduce tu contraseña actual"
+                placeholder="Tu contraseña actual"
                 value={passwordForm.passwordActual}
                 onChange={(e) => setPasswordForm({ ...passwordForm, passwordActual: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
@@ -137,11 +199,11 @@ const MiPerfil = () => {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nueva Contraseña * (mínimo 6 caracteres)
+                Nueva Contraseña * (min. 6 caracteres)
               </label>
               <input
                 type="password"
-                placeholder="Introduce la nueva contraseña"
+                placeholder="Nueva contraseña"
                 value={passwordForm.passwordNueva}
                 onChange={(e) => setPasswordForm({ ...passwordForm, passwordNueva: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
@@ -156,7 +218,7 @@ const MiPerfil = () => {
               </label>
               <input
                 type="password"
-                placeholder="Confirma la nueva contraseña"
+                placeholder="Confirmar contraseña"
                 value={passwordForm.passwordConfirm}
                 onChange={(e) => setPasswordForm({ ...passwordForm, passwordConfirm: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
