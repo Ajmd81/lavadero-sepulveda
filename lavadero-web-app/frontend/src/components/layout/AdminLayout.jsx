@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, Menu, X, Settings, ChevronRight } from 'lucide-react';
+import { LogOut, Menu, X, Settings, ChevronRight, UserCircle, Cpu } from 'lucide-react';
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
@@ -24,7 +24,7 @@ const AdminLayout = () => {
     { icon: '/assets/icons/contabilidad.png', label: 'Contabilidad', path: '/admin/contabilidad', category: 'financiero' },
     { icon: '/assets/icons/estado-financiero.png', label: 'Resumen financiero', path: '/admin/resumen-financiero', category: 'financiero' },
     { icon: '/assets/icons/modeloFiscal.png', label: 'Modelos fiscales', path: '/admin/modelos-fiscales', category: 'financiero' },
-    { icon: '/assets/icons/perfil.png', label: 'Mi Perfil', path: '/admin/mi-perfil', category: 'usuario' },
+    { icon: 'user', label: 'Mi Perfil', path: '/admin/mi-perfil', category: 'usuario' },
   ];
 
   const isActive = (path) => {
@@ -95,7 +95,11 @@ const AdminLayout = () => {
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-white via-white/80 to-transparent"></div>
               )}
               
-              <img src={item.icon} alt={item.label} className={`w-8 h-8 object-contain flex-shrink-0 transition-transform duration-300 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
+              {item.icon === 'user' ? (
+                <UserCircle size={32} className={`flex-shrink-0 transition-transform duration-300 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
+              ) : (
+                <img src={item.icon} alt={item.label} className={`w-8 h-8 object-contain flex-shrink-0 transition-transform duration-300 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
+              )}
               {sidebarOpen && (
                 <div className="flex-1 flex items-center justify-between">
                   <span className="font-semibold text-sm">{item.label}</span>
@@ -126,7 +130,7 @@ const AdminLayout = () => {
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-white via-white/80 to-transparent"></div>
             )}
             
-            <img src="/assets/icons/configuracion.png" alt="Configuración" className={`w-8 h-8 object-contain flex-shrink-0 transition-transform duration-300 ${isActive('/admin/configuracion') ? 'scale-110 rotate-180' : 'group-hover:scale-110 group-hover:rotate-90'}`} />
+            <Cpu size={32} className={`flex-shrink-0 transition-transform duration-300 ${isActive('/admin/configuracion') ? 'scale-110 rotate-180' : 'group-hover:scale-110 group-hover:rotate-90'}`} />
             {sidebarOpen && (
               <div className="flex-1 flex items-center justify-between">
                 <span className="font-semibold text-sm">Configuración</span>
