@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -83,11 +84,17 @@ public class AdminController {
                 // Filtrar por estado específico
                 citasPorEstado = todasLasCitas.stream()
                         .filter(cita -> cita.getEstado() == estado)
-                        .collect(Collectors.groupingBy(Cita::getEstado));
+                        .collect(Collectors.<Cita, EstadoCita, List<Cita>>groupingBy(
+                            Cita::getEstado, 
+                            HashMap::new,
+                            Collectors.toList()));
             } else {
                 // Mostrar todas agrupadas por estado
                 citasPorEstado = todasLasCitas.stream()
-                        .collect(Collectors.groupingBy(Cita::getEstado));
+                        .collect(Collectors.<Cita, EstadoCita, List<Cita>>groupingBy(
+                            Cita::getEstado, 
+                            HashMap::new,
+                            Collectors.toList()));
             }
 
             model.addAttribute("citasPorEstado", citasPorEstado);
