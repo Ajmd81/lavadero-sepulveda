@@ -520,31 +520,31 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col">
+      <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
         {/* Header del modal */}
-        <div className="px-8 py-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
-          <h3 className="text-2xl font-bold text-gray-900">
+        <div className="px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+          <h3 className="text-3xl font-bold text-gray-900">
             {mode === 'edit' ? 'Editar Albarán' : 'Nuevo Albarán'}
           </h3>
         </div>
 
         {/* Contenido con scroll */}
-        <div className="px-8 py-6 overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="px-10 py-8 overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Sección: Datos del Albarán */}
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+              <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
                 Datos del Albarán
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-base font-semibold text-gray-700 mb-2">
                     Cliente *
                   </label>
                   <select
                     value={formData.clienteId}
                     onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   >
                     <option value="">-- Selecciona un cliente --</option>
@@ -557,14 +557,14 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-base font-semibold text-gray-700 mb-2">
                     Fecha *
                   </label>
                   <input
                     type="date"
                     value={formData.fecha}
                     onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
@@ -573,14 +573,14 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
 
             {/* Sección: Líneas del Albarán */}
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+              <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
                 Líneas del Albarán
               </h4>
 
               <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                   <div className="md:col-span-5">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">
                       Concepto
                     </label>
                     <input
@@ -588,11 +588,11 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                       placeholder="Descripción del servicio/producto"
                       value={nuevaLinea.concepto}
                       onChange={(e) => setNuevaLinea({ ...nuevaLinea, concepto: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">
                       Cantidad
                     </label>
                     <input
@@ -600,11 +600,11 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                       min="1"
                       value={nuevaLinea.cantidad}
                       onChange={(e) => setNuevaLinea({ ...nuevaLinea, cantidad: parseFloat(e.target.value) || 1 })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">
                       Precio Unit. (€)
                     </label>
                     <input
@@ -613,18 +613,18 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                       min="0"
                       value={nuevaLinea.precioUnitario}
                       onChange={(e) => setNuevaLinea({ ...nuevaLinea, precioUnitario: parseFloat(e.target.value) || 0 })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="0,00"
                     />
                   </div>
                   <div className="md:col-span-1">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">
                       IVA %
                     </label>
                     <select
                       value={nuevaLinea.tipoIva}
                       onChange={(e) => setNuevaLinea({ ...nuevaLinea, tipoIva: parseFloat(e.target.value) })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="0">0%</option>
                       <option value="4">4%</option>
@@ -636,7 +636,7 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                     <button
                       type="button"
                       onClick={agregarLinea}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold text-base transition-colors"
                     >
                       + Agregar
                     </button>
@@ -649,13 +649,13 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                   <table className="w-full">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Concepto</th>
-                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Cantidad</th>
-                        <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Precio Unit.</th>
-                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">IVA %</th>
-                        <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Subtotal</th>
-                        <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Total</th>
-                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Acción</th>
+                        <th className="px-4 py-3 text-left text-base font-semibold text-gray-700">Concepto</th>
+                        <th className="px-4 py-3 text-center text-base font-semibold text-gray-700">Cantidad</th>
+                        <th className="px-4 py-3 text-right text-base font-semibold text-gray-700">Precio Unit.</th>
+                        <th className="px-4 py-3 text-center text-base font-semibold text-gray-700">IVA %</th>
+                        <th className="px-4 py-3 text-right text-base font-semibold text-gray-700">Subtotal</th>
+                        <th className="px-4 py-3 text-right text-base font-semibold text-gray-700">Total</th>
+                        <th className="px-4 py-3 text-center text-base font-semibold text-gray-700">Acción</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -668,7 +668,7 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                                 type="text"
                                 value={linea.concepto}
                                 onChange={(e) => updateLinea(index, 'concepto', e.target.value)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                className="w-full px-4 py-2 border-2 border-gray-300 rounded text-base"
                                 placeholder="Concepto"
                                 required
                               />
@@ -678,7 +678,7 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                                 type="number"
                                 value={linea.cantidad}
                                 onChange={(e) => updateLinea(index, 'cantidad', parseFloat(e.target.value) || 1)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-center"
+                                className="w-full px-4 py-2 border-2 border-gray-300 rounded text-base text-center"
                                 min="1"
                                 required
                               />
@@ -689,7 +689,7 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                                 step="0.01"
                                 value={linea.precioUnitario}
                                 onChange={(e) => updateLinea(index, 'precioUnitario', parseFloat(e.target.value) || 0)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                className="w-full px-4 py-2 border-2 border-gray-300 rounded text-base text-right"
                                 min="0"
                                 required
                               />
@@ -698,7 +698,7 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                               <select
                                 value={linea.tipoIva}
                                 onChange={(e) => updateLinea(index, 'tipoIva', parseFloat(e.target.value))}
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-center"
+                                className="w-full px-4 py-2 border-2 border-gray-300 rounded text-base text-center"
                               >
                                 <option value="0">0%</option>
                                 <option value="4">4%</option>
@@ -706,14 +706,14 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
                                 <option value="21">21%</option>
                               </select>
                             </td>
-                            <td className="px-4 py-3 text-sm text-right">{subtotal.toFixed(2)} €</td>
-                            <td className="px-4 py-3 text-sm text-right font-semibold">{total.toFixed(2)} €</td>
+                            <td className="px-4 py-3 text-base text-right">{subtotal.toFixed(2)} €</td>
+                            <td className="px-4 py-3 text-base text-right font-semibold">{total.toFixed(2)} €</td>
                             <td className="px-4 py-3 text-center">
                               <button
                                 type="button"
                                 onClick={() => removeLinea(index)}
                                 disabled={formData.lineas.length === 1}
-                                className="text-red-600 hover:text-red-800 font-semibold text-sm disabled:opacity-30"
+                                className="text-red-600 hover:text-red-800 font-semibold text-base disabled:opacity-30"
                               >
                                 Eliminar
                               </button>
@@ -733,40 +733,40 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
 
             {/* Sección: Totales */}
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+              <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
                 Totales (Calculados Automáticamente)
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-base font-semibold text-gray-700 mb-2">
                     Base Imponible
                   </label>
                   <input
                     type="text"
                     value={`${totales.base.toFixed(2)} €`}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 font-semibold"
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 bg-gray-50 font-semibold text-base"
                     readOnly
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-base font-semibold text-gray-700 mb-2">
                     IVA
                   </label>
                   <input
                     type="text"
                     value={`${totales.iva.toFixed(2)} €`}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 font-semibold"
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 bg-gray-50 font-semibold text-base"
                     readOnly
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-base font-semibold text-gray-700 mb-2">
                     Total Albarán
                   </label>
                   <input
                     type="text"
                     value={`${totales.total.toFixed(2)} €`}
-                    className="w-full border-2 border-green-500 rounded-lg px-4 py-2.5 bg-green-50 font-bold text-green-700"
+                    className="w-full border-2 border-green-500 rounded-lg px-4 py-3 bg-green-50 font-bold text-lg text-green-700"
                     readOnly
                   />
                 </div>
@@ -776,11 +776,11 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
         </div>
 
         {/* Footer con botones */}
-        <div className="px-8 py-5 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+        <div className="px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+            className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
           >
             Cancelar
           </button>
@@ -788,7 +788,7 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
             type="submit"
             onClick={handleSubmit}
             disabled={loading}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg disabled:opacity-50"
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg disabled:opacity-50"
           >
             {loading ? 'Guardando...' : (mode === 'edit' ? 'Actualizar Albarán' : 'Crear Albarán')}
           </button>

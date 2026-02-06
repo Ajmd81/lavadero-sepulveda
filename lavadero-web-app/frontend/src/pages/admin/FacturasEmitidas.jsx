@@ -986,25 +986,25 @@ const FacturasEmitidas = () => {
       {/* Modal para crear/editar factura */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col">
+          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
             {/* Header del modal */}
-            <div className="px-8 py-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
-              <h3 className="text-2xl font-bold text-gray-900">
+            <div className="px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+              <h3 className="text-3xl font-bold text-gray-900">
                 {editandoFactura ? 'Editar Factura Emitida' : 'Nueva Factura Emitida'}
               </h3>
             </div>
 
             {/* Contenido con scroll */}
-            <div className="px-8 py-6 overflow-y-auto flex-1">
-              <form onSubmit={guardarFactura} className="space-y-6">
+            <div className="px-10 py-8 overflow-y-auto flex-1">
+              <form onSubmit={guardarFactura} className="space-y-8">
                 {/* Sección: Datos de la Factura */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
                     Datos de la Factura
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Nº Factura*
                       </label>
                       <input
@@ -1012,7 +1012,7 @@ const FacturasEmitidas = () => {
                         name="numero"
                         value={formData.numero}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:border-transparent"
                         placeholder="Ej: 2026/001"
                         required
                       />

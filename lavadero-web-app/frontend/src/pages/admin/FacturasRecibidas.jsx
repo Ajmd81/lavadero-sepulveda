@@ -566,22 +566,22 @@ const FacturasRecibidas = () => {
       {/* Modal */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col">
-            <div className="px-8 py-5 border-b border-gray-200 bg-linear-to-r from-orange-50 to-orange-100">
-              <h3 className="text-2xl font-bold text-gray-900">
+          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
+            <div className="px-10 py-6 border-b border-gray-200 bg-linear-to-r from-orange-50 to-orange-100">
+              <h3 className="text-3xl font-bold text-gray-900">
                 {editandoFactura ? 'Editar Factura Recibida' : 'Nueva Factura Recibida'}
               </h3>
             </div>
 
-            <div className="px-8 py-6 overflow-y-auto flex-1">
-              <form onSubmit={guardarFactura} className="space-y-6">
+            <div className="px-10 py-8 overflow-y-auto flex-1">
+              <form onSubmit={guardarFactura} className="space-y-8">
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-orange-300">
                     Datos de la Factura
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Nº Factura*
                       </label>
                       <input
@@ -589,13 +589,13 @@ const FacturasRecibidas = () => {
                         name="numeroFactura"
                         value={formData.numeroFactura}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:border-transparent"
                         placeholder="Ej: FAC-2026-001"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Fecha*
                       </label>
                       <input
@@ -603,12 +603,12 @@ const FacturasRecibidas = () => {
                         name="fechaFactura"
                         value={formData.fechaFactura}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Vencimiento
                       </label>
                       <input
@@ -616,26 +616,26 @@ const FacturasRecibidas = () => {
                         name="fechaVencimiento"
                         value={formData.fechaVencimiento}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-orange-300">
                     Datos del Proveedor
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Proveedor*
                       </label>
                       <select
                         name="proveedorId"
                         value={formData.proveedorId}
                         onChange={handleProveedorChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         required
                       >
                         <option value="">-- Selecciona un proveedor --</option>
@@ -647,25 +647,25 @@ const FacturasRecibidas = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         NIF/CIF (autocompletado)
                       </label>
                       <input
                         type="text"
                         value={formData.proveedorNif}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-gray-50"
                         readOnly
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Categoría
                       </label>
                       <select
                         name="categoria"
                         value={formData.categoria}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       >
                         <option value="">-- Selecciona una categoría --</option>
                         {categorias.map(cat => (
@@ -680,14 +680,14 @@ const FacturasRecibidas = () => {
 
                 {/* Sección: Líneas de Factura */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-orange-300">
                     Líneas de Factura
                   </h4>
 
-                  <div className="bg-orange-50 p-4 rounded-lg mb-4">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                  <div className="bg-orange-50 p-5 rounded-lg mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                       <div className="md:col-span-4">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        <label className="block text-base font-semibold text-gray-700 mb-2">
                           Concepto
                         </label>
                         <input
@@ -695,12 +695,12 @@ const FacturasRecibidas = () => {
                           name="concepto"
                           value={nuevaLinea.concepto}
                           onChange={handleNuevaLineaChange}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                          className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                           placeholder="Descripción del servicio/producto"
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        <label className="block text-base font-semibold text-gray-700 mb-2">
                           Cantidad
                         </label>
                         <input
@@ -710,11 +710,11 @@ const FacturasRecibidas = () => {
                           onChange={handleNuevaLineaChange}
                           step="0.01"
                           min="1"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                          className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        <label className="block text-base font-semibold text-gray-700 mb-2">
                           P. Unitario (€)
                         </label>
                         <input
@@ -723,19 +723,19 @@ const FacturasRecibidas = () => {
                           value={nuevaLinea.precioUnitario}
                           onChange={handleNuevaLineaChange}
                           step="0.01"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                          className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                           placeholder="0,00"
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        <label className="block text-base font-semibold text-gray-700 mb-2">
                           IVA (%)
                         </label>
                         <select
                           name="tipoIva"
                           value={nuevaLinea.tipoIva}
                           onChange={handleNuevaLineaChange}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                          className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         >
                           <option value="0">0%</option>
                           <option value="4">4%</option>
@@ -747,7 +747,7 @@ const FacturasRecibidas = () => {
                         <button
                           type="button"
                           onClick={agregarLinea}
-                          className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg font-semibold text-base transition-colors"
                         >
                           + Agregar
                         </button>
@@ -760,27 +760,27 @@ const FacturasRecibidas = () => {
                       <table className="w-full">
                         <thead className="bg-gray-100">
                           <tr>
-                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Concepto</th>
-                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Cantidad</th>
-                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">P. Unit.</th>
-                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">IVA %</th>
-                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Subtotal</th>
-                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Acción</th>
+                            <th className="px-4 py-3 text-left text-base font-semibold text-gray-700">Concepto</th>
+                            <th className="px-4 py-3 text-center text-base font-semibold text-gray-700">Cantidad</th>
+                            <th className="px-4 py-3 text-right text-base font-semibold text-gray-700">P. Unit.</th>
+                            <th className="px-4 py-3 text-center text-base font-semibold text-gray-700">IVA %</th>
+                            <th className="px-4 py-3 text-right text-base font-semibold text-gray-700">Subtotal</th>
+                            <th className="px-4 py-3 text-center text-base font-semibold text-gray-700">Acción</th>
                           </tr>
                         </thead>
                         <tbody>
                           {formData.lineas.map((linea) => (
                             <tr key={linea.id} className="border-t border-gray-200 hover:bg-gray-50">
-                              <td className="px-4 py-3 text-sm">{linea.concepto}</td>
-                              <td className="px-4 py-3 text-sm text-center">{linea.cantidad}</td>
-                              <td className="px-4 py-3 text-sm text-right">{linea.precioUnitario.toFixed(2)} €</td>
-                              <td className="px-4 py-3 text-sm text-center font-semibold text-orange-600">{(linea.tipoIva ?? 21).toFixed(2)} %</td>
-                              <td className="px-4 py-3 text-sm text-right font-semibold">{linea.subtotal.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-base">{linea.concepto}</td>
+                              <td className="px-4 py-3 text-base text-center">{linea.cantidad}</td>
+                              <td className="px-4 py-3 text-base text-right">{linea.precioUnitario.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-base text-center font-semibold text-orange-600">{(linea.tipoIva ?? 21).toFixed(2)} %</td>
+                              <td className="px-4 py-3 text-base text-right font-semibold">{linea.subtotal.toFixed(2)} €</td>
                               <td className="px-4 py-3 text-center">
                                 <button
                                   type="button"
                                   onClick={() => eliminarLinea(linea.id)}
-                                  className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                                  className="text-red-600 hover:text-red-800 font-semibold text-base"
                                 >
                                   Eliminar
                                 </button>
@@ -798,54 +798,54 @@ const FacturasRecibidas = () => {
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-orange-300">
                     Importes (Calculados Automáticamente)
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Base Imponible
                       </label>
                       <input
                         type="text"
                         value={formData.baseImponible ? `${formData.baseImponible} €` : '0,00 €'}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-gray-50"
                         readOnly
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         IVA de importación
                       </label>
                       <input
                         type="text"
                         value={formData.cuotaIva ? `${formData.cuotaIva} €` : '0,00 €'}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base bg-gray-50"
                         readOnly
                       />
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <div className="mt-5">
+                    <label className="block text-base font-semibold text-gray-700 mb-2">
                       Factura total
                     </label>
                     <input
                       type="text"
                       value={formData.total ? `${formData.total} €` : '0,00 €'}
-                      className="w-full border border-2 border-green-500 rounded-lg px-4 py-3 bg-green-50 text-lg font-bold"
+                      className="w-full border-2 border-green-500 rounded-lg px-4 py-3 bg-green-50 text-lg font-bold text-green-700"
                       readOnly
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Estado
                       </label>
                       <select
                         name="estado"
                         value={formData.estado}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       >
                         <option value="PENDIENTE">Pendiente</option>
                         <option value="PAGADA">Pagada</option>
@@ -881,7 +881,7 @@ const FacturasRecibidas = () => {
                     name="notas"
                     value={formData.notas}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     rows="3"
                     placeholder="Notas adicionales"
                   />
@@ -889,18 +889,18 @@ const FacturasRecibidas = () => {
               </form>
             </div>
 
-            <div className="px-8 py-5 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <div className="px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
               <button
                 type="button"
                 onClick={cerrarModal}
-                className="px-6 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 onClick={guardarFactura}
-                className="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
+                className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white text-base font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg"
               >
                 {editandoFactura ? 'Actualizar Factura' : 'Crear Factura'}
               </button>

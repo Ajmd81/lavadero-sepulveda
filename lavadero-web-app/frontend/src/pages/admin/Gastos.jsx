@@ -333,22 +333,22 @@ const Gastos = () => {
       {/* Modal */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col">
-            <div className="px-8 py-5 border-b border-gray-200 bg-linear-to-r from-purple-50 to-purple-100">
-              <h3 className="text-2xl font-bold text-gray-900">
+          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
+            <div className="px-10 py-6 border-b border-gray-200 bg-linear-to-r from-purple-50 to-purple-100">
+              <h3 className="text-3xl font-bold text-gray-900">
                 {editandoGasto ? 'Editar Gasto' : 'Nuevo Gasto'}
               </h3>
             </div>
 
-            <div className="px-8 py-6 overflow-y-auto flex-1">
-              <form onSubmit={guardarGasto} className="space-y-6">
+            <div className="px-10 py-8 overflow-y-auto flex-1">
+              <form onSubmit={guardarGasto} className="space-y-8">
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-purple-300">
                     Información del Gasto
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Concepto*
                       </label>
                       <input
@@ -356,13 +356,13 @@ const Gastos = () => {
                         name="concepto"
                         value={formData.concepto}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Descripción del gasto"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Fecha*
                       </label>
                       <input
@@ -370,19 +370,19 @@ const Gastos = () => {
                         name="fecha"
                         value={formData.fecha}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Categoría
                       </label>
                       <select
                         name="categoria"
                         value={formData.categoria}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       >
                         <option value="">-- Selecciona una categoría --</option>
                         {categorias.map((cat) => (
@@ -393,7 +393,7 @@ const Gastos = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Importe*
                       </label>
                       <input
@@ -402,20 +402,20 @@ const Gastos = () => {
                         value={formData.importe}
                         onChange={handleInputChange}
                         step="0.01"
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         placeholder="0,00"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Método Pago
                       </label>
                       <select
                         name="metodoPago"
                         value={formData.metodoPago}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       >
                         <option value="EFECTIVO">Efectivo</option>
                         <option value="TARJETA">Tarjeta</option>
@@ -432,7 +432,7 @@ const Gastos = () => {
                           onChange={handleInputChange}
                           className="w-5 h-5 rounded"
                         />
-                        <span className="text-sm font-semibold text-gray-700">Pagado</span>
+                        <span className="text-base font-semibold text-gray-700">Pagado</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -442,21 +442,21 @@ const Gastos = () => {
                           onChange={handleInputChange}
                           className="w-5 h-5 rounded"
                         />
-                        <span className="text-sm font-semibold text-gray-700">Recurrente</span>
+                        <span className="text-base font-semibold text-gray-700">Recurrente</span>
                       </label>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-base font-semibold text-gray-700 mb-2">
                     Notas
                   </label>
                   <textarea
                     name="notas"
                     value={formData.notas}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     rows="3"
                     placeholder="Notas adicionales"
                   />
@@ -464,18 +464,18 @@ const Gastos = () => {
               </form>
             </div>
 
-            <div className="px-8 py-5 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <div className="px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
               <button
                 type="button"
                 onClick={cerrarModal}
-                className="px-6 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 onClick={guardarGasto}
-                className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white text-base font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg"
               >
                 {editandoGasto ? 'Actualizar Gasto' : 'Crear Gasto'}
               </button>
