@@ -1,5 +1,7 @@
 package com.lavaderosepulveda.app.config;
 
+import com.lavaderosepulveda.app.model.Usuario;
+import com.lavaderosepulveda.app.repository.UsuarioRepository;
 import com.lavaderosepulveda.app.model.VehicleCategory;
 import com.lavaderosepulveda.app.model.VehicleModel;
 import com.lavaderosepulveda.app.repository.VehicleCategoryRepository;
@@ -7,7 +9,9 @@ import com.lavaderosepulveda.app.repository.VehicleModelRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +28,37 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private VehicleModelRepository modelRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Value("${app.admin.username:admin}")
+    private String adminUsername;
+
+    @Value("${app.admin.password:admin123}")
+    private String adminPassword;
+
     @Override
     @Transactional
     public void run(String... args) throws Exception {
         try {
+            // ✅ MIGRAR USUARIO
+            if (usuarioRepository.count() == 0) {
+                logger.info("🔄 Migrando usuario inicial a base de datos...");
+                Usuario admin = new Usuario();
+                admin.setUsername(adminUsername);
+                admin.setNombreCompleto("Administrador Principal");
+                admin.setPassword(passwordEncoder.encode(adminPassword));
+                admin.setEmail("admin@lavaderosepulveda.com");
+                admin.setActivo(true);
+                usuarioRepository.save(admin);
+                
+                logger.info("✅ Usuario migrado: {}", adminUsername);
+                logger.warn("⚠️  IMPORTANTE: Cambia tu usuario y contraseña desde la interfaz web");
+                logger.warn("⚠️  Luego elimina app.admin.* del application.properties");
+            }
             if (categoryRepository.count() == 0) {
                 logger.info("Iniciando población de base de datos con categorías y modelos de vehículos...");
                 populateDatabase();

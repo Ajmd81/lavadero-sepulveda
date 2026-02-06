@@ -3,62 +3,112 @@ package com.lavaderosepulveda.app.controller;
 import com.lavaderosepulveda.app.dto.LoginRequest;
 import com.lavaderosepulveda.app.dto.LoginResponse;
 import com.lavaderosepulveda.app.dto.UserDTO;
-import org.springframework.beans.factory.annotation.Value;
+import com.lavaderosepulveda.app.model.Usuario;
+import com.lavaderosepulveda.app.repository.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    @Value("${app.admin.username:admin}")
-    private String adminUsername;
-
-    @Value("${app.admin.password:admin123}")
-    private String adminPassword;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(request.getUsername());
         
-        System.out.println("=================================");
-        System.out.println("INTENTO DE LOGIN:");
-        System.out.println("Usuario recibido: " + request.getUsername());
-        System.out.println("Usuario esperado: " + adminUsername);
-        System.out.println("=================================");
-        
-        // Validar credenciales contra las variables de entorno
-        if (adminUsername.equals(request.getUsername()) && 
-            adminPassword.equals(request.getPassword())) {
-            
-            UserDTO user = new UserDTO();
-            user.setUsername(adminUsername);
-            user.setNombre("Administrador");
-            user.setRole("ADMIN");
-            
-            LoginResponse response = new LoginResponse();
-            response.setToken("Bearer-token-" + System.currentTimeMillis());
-            response.setUser(user);
-            
-            System.out.println("✅ Login exitoso para: " + adminUsername);
-            
-            return ResponseEntity.ok(response);
+        if (usuarioOpt.isEmpty() || !usuarioOpt.get().getActivo()) {
+            return ResponseEntity.status(401).body("Credenciales inválidas");
         }
         
-        System.out.println("❌ Login fallido - Credenciales incorrectas");
-        return ResponseEntity.status(401).body("Credenciales inválidas");
+        Usuario usuario = usuarioOpt.get();
+        
+        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
+            return ResponseEntity.status(401).body("Credenciales inválidas");
+        }
+        
+        // Actualizar último acceso
+        usuario.setUltimoAcceso(LocalDateTime.now());
+        usuarioRepository.save(usuario);
+        
+        UserDTO user = new UserDTO();
+        user.setUsername(usuario.getUsername());
+        user.setNombre(usuario.getNombreCompleto());
+        user.setRole("ADMIN");
+        
+        LoginResponse response = new LoginResponse();
+        response.setToken("Bearer-token-" + System.currentTimeMillis());
+        response.setUser(user);
+        
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/verify")
     public ResponseEntity<?> verifyToken(@RequestHeader(value = "Authorization", required = false) String token) {
         if (token != null && token.startsWith("Bearer")) {
+            // En producción usarías JWT real
             UserDTO user = new UserDTO();
-            user.setUsername(adminUsername);
+            user.setUsername("admin");
             user.setNombre("Administrador");
             user.setRole("ADMIN");
-            
             return ResponseEntity.ok(user);
         }
-        
         return ResponseEntity.status(401).body("Token inválido");
+    }
+    
+    // Cambiar username
+    @PutMapping("/perfil/username")
+    public ResponseEntity<?> cambiarUsername(@RequestBody Map<String, String> payload) {
+        String currentUsername = payload.get("currentUsername");
+        String nuevoUsername = payload.get("nuevoUsername");
+        
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(currentUsername);
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+        }
+        
+        if (usuarioRepository.findByUsername(nuevoUsername).isPresent()) {
+            return ResponseEntity.status(400).body(Map.of("error", "El username ya existe"));
+        }
+        
+        Usuario usuario = usuarioOpt.get();
+        usuario.setUsername(nuevoUsername);
+        usuarioRepository.save(usuario);
+        
+        return ResponseEntity.ok(Map.of("message", "Username actualizado"));
+    }
+    
+    // Cambiar password
+    @PutMapping("/perfil/password")
+    public ResponseEntity<?> cambiarPassword(@RequestBody Map<String, String> payload) {
+        String username = payload.get("username");
+        String passwordActual = payload.get("passwordActual");
+        String passwordNueva = payload.get("passwordNueva");
+        
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+        }
+        
+        Usuario usuario = usuarioOpt.get();
+        
+        if (!passwordEncoder.matches(passwordActual, usuario.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("error", "Contraseña actual incorrecta"));
+        }
+        
+        usuario.setPassword(passwordEncoder.encode(passwordNueva));
+        usuarioRepository.save(usuario);
+        
+        return ResponseEntity.ok(Map.of("message", "Contraseña actualizada"));
     }
 }
