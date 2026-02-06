@@ -342,6 +342,24 @@ const Citas = () => {
     }
   };
 
+  const esCitaDeHoy = (fecha) => {
+    const hoy = new Date();
+    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+
+    let fechaCita = fecha;
+
+    if (fechaCita && fechaCita.includes('/')) {
+      const [d, m, y] = fechaCita.split('/');
+      fechaCita = `${y}-${m}-${d}`;
+    }
+
+    if (fechaCita) {
+      fechaCita = fechaCita.split('T')[0];
+    }
+
+    return fechaCita === hoyStr;
+  };
+
   const citasHoy = () => {
     const hoy = new Date();
     const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
@@ -434,7 +452,7 @@ const Citas = () => {
                 </thead>
                 <tbody>
                   {citas.map((cita) => (
-                    <tr key={cita.id} className="hover:bg-gray-50">
+                    <tr key={cita.id} className={`${esCitaDeHoy(cita.fecha) ? 'bg-blue-100 hover:bg-blue-200' : 'hover:bg-gray-50'}`}>
                       <td className="border border-gray-300 px-4 py-2">{cita.nombre}</td>
                       <td className="border border-gray-300 px-4 py-2">{cita.telefono}</td>
                       <td className="border border-gray-300 px-4 py-2">
