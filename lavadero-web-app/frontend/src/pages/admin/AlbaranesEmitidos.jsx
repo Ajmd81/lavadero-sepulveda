@@ -8,7 +8,6 @@ import {
 } from 'react-icons/fi';
 
 const AlbaranesEmitidos = () => {
-  
   const [albaranes, setAlbaranes] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [filteredAlbaranes, setFilteredAlbaranes] = useState([]);
@@ -19,7 +18,7 @@ const AlbaranesEmitidos = () => {
   const [clienteFilter, setClienteFilter] = useState('');
   
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('create'); // 'create' | 'edit'
+  const [modalMode, setModalMode] = useState('create');
   const [currentAlbaran, setCurrentAlbaran] = useState(null);
   
   const [showFacturarModal, setShowFacturarModal] = useState(false);
@@ -136,7 +135,6 @@ const AlbaranesEmitidos = () => {
       return;
     }
     
-    // Aquí integrarías con el módulo de facturas
     alert(`Se van a facturar ${selectedAlbaranes.length} albaranes. (Funcionalidad pendiente de integrar con módulo de facturas)`);
     setShowFacturarModal(false);
   };
@@ -162,7 +160,14 @@ const AlbaranesEmitidos = () => {
   const clientesConAlbaranes = [...new Set(albaranesPendientesFacturar.map(a => a.clienteId))];
 
   if (loading) {
-    return <div className="loading">Cargando albaranes...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando albaranes...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -382,7 +387,6 @@ const AlbaranesEmitidos = () => {
       {/* Modal Facturar */}
       {showFacturarModal && (
         <FacturarAlbaranesModal
-          clienteId={clienteFacturar}
           albaranes={albaranes.filter(a => a.clienteId === parseInt(clienteFacturar) && a.estado === 'ENTREGADO')}
           selectedAlbaranes={selectedAlbaranes}
           onToggle={toggleAlbaranSelection}
@@ -404,12 +408,25 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
     ]
   });
   const [loading, setLoading] = useState(false);
+  
+  // Estado temporal para nueva línea
+  const [nuevaLinea, setNuevaLinea] = useState({
+    concepto: '',
+    cantidad: 1,
+    precioUnitario: 0,
+    tipoIva: 21
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.clienteId) {
       alert('Selecciona un cliente');
+      return;
+    }
+
+    if (formData.lineas.length === 0) {
+      alert('Debes agregar al menos una línea');
       return;
     }
 
@@ -442,15 +459,31 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
     }
   };
 
-  const addLinea = () => {
+  const agregarLinea = () => {
+    if (!nuevaLinea.concepto || nuevaLinea.precioUnitario <= 0) {
+      alert('Completa el concepto y precio unitario');
+      return;
+    }
+
     setFormData({
       ...formData,
-      lineas: [...formData.lineas, { concepto: '', cantidad: 1, precioUnitario: 0, tipoIva: 21 }]
+      lineas: [...formData.lineas, { ...nuevaLinea }]
+    });
+
+    // Reset nueva línea
+    setNuevaLinea({
+      concepto: '',
+      cantidad: 1,
+      precioUnitario: 0,
+      tipoIva: 21
     });
   };
 
   const removeLinea = (index) => {
-    if (formData.lineas.length === 1) return;
+    if (formData.lineas.length === 1) {
+      alert('Debe haber al menos una línea');
+      return;
+    }
     setFormData({
       ...formData,
       lineas: formData.lineas.filter((_, i) => i !== index)
@@ -486,164 +519,280 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
   const totales = calcularTotales();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-gray-900">
+    <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col">
+        {/* Header del modal */}
+        <div className="px-8 py-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+          <h3 className="text-2xl font-bold text-gray-900">
             {mode === 'edit' ? 'Editar Albarán' : 'Nuevo Albarán'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <FiX size={24} />
-          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+        {/* Contenido con scroll */}
+        <div className="px-8 py-6 overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Sección: Datos del Albarán */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cliente *
-              </label>
-              <select
-                value={formData.clienteId}
-                onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Seleccionar...</option>
-                {clientes.map(c => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fecha *
-              </label>
-              <input
-                type="date"
-                value={formData.fecha}
-                onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-lg font-medium text-gray-900">Líneas del Albarán</h4>
-              <button
-                type="button"
-                onClick={addLinea}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-              >
-                <FiPlus size={16} /> Añadir línea
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {formData.lineas.map((linea, index) => {
-                const { total } = calcularLinea(linea);
-                return (
-                  <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 bg-gray-50 rounded-lg">
-                    <div className="col-span-4">
-                      <input
-                        type="text"
-                        placeholder="Concepto"
-                        value={linea.concepto}
-                        onChange={(e) => updateLinea(index, 'concepto', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <input
-                        type="number"
-                        placeholder="Cant."
-                        value={linea.cantidad}
-                        onChange={(e) => updateLinea(index, 'cantidad', parseFloat(e.target.value) || 1)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        min="1"
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <input
-                        type="number"
-                        placeholder="Precio"
-                        value={linea.precioUnitario}
-                        onChange={(e) => updateLinea(index, 'precioUnitario', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        step="0.01"
-                        min="0"
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <select
-                        value={linea.tipoIva}
-                        onChange={(e) => updateLinea(index, 'tipoIva', parseFloat(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      >
-                        <option value="0">0%</option>
-                        <option value="4">4%</option>
-                        <option value="10">10%</option>
-                        <option value="21">21%</option>
-                      </select>
-                    </div>
-                    <div className="col-span-1 text-right text-sm font-medium">
-                      {total.toFixed(2)}€
-                    </div>
-                    <div className="col-span-1 text-center">
-                      <button
-                        type="button"
-                        onClick={() => removeLinea(index)}
-                        disabled={formData.lineas.length === 1}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-30"
-                      >
-                        <FiTrash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="border-t border-gray-200 pt-4">
-            <div className="flex justify-end space-y-2">
-              <div className="text-right space-y-1">
-                <div className="text-sm text-gray-600">
-                  Base: <span className="font-medium">{totales.base.toFixed(2)}€</span>
+              <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                Datos del Albarán
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Cliente *
+                  </label>
+                  <select
+                    value={formData.clienteId}
+                    onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">-- Selecciona un cliente --</option>
+                    {clientes.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre} {c.apellidos && `${c.apellidos}`} {c.nif && `(${c.nif})`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="text-sm text-gray-600">
-                  IVA: <span className="font-medium">{totales.iva.toFixed(2)}€</span>
-                </div>
-                <div className="text-lg font-bold text-gray-900">
-                  Total: {totales.total.toFixed(2)}€
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Fecha *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.fecha}
+                    onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
+            {/* Sección: Líneas del Albarán */}
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                Líneas del Albarán
+              </h4>
+
+              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                  <div className="md:col-span-5">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Concepto
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Descripción del servicio/producto"
+                      value={nuevaLinea.concepto}
+                      onChange={(e) => setNuevaLinea({ ...nuevaLinea, concepto: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Cantidad
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={nuevaLinea.cantidad}
+                      onChange={(e) => setNuevaLinea({ ...nuevaLinea, cantidad: parseFloat(e.target.value) || 1 })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Precio Unit. (€)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={nuevaLinea.precioUnitario}
+                      onChange={(e) => setNuevaLinea({ ...nuevaLinea, precioUnitario: parseFloat(e.target.value) || 0 })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      IVA %
+                    </label>
+                    <select
+                      value={nuevaLinea.tipoIva}
+                      onChange={(e) => setNuevaLinea({ ...nuevaLinea, tipoIva: parseFloat(e.target.value) })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="0">0%</option>
+                      <option value="4">4%</option>
+                      <option value="10">10%</option>
+                      <option value="21">21%</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <button
+                      type="button"
+                      onClick={agregarLinea}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                    >
+                      + Agregar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {formData.lineas.length > 0 ? (
+                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Concepto</th>
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Cantidad</th>
+                        <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Precio Unit.</th>
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">IVA %</th>
+                        <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Subtotal</th>
+                        <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Total</th>
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.lineas.map((linea, index) => {
+                        const { subtotal, total } = calcularLinea(linea);
+                        return (
+                          <tr key={index} className="border-t border-gray-200 hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <input
+                                type="text"
+                                value={linea.concepto}
+                                onChange={(e) => updateLinea(index, 'concepto', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                placeholder="Concepto"
+                                required
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                value={linea.cantidad}
+                                onChange={(e) => updateLinea(index, 'cantidad', parseFloat(e.target.value) || 1)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-center"
+                                min="1"
+                                required
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={linea.precioUnitario}
+                                onChange={(e) => updateLinea(index, 'precioUnitario', parseFloat(e.target.value) || 0)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                min="0"
+                                required
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <select
+                                value={linea.tipoIva}
+                                onChange={(e) => updateLinea(index, 'tipoIva', parseFloat(e.target.value))}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-center"
+                              >
+                                <option value="0">0%</option>
+                                <option value="4">4%</option>
+                                <option value="10">10%</option>
+                                <option value="21">21%</option>
+                              </select>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right">{subtotal.toFixed(2)} €</td>
+                            <td className="px-4 py-3 text-sm text-right font-semibold">{total.toFixed(2)} €</td>
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => removeLinea(index)}
+                                disabled={formData.lineas.length === 1}
+                                className="text-red-600 hover:text-red-800 font-semibold text-sm disabled:opacity-30"
+                              >
+                                Eliminar
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <p className="text-gray-500">No hay líneas agregadas. Usa el formulario de arriba para agregar líneas.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Sección: Totales */}
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">
+                Totales (Calculados Automáticamente)
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Base Imponible
+                  </label>
+                  <input
+                    type="text"
+                    value={`${totales.base.toFixed(2)} €`}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 font-semibold"
+                    readOnly
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    IVA
+                  </label>
+                  <input
+                    type="text"
+                    value={`${totales.iva.toFixed(2)} €`}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 font-semibold"
+                    readOnly
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Total Albarán
+                  </label>
+                  <input
+                    type="text"
+                    value={`${totales.total.toFixed(2)} €`}
+                    className="w-full border-2 border-green-500 rounded-lg px-4 py-2.5 bg-green-50 font-bold text-green-700"
+                    readOnly
+                  />
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* Footer con botones */}
+        <div className="px-8 py-5 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg disabled:opacity-50"
+          >
+            {loading ? 'Guardando...' : (mode === 'edit' ? 'Actualizar Albarán' : 'Crear Albarán')}
+          </button>
+        </div>
       </div>
     </div>
   );
