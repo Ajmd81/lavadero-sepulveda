@@ -74,36 +74,44 @@ public class AdminController {
      * Listado de citas filtradas por estado
      */
     @GetMapping("/citas-por-estado")
-    public String citasPorEstado(@RequestParam(required = false) EstadoCita estado, Model model) {
+    public String citasPorEstado(@RequestParam(required = false) String estado, Model model) {
         try {
             List<Cita> todasLasCitas = citaService.obtenerTodasLasCitas();
+            EstadoCita estadoSeleccionado = null;
+
+            // Convertir el parámetro String a EstadoCita si no es nulo
+            if (estado != null && !estado.isEmpty()) {
+                try {
+                    estadoSeleccionado = EstadoCita.valueOf(estado.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Estado inválido proporcionado: {}", estado);
+                    model.addAttribute("error", "Estado no válido");
+                    return "admin/listado-citas";
+                }
+            }
+
+            // Variable final para usar en lambda
+            final EstadoCita estadoFinal = estadoSeleccionado;
 
             Map<EstadoCita, List<Cita>> citasPorEstado;
-
-            if (estado != null) {
+            if (estadoFinal != null) {
                 // Filtrar por estado específico
                 citasPorEstado = todasLasCitas.stream()
-                        .filter(cita -> cita.getEstado() == estado)
-                        .collect(Collectors.<Cita, EstadoCita, List<Cita>>groupingBy(
-                            Cita::getEstado, 
-                            HashMap::new,
-                            Collectors.toList()));
+                        .filter(cita -> cita.getEstado() == estadoFinal)
+                        .collect(Collectors.groupingBy(Cita::getEstado, Collectors.toList()));
             } else {
                 // Mostrar todas agrupadas por estado
                 citasPorEstado = todasLasCitas.stream()
-                        .collect(Collectors.<Cita, EstadoCita, List<Cita>>groupingBy(
-                            Cita::getEstado, 
-                            HashMap::new,
-                            Collectors.toList()));
+                        .collect(Collectors.groupingBy(Cita::getEstado, Collectors.toList()));
             }
 
             model.addAttribute("citasPorEstado", citasPorEstado);
-            model.addAttribute("estadoSeleccionado", estado);
+            model.addAttribute("estadoSeleccionado", estadoFinal);
 
             return "admin/citas-por-estado";
         } catch (Exception e) {
             logger.error("Error al cargar citas por estado: {}", e.getMessage(), e);
-            model.addAttribute("error", "Error al cargar las citas por estado");
+            model.addAttribute("error", "Error al cargar las citas por estado: " + e.getMessage());
             return "admin/listado-citas";
         }
     }
