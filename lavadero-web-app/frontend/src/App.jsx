@@ -13,7 +13,6 @@ import Citas from './pages/admin/Citas';
 import Calendario from './pages/admin/Calendario';
 import Facturacion from './pages/admin/Facturacion';
 import Proveedores from './pages/admin/Proveedores';
-import Gastos from './pages/admin/Gastos';
 import Contabilidad from './pages/admin/Contabilidad';
 import ResumenFinanciero from './pages/admin/ResumenFinanciero';
 import ModelosFiscales from './pages/admin/ModelosFiscales';
@@ -47,7 +46,6 @@ function App() {
               <Route path="calendario" element={<Calendario />} />
               <Route path="facturacion" element={<Facturacion />} />
               <Route path="proveedores" element={<Proveedores />} />
-              <Route path="gastos" element={<Gastos />} />
               <Route path="contabilidad" element={<Contabilidad />} />
               <Route path="resumen-financiero" element={<ResumenFinanciero />} />
               <Route path="modelos-fiscales" element={<ModelosFiscales />} />
