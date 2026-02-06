@@ -21,10 +21,10 @@ const AdminLayout = () => {
     { icon: '/assets/icons/calendario.png?v=1', label: 'Calendario', path: '/admin/calendario' },
     { icon: '/assets/icons/facturacion.png', label: 'Facturación', path: '/admin/facturacion' },
     { icon: '/assets/icons/proveedor.png', label: 'Proveedores', path: '/admin/proveedores' },
-    { icon: '/assets/icons/invoice.png', label: 'Gastos', path: '/admin/gastos' },
     { icon: '/assets/icons/contabilidad.png', label: 'Contabilidad', path: '/admin/contabilidad' },
     { icon: '/assets/icons/estado-financiero.png', label: 'Resumen financiero', path: '/admin/resumen-financiero' },
     { icon: '/assets/icons/modeloFiscal.png', label: 'Modelos fiscales', path: '/admin/modelos-fiscales' },
+    { icon: '/assets/icons/perfil.png', label: 'Mi Perfil', path: '/admin/mi-perfil' },
   ];
 
   const isActive = (path) => {
