@@ -44,29 +44,39 @@ const Citas = () => {
     if (formData.fecha) {
       cargarHorariosDisponibles(formData.fecha);
     } else {
-      setHorariosDisponibles(todosLosHorarios);
+      // Usar horarios por defecto si no hay fecha seleccionada
+      const horariosAMostrar = todosLosHorarios && todosLosHorarios.length > 0 ? todosLosHorarios : horariosPorDefecto;
+      setHorariosDisponibles(horariosAMostrar);
     }
-  }, [formData.fecha]);
+  }, [formData.fecha, todosLosHorarios]);
+
+  // Horarios por defecto en caso de que no se carguen del backend
+  const horariosPorDefecto = [
+    '08:00', '09:00', '10:00', '11:00', '12:00', 
+    '13:00', '14:00', '15:00', '16:00', '17:00', 
+    '18:00', '19:00', '20:00'
+  ];
 
   // Cargar horarios configurados del backend
   const cargarHorariosConfigurados = async () => {
     try {
       const response = await citaService.getHorariosConfigurados();
-      if (response?.data && Array.isArray(response.data)) {
+      if (response?.data && Array.isArray(response.data) && response.data.length > 0) {
         setTodosLosHorarios(response.data);
         setHorariosDisponibles(response.data);
         console.log('Horarios configurados cargados:', response.data);
+      } else {
+        // Si la respuesta viene vacía, usar horarios por defecto
+        setTodosLosHorarios(horariosPorDefecto);
+        setHorariosDisponibles(horariosPorDefecto);
+        console.log('Usando horarios por defecto');
       }
     } catch (err) {
       console.error('Error cargando horarios configurados:', err);
       // Fallback a horarios por defecto si falla
-      const horariosFallback = [
-        '08:00', '09:00', '10:00', '11:00', '12:00', 
-        '13:00', '14:00', '15:00', '16:00', '17:00', 
-        '18:00', '19:00', '20:00'
-      ];
-      setTodosLosHorarios(horariosFallback);
-      setHorariosDisponibles(horariosFallback);
+      setTodosLosHorarios(horariosPorDefecto);
+      setHorariosDisponibles(horariosPorDefecto);
+      console.log('Usando horarios por defecto (error)');
     }
   };
 
@@ -160,7 +170,9 @@ const Citas = () => {
       modeloVehiculo: '',
       observaciones: '',
     });
-    setHorariosDisponibles(todosLosHorarios);
+    // Usar horarios por defecto si todosLosHorarios está vacío
+    const horariosAMostrar = todosLosHorarios && todosLosHorarios.length > 0 ? todosLosHorarios : horariosPorDefecto;
+    setHorariosDisponibles(horariosAMostrar);
     setShowModal(true);
   };
 
@@ -608,144 +620,189 @@ const Citas = () => {
 
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <h3 className="text-xl font-bold mb-4">
-                {editingCita ? 'Editar Cita' : 'Nueva Cita'}
-              </h3>
-              <form onSubmit={guardarCita} className="space-y-4">
-                <input
-                  type="text"
-                  name="nombre"
-                  placeholder="Nombre del cliente"
-                  value={formData.nombre}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  required
-                />
-                <input
-                  type="tel"
-                  name="telefono"
-                  placeholder="Teléfono"
-                  value={formData.telefono}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  required
-                />
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email (opcional)"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                />
+            <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
+              <div className="px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+                <h3 className="text-3xl font-bold text-gray-900">
+                  {editingCita ? 'Editar Cita' : 'Nueva Cita'}
+                </h3>
+              </div>
+              <form onSubmit={guardarCita} className="px-10 py-8 overflow-y-auto flex-1 space-y-6">
+                <div>
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
+                    Datos del Cliente
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                      <label className="block text-base font-semibold text-gray-700 mb-2">Nombre *</label>
+                      <input
+                        type="text"
+                        name="nombre"
+                        placeholder="Nombre del cliente"
+                        value={formData.nombre}
+                        onChange={handleInputChange}
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-base font-semibold text-gray-700 mb-2">Teléfono *</label>
+                      <input
+                        type="tel"
+                        name="telefono"
+                        placeholder="Teléfono"
+                        value={formData.telefono}
+                        onChange={handleInputChange}
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-base font-semibold text-gray-700 mb-2">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="Email (opcional)"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
                 
                 <div>
-                  <input
-                    type="date"
-                    name="fecha"
-                    value={formData.fecha}
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
+                    Fecha y Hora
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-base font-semibold text-gray-700 mb-2">Fecha *</label>
+                      <input
+                        type="date"
+                        name="fecha"
+                        value={formData.fecha}
+                        onChange={handleInputChange}
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                      <p className="text-sm text-gray-500 mt-2">
+                        Selecciona la fecha para ver horarios disponibles
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-base font-semibold text-gray-700 mb-2">Hora *</label>
+                      <select
+                        name="hora"
+                        value={formData.hora}
+                        onChange={handleInputChange}
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                        disabled={!formData.fecha || loadingHorarios}
+                      >
+                        <option value="">
+                          {!formData.fecha 
+                            ? 'Primero selecciona una fecha' 
+                            : loadingHorarios 
+                            ? 'Cargando horarios...' 
+                            : 'Seleccionar hora'}
+                        </option>
+                        {horariosDisponibles.map(hora => (
+                          <option key={hora} value={hora}>
+                            {hora}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.fecha && horariosDisponibles.length === 0 && !loadingHorarios && (
+                        <p className="text-sm text-red-600 mt-2">
+                          ⚠️ No hay horarios disponibles para esta fecha
+                        </p>
+                      )}
+                      {formData.fecha && horariosDisponibles.length > 0 && (
+                        <p className="text-sm text-green-600 mt-2">
+                          ✅ {horariosDisponibles.length} horario(s) disponible(s)
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
+                    Detalles del Vehículo
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-base font-semibold text-gray-700 mb-2">Tipo de Lavado *</label>
+                      <select
+                        name="tipoLavado"
+                        value={formData.tipoLavado}
+                        onChange={handleInputChange}
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">Seleccionar tipo de lavado</option>
+                        {tiposLavado.map(tipo => (
+                          <option key={tipo.id} value={tipo.id}>
+                            {tipo.descripcion} - €{tipo.precio.toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-base font-semibold text-gray-700 mb-2">Modelo del Vehículo *</label>
+                      <input
+                        type="text"
+                        name="modeloVehiculo"
+                        placeholder="Modelo del vehículo"
+                        value={formData.modeloVehiculo}
+                        onChange={handleInputChange}
+                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
+                    Observaciones
+                  </h4>
+                  <label className="block text-base font-semibold text-gray-700 mb-2">Notas Adicionales</label>
+                  <textarea
+                    name="observaciones"
+                    placeholder="Observaciones sobre la cita"
+                    value={formData.observaciones}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows="3"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Selecciona primero la fecha para ver horarios disponibles
-                  </p>
-                </div>
-
-                <div>
-                  <select
-                    name="hora"
-                    value={formData.hora}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
-                    disabled={!formData.fecha || loadingHorarios}
-                  >
-                    <option value="">
-                      {!formData.fecha 
-                        ? 'Primero selecciona una fecha' 
-                        : loadingHorarios 
-                        ? 'Cargando horarios...' 
-                        : 'Seleccionar hora'}
-                    </option>
-                    {horariosDisponibles.map(hora => (
-                      <option key={hora} value={hora}>
-                        {hora}
-                      </option>
-                    ))}
-                  </select>
-                  {formData.fecha && horariosDisponibles.length === 0 && !loadingHorarios && (
-                    <p className="text-xs text-red-600 mt-1">
-                      ⚠️ No hay horarios disponibles para esta fecha
-                    </p>
-                  )}
-                  {formData.fecha && horariosDisponibles.length > 0 && (
-                    <p className="text-xs text-green-600 mt-1">
-                      ✅ {horariosDisponibles.length} horario(s) disponible(s)
-                    </p>
-                  )}
-                </div>
-
-                <select
-                  name="tipoLavado"
-                  value={formData.tipoLavado}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  required
-                >
-                  <option value="">Seleccionar tipo de lavado</option>
-                  {tiposLavado.map(tipo => (
-                    <option key={tipo.id} value={tipo.id}>
-                      {tipo.descripcion} - €{tipo.precio.toFixed(2)}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  name="modeloVehiculo"
-                  placeholder="Modelo del vehículo"
-                  value={formData.modeloVehiculo}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  required
-                />
-                <textarea
-                  name="observaciones"
-                  placeholder="Observaciones"
-                  value={formData.observaciones}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  rows="3"
-                />
-                
-                <div className="flex gap-4">
-                  <button
-                    type="submit"
-                    disabled={validandoDisponibilidad || loadingHorarios}
-                    className={`flex-1 px-4 py-2 rounded text-white font-medium
-                      ${validandoDisponibilidad || loadingHorarios
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-green-600 hover:bg-green-700'
-                      }`}
-                  >
-                    {validandoDisponibilidad 
-                      ? '🔍 Validando...' 
-                      : editingCita 
-                      ? 'Actualizar' 
-                      : 'Crear'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cerrarModal}
-                    disabled={validandoDisponibilidad}
-                    className="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
-                  >
-                    Cancelar
-                  </button>
                 </div>
               </form>
+              <div className="px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+                <button
+                  type="button"
+                  onClick={cerrarModal}
+                  disabled={validandoDisponibilidad}
+                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={validandoDisponibilidad || loadingHorarios}
+                  className={`px-6 py-3 rounded-lg font-semibold text-base text-white transition-colors
+                    ${validandoDisponibilidad || loadingHorarios
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                >
+                  {validandoDisponibilidad 
+                    ? '🔍 Validando...' 
+                    : editingCita 
+                    ? 'Actualizar' 
+                    : 'Crear'}
+                </button>
+              </div>
             </div>
           </div>
         )}
