@@ -434,7 +434,7 @@ const Citas = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Gestión de Citas</h1>
-              <p className="text-base text-gray-600">Citas pendientes hoy: <span className="font-semibold text-blue-600">{citasHoy()}</span> | Total: {totalElements} citas</p>
+              <p className="text-base text-gray-600">Pendientes hoy: <span className="font-semibold text-blue-600">{citasHoy()}</span> | Total: {totalElements} citas</p>
             </div>
           </div>
           <button
