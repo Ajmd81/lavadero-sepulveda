@@ -800,32 +800,33 @@ const Citas = () => {
                     rows="3"
                   />
                 </div>
+
+                <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={cerrarModal}
+                    disabled={validandoDisponibilidad}
+                    className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={validandoDisponibilidad || loadingHorarios}
+                    className={`px-6 py-3 rounded-lg font-semibold text-base text-white transition-colors
+                      ${validandoDisponibilidad || loadingHorarios
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                  >
+                    {validandoDisponibilidad 
+                      ? '🔍 Validando...' 
+                      : editingCita 
+                      ? 'Actualizar' 
+                      : 'Crear'}
+                  </button>
+                </div>
               </form>
-              <div className="px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                <button
-                  type="button"
-                  onClick={cerrarModal}
-                  disabled={validandoDisponibilidad}
-                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={validandoDisponibilidad || loadingHorarios}
-                  className={`px-6 py-3 rounded-lg font-semibold text-base text-white transition-colors
-                    ${validandoDisponibilidad || loadingHorarios
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                >
-                  {validandoDisponibilidad 
-                    ? '🔍 Validando...' 
-                    : editingCita 
-                    ? 'Actualizar' 
-                    : 'Crear'}
-                </button>
-              </div>
             </div>
           </div>
         )}
