@@ -126,22 +126,40 @@ const Citas = () => {
       const response = await citaService.getHorariosDisponibles(fecha);
       let horarios = response.data || [];
 
-      if (editingCita && editingCita.hora) {
-        const horaActual = editingCita.hora.substring(0, 5);
-        if (!horarios.includes(horaActual)) {
-          horarios.push(horaActual);
-          horarios.sort();
-        }
+      // Normalizar horarios al formato HH:00 si es necesario
+      if (horarios.length > 0) {
+        horarios = horarios
+          .map(h => {
+            if (typeof h === 'string') {
+              return h.substring(0, 5); // Tomar HH:MM
+            }
+            return h;
+          })
+          .filter(h => h);
+
+        console.log('Horarios disponibles del backend:', horarios);
       }
 
-      if (horarios.length === 0) {
-        setHorariosDisponibles(todosLosHorarios);
+      // Si el backend no devuelve horarios o devuelve un array vacío
+      if (!horarios || horarios.length === 0) {
+        console.warn('El backend no devolvió horarios disponibles para la fecha:', fecha);
+        setHorariosDisponibles([]);
       } else {
+        // Si la hora actual existe en la edición, garantizar que esté en la lista
+        if (editingCita && editingCita.hora) {
+          const horaActual = editingCita.hora.substring(0, 5);
+          if (!horarios.includes(horaActual)) {
+            horarios.push(horaActual);
+            horarios.sort();
+          }
+        }
+
         setHorariosDisponibles(horarios);
       }
     } catch (err) {
       console.error('Error cargando horarios disponibles:', err);
-      setHorariosDisponibles(todosLosHorarios);
+      // Si hay error, dejar vacío para que el usuario sepa que hubo un problema
+      setHorariosDisponibles([]);
     } finally {
       setLoadingHorarios(false);
     }
