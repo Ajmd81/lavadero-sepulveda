@@ -123,7 +123,12 @@ const Citas = () => {
 
     setLoadingHorarios(true);
     try {
-      const response = await citaService.getHorariosDisponibles(fecha);
+      // Convertir fecha de yyyy-mm-dd a dd/MM/yyyy
+      const [year, month, day] = fecha.split('-');
+      const fechaFormato = `${day}/${month}/${year}`;
+      
+      console.log('Enviando fecha:', fechaFormato);
+      const response = await citaService.getHorariosDisponibles(fechaFormato);
       let horarios = response.data || [];
 
       // Normalizar horarios al formato HH:00 si es necesario
