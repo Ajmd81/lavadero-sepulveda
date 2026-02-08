@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Edit, Trash2, X, Phone, Mail, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Phone, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import clienteService from '../../services/clienteService';
 
 const Clientes = () => {
@@ -8,14 +8,19 @@ const Clientes = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [mensaje, setMensaje] = useState(null);
+  
+  // Estados para paginación
   const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  
   const queryClient = useQueryClient();
 
   const [formulario, setFormulario] = useState({
     nombre: '',
     apellidos: '',
-    dni: '',
+    nif: '',
     telefono: '',
     email: '',
     direccion: '',
@@ -28,13 +33,20 @@ const Clientes = () => {
 
   const { data: clientesData, isLoading } = useQuery({
     queryKey: ['clientes', currentPage, pageSize],
-    queryFn: () => clienteService.getAllPaginated(currentPage, pageSize),
+    queryFn: async () => {
+      const response = await clienteService.getAllPaginated(currentPage, pageSize);
+      const data = response.data;
+      
+      if (data.content) {
+        setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
+        return data.content;
+      }
+      return data || [];
+    },
   });
 
-  // Extraer datos de la respuesta paginada
-  const clientes = clientesData?.data?.content || [];
-  const totalPages = clientesData?.data?.totalPages || 0;
-  const totalItems = clientesData?.data?.totalItems || 0;
+  const clientes = clientesData || [];
 
   const guardarMutation = useMutation({
     mutationFn: async (cliente) => {
@@ -75,14 +87,14 @@ const Clientes = () => {
     cliente.telefono?.includes(searchTerm) ||
     cliente.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.nif?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const abrirModalNuevo = () => {
     setSelectedCliente(null);
     setFormulario({
       nombre: '',
       apellidos: '',
-      dni: '',
+      nif: '',
       telefono: '',
       email: '',
       direccion: '',
@@ -147,14 +159,20 @@ const Clientes = () => {
     setFormulario(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
+  // Funciones de paginación estilo Citas
+  const irAPagina = (pagina) => {
+    if (pagina >= 0 && pagina < totalPages) {
+      setCurrentPage(pagina);
+    }
   };
 
-  const handlePageSizeChange = (e) => {
-    setPageSize(Number(e.target.value));
-    setCurrentPage(0); // Reset a la primera página
+  const cambiarTamanoPagina = (nuevoTamano) => {
+    setPageSize(nuevoTamano);
+    setCurrentPage(0);
   };
+
+  const getPaginaInicio = () => currentPage * pageSize + 1;
+  const getPaginaFin = () => Math.min((currentPage + 1) * pageSize, totalElements);
 
   return (
     <div className="space-y-6">
@@ -166,12 +184,11 @@ const Clientes = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Gestión de Clientes</h1>
-              <p className="text-gray-600">Total: {totalItems} clientes</p>
+              <p className="text-base text-gray-600">Total: <span className="font-semibold text-blue-600">{totalElements}</span> clientes</p>
             </div>
           </div>
-          <button onClick={abrirModalNuevo} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus size={20} />
-            Nuevo cliente
+          <button onClick={abrirModalNuevo} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium">
+            + Nuevo Cliente
           </button>
         </div>
       </div>
@@ -196,177 +213,176 @@ const Clientes = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DNI</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehículo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      <span className="ml-3 text-gray-500">Cargando clientes...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredClientes.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm ? 'No se encontraron clientes' : 'No hay clientes registrados'}
-                  </td>
-                </tr>
-              ) : (
-                filteredClientes.map((cliente) => (
-                  <tr key={cliente.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{cliente.nombre} {cliente.apellidos}</div>
-                      {cliente.ciudad && <div className="text-xs text-gray-500">{cliente.ciudad}</div>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{cliente.nif || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        {cliente.telefono && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Phone size={14} className="mr-1 flex-shrink-0" />
-                            <span>{cliente.telefono}</span>
-                          </div>
-                        )}
-                        {cliente.email && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Mail size={14} className="mr-1 flex-shrink-0" />
-                            <span className="truncate max-w-xs">{cliente.email}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{cliente.vehiculoHabitual || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${cliente.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {cliente.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button onClick={() => abrirModalEditar(cliente)} className="text-blue-600 hover:text-blue-900 mr-3 transition-colors" title="Editar">
-                        <Edit size={18} />
-                      </button>
-                      <button onClick={() => handleEliminar(cliente.id)} className="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginación */}
-        {totalPages > 0 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 0}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages - 1}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Siguiente
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <p className="text-sm text-gray-700">
-                  Mostrando <span className="font-medium">{currentPage * pageSize + 1}</span> a{' '}
-                  <span className="font-medium">{Math.min((currentPage + 1) * pageSize, totalItems)}</span> de{' '}
-                  <span className="font-medium">{totalItems}</span> resultados
-                </p>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-700">Por página:</label>
-                  <select
-                    value={pageSize}
-                    onChange={handlePageSizeChange}
-                    className="border border-gray-300 rounded-md text-sm px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 0}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  
-                  {[...Array(totalPages)].map((_, index) => {
-                    // Mostrar solo páginas relevantes
-                    if (
-                      index === 0 || // Primera página
-                      index === totalPages - 1 || // Última página
-                      (index >= currentPage - 1 && index <= currentPage + 1) // Páginas cercanas a la actual
-                    ) {
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handlePageChange(index)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === index
-                              ? 'z-10 bg-blue-600 border-blue-600 text-white'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {index + 1}
-                        </button>
-                      );
-                    } else if (
-                      index === currentPage - 2 ||
-                      index === currentPage + 2
-                    ) {
-                      return (
-                        <span key={index} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                          ...
-                        </span>
-                      );
-                    }
-                    return null;
-                  })}
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage >= totalPages - 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </nav>
-              </div>
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-500 text-base">Cargando clientes...</span>
             </div>
           </div>
+        ) : filteredClientes.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 text-base">
+            {searchTerm ? 'No se encontraron clientes' : 'No hay clientes registrados'}
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Cliente</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">DNI</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Contacto</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Vehículo</th>
+                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Estado</th>
+                    <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredClientes.map((cliente) => (
+                    <tr key={cliente.id} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-3 text-base">
+                        <div className="font-medium text-gray-900">{cliente.nombre} {cliente.apellidos}</div>
+                        {cliente.ciudad && <div className="text-sm text-gray-500">{cliente.ciudad}</div>}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">{cliente.nif || '-'}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">
+                        <div className="flex flex-col gap-1">
+                          {cliente.telefono && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Phone size={14} className="mr-1 flex-shrink-0" />
+                              <span>{cliente.telefono}</span>
+                            </div>
+                          )}
+                          {cliente.email && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Mail size={14} className="mr-1 flex-shrink-0" />
+                              <span className="truncate max-w-xs">{cliente.email}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">{cliente.vehiculoHabitual || '-'}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-base">
+                        <span className={`px-3 py-1 rounded text-sm font-medium ${cliente.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {cliente.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-3 text-center text-base">
+                        <div className="flex items-center justify-center gap-2">
+                          <button onClick={() => abrirModalEditar(cliente)} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-base font-medium">
+                            Editar
+                          </button>
+                          <button onClick={() => handleEliminar(cliente.id)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-base font-medium">
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginación estilo Citas */}
+            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  <p className="text-base text-gray-700">
+                    Mostrando <span className="font-medium">{getPaginaInicio()}</span> a <span className="font-medium">{getPaginaFin()}</span> de{' '}
+                    <span className="font-medium">{totalElements}</span> resultados
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="pageSize" className="text-base text-gray-700">
+                      Por página:
+                    </label>
+                    <select
+                      id="pageSize"
+                      value={pageSize}
+                      onChange={(e) => cambiarTamanoPagina(Number(e.target.value))}
+                      className="border border-gray-300 rounded px-3 py-2 text-base"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => irAPagina(0)}
+                    disabled={currentPage === 0}
+                    className={`px-4 py-2 rounded text-base ${currentPage === 0
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                  >
+                    Primera
+                  </button>
+                  <button
+                    onClick={() => irAPagina(currentPage - 1)}
+                    disabled={currentPage === 0}
+                    className={`px-4 py-2 rounded text-base ${currentPage === 0
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                  >
+                    Anterior
+                  </button>
+
+                  <div className="flex gap-1">
+                    {[...Array(totalPages)].map((_, index) => {
+                      if (
+                        index === 0 ||
+                        index === totalPages - 1 ||
+                        (index >= currentPage - 2 && index <= currentPage + 2)
+                      ) {
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => irAPagina(index)}
+                            className={`px-3 py-2 rounded text-base ${currentPage === index
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              }`}
+                          >
+                            {index + 1}
+                          </button>
+                        );
+                      } else if (index === currentPage - 3 || index === currentPage + 3) {
+                        return <span key={index} className="px-2">...</span>;
+                      }
+                      return null;
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => irAPagina(currentPage + 1)}
+                    disabled={currentPage === totalPages - 1}
+                    className={`px-4 py-2 rounded text-base ${currentPage === totalPages - 1
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                  >
+                    Siguiente
+                  </button>
+                  <button
+                    onClick={() => irAPagina(totalPages - 1)}
+                    disabled={currentPage === totalPages - 1}
+                    className={`px-4 py-2 rounded text-base ${currentPage === totalPages - 1
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                  >
+                    Última
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -399,7 +415,7 @@ const Clientes = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">DNI/NIE</label>
-                    <input type="text" name="dni" value={formulario.dni} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <input type="text" name="nif" value={formulario.nif} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
