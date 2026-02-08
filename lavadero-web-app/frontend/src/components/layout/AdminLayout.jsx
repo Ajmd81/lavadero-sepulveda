@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, Menu, X, Settings, ChevronRight, UserCircle, Cpu } from 'lucide-react';
+import { LogOut, Menu, X, ChevronRight } from 'lucide-react';
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
@@ -24,6 +24,13 @@ const AdminLayout = () => {
     { icon: '/assets/icons/contabilidad.png', label: 'Contabilidad', path: '/admin/contabilidad', category: 'financiero' },
     { icon: '/assets/icons/estado-financiero.png', label: 'Resumen financiero', path: '/admin/resumen-financiero', category: 'financiero' },
     { icon: '/assets/icons/modeloFiscal.png', label: 'Modelos fiscales', path: '/admin/modelos-fiscales', category: 'financiero' },
+    
+    // Separador visual
+    { separator: true },
+    
+    // Sección de usuario
+    { icon: '/assets/icons/contacto.png', label: 'Mi Perfil', path: '/admin/mi-perfil', category: 'usuario' },
+    { icon: '/assets/icons/ajustes.png', label: 'Configuración', path: '/admin/configuracion', category: 'usuario', rotateOnActive: true },
   ];
 
   const isActive = (path) => {
@@ -73,93 +80,54 @@ const AdminLayout = () => {
 
         {/* Navegación */}
         <nav className="flex-1 p-3 overflow-y-auto scrollbar-hide">
-          {menuItems.map((item) => (
-            <Link 
-              key={item.path} 
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-300 relative group overflow-hidden ${
-                isActive(item.path) 
-                  ? `bg-linear-to-r ${getCategoryGradient(item.category)} shadow-lg shadow-slate-900/50 scale-105` 
-                  : 'hover:bg-slate-700/50 hover:translate-x-1'
-              }`}
-              title={!sidebarOpen ? item.label : ''}
-            >
-              {/* Efecto de brillo en hover */}
-              {!isActive(item.path) && (
-                <div className="absolute inset-0 bg-linear-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-              )}
-              
-              {/* Indicador activo */}
-              {isActive(item.path) && (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-white via-white/80 to-transparent"></div>
-              )}
-              
-              <img src={item.icon} alt={item.label} className={`w-8 h-8 object-contain shrink-0 transition-transform duration-300 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
-              {sidebarOpen && (
-                <div className="flex-1 flex items-center justify-between">
-                  <span className="font-semibold text-sm">{item.label}</span>
-                  {isActive(item.path) && <ChevronRight size={18} />}
-                </div>
-              )}
-            </Link>
-          ))}
+          {menuItems.map((item, index) => {
+            // Renderizar separador
+            if (item.separator) {
+              return sidebarOpen ? (
+                <div key={`separator-${index}`} className="my-4 h-px bg-linear-to-r from-slate-700 via-slate-600 to-slate-700"></div>
+              ) : null;
+            }
 
-          {/* Separador visual */}
-          {sidebarOpen && <div className="my-4 h-px bg-linear-to-r from-slate-700 via-slate-600 to-slate-700"></div>}
-
-          {/* Mi Perfil */}
-          <Link 
-            to="/admin/mi-perfil"
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-300 relative group overflow-hidden ${
-              isActive('/admin/mi-perfil') 
-                ? `bg-linear-to-r from-purple-500 to-pink-500 shadow-lg shadow-slate-900/50 scale-105` 
-                : 'hover:bg-slate-700/50 hover:translate-x-1'
-            }`}
-            title={!sidebarOpen ? 'Mi Perfil' : ''}
-          >
-            {!isActive('/admin/mi-perfil') && (
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-            )}
-            
-            {isActive('/admin/mi-perfil') && (
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-white via-white/80 to-transparent"></div>
-            )}
-            
-            <img src="/assets/icons/contacto.png" alt="Mi Perfil" className={`w-8 h-8 object-contain shrink-0 transition-transform duration-300 ${isActive('/admin/mi-perfil') ? 'scale-110' : 'group-hover:scale-110'}`} />
-            {sidebarOpen && (
-              <div className="flex-1 flex items-center justify-between">
-                <span className="font-semibold text-sm">Mi Perfil</span>
-                {isActive('/admin/mi-perfil') && <ChevronRight size={18} />}
-              </div>
-            )}
-          </Link>
-
-          {/* Configuración */}
-          <Link 
-            to="/admin/configuracion"
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-300 relative group overflow-hidden ${
-              isActive('/admin/configuracion') 
-                ? `bg-linear-to-r from-purple-500 to-pink-500 shadow-lg shadow-slate-900/50 scale-105` 
-                : 'hover:bg-slate-700/50 hover:translate-x-1'
-            }`}
-            title={!sidebarOpen ? 'Configuración' : ''}
-          >
-            {!isActive('/admin/configuracion') && (
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-            )}
-            
-            {isActive('/admin/configuracion') && (
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-white via-white/80 to-transparent"></div>
-            )}
-            
-            <img src="/assets/icons/ajustes.png" alt="Configuración" className={`w-8 h-8 object-contain shrink-0 transition-transform duration-300 ${isActive('/admin/configuracion') ? 'scale-110 rotate-180' : 'group-hover:scale-110 group-hover:rotate-90'}`} />
-            {sidebarOpen && (
-              <div className="flex-1 flex items-center justify-between">
-                <span className="font-semibold text-sm">Configuración</span>
-                {isActive('/admin/configuracion') && <ChevronRight size={18} />}
-              </div>
-            )}
-          </Link>
+            // Renderizar items del menú
+            return (
+              <Link 
+                key={item.path} 
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-300 relative group overflow-hidden ${
+                  isActive(item.path) 
+                    ? `bg-linear-to-r ${getCategoryGradient(item.category)} shadow-lg shadow-slate-900/50 scale-105` 
+                    : 'hover:bg-slate-700/50 hover:translate-x-1'
+                }`}
+                title={!sidebarOpen ? item.label : ''}
+              >
+                {/* Efecto de brillo en hover */}
+                {!isActive(item.path) && (
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                )}
+                
+                {/* Indicador activo */}
+                {isActive(item.path) && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-white via-white/80 to-transparent"></div>
+                )}
+                
+                <img 
+                  src={item.icon} 
+                  alt={item.label} 
+                  className={`w-8 h-8 object-contain shrink-0 transition-transform duration-300 ${
+                    isActive(item.path) 
+                      ? `scale-110 ${item.rotateOnActive ? 'rotate-180' : ''}` 
+                      : `group-hover:scale-110 ${item.rotateOnActive ? 'group-hover:rotate-90' : ''}`
+                  }`} 
+                />
+                {sidebarOpen && (
+                  <div className="flex-1 flex items-center justify-between">
+                    <span className="font-semibold text-sm">{item.label}</span>
+                    {isActive(item.path) && <ChevronRight size={18} />}
+                  </div>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Footer - Usuario y Logout */}
