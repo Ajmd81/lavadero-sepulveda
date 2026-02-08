@@ -144,9 +144,6 @@ const Login = () => {
 
             {/* Footer */}
             <div className="mt-10 pt-8 border-t border-slate-200">
-              <p className="text-center text-base text-slate-600">
-                <span className="font-semibold">Sistema de gestión</span> para administradores
-              </p>
               <p className="text-center text-sm text-slate-500 mt-3">
                 © 2025 Lavadero Sepúlveda - Todos los derechos reservados
               </p>
