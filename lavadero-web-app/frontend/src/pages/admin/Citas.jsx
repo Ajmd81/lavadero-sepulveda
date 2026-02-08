@@ -127,7 +127,6 @@ const Citas = () => {
       const [year, month, day] = fecha.split('-');
       const fechaFormato = `${day}/${month}/${year}`;
       
-      console.log('Enviando fecha:', fechaFormato);
       const response = await citaService.getHorariosDisponibles(fechaFormato);
       let horarios = response.data || [];
 
