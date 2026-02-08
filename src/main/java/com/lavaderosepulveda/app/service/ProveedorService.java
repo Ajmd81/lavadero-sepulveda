@@ -24,7 +24,7 @@ public class ProveedorService {
     */
     public Page<ProveedorDTO> listarActivosPaginados(Pageable pageable) {
         return proveedorRepository.findByActivoTrue(pageable)
-                .map(this::convertirADTO);
+                .map(this::toDTO);
     }
 
     public List<ProveedorDTO> listarActivos() {

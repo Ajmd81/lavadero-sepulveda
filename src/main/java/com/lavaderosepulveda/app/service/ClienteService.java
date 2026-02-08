@@ -34,7 +34,7 @@ public class ClienteService {
      */
     public Page<ClienteDTO> obtenerTodosLosClientesPaginados(Pageable pageable) {
         return clienteRepository.findAll(pageable)
-                .map(clienteMapper::toDTO);
+                .map(clienteMapper::convertirADTO);
     }
 
     /**
