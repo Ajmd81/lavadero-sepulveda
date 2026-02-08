@@ -41,6 +41,13 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
      */
     List<Cita> findByClienteIdOrderByFechaDescHoraDesc(Long clienteId);
 
+     /**
+     * Buscar citas de un cliente ordenadas por fecha descendente
+     * @param clienteId ID del cliente
+     * @return Lista de citas ordenadas de más reciente a más antigua
+     */
+    List<Cita> findByClienteIdOrderByFechaDesc(Long clienteId);
+
     /**
      * Buscar citas pendientes (no completadas ni canceladas)
      */

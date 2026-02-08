@@ -251,6 +251,38 @@ public class CitaApiController {
     }
 
     /**
+     * Obtener citas por teléfono (historial del cliente)
+     */
+    @GetMapping("/citas/cliente/{telefono}")
+    public ResponseEntity<List<CitaDTO>> obtenerCitasPorTelefono(@PathVariable String telefono) {
+        logger.info("Buscando citas para el teléfono: {}", telefono);
+        
+        try {
+            // Obtener citas del servicio
+            List<Cita> citas = citaService.obtenerCitasPorTelefono(telefono);
+            
+            // Si no hay citas, devolver lista vacía (NO error 404)
+            if (citas == null || citas.isEmpty()) {
+                logger.debug("No se encontraron citas para el teléfono: {}", telefono);
+                return ResponseEntity.ok(Collections.emptyList());
+            }
+            
+            // Convertir a DTOs
+            List<CitaDTO> citasDTO = citas.stream()
+                    .map(citaMapper::toDTO)
+                    .collect(Collectors.toList());
+            
+            logger.info("Encontradas {} citas para el teléfono: {}", citasDTO.size(), telefono);
+            return ResponseEntity.ok(citasDTO);
+            
+        } catch (Exception e) {
+            logger.error("Error obteniendo citas por teléfono {}: {}", telefono, e.getMessage(), e);
+            // En caso de error, devolver lista vacía en vez de 500
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+    }
+    
+    /**
      * Actualizar cita existente
      */
     @PutMapping("/citas/{id}")
@@ -277,19 +309,6 @@ public class CitaApiController {
         Map<String, Object> estadisticas = horarioService.obtenerEstadisticasOcupacion(fecha);
 
         return ResponseEntity.ok(estadisticas);
-    }
-
-    /**
-     * Obtener citas por teléfono (historial del cliente)
-     */
-    @GetMapping("/citas/cliente/{telefono}")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasPorTelefono(@PathVariable String telefono) {
-        List<Cita> citas = citaService.obtenerCitasPorTelefono(telefono);
-        List<CitaDTO> citasDTO = citas.stream()
-                .map(citaMapper::toDTO)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(citasDTO);
     }
 
     /**
