@@ -74,7 +74,7 @@ const Clientes = () => {
     cliente.apellidos?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.telefono?.includes(searchTerm) ||
     cliente.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cliente.dni?.toLowerCase().includes(searchTerm.toLowerCase())
+    cliente.nif?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const abrirModalNuevo = () => {
@@ -100,7 +100,7 @@ const Clientes = () => {
     setFormulario({
       nombre: cliente.nombre || '',
       apellidos: cliente.apellidos || '',
-      dni: cliente.dni || '',
+      nif: cliente.nif || '',
       telefono: cliente.telefono || '',
       email: cliente.email || '',
       direccion: cliente.direccion || '',
@@ -119,7 +119,7 @@ const Clientes = () => {
     setFormulario({
       nombre: '',
       apellidos: '',
-      dni: '',
+      nif: '',
       telefono: '',
       email: '',
       direccion: '',
@@ -232,7 +232,7 @@ const Clientes = () => {
                       {cliente.ciudad && <div className="text-xs text-gray-500">{cliente.ciudad}</div>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{cliente.dni || '-'}</div>
+                      <div className="text-sm text-gray-900">{cliente.nif || '-'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
