@@ -44,7 +44,7 @@ public class ClienteService {
         List<Cliente> clientes = clienteRepository.findAll();
 
         return clientes.stream()
-                .map(this::convertirADTO)
+                .<ClienteDTO>map(this::convertirADTO)
                 .sorted(Comparator.comparing(ClienteDTO::getNombre))
                 .collect(Collectors.toList());
     }
@@ -245,7 +245,7 @@ public class ClienteService {
     public List<ClienteDTO> obtenerClientesActivos() {
         List<Cliente> clientes = clienteRepository.findByActivoTrue();
         return clientes.stream()
-                .map(this::convertirADTO)
+                .<ClienteDTO>map(this::convertirADTO)
                 .sorted(Comparator.comparing(ClienteDTO::getNombre))
                 .collect(Collectors.toList());
     }
@@ -256,7 +256,7 @@ public class ClienteService {
     public List<ClienteDTO> buscarPorNombre(String nombre) {
         List<Cliente> clientes = clienteRepository.findByNombreContainingIgnoreCase(nombre);
         return clientes.stream()
-                .map(this::convertirADTO)
+                .<ClienteDTO>map(this::convertirADTO)
                 .sorted(Comparator.comparing(ClienteDTO::getNombre))
                 .collect(Collectors.toList());
     }
