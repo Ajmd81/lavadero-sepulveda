@@ -24,7 +24,6 @@ const AdminLayout = () => {
     { icon: '/assets/icons/contabilidad.png', label: 'Contabilidad', path: '/admin/contabilidad', category: 'financiero' },
     { icon: '/assets/icons/estado-financiero.png', label: 'Resumen financiero', path: '/admin/resumen-financiero', category: 'financiero' },
     { icon: '/assets/icons/modeloFiscal.png', label: 'Modelos fiscales', path: '/admin/modelos-fiscales', category: 'financiero' },
-    { icon: 'user', label: 'Mi Perfil', path: '/admin/mi-perfil', category: 'usuario' },
   ];
 
   const isActive = (path) => {
@@ -95,11 +94,7 @@ const AdminLayout = () => {
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-white via-white/80 to-transparent"></div>
               )}
               
-              {item.icon === 'user' ? (
-                <UserCircle size={32} className={`flex-shrink-0 transition-transform duration-300 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
-              ) : (
-                <img src={item.icon} alt={item.label} className={`w-8 h-8 object-contain flex-shrink-0 transition-transform duration-300 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
-              )}
+              <img src={item.icon} alt={item.label} className={`w-8 h-8 object-contain flex-shrink-0 transition-transform duration-300 ${isActive(item.path) ? 'scale-110' : 'group-hover:scale-110'}`} />
               {sidebarOpen && (
                 <div className="flex-1 flex items-center justify-between">
                   <span className="font-semibold text-sm">{item.label}</span>
@@ -111,6 +106,33 @@ const AdminLayout = () => {
 
           {/* Separador visual */}
           {sidebarOpen && <div className="my-4 h-px bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700"></div>}
+
+          {/* Mi Perfil */}
+          <Link 
+            to="/admin/mi-perfil"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-300 relative group overflow-hidden ${
+              isActive('/admin/mi-perfil') 
+                ? `bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-slate-900/50 scale-105` 
+                : 'hover:bg-slate-700/50 hover:translate-x-1'
+            }`}
+            title={!sidebarOpen ? 'Mi Perfil' : ''}
+          >
+            {!isActive('/admin/mi-perfil') && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            )}
+            
+            {isActive('/admin/mi-perfil') && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-white via-white/80 to-transparent"></div>
+            )}
+            
+            <img src="/assets/icons/contacto.png" alt="Mi Perfil" className={`w-8 h-8 object-contain flex-shrink-0 transition-transform duration-300 ${isActive('/admin/mi-perfil') ? 'scale-110' : 'group-hover:scale-110'}`} />
+            {sidebarOpen && (
+              <div className="flex-1 flex items-center justify-between">
+                <span className="font-semibold text-sm">Mi Perfil</span>
+                {isActive('/admin/mi-perfil') && <ChevronRight size={18} />}
+              </div>
+            )}
+          </Link>
 
           {/* Configuración */}
           <Link 
@@ -130,7 +152,7 @@ const AdminLayout = () => {
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-white via-white/80 to-transparent"></div>
             )}
             
-            <Cpu size={32} className={`flex-shrink-0 transition-transform duration-300 ${isActive('/admin/configuracion') ? 'scale-110 rotate-180' : 'group-hover:scale-110 group-hover:rotate-90'}`} />
+            <img src="/assets/icons/ajustes.png" alt="Configuración" className={`w-8 h-8 object-contain flex-shrink-0 transition-transform duration-300 ${isActive('/admin/configuracion') ? 'scale-110 rotate-180' : 'group-hover:scale-110 group-hover:rotate-90'}`} />
             {sidebarOpen && (
               <div className="flex-1 flex items-center justify-between">
                 <span className="font-semibold text-sm">Configuración</span>
