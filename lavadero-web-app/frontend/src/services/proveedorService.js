@@ -23,6 +23,12 @@ const proveedorService = {
       params: { page, size, sortBy, sortDir }
     });
   },
+
+  getAllPaginated: async (page = 0, size = 10, sortBy = 'nombre', sortDir = 'asc') => {
+    return await api.get('/proveedores', {
+      params: { page, size, sortBy, sortDir }
+    });
+  }
 };
 
 export default proveedorService;
