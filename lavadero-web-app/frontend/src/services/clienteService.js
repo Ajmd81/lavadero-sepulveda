@@ -18,6 +18,13 @@ const clienteService = {
 
   // Filtrados
   getActivos: () => api.get('/clientes?activos=true'),
+
+  // Paginación
+  getAllPaginated: async (page = 0, size = 10, sortBy = 'nombre', sortDir = 'asc') => {
+    return await api.get('/clientes', {
+      params: { page, size, sortBy, sortDir }
+    });
+  },
 };
 
 export default clienteService;

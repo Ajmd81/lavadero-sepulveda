@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import proveedorService from '../../services/proveedorService';
 
 const Proveedores = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedProveedor, setSelectedProveedor] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const queryClient = useQueryClient();
 
-  const { data: proveedores, isLoading } = useQuery({
-    queryKey: ['proveedores'],
-    queryFn: () => proveedorService.getAll(),
+  const { data: proveedoresData, isLoading } = useQuery({
+    queryKey: ['proveedores', currentPage, pageSize],
+    queryFn: () => proveedorService.getAllPaginated(currentPage, pageSize),
   });
 
-  // Extraer array de proveedores de la respuesta (manejar tanto respuestas paginadas como directas)
-  const proveedoresArray = Array.isArray(proveedores?.data) 
-    ? proveedores.data 
-    : (proveedores?.data?.content && Array.isArray(proveedores.data.content) 
-      ? proveedores.data.content 
-      : []);
+  // Extraer datos de la respuesta paginada
+  const proveedores = proveedoresData?.data?.content || [];
+  const totalPages = proveedoresData?.data?.totalPages || 0;
+  const totalItems = proveedoresData?.data?.totalItems || 0;
 
   const deleteMutation = useMutation({
     mutationFn: (id) => proveedorService.delete(id),
@@ -29,15 +29,23 @@ const Proveedores = () => {
     },
   });
 
-  const filteredProveedores = proveedoresArray.filter(proveedor =>
+  const filteredProveedores = proveedores.filter(proveedor =>
     proveedor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     proveedor.telefono?.includes(searchTerm) ||
     proveedor.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (e) => {
+    setPageSize(Number(e.target.value));
+    setCurrentPage(0); // Reset a la primera página
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -47,7 +55,7 @@ const Proveedores = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Gestión de Proveedores</h1>
-              <p className="text-gray-600">Total: {filteredProveedores.length} proveedores</p>
+              <p className="text-gray-600">Total: {totalItems} proveedores</p>
             </div>
           </div>
           <button
@@ -76,72 +84,173 @@ const Proveedores = () => {
 
       {/* Tabla de Proveedores */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">NIF/CIF</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teléfono</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
-                  Cargando proveedores...
-                </td>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">NIF/CIF</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teléfono</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
               </tr>
-            ) : filteredProveedores.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
-                  No se encontraron proveedores
-                </td>
-              </tr>
-            ) : (
-              filteredProveedores.map((proveedor) => (
-                <tr key={proveedor.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{proveedor.nombre}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{proveedor.nif || '—'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{proveedor.telefono}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{proveedor.email}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{proveedor.categoria || '—'}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded ${proveedor.activo
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                      }`}>
-                      {proveedor.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => { setSelectedProveedor(proveedor); setShowModal(true); }}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (window.confirm('¿Eliminar este proveedor?')) {
-                          deleteMutation.mutate(proveedor.id);
-                        }
-                      }}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {isLoading ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-8 text-center">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-3 text-gray-500">Cargando proveedores...</span>
+                    </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : filteredProveedores.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                    {searchTerm ? 'No se encontraron proveedores' : 'No hay proveedores registrados'}
+                  </td>
+                </tr>
+              ) : (
+                filteredProveedores.map((proveedor) => (
+                  <tr key={proveedor.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">{proveedor.nombre}</div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{proveedor.nif || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{proveedor.telefono}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{proveedor.email}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{proveedor.categoria || '—'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs rounded ${proveedor.activo
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                        }`}>
+                        {proveedor.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => { setSelectedProveedor(proveedor); setShowModal(true); }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('¿Eliminar este proveedor?')) {
+                            deleteMutation.mutate(proveedor.id);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Paginación */}
+        {totalPages > 0 && (
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Siguiente
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-gray-700">
+                  Mostrando <span className="font-medium">{currentPage * pageSize + 1}</span> a{' '}
+                  <span className="font-medium">{Math.min((currentPage + 1) * pageSize, totalItems)}</span> de{' '}
+                  <span className="font-medium">{totalItems}</span> resultados
+                </p>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-700">Por página:</label>
+                  <select
+                    value={pageSize}
+                    onChange={handlePageSizeChange}
+                    className="border border-gray-300 rounded-md text-sm px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 0}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  
+                  {[...Array(totalPages)].map((_, index) => {
+                    // Mostrar solo páginas relevantes
+                    if (
+                      index === 0 || // Primera página
+                      index === totalPages - 1 || // Última página
+                      (index >= currentPage - 1 && index <= currentPage + 1) // Páginas cercanas a la actual
+                    ) {
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handlePageChange(index)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === index
+                              ? 'z-10 bg-blue-600 border-blue-600 text-white'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {index + 1}
+                        </button>
+                      );
+                    } else if (
+                      index === currentPage - 2 ||
+                      index === currentPage + 2
+                    ) {
+                      return (
+                        <span key={index} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages - 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal para crear/editar */}
@@ -207,7 +316,7 @@ const ProveedorModal = ({ proveedor, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-96 overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">
           {proveedor ? 'Editar Proveedor' : 'Nuevo Proveedor'}
         </h2>

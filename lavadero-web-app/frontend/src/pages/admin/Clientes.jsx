@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Edit, Trash2, X, Phone, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Phone, Mail, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import clienteService from '../../services/clienteService';
 
 const Clientes = () => {
@@ -8,6 +8,8 @@ const Clientes = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [mensaje, setMensaje] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const queryClient = useQueryClient();
 
   const [formulario, setFormulario] = useState({
@@ -24,17 +26,15 @@ const Clientes = () => {
     activo: true
   });
 
-  const { data: clientes, isLoading } = useQuery({
-    queryKey: ['clientes'],
-    queryFn: () => clienteService.getAll(),
+  const { data: clientesData, isLoading } = useQuery({
+    queryKey: ['clientes', currentPage, pageSize],
+    queryFn: () => clienteService.getAllPaginated(currentPage, pageSize),
   });
 
-  // Extraer array de clientes de la respuesta (manejar tanto respuestas paginadas como directas)
-  const clientesArray = Array.isArray(clientes?.data) 
-    ? clientes.data 
-    : (clientes?.data?.content && Array.isArray(clientes.data.content) 
-      ? clientes.data.content 
-      : []);
+  // Extraer datos de la respuesta paginada
+  const clientes = clientesData?.data?.content || [];
+  const totalPages = clientesData?.data?.totalPages || 0;
+  const totalItems = clientesData?.data?.totalItems || 0;
 
   const guardarMutation = useMutation({
     mutationFn: async (cliente) => {
@@ -69,7 +69,7 @@ const Clientes = () => {
     }
   });
 
-  const filteredClientes = clientesArray.filter(cliente =>
+  const filteredClientes = clientes.filter(cliente =>
     cliente.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.apellidos?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.telefono?.includes(searchTerm) ||
@@ -147,6 +147,15 @@ const Clientes = () => {
     setFormulario(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (e) => {
+    setPageSize(Number(e.target.value));
+    setCurrentPage(0); // Reset a la primera página
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
@@ -157,7 +166,7 @@ const Clientes = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Gestión de Clientes</h1>
-              <p className="text-gray-600">Total: {filteredClientes.length} clientes</p>
+              <p className="text-gray-600">Total: {totalItems} clientes</p>
             </div>
           </div>
           <button onClick={abrirModalNuevo} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -263,6 +272,102 @@ const Clientes = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Paginación */}
+        {totalPages > 0 && (
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Siguiente
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-gray-700">
+                  Mostrando <span className="font-medium">{currentPage * pageSize + 1}</span> a{' '}
+                  <span className="font-medium">{Math.min((currentPage + 1) * pageSize, totalItems)}</span> de{' '}
+                  <span className="font-medium">{totalItems}</span> resultados
+                </p>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-700">Por página:</label>
+                  <select
+                    value={pageSize}
+                    onChange={handlePageSizeChange}
+                    className="border border-gray-300 rounded-md text-sm px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 0}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  
+                  {[...Array(totalPages)].map((_, index) => {
+                    // Mostrar solo páginas relevantes
+                    if (
+                      index === 0 || // Primera página
+                      index === totalPages - 1 || // Última página
+                      (index >= currentPage - 1 && index <= currentPage + 1) // Páginas cercanas a la actual
+                    ) {
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handlePageChange(index)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === index
+                              ? 'z-10 bg-blue-600 border-blue-600 text-white'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {index + 1}
+                        </button>
+                      );
+                    } else if (
+                      index === currentPage - 2 ||
+                      index === currentPage + 2
+                    ) {
+                      return (
+                        <span key={index} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages - 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {showModal && (

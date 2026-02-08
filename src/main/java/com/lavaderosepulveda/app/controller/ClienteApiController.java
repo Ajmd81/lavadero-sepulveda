@@ -8,7 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,15 +27,36 @@ public class ClienteApiController {
     private ClienteService clienteService;
 
     /**
-     * GET /api/clientes
-     * Obtener todos los clientes
-     */
+    * GET /api/clientes?page=0&size=10&sortBy=nombre&sortDir=asc
+    * Obtener todos los clientes con paginación
+    */
     @GetMapping
-    public ResponseEntity<List<ClienteDTO>> obtenerTodosLosClientes() {
+    public ResponseEntity<Map<String, Object>> obtenerTodosLosClientes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "nombre") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
         try {
-            List<ClienteDTO> clientes = clienteService.obtenerTodosLosClientes();
-            log.info("Obtenidos {} clientes", clientes.size());
-            return ResponseEntity.ok(clientes);
+            Sort sort = sortDir.equalsIgnoreCase("desc") 
+                ? Sort.by(sortBy).descending() 
+                : Sort.by(sortBy).ascending();
+            
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<ClienteDTO> pageClientes = clienteService.obtenerTodosLosClientesPaginados(pageable);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", pageClientes.getContent());
+            response.put("currentPage", pageClientes.getNumber());
+            response.put("totalItems", pageClientes.getTotalElements());
+            response.put("totalPages", pageClientes.getTotalPages());
+            response.put("size", pageClientes.getSize());
+            
+            log.info("Obtenidos {} clientes (página {}/{})", 
+                pageClientes.getNumberOfElements(), 
+                pageClientes.getNumber() + 1, 
+                pageClientes.getTotalPages());
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error al obtener clientes", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

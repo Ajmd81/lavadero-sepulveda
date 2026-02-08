@@ -16,6 +16,13 @@ const proveedorService = {
   // Estados
   activar: (id) => api.put(`/proveedores/${id}/activar`),
   desactivar: (id) => api.put(`/proveedores/${id}/desactivar`),
+
+  // Paginación
+  getActivosPaginated: async (page = 0, size = 10, sortBy = 'nombre', sortDir = 'asc') => {
+    return await api.get('/proveedores/activos', {
+      params: { page, size, sortBy, sortDir }
+    });
+  },
 };
 
 export default proveedorService;
