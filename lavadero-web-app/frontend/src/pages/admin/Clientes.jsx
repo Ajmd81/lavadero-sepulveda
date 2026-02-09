@@ -37,12 +37,17 @@ const Clientes = () => {
       const response = await clienteService.getAllPaginated(currentPage, pageSize);
       const data = response.data;
       
-      if (data.content) {
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
+      // Asegurarse de que los valores siempre tienen un default
+      const totalElements = data?.totalElements || 0;
+      const totalPages = data?.totalPages || 0;
+      
+      setTotalPages(totalPages);
+      setTotalElements(totalElements);
+      
+      if (data?.content && Array.isArray(data.content)) {
         return data.content;
       }
-      return data || [];
+      return [];
     },
   });
 
@@ -172,7 +177,7 @@ const Clientes = () => {
   };
 
   const getPaginaInicio = () => currentPage * pageSize + 1;
-  const getPaginaFin = () => Math.min((currentPage + 1) * pageSize, totalElements);
+  const getPaginaFin = () => Math.min((currentPage + 1) * pageSize, totalElements || 0);
 
   return (
     <div className="space-y-6">
