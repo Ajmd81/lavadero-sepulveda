@@ -12,7 +12,7 @@ const Clientes = () => {
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   
   const queryClient = useQueryClient();
@@ -38,11 +38,11 @@ const Clientes = () => {
       const data = response.data;
       
       // Asegurarse de que los valores siempre tienen un default
-      const totalElements = data?.totalElements || 0;
+      const totalItems = data?.totalItems || 0;
       const totalPages = data?.totalPages || 0;
       
       setTotalPages(totalPages);
-      setTotalElements(totalElements);
+      setTotalItems(totalItems);
       
       if (data?.content && Array.isArray(data.content)) {
         return data.content;
@@ -177,7 +177,7 @@ const Clientes = () => {
   };
 
   const getPaginaInicio = () => currentPage * pageSize + 1;
-  const getPaginaFin = () => Math.min((currentPage + 1) * pageSize, totalElements || 0);
+  const getPaginaFin = () => Math.min((currentPage + 1) * pageSize, totalItems || 0);
 
   return (
     <div className="space-y-6">
@@ -189,7 +189,7 @@ const Clientes = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Gestión de Clientes</h1>
-              <p className="text-base text-gray-600">Total: <span className="font-semibold text-blue-600">{totalElements}</span> clientes</p>
+              <p className="text-base text-gray-600">Total: <span className="font-semibold text-blue-600">{totalItems}</span> clientes</p>
             </div>
           </div>
           <button onClick={abrirModalNuevo} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium">
@@ -295,7 +295,7 @@ const Clientes = () => {
                 <div className="flex items-center gap-4">
                   <p className="text-base text-gray-700">
                     Mostrando <span className="font-medium">{getPaginaInicio()}</span> a <span className="font-medium">{getPaginaFin()}</span> de{' '}
-                    <span className="font-medium">{totalElements}</span> resultados
+                    <span className="font-medium">{totalItems}</span> resultados
                   </p>
 
                   <div className="flex items-center gap-2">
