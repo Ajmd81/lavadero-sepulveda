@@ -138,7 +138,8 @@ const FacturasEmitidas = () => {
 
   const cargarClientes = async () => {
     try {
-      const response = await clienteService.getAll();
+      // Usar getAllPaginated con tamaño grande para obtener todos los clientes en una sola llamada
+      const response = await clienteService.getAllPaginated(0, 1000, 'nombre', 'asc');
       let clientesData = response.data || [];
       
       // Si es un objeto con content (paginado), extraer content
@@ -152,6 +153,7 @@ const FacturasEmitidas = () => {
         clientesData = [];
       }
       
+      console.log('✅ Clientes cargados:', clientesData.length);
       setClientes(clientesData);
     } catch (err) {
       console.error('❌ Error al cargar clientes:', err);
@@ -374,6 +376,10 @@ const FacturasEmitidas = () => {
         console.log('📤 Actualizando factura:', { id: editandoFactura, data: datosLimpios });
         await facturaService.update(editandoFactura, datosLimpios);
         alert('✅ Factura actualizada correctamente');
+        
+        cerrarModal();
+        // Mantener en la misma página al actualizar
+        await cargarFacturas(paginaActual);
       } else {
         // Crear nueva factura con número y fecha personalizados
         const params = {};
@@ -393,10 +399,14 @@ const FacturasEmitidas = () => {
         console.log('📤 JSON a enviar:', JSON.stringify(datosLimpios, null, 2));
         await facturaService.createManual(datosLimpios, params);
         alert('✅ Factura creada correctamente');
+        
+        cerrarModal();
+        // Cargar la última página para ver la nueva factura
+        // Primero cargar página 0 para actualizar totalPaginas
+        const response = await facturaService.getAll(0, 20, 'numero');
+        const nuevoTotal = response.data?.totalPages || 1;
+        await cargarFacturas(Math.max(0, nuevoTotal - 1));
       }
-      
-      cerrarModal();
-      await cargarFacturas();
     } catch (err) {
       console.error('❌ Error al guardar factura:', err);
       console.error('❌ Response completo:', err.response);
