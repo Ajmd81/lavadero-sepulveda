@@ -172,12 +172,18 @@ const Clientes = () => {
   };
 
   const cambiarTamanoPagina = (nuevoTamano) => {
-    setPageSize(nuevoTamano);
+    setPageSize(Number(nuevoTamano));
     setCurrentPage(0);
   };
 
-  const getPaginaInicio = () => currentPage * pageSize + 1;
-  const getPaginaFin = () => Math.min((currentPage + 1) * pageSize, totalItems || 0);
+  const getPaginaInicio = () => {
+    const start = currentPage * Number(pageSize) + 1;
+    return isNaN(start) ? 0 : start;
+  };
+  const getPaginaFin = () => {
+    const end = Math.min((currentPage + 1) * Number(pageSize), Number(totalItems) || 0);
+    return isNaN(end) ? 0 : end;
+  };
 
   return (
     <div className="space-y-6">
