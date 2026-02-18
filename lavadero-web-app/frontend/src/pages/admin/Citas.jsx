@@ -83,12 +83,33 @@ const Citas = () => {
   const cargarCitas = async () => {
     setLoading(true);
     try {
-      // Orden descendente por defecto (fecha más reciente primero)
+      // Cargar citas ordenadas por fecha descendente
       const response = await citaService.getAllPaginado(currentPage, pageSize, 'fecha', 'desc');
       const data = response.data;
 
       if (data.content) {
-        setCitas(data.content);
+        // Ordenar por fecha y luego por hora
+        const citasOrdenadas = data.content.sort((a, b) => {
+          // Parsear fechas (asumiendo formato dd/MM/yyyy o similar)
+          const fechaA = new Date(a.fecha);
+          const fechaB = new Date(b.fecha);
+          
+          // Si las fechas son diferentes, ordenar por fecha descendente
+          if (fechaA.getTime() !== fechaB.getTime()) {
+            return fechaB.getTime() - fechaA.getTime();
+          }
+          
+          // Si las fechas son iguales, ordenar por hora ascendente
+          const horaA = a.hora ? a.hora.split(':') : ['00', '00'];
+          const horaB = b.hora ? b.hora.split(':') : ['00', '00'];
+          
+          const minutosA = parseInt(horaA[0]) * 60 + parseInt(horaA[1]);
+          const minutosB = parseInt(horaB[0]) * 60 + parseInt(horaB[1]);
+          
+          return minutosA - minutosB;
+        });
+        
+        setCitas(citasOrdenadas);
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
       } else {
