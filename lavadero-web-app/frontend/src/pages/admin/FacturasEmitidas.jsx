@@ -258,8 +258,9 @@ const FacturasEmitidas = () => {
     }
   };
 
-  // Buscar precio de un servicio por concepto (retorna base imponible SIN IVA)
-  const buscarPrecioServicio = (concepto) => {
+  // Buscar precio de un servicio por concepto y calcular base imponible (sin IVA)
+  // La API devuelve el precio CON IVA incluido, necesitamos extraer la base imponible
+  const buscarPrecioServicio = (concepto, tipoIva = 21) => {
     if (!concepto || !tiposLavado.length) return null;
     
     // Buscar coincidencia exacta
@@ -274,9 +275,12 @@ const FacturasEmitidas = () => {
       );
     }
     
-    // Si encontramos un tipo, retornar el precio SIN IVA (base imponible)
+    // Si encontramos un tipo, extraer la base imponible del precio con IVA
     if (tipoEncontrado && (tipoEncontrado.precio || tipoEncontrado.importe)) {
-      return tipoEncontrado.precio || tipoEncontrado.importe;
+      const precioConIva = tipoEncontrado.precio || tipoEncontrado.importe;
+      // Convertir precio con IVA a base imponible: precio / (1 + IVA%)
+      const baseImponible = precioConIva / (1 + tipoIva / 100);
+      return baseImponible;
     }
     
     return null;
@@ -294,14 +298,15 @@ const FacturasEmitidas = () => {
   // Manejar blur en el campo de concepto para buscar precio
   const handleConceptoBlur = (e, isEditMode = false) => {
     const concepto = e.target.value;
-    const precioEncontrado = buscarPrecioServicio(concepto);
+    const tipoIva = parseFloat(formData.tipoIva) || 21;
+    const precioEncontrado = buscarPrecioServicio(concepto, tipoIva);
     
     if (precioEncontrado) {
       if (isEditMode) {
         // En modo edición, solo actualizamos el estado de concepto editado
         // El precio se calculará cuando se guarde
       } else {
-        // En modo nueva línea, actualizamos el precio unitario (SIN IVA - base imponible)
+        // En modo nueva línea, actualizamos el precio unitario (base imponible SIN IVA)
         setNuevaLinea(prev => ({
           ...prev,
           precioUnitario: precioEncontrado.toString(),
@@ -357,12 +362,13 @@ const FacturasEmitidas = () => {
       return;
     }
 
+    const tipoIva = parseFloat(formData.tipoIva) || 21;
     const nuevasLineas = formData.lineas.map(l => {
       if (l.id === lineaId) {
         const nuevaLinea = { ...l, concepto: conceptoEditado };
         
-        // Buscar el precio del servicio
-        const precioEncontrado = buscarPrecioServicio(conceptoEditado);
+        // Buscar el precio del servicio (base imponible sin IVA)
+        const precioEncontrado = buscarPrecioServicio(conceptoEditado, tipoIva);
         
         if (precioEncontrado) {
           nuevaLinea.precioUnitario = precioEncontrado;
