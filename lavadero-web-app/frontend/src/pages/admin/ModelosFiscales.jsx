@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, parseISO, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import facturaService from '../../services/facturaService';
 import facturaRecibidaService from '../../services/facturaRecibidaService';
 import gastoService from '../../services/gastoService';
@@ -214,11 +216,244 @@ const ModelosFiscales = () => {
     };
 
     const generarPDF = async () => {
-        setMensaje({ 
-            tipo: 'error', 
-            texto: 'La generación de PDF no está disponible actualmente. Esta funcionalidad requiere un endpoint en el backend.' 
-        });
-        setTimeout(() => setMensaje(null), 5000);
+        try {
+            if (!datosModelo) {
+                setMensaje({ tipo: 'error', texto: 'No hay datos para generar el PDF' });
+                return;
+            }
+
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            let yPosition = 15;
+
+            // Título
+            doc.setFontSize(18);
+            doc.setTextColor(40, 40, 40);
+            doc.text(`Modelo ${modeloSeleccionado}`, pageWidth / 2, yPosition, { align: 'center' });
+
+            yPosition += 8;
+            doc.setFontSize(12);
+            doc.setTextColor(100, 100, 100);
+            const modeloInfo = modelos.find(m => m.id === modeloSeleccionado);
+            doc.text(modeloInfo?.descripcion || '', pageWidth / 2, yPosition, { align: 'center' });
+
+            yPosition += 12;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Período: ${trimestre}T ${año}`, 20, yPosition);
+            doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth - 20, yPosition, { align: 'right' });
+
+            yPosition += 15;
+
+            // Contenido según modelo
+            if (modeloSeleccionado === '303') {
+                doc.setFontSize(12);
+                doc.setTextColor(40, 40, 40);
+                doc.text('Declaración de IVA', 20, yPosition);
+
+                yPosition += 10;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+
+                const datos303 = [
+                    ['Concepto', 'Importe'],
+                    ['IVA Repercutido (Ventas)', formatCurrency(datosModelo.ivaRepercutido)],
+                    ['Base Ingresos', formatCurrency(datosModelo.baseIngresos)],
+                    ['', ''],
+                    ['IVA Soportado (Compras)', formatCurrency(datosModelo.ivaSoportado)],
+                    ['Base Gastos', formatCurrency(datosModelo.baseGastos)],
+                    ['', ''],
+                    ['RESULTADO', formatCurrency(datosModelo.liquidacion)]
+                ];
+
+                doc.autoTable({
+                    head: [datos303[0]],
+                    body: datos303.slice(1),
+                    startY: yPosition,
+                    theme: 'grid',
+                    headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
+                    bodyStyles: { textColor: 0 },
+                    alternateRowStyles: { fillColor: [245, 245, 245] },
+                    columnStyles: { 1: { halign: 'right' } },
+                    margin: { left: 20, right: 20 }
+                });
+
+            } else if (modeloSeleccionado === '130') {
+                doc.setFontSize(12);
+                doc.setTextColor(40, 40, 40);
+                doc.text('Pago Fraccionado IRPF', 20, yPosition);
+
+                yPosition += 10;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+
+                const datos130 = [
+                    ['Concepto', 'Importe'],
+                    ['Ingresos del Trimestre', formatCurrency(datosModelo.ingresosTrimestre)],
+                    ['Gastos Deducibles', formatCurrency(datosModelo.gastosDeducibles)],
+                    ['Beneficio Neto', formatCurrency(datosModelo.beneficio)],
+                    ['Pago a Cuenta (20%)', formatCurrency(datosModelo.pagoACuenta)]
+                ];
+
+                doc.autoTable({
+                    head: [datos130[0]],
+                    body: datos130.slice(1),
+                    startY: yPosition,
+                    theme: 'grid',
+                    headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
+                    bodyStyles: { textColor: 0 },
+                    alternateRowStyles: { fillColor: [245, 245, 245] },
+                    columnStyles: { 1: { halign: 'right' } },
+                    margin: { left: 20, right: 20 }
+                });
+
+            } else if (modeloSeleccionado === '111') {
+                doc.setFontSize(12);
+                doc.setTextColor(40, 40, 40);
+                doc.text('Retenciones IRPF', 20, yPosition);
+
+                yPosition += 10;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+
+                const datos111 = [
+                    ['Concepto', 'Importe'],
+                    ['Total Retenciones', formatCurrency(datosModelo.totalRetenciones)],
+                    ['Número de Perceptores', (datosModelo.numeroPerceptores || 0).toString()]
+                ];
+
+                doc.autoTable({
+                    head: [datos111[0]],
+                    body: datos111.slice(1),
+                    startY: yPosition,
+                    theme: 'grid',
+                    headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
+                    bodyStyles: { textColor: 0 },
+                    alternateRowStyles: { fillColor: [245, 245, 245] },
+                    columnStyles: { 1: { halign: 'right' } },
+                    margin: { left: 20, right: 20 }
+                });
+            }
+
+            // Pie de página
+            const pageCount = doc.internal.getPages().length;
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(
+                    `Página ${i} de ${pageCount}`,
+                    pageWidth / 2,
+                    pageHeight - 10,
+                    { align: 'center' }
+                );
+            }
+
+            // Descargar
+            const nombreArchivo = `Modelo_${modeloSeleccionado}_${trimestre}T_${año}.pdf`;
+            doc.save(nombreArchivo);
+
+            setMensaje({ tipo: 'exito', texto: `PDF descargado: ${nombreArchivo}` });
+            setTimeout(() => setMensaje(null), 5000);
+
+        } catch (error) {
+            console.error('Error generando PDF:', error);
+            setMensaje({ tipo: 'error', texto: 'Error al generar el PDF' });
+            setTimeout(() => setMensaje(null), 5000);
+        }
+    };
+
+    const generarTXT = () => {
+        try {
+            if (!datosModelo) {
+                setMensaje({ tipo: 'error', texto: 'No hay datos para generar el TXT' });
+                return;
+            }
+
+            let contenido = '';
+            const ahora = new Date();
+            const nif = 'XXXXXXXXX'; // Placeholder, idealmente desde config/usuario
+
+            // Encabezado común
+            contenido += `MODELO FISCAL ${modeloSeleccionado}\n`;
+            contenido += `====================================\n\n`;
+            contenido += `Período: ${trimestre}T ${año}\n`;
+            contenido += `NIF: ${nif}\n`;
+            contenido += `Generado: ${format(ahora, 'dd/MM/yyyy HH:mm')}\n`;
+            contenido += `====================================\n\n`;
+
+            if (modeloSeleccionado === '303') {
+                contenido += `DECLARACIÓN DE IVA (MODELO 303)\n`;
+                contenido += `--------------------------------\n\n`;
+                contenido += `OPERACIONES INTERIORES CON BIENES\n`;
+                contenido += `Base Ingresos (21%)          : ${formatCurrency(datosModelo.baseIngresos)}\n`;
+                contenido += `IVA Repercutido              : ${formatCurrency(datosModelo.ivaRepercutido)}\n\n`;
+                contenido += `CUOTA IMPUESTO SOPORTADO\n`;
+                contenido += `Base Gastos (21%)            : ${formatCurrency(datosModelo.baseGastos)}\n`;
+                contenido += `IVA Soportado                : ${formatCurrency(datosModelo.ivaSoportado)}\n\n`;
+                contenido += `RESULTADO\n`;
+                contenido += `====================================\n`;
+                if (datosModelo.liquidacion >= 0) {
+                    contenido += `CANTIDAD A INGRESAR          : ${formatCurrency(datosModelo.liquidacion)}\n`;
+                } else {
+                    contenido += `CANTIDAD A COMPENSAR         : ${formatCurrency(Math.abs(datosModelo.liquidacion))}\n`;
+                }
+                contenido += `====================================\n\n`;
+                contenido += `NOTAS:\n`;
+                contenido += `- Declaración generada automáticamente desde sistema de facturación\n`;
+                contenido += `- Revise que todas las facturas del período estén registradas\n`;
+                contenido += `- Incluye IVA soportado de facturas recibidas\n`;
+
+            } else if (modeloSeleccionado === '130') {
+                contenido += `PAGO FRACCIONADO IRPF (MODELO 130)\n`;
+                contenido += `--------------------------------\n\n`;
+                contenido += `INGRESOS\n`;
+                contenido += `Ingresos del Trimestre       : ${formatCurrency(datosModelo.ingresosTrimestre)}\n\n`;
+                contenido += `GASTOS DEDUCIBLES\n`;
+                contenido += `Gastos Totales               : ${formatCurrency(datosModelo.gastosDeducibles)}\n\n`;
+                contenido += `RESULTADO\n`;
+                contenido += `Beneficio Neto               : ${formatCurrency(datosModelo.beneficio)}\n`;
+                contenido += `Porcentaje Retención (20%)   : 20%\n`;
+                contenido += `Pago a Cuenta                : ${formatCurrency(datosModelo.pagoACuenta)}\n`;
+                contenido += `====================================\n\n`;
+                contenido += `NOTAS:\n`;
+                contenido += `- Incluye gastos de facturas recibidas y gastos registrados\n`;
+                contenido += `- Obligatorio para autónomos en estimación directa\n`;
+
+            } else if (modeloSeleccionado === '111') {
+                contenido += `RETENCIONES IRPF (MODELO 111)\n`;
+                contenido += `--------------------------------\n\n`;
+                contenido += `Total Retenciones            : ${formatCurrency(datosModelo.totalRetenciones)}\n`;
+                contenido += `Número de Perceptores       : ${datosModelo.numeroPerceptores || 0}\n`;
+                contenido += `====================================\n\n`;
+                contenido += `NOTAS:\n`;
+                contenido += `- Declara retenciones practicadas a trabajadores y profesionales\n`;
+            }
+
+            contenido += `\nJustificación: Generado automáticamente por sistema de gestión fiscal\n`;
+
+            // Crear blob y descargar
+            const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+            const enlace = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            enlace.setAttribute('href', url);
+            enlace.setAttribute('download', `Modelo_${modeloSeleccionado}_${trimestre}T_${año}.txt`);
+            enlace.style.visibility = 'hidden';
+            
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+
+            setMensaje({ tipo: 'exito', texto: `TXT descargado: Modelo_${modeloSeleccionado}_${trimestre}T_${año}.txt` });
+            setTimeout(() => setMensaje(null), 5000);
+
+        } catch (error) {
+            console.error('Error generando TXT:', error);
+            setMensaje({ tipo: 'error', texto: 'Error al generar el TXT' });
+            setTimeout(() => setMensaje(null), 5000);
+        }
     };
 
     const formatCurrency = (value) => {
@@ -367,18 +602,22 @@ const ModelosFiscales = () => {
                                         <FileText size={24} />
                                         Modelo 303 - Declaración de IVA
                                     </h2>
+                                <div className="flex gap-2">
                                     <button
                                         onClick={generarPDF}
-                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                                     >
                                         <Download size={20} />
                                         Descargar PDF
                                     </button>
+                                    <button
+                                        onClick={generarTXT}
+                                        className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                                    >
+                                        <FileText size={20} />
+                                        Descargar TXT
+                                    </button>
                                 </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                                        <p className="text-sm text-gray-600 mb-1">IVA Repercutido</p>
                                         <p className="text-2xl font-bold text-green-700">
                                             {formatCurrency(datosModelo.ivaRepercutido)}
                                         </p>
@@ -519,13 +758,22 @@ const ModelosFiscales = () => {
                                     <FileText size={24} />
                                     Modelo 130 - Pago Fraccionado IRPF
                                 </h2>
-                                <button
-                                    onClick={generarPDF}
-                                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                >
-                                    <Download size={20} />
-                                    Descargar PDF
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={generarPDF}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        <Download size={20} />
+                                        Descargar PDF
+                                    </button>
+                                    <button
+                                        onClick={generarTXT}
+                                        className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                                    >
+                                        <FileText size={20} />
+                                        Descargar TXT
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -577,13 +825,22 @@ const ModelosFiscales = () => {
                                     <FileText size={24} />
                                     Modelo 111 - Retenciones IRPF
                                 </h2>
-                                <button
-                                    onClick={generarPDF}
-                                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                >
-                                    <Download size={20} />
-                                    Descargar PDF
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={generarPDF}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        <Download size={20} />
+                                        Descargar PDF
+                                    </button>
+                                    <button
+                                        onClick={generarTXT}
+                                        className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                                    >
+                                        <FileText size={20} />
+                                        Descargar TXT
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
