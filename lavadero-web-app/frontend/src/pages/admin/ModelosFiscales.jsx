@@ -29,10 +29,11 @@ const ModelosFiscales = () => {
     }, []);
 
     useEffect(() => {
-        if (facturas.length > 0) {
+        if (facturas.length > 0 || facturasRecibidas.length > 0 || gastos.length > 0) {
             calcularModelo();
         }
-    }, [facturas, facturasRecibidas, gastos, modeloSeleccionado, trimestre, año, calcularModelo]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [facturas, facturasRecibidas, gastos, modeloSeleccionado, trimestre, año]);
 
     const cargarTodosDatos = async () => {
         try {
