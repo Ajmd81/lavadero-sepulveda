@@ -282,6 +282,15 @@ const FacturasEmitidas = () => {
     return null;
   };
 
+  // Manejar cambios en la nueva línea
+  const handleNuevaLineaChange = (e) => {
+    const { name, value } = e.target;
+    setNuevaLinea(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   // Manejar blur en el campo de concepto para buscar precio
   const handleConceptoBlur = (e, isEditMode = false) => {
     const concepto = e.target.value;
