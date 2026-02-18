@@ -49,6 +49,9 @@ const FacturasEmitidas = () => {
     precioUnitario: '',
   });
 
+  const [lineaEditando, setLineaEditando] = useState(null);
+  const [conceptoEditado, setConceptoEditado] = useState('');
+
   useEffect(() => {
     // Inicializar datos en componente
     const inicializar = async () => {
@@ -198,6 +201,8 @@ const FacturasEmitidas = () => {
       lineas: factura.lineas || [],
     });
     setEditandoFactura(factura.id);
+    setLineaEditando(null);
+    setConceptoEditado('');
     setModalAbierto(true);
   };
 
@@ -205,6 +210,8 @@ const FacturasEmitidas = () => {
   const cerrarModal = () => {
     setModalAbierto(false);
     setEditandoFactura(null);
+    setLineaEditando(null);
+    setConceptoEditado('');
   };
 
   // Manejar cambios en los inputs
@@ -294,6 +301,40 @@ const FacturasEmitidas = () => {
     });
   };
 
+  // Editar concepto de línea existente
+  const iniciarEdicionLinea = (lineaId, conceptoActual) => {
+    setLineaEditando(lineaId);
+    setConceptoEditado(conceptoActual);
+  };
+
+  // Guardar cambios de concepto
+  const guardarEdicionLinea = (lineaId) => {
+    if (!conceptoEditado) {
+      alert('Por favor selecciona un concepto');
+      return;
+    }
+
+    const nuevasLineas = formData.lineas.map(l => 
+      l.id === lineaId 
+        ? { ...l, concepto: conceptoEditado }
+        : l
+    );
+    
+    setFormData(prev => ({
+      ...prev,
+      lineas: nuevasLineas,
+    }));
+    
+    setLineaEditando(null);
+    setConceptoEditado('');
+  };
+
+  // Cancelar edición de línea
+  const cancelarEdicionLinea = () => {
+    setLineaEditando(null);
+    setConceptoEditado('');
+  };
+
   // Eliminar línea
   const eliminarLinea = (lineaId) => {
     const nuevasLineas = formData.lineas.filter(l => l.id !== lineaId);
@@ -302,6 +343,11 @@ const FacturasEmitidas = () => {
       lineas: nuevasLineas,
     }));
     recalcularTotales(nuevasLineas, formData.tipoIva);
+    // Si estaba editando esta línea, cancelar edición
+    if (lineaEditando === lineaId) {
+      setLineaEditando(null);
+      setConceptoEditado('');
+    }
   };
 
   // Recalcular totales
@@ -1255,18 +1301,66 @@ const FacturasEmitidas = () => {
                         <tbody>
                           {formData.lineas.map((linea) => (
                             <tr key={linea.id} className="border-t border-gray-200 hover:bg-gray-50">
-                              <td className="px-4 py-3 text-sm">{linea.concepto}</td>
+                              <td className="px-4 py-3 text-sm">
+                                {lineaEditando === linea.id ? (
+                                  <select
+                                    value={conceptoEditado}
+                                    onChange={(e) => setConceptoEditado(e.target.value)}
+                                    className="w-full border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    <option value="">-- Selecciona concepto --</option>
+                                    {tiposLavado.map((tipo) => (
+                                      <option key={tipo.valor} value={tipo.valor}>
+                                        {tipo.descripcion}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  linea.concepto
+                                )}
+                              </td>
                               <td className="px-4 py-3 text-sm text-center">{linea.cantidad}</td>
                               <td className="px-4 py-3 text-sm text-right">{linea.precioUnitario.toFixed(2)} €</td>
                               <td className="px-4 py-3 text-sm text-right font-semibold">{linea.subtotal.toFixed(2)} €</td>
-                              <td className="px-4 py-3 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => eliminarLinea(linea.id)}
-                                  className="text-red-600 hover:text-red-800 font-semibold text-sm"
-                                >
-                                  Eliminar
-                                </button>
+                              <td className="px-4 py-3 text-center space-x-1">
+                                {lineaEditando === linea.id ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => guardarEdicionLinea(linea.id)}
+                                      className="text-green-600 hover:text-green-800 font-semibold text-sm"
+                                      title="Guardar cambios"
+                                    >
+                                      ✓ Guardar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={cancelarEdicionLinea}
+                                      className="text-gray-600 hover:text-gray-800 font-semibold text-sm"
+                                      title="Cancelar"
+                                    >
+                                      ✕ Cancelar
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => iniciarEdicionLinea(linea.id, linea.concepto)}
+                                      className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                                      title="Editar concepto"
+                                    >
+                                      Editar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => eliminarLinea(linea.id)}
+                                      className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                                    >
+                                      Eliminar
+                                    </button>
+                                  </>
+                                )}
                               </td>
                             </tr>
                           ))}
