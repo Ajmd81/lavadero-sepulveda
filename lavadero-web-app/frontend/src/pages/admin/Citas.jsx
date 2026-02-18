@@ -148,6 +148,11 @@ const Citas = () => {
       const [year, month, day] = fecha.split('-');
       const fechaFormato = `${day}/${month}/${year}`;
       
+      // Detectar si es sábado
+      const fechaObj = new Date(year, parseInt(month) - 1, parseInt(day));
+      const diaSemana = fechaObj.getDay(); // 0=domingo, 1=lunes, ..., 6=sábado
+      const esSabado = diaSemana === 6;
+      
       const response = await citaService.getHorariosDisponibles(fechaFormato);
       let horarios = response.data || [];
 
@@ -163,6 +168,15 @@ const Citas = () => {
           .filter(h => h);
 
         console.log('Horarios disponibles del backend:', horarios);
+        
+        // Si es sábado, filtrar solo horarios de 9:00 a 12:00 (incluidos)
+        if (esSabado) {
+          horarios = horarios.filter(h => {
+            const hora = parseInt(h.split(':')[0]);
+            return hora >= 9 && hora <= 12;
+          });
+          console.log('Sábado detectado. Horarios filtrados (9-12):', horarios);
+        }
       }
 
       // Si el backend no devuelve horarios o devuelve un array vacío
