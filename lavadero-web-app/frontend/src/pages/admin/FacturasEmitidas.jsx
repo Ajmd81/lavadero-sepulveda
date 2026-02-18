@@ -258,7 +258,7 @@ const FacturasEmitidas = () => {
     }
   };
 
-  // Buscar precio de un servicio por concepto
+  // Buscar precio de un servicio por concepto (retorna base imponible SIN IVA)
   const buscarPrecioServicio = (concepto) => {
     if (!concepto || !tiposLavado.length) return null;
     
@@ -274,7 +274,7 @@ const FacturasEmitidas = () => {
       );
     }
     
-    // Si encontramos un tipo, retornar el precio
+    // Si encontramos un tipo, retornar el precio SIN IVA (base imponible)
     if (tipoEncontrado && (tipoEncontrado.precio || tipoEncontrado.importe)) {
       return tipoEncontrado.precio || tipoEncontrado.importe;
     }
@@ -301,7 +301,7 @@ const FacturasEmitidas = () => {
         // En modo edición, solo actualizamos el estado de concepto editado
         // El precio se calculará cuando se guarde
       } else {
-        // En modo nueva línea, actualizamos el precio unitario
+        // En modo nueva línea, actualizamos el precio unitario (SIN IVA - base imponible)
         setNuevaLinea(prev => ({
           ...prev,
           precioUnitario: precioEncontrado.toString(),
@@ -1321,7 +1321,7 @@ const FacturasEmitidas = () => {
                       </div>
                       <div className="md:col-span-3">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          Precio Unitario (€)
+                          Precio Unitario Sin IVA (€)
                         </label>
                         <input
                           type="number"
@@ -1352,8 +1352,8 @@ const FacturasEmitidas = () => {
                           <tr>
                             <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Concepto</th>
                             <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Cantidad</th>
-                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Precio Unit.</th>
-                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Subtotal</th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Precio Sin IVA</th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Base Imponible</th>
                             <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Acción</th>
                           </tr>
                         </thead>
