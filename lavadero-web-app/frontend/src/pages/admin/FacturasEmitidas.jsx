@@ -258,13 +258,47 @@ const FacturasEmitidas = () => {
     }
   };
 
-  // Manejar cambios en la nueva línea
-  const handleNuevaLineaChange = (e) => {
-    const { name, value } = e.target;
-    setNuevaLinea(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+  // Buscar precio de un servicio por concepto
+  const buscarPrecioServicio = (concepto) => {
+    if (!concepto || !tiposLavado.length) return null;
+    
+    // Buscar coincidencia exacta
+    let tipoEncontrado = tiposLavado.find(t => 
+      t.descripcion && t.descripcion.toLowerCase() === concepto.toLowerCase()
+    );
+    
+    // Si no hay coincidencia exacta, buscar si el concepto comienza con el tipo de lavado
+    if (!tipoEncontrado) {
+      tipoEncontrado = tiposLavado.find(t => 
+        t.descripcion && concepto.toLowerCase().startsWith(t.descripcion.toLowerCase())
+      );
+    }
+    
+    // Si encontramos un tipo, retornar el precio
+    if (tipoEncontrado && (tipoEncontrado.precio || tipoEncontrado.importe)) {
+      return tipoEncontrado.precio || tipoEncontrado.importe;
+    }
+    
+    return null;
+  };
+
+  // Manejar blur en el campo de concepto para buscar precio
+  const handleConceptoBlur = (e, isEditMode = false) => {
+    const concepto = e.target.value;
+    const precioEncontrado = buscarPrecioServicio(concepto);
+    
+    if (precioEncontrado) {
+      if (isEditMode) {
+        // En modo edición, solo actualizamos el estado de concepto editado
+        // El precio se calculará cuando se guarde
+      } else {
+        // En modo nueva línea, actualizamos el precio unitario
+        setNuevaLinea(prev => ({
+          ...prev,
+          precioUnitario: precioEncontrado.toString(),
+        }));
+      }
+    }
   };
 
   // Agregar línea
@@ -314,16 +348,30 @@ const FacturasEmitidas = () => {
       return;
     }
 
-    const nuevasLineas = formData.lineas.map(l => 
-      l.id === lineaId 
-        ? { ...l, concepto: conceptoEditado }
-        : l
-    );
+    const nuevasLineas = formData.lineas.map(l => {
+      if (l.id === lineaId) {
+        const nuevaLinea = { ...l, concepto: conceptoEditado };
+        
+        // Buscar el precio del servicio
+        const precioEncontrado = buscarPrecioServicio(conceptoEditado);
+        
+        if (precioEncontrado) {
+          nuevaLinea.precioUnitario = precioEncontrado;
+          nuevaLinea.subtotal = l.cantidad * precioEncontrado;
+        }
+        
+        return nuevaLinea;
+      }
+      return l;
+    });
     
     setFormData(prev => ({
       ...prev,
       lineas: nuevasLineas,
     }));
+    
+    // Recalcular totales si el precio cambió
+    recalcularTotales(nuevasLineas, formData.tipoIva);
     
     setLineaEditando(null);
     setConceptoEditado('');
@@ -1230,21 +1278,23 @@ const FacturasEmitidas = () => {
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                       <div className="md:col-span-5">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          Concepto
+                          Concepto (incluye matrícula si aplica)
                         </label>
-                        <select
+                        <input
+                          type="text"
                           name="concepto"
                           value={nuevaLinea.concepto}
                           onChange={handleNuevaLineaChange}
+                          onBlur={handleConceptoBlur}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">-- Selecciona un servicio --</option>
+                          placeholder="Ej: Lavado Completo Turismo - 1234ABC"
+                          list="tiposLavadoList"
+                        />
+                        <datalist id="tiposLavadoList">
                           {tiposLavado.map((tipo) => (
-                            <option key={tipo.valor} value={tipo.valor}>
-                              {tipo.descripcion}
-                            </option>
+                            <option key={tipo.valor} value={tipo.descripcion} />
                           ))}
-                        </select>
+                        </datalist>
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -1303,21 +1353,23 @@ const FacturasEmitidas = () => {
                             <tr key={linea.id} className="border-t border-gray-200 hover:bg-gray-50">
                               <td className="px-4 py-3 text-sm">
                                 {lineaEditando === linea.id ? (
-                                  <select
+                                  <input
+                                    type="text"
                                     value={conceptoEditado}
                                     onChange={(e) => setConceptoEditado(e.target.value)}
+                                    onBlur={(e) => handleConceptoBlur(e, true)}
                                     className="w-full border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500"
-                                  >
-                                    <option value="">-- Selecciona concepto --</option>
-                                    {tiposLavado.map((tipo) => (
-                                      <option key={tipo.valor} value={tipo.valor}>
-                                        {tipo.descripcion}
-                                      </option>
-                                    ))}
-                                  </select>
+                                    placeholder="Ej: Lavado Completo Turismo - 1234ABC"
+                                    list="tiposLavadoEditList"
+                                  />
                                 ) : (
                                   linea.concepto
                                 )}
+                                <datalist id="tiposLavadoEditList">
+                                  {tiposLavado.map((tipo) => (
+                                    <option key={tipo.valor} value={tipo.descripcion} />
+                                  ))}
+                                </datalist>
                               </td>
                               <td className="px-4 py-3 text-sm text-center">{linea.cantidad}</td>
                               <td className="px-4 py-3 text-sm text-right">{linea.precioUnitario.toFixed(2)} €</td>
