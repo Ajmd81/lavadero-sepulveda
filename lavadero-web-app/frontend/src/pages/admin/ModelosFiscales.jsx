@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Download, FileText, Calendar, AlertCircle, CheckCircle,
     Calculator, TrendingUp, TrendingDown, Info
 } from 'lucide-react';
-import { format, startOfQuarter, endOfQuarter, startOfYear, endOfYear, parseISO, isWithinInterval } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { format, startOfQuarter, endOfQuarter, parseISO, isWithinInterval } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import facturaService from '../../services/facturaService';
@@ -33,7 +32,7 @@ const ModelosFiscales = () => {
         if (facturas.length > 0) {
             calcularModelo();
         }
-    }, [facturas, facturasRecibidas, gastos, modeloSeleccionado, trimestre, año]);
+    }, [facturas, facturasRecibidas, gastos, modeloSeleccionado, trimestre, año, calcularModelo]);
 
     const cargarTodosDatos = async () => {
         try {
@@ -99,21 +98,17 @@ const ModelosFiscales = () => {
                 return parseISO(fechaStr);
             }
             return null;
-        } catch (error) {
+        } catch {
             return null;
         }
     };
 
-    const getFechasPeriodo = () => {
+    const calcularModelo = useCallback(() => {
         const date = new Date(año, (trimestre - 1) * 3, 1);
-        return {
+        const fechas = {
             desde: startOfQuarter(date),
             hasta: endOfQuarter(date)
         };
-    };
-
-    const calcularModelo = () => {
-        const fechas = getFechasPeriodo();
         
         // Filtrar por período
         const filtrarPorFecha = (items) => items.filter(item => {
@@ -213,7 +208,7 @@ const ModelosFiscales = () => {
                 numeroPerceptores: 0
             });
         }
-    };
+    }, [facturas, facturasRecibidas, gastos, modeloSeleccionado, trimestre, año]);
 
     const generarPDF = async () => {
         try {
@@ -594,14 +589,12 @@ const ModelosFiscales = () => {
                 <>
                     {/* Modelo 303 - IVA */}
                     {modeloSeleccionado === '303' && (
-                        <>
-                            {/* Resumen IVA */}
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                        <FileText size={24} />
-                                        Modelo 303 - Declaración de IVA
-                                    </h2>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    <FileText size={24} />
+                                    Modelo 303 - Declaración de IVA
+                                </h2>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={generarPDF}
@@ -618,122 +611,117 @@ const ModelosFiscales = () => {
                                         Descargar TXT
                                     </button>
                                 </div>
-                                        <p className="text-2xl font-bold text-green-700">
-                                            {formatCurrency(datosModelo.ivaRepercutido)}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Base: {formatCurrency(datosModelo.baseIngresos)}
-                                        </p>
+                            </div>
+
+                            {/* Resumen de Importes */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                    <p className="text-sm text-gray-600 mb-1">IVA Repercutido</p>
+                                    <p className="text-2xl font-bold text-red-700">
+                                        {formatCurrency(datosModelo.ivaSoportado)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Base: {formatCurrency(datosModelo.baseGastos)}
+                                    </p>
+                                </div>
+
+                                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <p className="text-sm text-gray-600 mb-1">Resultado</p>
+                                    <p className={`text-2xl font-bold ${datosModelo.liquidacion >= 0 ? 'text-blue-700' : 'text-red-700'
+                                        }`}>
+                                        {formatCurrency(datosModelo.liquidacion)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {datosModelo.liquidacion >= 0 ? 'A ingresar' : 'A compensar'}
+                                    </p>
+                                </div>
+
+                                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                    <p className="text-sm text-gray-600 mb-1">Período</p>
+                                    <p className="text-2xl font-bold text-purple-700">
+                                        {trimestre}T {año}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {trimestres.find(t => t.value === trimestre)?.meses}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Detalle de Operaciones */}
+                            <div className="border-t border-gray-200 pt-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Detalle de Operaciones</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* IVA Devengado */}
+                                    <div>
+                                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                            <TrendingUp size={20} className="text-green-600" />
+                                            IVA Devengado (Ventas)
+                                        </h4>
+                                        <table className="min-w-full text-sm">
+                                            <tbody className="divide-y divide-gray-200">
+                                                <tr>
+                                                    <td className="py-2 text-gray-600">Régimen General (21%)</td>
+                                                    <td className="py-2 text-right font-medium">
+                                                        {formatCurrency(datosModelo.baseIngresos)}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-2 text-gray-600">IVA repercutido (21%)</td>
+                                                    <td className="py-2 text-right font-bold text-green-700">
+                                                        {formatCurrency(datosModelo.ivaRepercutido)}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
 
-                                    <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                                        <p className="text-sm text-gray-600 mb-1">IVA Soportado</p>
-                                        <p className="text-2xl font-bold text-red-700">
-                                            {formatCurrency(datosModelo.ivaSoportado)}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Base: {formatCurrency(datosModelo.baseGastos)}
-                                        </p>
+                                    {/* IVA Deducible */}
+                                    <div>
+                                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                            <TrendingDown size={20} className="text-red-600" />
+                                            IVA Deducible (Compras)
+                                        </h4>
+                                        <table className="min-w-full text-sm">
+                                            <tbody className="divide-y divide-gray-200">
+                                                <tr>
+                                                    <td className="py-2 text-gray-600">Bienes corrientes</td>
+                                                    <td className="py-2 text-right font-medium">
+                                                        {formatCurrency(datosModelo.baseGastos)}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-2 text-gray-600">IVA soportado</td>
+                                                    <td className="py-2 text-right font-bold text-red-700">
+                                                        {formatCurrency(datosModelo.ivaSoportado)}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                        <p className="text-sm text-gray-600 mb-1">Resultado</p>
-                                        <p className={`text-2xl font-bold ${datosModelo.liquidacion >= 0 ? 'text-blue-700' : 'text-red-700'
+                            {/* Liquidación Final */}
+                            <div className="border-t border-gray-200 pt-6 mt-6">
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-lg font-bold text-gray-900">RESULTADO DE LA LIQUIDACIÓN</span>
+                                        <span className={`text-3xl font-bold ${datosModelo.liquidacion >= 0 ? 'text-blue-700' : 'text-green-700'
                                             }`}>
                                             {formatCurrency(datosModelo.liquidacion)}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {datosModelo.liquidacion >= 0 ? 'A ingresar' : 'A compensar'}
-                                        </p>
+                                        </span>
                                     </div>
-
-                                    <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                                        <p className="text-sm text-gray-600 mb-1">Período</p>
-                                        <p className="text-2xl font-bold text-purple-700">
-                                            {trimestre}T {año}
+                                    {datosModelo.liquidacion >= 0 ? (
+                                        <p className="text-sm text-gray-600 mt-2">
+                                            <Info size={16} className="inline mr-1" />
+                                            Cantidad a ingresar en la Agencia Tributaria
                                         </p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {trimestres.find(t => t.value === trimestre)?.meses}
+                                    ) : (
+                                        <p className="text-sm text-gray-600 mt-2">
+                                            <Info size={16} className="inline mr-1" />
+                                            Cantidad a compensar en futuras declaraciones
                                         </p>
-                                    </div>
-                                </div>
-
-                                {/* Detalle de Operaciones */}
-                                <div className="border-t border-gray-200 pt-6">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-4">Detalle de Operaciones</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* IVA Devengado */}
-                                        <div>
-                                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                                <TrendingUp size={20} className="text-green-600" />
-                                                IVA Devengado (Ventas)
-                                            </h4>
-                                            <table className="min-w-full text-sm">
-                                                <tbody className="divide-y divide-gray-200">
-                                                    <tr>
-                                                        <td className="py-2 text-gray-600">Régimen General (21%)</td>
-                                                        <td className="py-2 text-right font-medium">
-                                                            {formatCurrency(datosModelo.baseIngresos)}
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="py-2 text-gray-600">IVA repercutido (21%)</td>
-                                                        <td className="py-2 text-right font-bold text-green-700">
-                                                            {formatCurrency(datosModelo.ivaRepercutido)}
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        {/* IVA Deducible */}
-                                        <div>
-                                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                                <TrendingDown size={20} className="text-red-600" />
-                                                IVA Deducible (Compras)
-                                            </h4>
-                                            <table className="min-w-full text-sm">
-                                                <tbody className="divide-y divide-gray-200">
-                                                    <tr>
-                                                        <td className="py-2 text-gray-600">Bienes corrientes</td>
-                                                        <td className="py-2 text-right font-medium">
-                                                            {formatCurrency(datosModelo.baseGastos)}
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td className="py-2 text-gray-600">IVA soportado</td>
-                                                        <td className="py-2 text-right font-bold text-red-700">
-                                                            {formatCurrency(datosModelo.ivaSoportado)}
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Liquidación Final */}
-                                <div className="border-t border-gray-200 pt-6 mt-6">
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-lg font-bold text-gray-900">RESULTADO DE LA LIQUIDACIÓN</span>
-                                            <span className={`text-3xl font-bold ${datosModelo.liquidacion >= 0 ? 'text-blue-700' : 'text-green-700'
-                                                }`}>
-                                                {formatCurrency(datosModelo.liquidacion)}
-                                            </span>
-                                        </div>
-                                        {datosModelo.liquidacion >= 0 ? (
-                                            <p className="text-sm text-gray-600 mt-2">
-                                                <Info size={16} className="inline mr-1" />
-                                                Cantidad a ingresar en la Agencia Tributaria
-                                            </p>
-                                        ) : (
-                                            <p className="text-sm text-gray-600 mt-2">
-                                                <Info size={16} className="inline mr-1" />
-                                                Cantidad a compensar en futuras declaraciones
-                                            </p>
-                                        )}
-                                    </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -747,7 +735,7 @@ const ModelosFiscales = () => {
                                     <li>• ✅ Incluye IVA soportado de facturas recibidas</li>
                                 </ul>
                             </div>
-                        </>
+                        </div>
                     )}
 
                     {/* Modelo 130 - IRPF */}
