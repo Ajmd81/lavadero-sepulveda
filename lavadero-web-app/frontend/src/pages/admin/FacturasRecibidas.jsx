@@ -190,7 +190,7 @@ const FacturasRecibidas = () => {
     setModalAbierto(true);
   };
 
-  const abrirModalEditar = (factura) => {
+  const abrirModalEditar = async (factura) => {
     // Convertir fechas dd/MM/yyyy → yyyy-MM-dd para inputs type="date"
     const convertirFecha = (f) => {
       if (!f) return '';
@@ -198,18 +198,47 @@ const FacturasRecibidas = () => {
         const [d, m, y] = f.split('/');
         return `${y}-${m}-${d}`;
       }
-      return f; // ya está en yyyy-MM-dd u otro formato
+      return f;
     };
 
-    setFormData({
-      ...factura,
-      fechaFactura: convertirFecha(factura.fechaFactura),
-      fechaVencimiento: convertirFecha(factura.fechaVencimiento),
-      fechaPago: convertirFecha(factura.fechaPago),
-      lineas: factura.lineas || [],
-      tipoIva: factura.tipoIva ?? '21',
-      tipoIrpf: factura.tipoIrpf ?? '0',
-    });
+    try {
+      // Traer la factura completa (con líneas) desde la API
+      const response = await facturaRecibidaService.getById(factura.id);
+      const facturaCompleta = response.data || factura;
+
+      setFormData({
+        ...facturaCompleta,
+        fechaFactura: convertirFecha(facturaCompleta.fechaFactura),
+        fechaVencimiento: convertirFecha(facturaCompleta.fechaVencimiento),
+        fechaPago: convertirFecha(facturaCompleta.fechaPago),
+        lineas: Array.isArray(facturaCompleta.lineas) && facturaCompleta.lineas.length > 0
+          ? facturaCompleta.lineas.map(l => ({
+              ...l,
+              id: l.id || Date.now() + Math.random(),
+              concepto: l.concepto || '',
+              cantidad: Number(l.cantidad) || 1,
+              precioUnitario: Number(l.precioUnitario) || 0,
+              tipoIva: Number(l.tipoIva) ?? 21,
+              subtotal: Number(l.subtotal) || (Number(l.cantidad) || 1) * (Number(l.precioUnitario) || 0),
+            }))
+          : [],
+        tipoIva: facturaCompleta.tipoIva ?? '21',
+        tipoIrpf: facturaCompleta.tipoIrpf ?? '0',
+      });
+    } catch (err) {
+      console.error('Error cargando factura para editar:', err);
+      // Fallback: usar los datos del listado
+      setFormData({
+        ...factura,
+        fechaFactura: convertirFecha(factura.fechaFactura),
+        fechaVencimiento: convertirFecha(factura.fechaVencimiento),
+        fechaPago: convertirFecha(factura.fechaPago),
+        lineas: Array.isArray(factura.lineas) ? factura.lineas : [],
+        tipoIva: factura.tipoIva ?? '21',
+        tipoIrpf: factura.tipoIrpf ?? '0',
+      });
+    }
+
     setNuevaLinea({
       concepto: '',
       cantidad: 1,
