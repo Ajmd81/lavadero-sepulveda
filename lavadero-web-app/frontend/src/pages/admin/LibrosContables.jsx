@@ -1,59 +1,44 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   TrendingUp, TrendingDown, Minus, FileDown, Printer,
-  ChevronDown, ChevronRight, Calendar, BarChart3, PieChart,
+  ChevronDown, ChevronRight, Calendar, BarChart3,
   BookOpen, ArrowUpRight, ArrowDownRight
 } from "lucide-react";
 import {
   PieChart as RechartsPie, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer
 } from "recharts";
+import { parseISO, isWithinInterval } from "date-fns";
+import facturaService from "../../services/facturaService";
+import facturaRecibidaService from "../../services/facturaRecibidaService";
+import gastoService from "../../services/gastoService";
 
 // ─────────────────────────────────────────────
-// DATOS MOCK — reemplazar por llamadas a la API
+// CATEGORÍAS → etiquetas legibles
 // ─────────────────────────────────────────────
-const MOCK_DATA = {
-  ejercicio: 2025,
-  fechaDesde: "01/01/2025",
-  fechaHasta: "19/02/2025",
-  numFacturasEmitidas: 142,
-  numFacturasRecibidas: 38,
-  numGastos: 17,
-  totalIngresos: 28450.0,
-  totalGastos: 19830.5,
-  ventasNetas: 27900.0,
-  otrosIngresosExplotacion: 550.0,
-  aprovisionamientos: 4200.0,
-  gastosPersonal: 8500.0,
-  gastosPersonalDetalle: { sueldos: 7000.0, seguridadSocial: 1500.0 },
-  otrosGastosExplotacion: 5130.5,
-  serviciosExteriores: 2800.0,
-  tributos: 630.5,
-  otrosGastosGestion: 1700.0,
-  amortizacion: 2000.0,
-  resultadoExplotacion: 8619.5,
-  ingresosFinancieros: 120.0,
-  gastosFinancieros: 89.0,
-  resultadoFinanciero: 31.0,
-  resultadoAntesImpuestos: 8650.5,
-  impuestoBeneficios: 2162.62,
-  resultadoEjercicio: 6487.88,
-  margenBeneficio: 22.8,
-  gastosPorCategoria: [
-    { categoria: "PERSONAL", label: "Personal", importe: 7000.0 },
-    { categoria: "SEGURIDAD_SOCIAL", label: "Seguridad Social", importe: 1500.0 },
-    { categoria: "ALQUILER", label: "Alquiler", importe: 1800.0 },
-    { categoria: "PRODUCTOS", label: "Productos limpieza", importe: 1200.0 },
-    { categoria: "LUZ", label: "Electricidad", importe: 890.5 },
-    { categoria: "AGUA", label: "Agua", importe: 420.0 },
-    { categoria: "GESTORIA", label: "Gestoría", importe: 400.0 },
-    { categoria: "TELEFONIA", label: "Telefonía/Internet", importe: 180.0 },
-    { categoria: "PUBLICIDAD", label: "Publicidad", importe: 280.0 },
-    { categoria: "MANTENIMIENTO", label: "Mantenimiento", importe: 660.0 },
-    { categoria: "BANCARIOS", label: "Gastos bancarios", importe: 89.0 },
-    { categoria: "SEGUROS", label: "Seguros", importe: 311.0 },
-    { categoria: "OTROS", label: "Otros gastos", importe: 100.0 },
-  ],
+const CATEGORIA_LABELS = {
+  PERSONAL: "Personal",
+  SEGURIDAD_SOCIAL: "Seguridad Social",
+  SEGURIDAD_SOCIAL_A_CARGO_EMPRESA: "SS Empresa",
+  ALQUILER: "Alquiler",
+  PRODUCTOS: "Productos limpieza",
+  LUZ: "Electricidad",
+  AGUA: "Agua",
+  GESTORIA: "Gestoría",
+  TELEFONIA: "Telefonía/Internet",
+  PUBLICIDAD: "Publicidad",
+  MANTENIMIENTO: "Mantenimiento",
+  BANCARIOS: "Gastos bancarios",
+  SEGUROS: "Seguros",
+  SUMINISTROS: "Suministros",
+  IMPUESTOS: "Impuestos/Tributos",
+  COMBUSTIBLE: "Combustible",
+  MATERIAL_OFICINA: "Material oficina",
+  REPARACIONES: "Reparaciones",
+  MAQUINARIA: "Maquinaria",
+  VEHICULOS: "Vehículos",
+  ASOCIACIONES: "Asociaciones",
+  OTROS: "Otros gastos",
 };
 
 const PIE_COLORS = [
@@ -171,43 +156,216 @@ export default function LibrosContables() {
   const [desde, setDesde] = useState(`${today.getFullYear()}-01-01`);
   const [hasta, setHasta] = useState(today.toISOString().split("T")[0]);
   const [activeTab, setActiveTab] = useState("pyg"); // pyg | grafico
-  const [data, setData] = useState(MOCK_DATA);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Quick filters
+  // ── Parsear fecha flexible (dd/MM/yyyy ó yyyy-MM-dd) ──
+  const parsearFecha = (fechaStr) => {
+    if (!fechaStr) return null;
+    try {
+      if (fechaStr.includes("/")) {
+        const [dia, mes, anio] = fechaStr.split("/");
+        return new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+      }
+      if (fechaStr.includes("-")) return parseISO(fechaStr);
+      return null;
+    } catch { return null; }
+  };
+
+  // ── Extraer array de respuesta API ──
+  const extraerArray = (resp) => {
+    if (Array.isArray(resp)) return resp;
+    if (resp?.content && Array.isArray(resp.content)) return resp.content;
+    if (resp?.data) {
+      if (Array.isArray(resp.data)) return resp.data;
+      if (resp.data.content && Array.isArray(resp.data.content)) return resp.data.content;
+      return [];
+    }
+    return [];
+  };
+
+  // ── Calcular PyG desde datos brutos ──
+  const calcularPyG = useCallback((facturas, facturasRecibidas, gastos, fechaDesde, fechaHasta) => {
+    const inicio = parseISO(fechaDesde);
+    const fin = parseISO(fechaHasta);
+
+    const enPeriodo = (item) => {
+      const f = parsearFecha(item.fecha || item.fechaFactura);
+      return f && isWithinInterval(f, { start: inicio, end: fin });
+    };
+
+    const facturasPeriodo = facturas.filter(enPeriodo);
+    const frPeriodo = facturasRecibidas.filter(enPeriodo);
+    const gastosPeriodo = gastos.filter(enPeriodo);
+
+    // ── INGRESOS ──
+    const baseIngresos = facturasPeriodo.reduce((s, f) => s + (parseFloat(f.baseImponible) || 0), 0);
+    const totalIngresos = facturasPeriodo.reduce((s, f) => s + (parseFloat(f.total) || 0), 0);
+    const ventasNetas = baseIngresos;
+
+    // ── GASTOS por categoría (facturas recibidas + gastos simples) ──
+    const mapCat = {};
+    frPeriodo.forEach((fr) => {
+      const cat = fr.categoria || "OTROS";
+      const imp = parseFloat(fr.baseImponible) || parseFloat(fr.total) || 0;
+      mapCat[cat] = (mapCat[cat] || 0) + imp;
+    });
+    gastosPeriodo.forEach((g) => {
+      const cat = g.categoria || "OTROS";
+      const imp = parseFloat(g.baseImponible) || parseFloat(g.importe) || 0;
+      mapCat[cat] = (mapCat[cat] || 0) + imp;
+    });
+
+    const gastosPorCategoria = Object.entries(mapCat)
+      .map(([categoria, importe]) => ({
+        categoria,
+        label: CATEGORIA_LABELS[categoria] || categoria,
+        importe: Math.round(importe * 100) / 100,
+      }))
+      .sort((a, b) => b.importe - a.importe);
+
+    // ── Agrupaciones PGC ──
+    const catPersonal = ["PERSONAL"];
+    const catSS = ["SEGURIDAD_SOCIAL", "SEGURIDAD_SOCIAL_A_CARGO_EMPRESA"];
+    const catAprov = ["PRODUCTOS", "MAQUINARIA"];
+    const catFinancieros = ["BANCARIOS"];
+    const catTributos = ["IMPUESTOS"];
+    const catServicios = ["ALQUILER", "TELEFONIA", "LUZ", "AGUA", "SUMINISTROS", "SEGUROS", "GESTORIA", "PUBLICIDAD", "COMBUSTIBLE", "VEHICULOS", "ASOCIACIONES"];
+    const catAmortiz = ["MANTENIMIENTO", "REPARACIONES"];
+
+    const sumarCats = (cats) => gastosPorCategoria
+      .filter((g) => cats.includes(g.categoria))
+      .reduce((s, g) => s + g.importe, 0);
+
+    const sueldos = sumarCats(catPersonal);
+    const seguridadSocial = sumarCats(catSS);
+    const gastosPersonal = sueldos + seguridadSocial;
+    const aprovisionamientos = sumarCats(catAprov);
+    const serviciosExteriores = sumarCats(catServicios);
+    const tributos = sumarCats(catTributos);
+    const gastosFinancieros = sumarCats(catFinancieros);
+    const amortizacion = sumarCats(catAmortiz);
+
+    const otrosGastosGestion = gastosPorCategoria
+      .filter((g) => ![ ...catPersonal, ...catSS, ...catAprov, ...catFinancieros, ...catTributos, ...catServicios, ...catAmortiz ].includes(g.categoria))
+      .reduce((s, g) => s + g.importe, 0);
+
+    const otrosGastosExplotacion = serviciosExteriores + tributos + otrosGastosGestion;
+    const totalGastos = gastosPersonal + aprovisionamientos + otrosGastosExplotacion + amortizacion;
+
+    // ── Resultados ──
+    const resultadoExplotacion = totalIngresos - totalGastos;
+    const ingresosFinancieros = 0;
+    const resultadoFinanciero = ingresosFinancieros - gastosFinancieros;
+    const resultadoAntesImpuestos = resultadoExplotacion + resultadoFinanciero;
+    const impuestoBeneficios = resultadoAntesImpuestos > 0 ? Math.round(resultadoAntesImpuestos * 0.25 * 100) / 100 : 0;
+    const resultadoEjercicio = Math.round((resultadoAntesImpuestos - impuestoBeneficios) * 100) / 100;
+    const margenBeneficio = totalIngresos > 0 ? Math.round((resultadoEjercicio / totalIngresos) * 1000) / 10 : 0;
+
+    return {
+      ejercicio: new Date(fechaDesde).getFullYear(),
+      fechaDesde: fechaDesde.split("-").reverse().join("/"),
+      fechaHasta: fechaHasta.split("-").reverse().join("/"),
+      numFacturasEmitidas: facturasPeriodo.length,
+      numFacturasRecibidas: frPeriodo.length,
+      numGastos: gastosPeriodo.length,
+      totalIngresos: Math.round(totalIngresos * 100) / 100,
+      totalGastos: Math.round(totalGastos * 100) / 100,
+      ventasNetas: Math.round(ventasNetas * 100) / 100,
+      otrosIngresosExplotacion: Math.round((totalIngresos - ventasNetas) * 100) / 100,
+      aprovisionamientos: Math.round(aprovisionamientos * 100) / 100,
+      gastosPersonal: Math.round(gastosPersonal * 100) / 100,
+      gastosPersonalDetalle: {
+        sueldos: Math.round(sueldos * 100) / 100,
+        seguridadSocial: Math.round(seguridadSocial * 100) / 100,
+      },
+      otrosGastosExplotacion: Math.round(otrosGastosExplotacion * 100) / 100,
+      serviciosExteriores: Math.round(serviciosExteriores * 100) / 100,
+      tributos: Math.round(tributos * 100) / 100,
+      otrosGastosGestion: Math.round(otrosGastosGestion * 100) / 100,
+      amortizacion: Math.round(amortizacion * 100) / 100,
+      resultadoExplotacion: Math.round(resultadoExplotacion * 100) / 100,
+      ingresosFinancieros,
+      gastosFinancieros: Math.round(gastosFinancieros * 100) / 100,
+      resultadoFinanciero: Math.round(resultadoFinanciero * 100) / 100,
+      resultadoAntesImpuestos: Math.round(resultadoAntesImpuestos * 100) / 100,
+      impuestoBeneficios,
+      resultadoEjercicio,
+      margenBeneficio,
+      gastosPorCategoria,
+    };
+  }, []);
+
+  // ── Cargar datos desde la API ──
+  const generarInforme = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [facturasResp, frResp, gastosResp] = await Promise.all([
+        facturaService.getAll(0, 10000),
+        facturaRecibidaService.getAll(),
+        gastoService.getAll(),
+      ]);
+
+      const facturas = extraerArray(facturasResp);
+      const facturasRecibidas = extraerArray(frResp);
+      const gastos = extraerArray(gastosResp);
+
+      const resultado = calcularPyG(facturas, facturasRecibidas, gastos, desde, hasta);
+      setData(resultado);
+    } catch (err) {
+      console.error("Error cargando datos contables:", err);
+      setError("Error al cargar los datos. Revisa la conexión con el servidor.");
+    } finally {
+      setLoading(false);
+    }
+  }, [desde, hasta, calcularPyG]);
+
+  // Cargar al montar
+  useEffect(() => {
+    generarInforme();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Filtros rápidos ──
   const setQuickFilter = (type) => {
     const y = today.getFullYear();
-    const quarters = { T1: ["01-01","03-31"], T2: ["04-01","06-30"], T3: ["07-01","09-30"], T4: ["10-01","12-31"] };
+    const pad = (n) => String(n).padStart(2, "0");
+    const quarters = {
+      T1: [`${y}-01-01`, `${y}-03-31`],
+      T2: [`${y}-04-01`, `${y}-06-30`],
+      T3: [`${y}-07-01`, `${y}-09-30`],
+      T4: [`${y}-10-01`, `${y}-12-31`],
+    };
     if (type === "mes") {
-      setDesde(`${y}-${String(today.getMonth()+1).padStart(2,"0")}-01`);
-      setHasta(today.toISOString().split("T")[0]);
+      const m = today.getMonth() + 1;
+      const lastDay = new Date(y, m, 0).getDate();
+      setDesde(`${y}-${pad(m)}-01`);
+      setHasta(`${y}-${pad(m)}-${pad(lastDay)}`);
     } else if (quarters[type]) {
-      setDesde(`${y}-${quarters[type][0]}`);
-      setHasta(`${y}-${quarters[type][1]}`);
+      setDesde(quarters[type][0]);
+      setHasta(quarters[type][1]);
     } else if (type === "anio") {
       setDesde(`${y}-01-01`);
       setHasta(`${y}-12-31`);
     }
   };
 
-  const generarInforme = useCallback(() => {
-    setLoading(true);
-    // TODO: llamar a la API → GET /api/contabilidad/pyg?desde={desde}&hasta={hasta}
-    setTimeout(() => { setData(MOCK_DATA); setLoading(false); }, 600);
-  }, []);
-
-  const resultado = data.resultadoEjercicio;
+  // ── Valores derivados (con null-safety) ──
+  const resultado = data?.resultadoEjercicio ?? 0;
   const resultadoColor = resultado > 0 ? "green" : resultado < 0 ? "red" : "blue";
   const ResultIcon = resultado > 0 ? TrendingUp : resultado < 0 ? TrendingDown : Minus;
 
-  // Top 6 para pie chart
-  const topGastos = [...data.gastosPorCategoria].sort((a,b) => b.importe - a.importe).slice(0,6);
-  const otrosImporte = data.gastosPorCategoria.slice(6).reduce((s,g) => s + g.importe, 0);
+  const gastosCat = data?.gastosPorCategoria ?? [];
+  const topGastos = [...gastosCat].sort((a,b) => b.importe - a.importe).slice(0,6);
+  const otrosImporte = gastosCat.length > 6
+    ? gastosCat.sort((a,b) => b.importe - a.importe).slice(6).reduce((s,g) => s + g.importe, 0)
+    : 0;
   const pieData = otrosImporte > 0
     ? [...topGastos, { label: "Otros", importe: otrosImporte }]
     : topGastos;
 
-  const barData = data.gastosPorCategoria
+  const barData = [...gastosCat]
     .sort((a,b) => b.importe - a.importe)
     .slice(0, 10)
     .map(g => ({ name: g.label.split("/")[0], importe: g.importe }));
@@ -226,7 +384,7 @@ export default function LibrosContables() {
           </h1>
         </div>
         <p style={{ margin: 0, fontSize: 13, opacity: 0.8 }}>
-          Lavadero Sepúlveda · Ejercicio {data.ejercicio}
+          Lavadero Sepúlveda · Ejercicio {data?.ejercicio ?? today.getFullYear()}
         </p>
       </div>
 
@@ -308,7 +466,27 @@ export default function LibrosContables() {
           </div>
         </div>
 
+        {/* ── ERROR / LOADING ── */}
+        {error && (
+          <div style={{
+            background: "#FFEBEE", border: "1px solid #EF5350", borderRadius: 8,
+            padding: "12px 16px", marginBottom: 16, color: "#C62828", fontSize: 13, fontWeight: 600
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        {loading && !data && (
+          <div style={{
+            background: "#E3F2FD", borderRadius: 8, padding: "24px",
+            textAlign: "center", color: "#1565C0", fontSize: 14, fontWeight: 600, marginBottom: 16
+          }}>
+            Cargando datos contables…
+          </div>
+        )}
+
         {/* ── KPIs ── */}
+        {data && (
         <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
           <KpiCard title="Total Ingresos" value={fmt(data.totalIngresos)}
             sub={`${data.numFacturasEmitidas} facturas emitidas`} color="green" icon={ArrowUpRight} />
@@ -322,11 +500,12 @@ export default function LibrosContables() {
             icon={ResultIcon}
           />
         </div>
+        )}
 
         {/* ═══════════════════════════════════════ */}
         {/* TAB: Pérdidas y Ganancias               */}
         {/* ═══════════════════════════════════════ */}
-        {activeTab === "pyg" && (
+        {activeTab === "pyg" && data && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
 
             {/* COLUMNA IZQUIERDA */}
@@ -344,8 +523,8 @@ export default function LibrosContables() {
               <Section title="B) Gastos de Explotación">
                 <PyGRow label="4. Aprovisionamientos" value={data.aprovisionamientos} isGasto />
                 <PyGRow label="6. Gastos de personal" value={data.gastosPersonal} isGasto bold />
-                <PyGRow label="Sueldos y salarios" value={data.gastosPersonalDetalle.sueldos} indent={1} isGasto />
-                <PyGRow label="Cargas sociales" value={data.gastosPersonalDetalle.seguridadSocial} indent={1} isGasto />
+                <PyGRow label="Sueldos y salarios" value={data.gastosPersonalDetalle?.sueldos} indent={1} isGasto />
+                <PyGRow label="Cargas sociales" value={data.gastosPersonalDetalle?.seguridadSocial} indent={1} isGasto />
                 <PyGRow label="7. Otros gastos de explotación" value={data.otrosGastosExplotacion} isGasto bold />
                 <PyGRow label="Servicios exteriores" value={data.serviciosExteriores} indent={1} isGasto />
                 <PyGRow label="Tributos" value={data.tributos} indent={1} isGasto />
@@ -367,7 +546,7 @@ export default function LibrosContables() {
                       </tr>
                     </thead>
                     <tbody>
-                      {[...data.gastosPorCategoria]
+                      {[...gastosCat]
                         .sort((a, b) => b.importe - a.importe)
                         .map((g, i) => (
                           <tr key={g.categoria} style={{ background: i % 2 === 0 ? "#fff" : "#F7FAFC" }}>
@@ -376,7 +555,7 @@ export default function LibrosContables() {
                               {fmtGasto(g.importe)}
                             </td>
                             <td style={{ padding: "7px 10px", textAlign: "right", color: "#666" }}>
-                              {((g.importe / data.totalGastos) * 100).toFixed(1)}%
+                              {data.totalGastos ? ((g.importe / data.totalGastos) * 100).toFixed(1) : 0}%
                             </td>
                           </tr>
                         ))}
@@ -463,7 +642,7 @@ export default function LibrosContables() {
         {/* ═══════════════════════════════════════ */}
         {/* TAB: Análisis Gráfico                   */}
         {/* ═══════════════════════════════════════ */}
-        {activeTab === "grafico" && (
+        {activeTab === "grafico" && data && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {/* Barras: gastos por categoría */}
             <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
@@ -537,7 +716,7 @@ export default function LibrosContables() {
           display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8
         }}>
           <span>Lavadero Sepúlveda · CIF: B-XXXXXXXX · Córdoba</span>
-          <span>Período: {data.fechaDesde} — {data.fechaHasta} · Ejercicio {data.ejercicio}</span>
+          <span>Período: {data?.fechaDesde ?? desde} — {data?.fechaHasta ?? hasta} · Ejercicio {data?.ejercicio ?? today.getFullYear()}</span>
           <span>Generado: {new Date().toLocaleString("es-ES")}</span>
         </div>
       </div>
