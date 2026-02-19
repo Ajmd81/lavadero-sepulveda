@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import gastoService from '../../services/gastoService';
 import enumsService from '../../services/enumsService';
+import * as XLSX from 'xlsx';
 
 const Gastos = () => {
   const [gastos, setGastos] = useState([]);
@@ -237,6 +238,88 @@ const Gastos = () => {
     return colores[categoria] || 'bg-gray-100 text-gray-800';
   };
 
+  // ── Importar desde Excel ──
+  const fileInputRef = useRef(null);
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      if (rows.length === 0) {
+        alert('El archivo Excel está vacío');
+        return;
+      }
+
+      let creados = 0;
+      let errores = [];
+
+      for (const [idx, row] of rows.entries()) {
+        try {
+          let fecha = '';
+          if (row.fecha) {
+            if (typeof row.fecha === 'number') {
+              const d = XLSX.SSF.parse_date_code(row.fecha);
+              fecha = `${String(d.d).padStart(2,'0')}/${String(d.m).padStart(2,'0')}/${d.y}`;
+            } else {
+              fecha = String(row.fecha);
+            }
+          }
+
+          const importe = parseFloat(row.importe) || 0;
+          const ivaIncluido = row.ivaIncluido === true || row.ivaIncluido === 'true' || row.ivaIncluido === 'si' || row.ivaIncluido === 'SI';
+          let base = parseFloat(row.baseImponible) || 0;
+          let cuotaIva = parseFloat(row.cuotaIva) || 0;
+
+          if (ivaIncluido && importe > 0 && base === 0) {
+            base = Math.round(importe / 1.21 * 100) / 100;
+            cuotaIva = Math.round((importe - base) * 100) / 100;
+          } else if (!ivaIncluido && base === 0 && importe > 0) {
+            base = importe;
+            cuotaIva = Math.round(base * 0.21 * 100) / 100;
+          }
+
+          const datos = {
+            concepto: row.concepto || '',
+            fecha,
+            categoria: row.categoria || 'OTROS',
+            importe: importe || (base + cuotaIva),
+            ivaIncluido,
+            baseImponible: base,
+            cuotaIva,
+            metodoPago: row.metodoPago || 'EFECTIVO',
+            recurrente: row.recurrente === true || row.recurrente === 'true',
+            diaRecurrencia: row.diaRecurrencia || '',
+            notas: row.notas || '',
+            pagado: row.pagado === true || row.pagado === 'true' || row.pagado === 'si' || row.pagado === 'SI',
+          };
+
+          await gastoService.create(datos);
+          creados++;
+        } catch (err) {
+          errores.push(`Fila ${idx + 2}: ${err.response?.data?.message || err.message}`);
+        }
+      }
+
+      await cargarGastos();
+      alert(`✅ Importación completada:\n- ${creados} gastos creados\n${errores.length > 0 ? `- ${errores.length} errores:\n${errores.join('\n')}` : '- Sin errores'}`);
+    } catch (err) {
+      console.error('Error importando Excel:', err);
+      setError('Error al leer el archivo Excel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
@@ -251,12 +334,27 @@ const Gastos = () => {
             </p>
           </div>
         </div>
-        <button
-          onClick={abrirModalNuevo}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold flex items-center gap-2"
-        >
-          <span>+</span> Nuevo Gasto
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold"
+          >
+            📥 Importar Excel
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".xlsx,.xls"
+            onChange={handleImportExcel}
+            className="hidden"
+          />
+          <button
+            onClick={abrirModalNuevo}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold flex items-center gap-2"
+          >
+            <span>+</span> Nuevo Gasto
+          </button>
+        </div>
       </div>
 
       {error && (

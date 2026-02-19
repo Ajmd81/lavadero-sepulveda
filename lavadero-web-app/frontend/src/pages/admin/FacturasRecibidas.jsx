@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import facturaRecibidaService from '../../services/facturaRecibidaService';
 import proveedorService from '../../services/proveedorService';
 import enumsService from '../../services/enumsService';
+import * as XLSX from 'xlsx';
 
 const FacturasRecibidas = () => {
   const [facturas, setFacturas] = useState([]);
@@ -476,6 +477,93 @@ const FacturasRecibidas = () => {
 
   const totalFacturas = facturas.reduce((sum, factura) => sum + (parseFloat(factura.total) || 0), 0);
 
+  // ── Importar desde Excel ──
+  const fileInputRef = useRef(null);
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      if (rows.length === 0) {
+        alert('El archivo Excel está vacío');
+        return;
+      }
+
+      let creadas = 0;
+      let errores = [];
+
+      for (const [idx, row] of rows.entries()) {
+        try {
+          const parseFecha = (val) => {
+            if (!val) return '';
+            if (typeof val === 'number') {
+              const d = XLSX.SSF.parse_date_code(val);
+              return `${String(d.d).padStart(2,'0')}/${String(d.m).padStart(2,'0')}/${d.y}`;
+            }
+            return String(val);
+          };
+
+          const base = parseFloat(row.baseImponible) || 0;
+          const tipoIva = parseFloat(row.tipoIva) || 21;
+          const cuotaIva = Math.round(base * tipoIva / 100 * 100) / 100;
+          const tipoIrpf = parseFloat(row.tipoIrpf) || 0;
+          const cuotaIrpf = Math.round(base * tipoIrpf / 100 * 100) / 100;
+          const total = parseFloat(row.total) || (base + cuotaIva - cuotaIrpf);
+
+          const datos = {
+            numeroFactura: row.numeroFactura || '',
+            proveedorId: row.proveedorId ? Number(row.proveedorId) : null,
+            proveedorNombre: row.proveedorNombre || '',
+            proveedorNif: row.proveedorNif || '',
+            fechaFactura: parseFecha(row.fechaFactura),
+            fechaVencimiento: parseFecha(row.fechaVencimiento),
+            fechaPago: parseFecha(row.fechaPago),
+            categoria: row.categoria || 'SUMINISTROS',
+            concepto: row.concepto || '',
+            lineas: [{
+              concepto: row.concepto || 'Concepto importado',
+              cantidad: parseInt(row.cantidad) || 1,
+              precioUnitario: base,
+              tipoIva,
+            }],
+            baseImponible: base,
+            tipoIva,
+            cuotaIva,
+            tipoIrpf,
+            cuotaIrpf,
+            total,
+            estado: row.estado || 'PENDIENTE',
+            metodoPago: row.metodoPago || 'TRANSFERENCIA',
+            notas: row.notas || '',
+          };
+
+          await facturaRecibidaService.create(datos);
+          creadas++;
+        } catch (err) {
+          errores.push(`Fila ${idx + 2}: ${err.response?.data?.message || err.message}`);
+        }
+      }
+
+      await cargarFacturas();
+      alert(`✅ Importación completada:\n- ${creadas} facturas recibidas creadas\n${errores.length > 0 ? `- ${errores.length} errores:\n${errores.join('\n')}` : '- Sin errores'}`);
+    } catch (err) {
+      console.error('Error importando Excel:', err);
+      setError('Error al leer el archivo Excel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
@@ -485,12 +573,27 @@ const FacturasRecibidas = () => {
             Total: {formatearMoneda(totalFacturas)}
           </p>
         </div>
-        <button
-          onClick={abrirModalNuevo}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
-        >
-          + Nueva Factura
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold"
+          >
+            📥 Importar Excel
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".xlsx,.xls"
+            onChange={handleImportExcel}
+            className="hidden"
+          />
+          <button
+            onClick={abrirModalNuevo}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
+          >
+            + Nueva Factura
+          </button>
+        </div>
       </div>
 
       {error && (

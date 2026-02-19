@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import facturaService from '../../services/facturaService';
 import clienteService from '../../services/clienteService';
 import enumsService from '../../services/enumsService';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 
 const FacturasEmitidas = () => {
@@ -948,6 +949,98 @@ const FacturasEmitidas = () => {
 
   const totalVentas = facturas.reduce((sum, factura) => sum + (parseFloat(factura.total) || 0), 0);
 
+  // ── Importar desde Excel ──
+  const fileInputRef = useRef(null);
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      if (rows.length === 0) {
+        alert('El archivo Excel está vacío');
+        return;
+      }
+
+      let creadas = 0;
+      let errores = [];
+
+      for (const row of rows) {
+        try {
+          // Convertir fecha Excel (número serial) o string a dd/MM/yyyy
+          let fechaEmision = '';
+          if (row.fecha) {
+            if (typeof row.fecha === 'number') {
+              const date = XLSX.SSF.parse_date_code(row.fecha);
+              fechaEmision = `${String(date.d).padStart(2,'0')}/${String(date.m).padStart(2,'0')}/${date.y}`;
+            } else if (typeof row.fecha === 'string') {
+              if (row.fecha.includes('-')) {
+                const [y, m, d] = row.fecha.split('-');
+                fechaEmision = `${d}/${m}/${y}`;
+              } else {
+                fechaEmision = row.fecha;
+              }
+            }
+          }
+
+          const base = parseFloat(row.baseImponible) || 0;
+          const iva = parseFloat(row.tipoIva) || 21;
+          const importeIva = Math.round(base * iva / 100 * 100) / 100;
+          const total = parseFloat(row.total) || (base + importeIva);
+
+          const datosFactura = {
+            tipo: row.tipo || 'SIMPLIFICADA',
+            estado: row.estado || 'PENDIENTE',
+            metodoPago: row.metodoPago || 'EFECTIVO',
+            clienteId: row.clienteId ? Number(row.clienteId) : null,
+            clienteNombre: row.clienteNombre || '',
+            clienteNif: row.clienteNif || '',
+            clienteDireccion: row.clienteDireccion || '',
+            clienteEmail: row.clienteEmail || '',
+            clienteTelefono: row.clienteTelefono || '',
+            lineas: [{
+              concepto: row.concepto || 'Servicio importado',
+              cantidad: parseInt(row.cantidad) || 1,
+              precioUnitario: base,
+              subtotal: base,
+            }],
+            baseImponible: base,
+            tipoIva: iva,
+            importeIva,
+            total,
+            observaciones: row.observaciones || '',
+          };
+
+          const params = {};
+          if (row.numero) params.numeroFactura = String(row.numero);
+          if (fechaEmision) params.fechaEmision = fechaEmision;
+
+          await facturaService.createManual(datosFactura, params);
+          creadas++;
+        } catch (err) {
+          errores.push(`Fila ${rows.indexOf(row) + 2}: ${err.response?.data?.message || err.message}`);
+        }
+      }
+
+      await cargarFacturas(0);
+      alert(`✅ Importación completada:\n- ${creadas} facturas creadas\n${errores.length > 0 ? `- ${errores.length} errores:\n${errores.join('\n')}` : '- Sin errores'}`);
+    } catch (err) {
+      console.error('Error importando Excel:', err);
+      setError('Error al leer el archivo Excel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
@@ -962,12 +1055,27 @@ const FacturasEmitidas = () => {
             </p>
           </div>
         </div>
-        <button
-          onClick={abrirModalNuevo}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
-        >
-          + Nueva Factura
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold"
+          >
+            📥 Importar Excel
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".xlsx,.xls"
+            onChange={handleImportExcel}
+            className="hidden"
+          />
+          <button
+            onClick={abrirModalNuevo}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
+          >
+            + Nueva Factura
+          </button>
+        </div>
       </div>
 
       {error && (
