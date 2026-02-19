@@ -24,6 +24,7 @@ const AdminLayout = () => {
     { icon: '/assets/icons/contabilidad.png', label: 'Contabilidad', path: '/admin/contabilidad', category: 'financiero' },
     { icon: '/assets/icons/estado-financiero.png', label: 'Resumen financiero', path: '/admin/resumen-financiero', category: 'financiero' },
     { icon: '/assets/icons/modeloFiscal.png', label: 'Modelos fiscales', path: '/admin/modelos-fiscales', category: 'financiero' },
+    { icon: '/assets/icons/contabilidad.png', label: 'Libros contables', path: '/admin/libros-contables', category: 'financiero' },
     
     // Separador visual
     { separator: true },

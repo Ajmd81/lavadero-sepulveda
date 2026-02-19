@@ -16,6 +16,7 @@ import Proveedores from './pages/admin/Proveedores';
 import Contabilidad from './pages/admin/Contabilidad';
 import ResumenFinanciero from './pages/admin/ResumenFinanciero';
 import ModelosFiscales from './pages/admin/ModelosFiscales';
+import LibrosContables from './pages/admin/LibrosContables';
 import Configuracion from './pages/admin/Configuracion';
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ function App() {
               <Route path="contabilidad" element={<Contabilidad />} />
               <Route path="resumen-financiero" element={<ResumenFinanciero />} />
               <Route path="modelos-fiscales" element={<ModelosFiscales />} />
+              <Route path="libros-contables" element={<LibrosContables />} />
               <Route path="configuracion" element={<Configuracion />} />
               <Route path="mi-perfil" element={<MiPerfil />} />
             </Route>
