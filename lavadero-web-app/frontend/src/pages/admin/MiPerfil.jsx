@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FiUser, FiLock, FiMail } from 'react-icons/fi';
+import { User, Lock, Mail } from 'lucide-react';
 
 const MiPerfil = () => {
   const { user, logout } = useAuth();
@@ -87,7 +87,7 @@ const MiPerfil = () => {
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-3">
-          <FiUser size={32} className="text-blue-600" />
+          <User size={32} className="text-blue-600" />
           <div>
             <h1 className="text-3xl font-bold">Mi Perfil</h1>
             <p className="text-gray-500">Usuario: {user?.username}</p>
@@ -98,7 +98,7 @@ const MiPerfil = () => {
       {/* Datos Personales */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <FiUser className="text-blue-600" />
+          <User className="text-blue-600" />
           Datos Personales
         </h2>
         
@@ -121,7 +121,7 @@ const MiPerfil = () => {
               Email
             </label>
             <div className="relative">
-              <FiMail className="absolute left-3 top-3 text-gray-400" />
+              <Mail className="absolute left-3 top-3 text-gray-400" />
               <input
                 type="email"
                 value={emailForm}
@@ -145,7 +145,7 @@ const MiPerfil = () => {
         {/* Cambiar Username */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <FiUser className="text-orange-600" />
+            <User className="text-orange-600" />
             Cambiar Username
           </h2>
           
@@ -178,7 +178,7 @@ const MiPerfil = () => {
         {/* Cambiar Contraseña */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <FiLock className="text-red-600" />
+            <Lock className="text-red-600" />
             Cambiar Contraseña
           </h2>
           

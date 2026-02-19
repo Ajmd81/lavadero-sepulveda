@@ -1,7 +1,7 @@
 // src/components/SeleccionarAlbaranesModal.jsx
 import React, { useState, useEffect } from 'react';
 import { albaranService } from '../../services/albaranService';
-import { FiX, FiCheck } from 'react-icons/fi';
+import { X, Check } from 'lucide-react';
 import '../styles/Modal.css';
 
 const SeleccionarAlbaranesModal = ({ isOpen, onClose, clienteId, onSeleccionar }) => {
@@ -47,7 +47,7 @@ const SeleccionarAlbaranesModal = ({ isOpen, onClose, clienteId, onSeleccionar }
         <div className="modal-header">
           <h2>Seleccionar Albaranes</h2>
           <button className="btn-close" onClick={onClose}>
-            <FiX />
+            <X />
           </button>
         </div>
 
@@ -97,7 +97,7 @@ const SeleccionarAlbaranesModal = ({ isOpen, onClose, clienteId, onSeleccionar }
             onClick={handleConfirmar}
             disabled={seleccionados.length === 0}
           >
-            <FiCheck /> Confirmar ({seleccionados.length})
+            <Check /> Confirmar ({seleccionados.length})
           </button>
         </div>
       </div>

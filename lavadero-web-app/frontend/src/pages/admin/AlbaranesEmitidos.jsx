@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { albaranService } from '../../services/albaranService';
 import clienteService from '../../services/clienteService';
 import { 
-  FiPlus, FiEdit2, FiTrash2, FiCheck, FiClock, 
-  FiFileText, FiSearch, FiFilter, FiX 
-} from 'react-icons/fi';
+  Plus, Pencil, Trash2, Check, Clock, 
+  FileText, Search, Filter, X 
+} from 'lucide-react';
 
 const AlbaranesEmitidos = () => {
   const [albaranes, setAlbaranes] = useState([]);
@@ -141,9 +141,9 @@ const AlbaranesEmitidos = () => {
 
   const getEstadoBadge = (estado) => {
     const badges = {
-      PENDIENTE: { color: 'bg-yellow-100 text-yellow-800', icon: FiClock, text: 'Pendiente' },
-      ENTREGADO: { color: 'bg-green-100 text-green-800', icon: FiCheck, text: 'Entregado' },
-      FACTURADO: { color: 'bg-blue-100 text-blue-800', icon: FiFileText, text: 'Facturado' }
+      PENDIENTE: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, text: 'Pendiente' },
+      ENTREGADO: { color: 'bg-green-100 text-green-800', icon: Check, text: 'Entregado' },
+      FACTURADO: { color: 'bg-blue-100 text-blue-800', icon: FileText, text: 'Facturado' }
     };
     
     const badge = badges[estado] || badges.PENDIENTE;
@@ -180,7 +180,7 @@ const AlbaranesEmitidos = () => {
             onClick={() => handleOpenModal('create')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <FiPlus size={20} />
+            <Plus size={20} />
             Nuevo Albarán
           </button>
         </div>
@@ -188,7 +188,7 @@ const AlbaranesEmitidos = () => {
         {/* Filtros */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar por número o cliente..."
@@ -199,7 +199,7 @@ const AlbaranesEmitidos = () => {
           </div>
 
           <div className="relative">
-            <FiFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <select
               value={estadoFilter}
               onChange={(e) => setEstadoFilter(e.target.value)}
@@ -342,14 +342,14 @@ const AlbaranesEmitidos = () => {
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Editar"
                           >
-                            <FiEdit2 size={18} />
+                            <Pencil size={18} />
                           </button>
                           <button
                             onClick={() => handleDelete(albaran.id)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Eliminar"
                           >
-                            <FiTrash2 size={18} />
+                            <Trash2 size={18} />
                           </button>
                         </>
                       )}
@@ -810,7 +810,7 @@ const FacturarAlbaranesModal = ({ albaranes, selectedAlbaranes, onToggle, onClos
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
           <h3 className="text-xl font-bold text-gray-900">Seleccionar Albaranes para Facturar</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <FiX size={24} />
+            <X size={24} />
           </button>
         </div>
 
