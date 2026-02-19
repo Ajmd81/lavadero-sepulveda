@@ -191,7 +191,25 @@ const FacturasRecibidas = () => {
   };
 
   const abrirModalEditar = (factura) => {
-    setFormData(factura);
+    // Convertir fechas dd/MM/yyyy → yyyy-MM-dd para inputs type="date"
+    const convertirFecha = (f) => {
+      if (!f) return '';
+      if (typeof f === 'string' && f.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        const [d, m, y] = f.split('/');
+        return `${y}-${m}-${d}`;
+      }
+      return f; // ya está en yyyy-MM-dd u otro formato
+    };
+
+    setFormData({
+      ...factura,
+      fechaFactura: convertirFecha(factura.fechaFactura),
+      fechaVencimiento: convertirFecha(factura.fechaVencimiento),
+      fechaPago: convertirFecha(factura.fechaPago),
+      lineas: factura.lineas || [],
+      tipoIva: factura.tipoIva ?? '21',
+      tipoIrpf: factura.tipoIrpf ?? '0',
+    });
     setNuevaLinea({
       concepto: '',
       cantidad: 1,
