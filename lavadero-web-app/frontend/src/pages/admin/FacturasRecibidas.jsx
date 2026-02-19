@@ -390,7 +390,7 @@ const FacturasRecibidas = () => {
       return;
     }
 
-    if (formData.lineas.length === 0) {
+    if (!editandoFactura && formData.lineas.length === 0) {
       alert('Por favor agrega al menos una línea de concepto');
       return;
     }
