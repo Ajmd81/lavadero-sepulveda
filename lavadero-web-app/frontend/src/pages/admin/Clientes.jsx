@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Plus, Edit, Trash2, X, Phone, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import clienteService from '../../services/clienteService';
+import * as XLSX from 'xlsx';
 
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -185,6 +186,59 @@ const Clientes = () => {
     return isNaN(end) ? 0 : end;
   };
 
+  // ── Importar desde Excel ──
+  const fileInputRef = useRef(null);
+
+  const handleImportExcel = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      if (rows.length === 0) {
+        alert('El archivo Excel está vacío');
+        return;
+      }
+
+      let creados = 0;
+      let errores = [];
+
+      for (const [idx, row] of rows.entries()) {
+        try {
+          const datos = {
+            nombre: row.nombre || '',
+            apellidos: row.apellidos || '',
+            nif: row.nif || '',
+            telefono: row.telefono ? String(row.telefono) : '',
+            email: row.email || '',
+            direccion: row.direccion || '',
+            ciudad: row.ciudad || '',
+            codigoPostal: row.codigoPostal ? String(row.codigoPostal) : '',
+            vehiculoHabitual: row.vehiculoHabitual || '',
+            notas: row.notas || '',
+            activo: row.activo !== false && row.activo !== 'false' && row.activo !== 'no',
+          };
+
+          await clienteService.create(datos);
+          creados++;
+        } catch (err) {
+          errores.push(`Fila ${idx + 2}: ${err.response?.data?.message || err.message}`);
+        }
+      }
+
+      queryClient.invalidateQueries(['clientes']);
+      alert(`✅ Importación completada:\n- ${creados} clientes creados\n${errores.length > 0 ? `- ${errores.length} errores:\n${errores.join('\n')}` : '- Sin errores'}`);
+    } catch (err) {
+      console.error('Error importando Excel:', err);
+      alert('Error al leer el archivo Excel');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
@@ -198,9 +252,24 @@ const Clientes = () => {
               <p className="text-base text-gray-600">Total: <span className="font-semibold text-blue-600">{totalItems}</span> clientes</p>
             </div>
           </div>
-          <button onClick={abrirModalNuevo} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium">
-            + Nuevo Cliente
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-base font-medium"
+            >
+              📥 Importar Excel
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".xlsx,.xls"
+              onChange={handleImportExcel}
+              className="hidden"
+            />
+            <button onClick={abrirModalNuevo} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium">
+              + Nuevo Cliente
+            </button>
+          </div>
         </div>
       </div>
 
