@@ -67,8 +67,8 @@ const FacturasRecibidas = () => {
       }
 
       facturasData = facturasData.sort((a, b) => {
-        let fechaA = a.fechaFactura;
-        let fechaB = b.fechaFactura;
+        let fechaA = a.fechaFactura || '';
+        let fechaB = b.fechaFactura || '';
 
         if (fechaA && fechaA.includes('/')) {
           const [d, m, y] = fechaA.split('/');
@@ -79,7 +79,7 @@ const FacturasRecibidas = () => {
           fechaB = `${y}-${m}-${d}`;
         }
 
-        return fechaB.localeCompare(fechaA);
+        return (fechaB || '').localeCompare(fechaA || '');
       });
 
       setFacturas(facturasData);
@@ -218,7 +218,7 @@ const FacturasRecibidas = () => {
               concepto: l.concepto || '',
               cantidad: Number(l.cantidad) || 1,
               precioUnitario: Number(l.precioUnitario) || 0,
-              tipoIva: Number(l.tipoIva) ?? 21,
+              tipoIva: !isNaN(Number(l.tipoIva)) ? Number(l.tipoIva) : 21,
               subtotal: Number(l.subtotal) || (Number(l.cantidad) || 1) * (Number(l.precioUnitario) || 0),
             }))
           : [],
@@ -280,7 +280,7 @@ const FacturasRecibidas = () => {
     const cantidad = parseFloat(nuevaLinea.cantidad);
     const precioUnitario = parseFloat(nuevaLinea.precioUnitario);
     const subtotal = cantidad * precioUnitario;
-    const tipoIvaLinea = parseFloat(nuevaLinea.tipoIva) ?? 21;
+    const tipoIvaLinea = !isNaN(parseFloat(nuevaLinea.tipoIva)) ? parseFloat(nuevaLinea.tipoIva) : 21;
 
     const linea = {
       id: Date.now(),
@@ -312,7 +312,7 @@ const FacturasRecibidas = () => {
     
     // Calcular IVA por línea según su tipoIva
     const cuotaIvaTotal = lineas.reduce((sum, linea) => {
-      const tipoIva = linea.tipoIva ?? 21;
+      const tipoIva = !isNaN(Number(linea.tipoIva)) ? Number(linea.tipoIva) : 21;
       const ivaLinea = (linea.subtotal * tipoIva) / 100;
       return sum + ivaLinea;
     }, 0);
@@ -423,19 +423,27 @@ const FacturasRecibidas = () => {
         proveedorNombre: formData.proveedorNombre.trim(),
         proveedorNif: (formData.proveedorNif || '').trim(),
         fechaFactura: fechaFacturaFormato,
-        fechaVencimiento: formatearFechaParaEnvio(formData.fechaVencimiento) || '',
-        fechaPago: formatearFechaParaEnvio(formData.fechaPago) || '',
+        fechaVencimiento: formatearFechaParaEnvio(formData.fechaVencimiento) || null,
+        fechaPago: formatearFechaParaEnvio(formData.fechaPago) || null,
         categoria: formData.categoria || 'SUMINISTROS',
         concepto: formData.concepto || '',
         baseImponible: baseImponibleNum,
-        tipoIva: parseFloat(formData.tipoIva) ?? 21,
+        tipoIva: parseFloat(formData.tipoIva) || 21,
         cuotaIva: parseFloat(formData.cuotaIva) || 0,
         tipoIrpf: parseFloat(formData.tipoIrpf) || 0,
         cuotaIrpf: parseFloat(formData.cuotaIrpf) || 0,
         total: totalNum,
         estado: formData.estado || 'PENDIENTE',
         metodoPago: formData.metodoPago || 'TRANSFERENCIA',
-        notas: (formData.notas || '').trim()
+        notas: (formData.notas || '').trim(),
+        lineas: (formData.lineas || []).map(l => ({
+          ...(l.id && typeof l.id === 'number' && l.id < 1000000000 ? { id: l.id } : {}),
+          concepto: l.concepto || '',
+          cantidad: parseFloat(l.cantidad) || 1,
+          precioUnitario: parseFloat(l.precioUnitario) || 0,
+          tipoIva: parseFloat(l.tipoIva) || 21,
+          subtotal: parseFloat(l.subtotal) || 0,
+        })),
       };
 
       console.log('Enviando datos:', datosEnvio);
@@ -923,9 +931,9 @@ const FacturasRecibidas = () => {
                             <tr key={linea.id} className="border-t border-gray-200 hover:bg-gray-50">
                               <td className="px-4 py-3 text-base">{linea.concepto}</td>
                               <td className="px-4 py-3 text-base text-center">{linea.cantidad}</td>
-                              <td className="px-4 py-3 text-base text-right">{linea.precioUnitario.toFixed(2)} €</td>
-                              <td className="px-4 py-3 text-base text-center font-semibold text-orange-600">{(linea.tipoIva ?? 21).toFixed(2)} %</td>
-                              <td className="px-4 py-3 text-base text-right font-semibold">{linea.subtotal.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-base text-right">{(Number(linea.precioUnitario) || 0).toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-base text-center font-semibold text-orange-600">{(!isNaN(Number(linea.tipoIva)) ? Number(linea.tipoIva) : 21).toFixed(2)} %</td>
+                              <td className="px-4 py-3 text-base text-right font-semibold">{(Number(linea.subtotal) || 0).toFixed(2)} €</td>
                               <td className="px-4 py-3 text-center">
                                 <button
                                   type="button"
@@ -1003,7 +1011,7 @@ const FacturasRecibidas = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <label className="block text-base font-semibold text-gray-700 mb-2">
                         Método de Pago
                       </label>
                       <select
@@ -1024,7 +1032,7 @@ const FacturasRecibidas = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-base font-semibold text-gray-700 mb-2">
                     Notas
                   </label>
                   <textarea
@@ -1048,7 +1056,7 @@ const FacturasRecibidas = () => {
                 Cancelar
               </button>
               <button
-                type="submit"
+                type="button"
                 onClick={guardarFactura}
                 className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white text-base font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg"
               >
