@@ -93,11 +93,13 @@ public class CitaController {
             }
 
             // Crear cita usando servicio refactorizado
+            logger.info("GUARDANDO cita para cliente: {} (email: {})", cita.getNombre(), cita.getEmail());
             Cita citaGuardada = citaService.crearCita(cita);
-            logger.info("Cita creada exitosamente: ID {}, Cliente: {}",
+            logger.info("OK: Cita creada exitosamente: ID {}, Cliente: {}",
                     citaGuardada.getId(), citaGuardada.getNombre());
 
-            // Enviar email si el servicio está disponible
+            // Enviar email si el servicio está disponible (redundante pero como respaldo)
+            logger.info("PROCESANDO envio de email desde controlador como respaldo...");
             enviarEmailConfirmacionSiEsPosible(citaGuardada);
 
             // Preparar mensajes para la vista usando DateTimeFormatUtils
@@ -173,21 +175,55 @@ public class CitaController {
      * Método privado para envío de email - Centralizado
      */
     private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
-        if (emailService != null && emailService.isServicioDisponible()) {
-            try {
-                if (cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
-                    emailService.enviarEmailConfirmacion(cita);
-                    logger.info("Email de confirmación enviado a: {}", cita.getEmail());
-                } else {
-                    logger.debug("No se envía email: dirección vacía para cita ID {}", cita.getId());
-                }
-            } catch (Exception e) {
-                // Error en email no debe afectar la creación de la cita
-                logger.warn("Error enviando email de confirmación para cita ID {}: {}",
-                        cita.getId(), e.getMessage());
-            }
-        } else {
-            logger.debug("Servicio de email no disponible - no se envía confirmación");
+        logger.info("VERIFICANDO disponibilidad de EmailService...");
+        
+        if (emailService == null) {
+            logger.error("ERROR: EmailService es NULL en CitaController - Verificar inyección");
+            return;
         }
+        
+        if (!emailService.isServicioDisponible()) {
+            logger.error("ERROR: Servicio de email NO DISPONIBLE. Estado: {}", emailService.obtenerEstadoConfiguracion());
+            return;
+        }
+        
+        logger.info("OK: EmailService disponible. Procesando envío...");
+        
+        try {
+            if (cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
+                logger.info("ENVIANDO email a: {}", cita.getEmail());
+                emailService.enviarEmailConfirmacion(cita);
+                logger.info("OK: Email de confirmación enviado a: {}", cita.getEmail());
+            } else {
+                logger.error("ERROR: Email vacío/nulo para cita ID {}: '{}'", cita.getId(), cita.getEmail());
+            }
+        } catch (Exception e) {
+            // Error en email no debe afectar la creación de la cita
+            logger.error("ERROR al enviar email para cita ID {}: {} | Causa: {} | Estado: {}",
+                    cita.getId(), e.getMessage(), e.getCause(), emailService.obtenerEstadoConfiguracion(), e);
+        }
+    }
+
+    /**
+     * Endpoint de diagnóstico para verificar estado de email
+     * Accede en: http://localhost:8080/diagnostico-email
+     */
+    @GetMapping("/diagnostico-email")
+    @ResponseBody
+    public Map<String, String> diagnosticoEmail() {
+        Map<String, String> diagnostico = new java.util.LinkedHashMap<>();
+
+        if (emailService != null) {
+            diagnostico.put("estado", "EmailService inyectado correctamente");
+            diagnostico.put("disponible", String.valueOf(emailService.isServicioDisponible()));
+            diagnostico.put("configuracion", emailService.obtenerEstadoConfiguracion());
+        } else {
+            diagnostico.put("estado", "ERROR: EmailService no inyectado");
+            diagnostico.put("disponible", "false");
+            diagnostico.put("configuracion", "No disponible");
+        }
+
+        logger.info("Diagnóstico de email solicitado: {}", diagnostico);
+        return diagnostico;
     }
 }

@@ -50,21 +50,25 @@ public class CitaService {
         Cita citaGuardada = citaRepository.save(cita);
 
         // Enviar email de confirmación si tiene email válido
-        if (emailService != null
-                && citaGuardada.getEmail() != null
-                && !citaGuardada.getEmail().isBlank()) {
-            try {
-                emailService.enviarEmailConfirmacion(citaGuardada);
-                marcarConfirmacionEnviada(citaGuardada.getId());
-                log.info("Email de confirmación enviado para cita {}", citaGuardada.getId());
-            } catch (Exception e) {
-                // La cita se guarda aunque falle el email
-                log.warn("No se pudo enviar el email de confirmación para cita {}: {}",
-                        citaGuardada.getId(), e.getMessage());
+        if (emailService != null) {
+            log.info("VERIFICANDO EmailService disponible. Email de cita: {}", citaGuardada.getEmail());
+            if (citaGuardada.getEmail() != null && !citaGuardada.getEmail().isBlank()) {
+                try {
+                    log.info("ENVIANDO email de confirmación para cita {}", citaGuardada.getId());
+                    emailService.enviarEmailConfirmacion(citaGuardada);
+                    marcarConfirmacionEnviada(citaGuardada.getId());
+                    log.info("OK: Email de confirmacion enviado exitosamente para cita {}", citaGuardada.getId());
+                } catch (Exception e) {
+                    // La cita se guarda aunque falle el email
+                    log.error("ERROR: Fallo al enviar email para cita {}: {} | Causa: {}",
+                            citaGuardada.getId(), e.getMessage(), e.getCause(), e);
+                }
+            } else {
+                log.warn("AVISO: Email vacio para cita {}: '{}'",
+                        citaGuardada.getId(), citaGuardada.getEmail());
             }
         } else {
-            log.info("Cita {} creada sin email de confirmación (sin email o servicio no disponible)",
-                    citaGuardada.getId());
+            log.error("ERROR: EmailService es NULL - no se enviaran emails. Verificar inyeccion de dependencias");
         }
 
         return citaGuardada;

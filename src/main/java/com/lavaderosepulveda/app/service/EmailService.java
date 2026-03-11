@@ -42,15 +42,19 @@ public class EmailService {
      * Usa DateTimeFormatUtils para formateo consistente
      */
     public void enviarEmailConfirmacion(Cita cita) {
+        logger.info("📧 INICIANDO envío de email de confirmación para cita ID: {}", cita.getId());
+        
         if (!isEmailConfigured()) {
-            logger.warn("EmailService no está configurado. No se enviará el email de confirmación.");
+            logger.error("❌ EmailService NO ESTÁ CONFIGURADO. JavaMailSender es null. Verificar variables de entorno SPRING_MAIL_*");
             return;
         }
 
         if (!isEmailValido(cita.getEmail())) {
-            logger.warn("Email inválido para la cita ID {}: {}", cita.getId(), cita.getEmail());
+            logger.error("❌ Email inválido para la cita ID {}: '{}'", cita.getId(), cita.getEmail());
             return;
         }
+        
+        logger.info("✅ Validaciones pasadas. Preparando envío a: {}", cita.getEmail());
 
         try {
             MimeMessage message = crearMimeMessage();
@@ -70,7 +74,7 @@ public class EmailService {
 
             // Enviar email
             emailSender.send(message);
-            logger.info("Email de confirmación enviado exitosamente a: {}", cita.getEmail());
+            logger.info("OK: Email de confirmacion enviado exitosamente a: {} para cita ID {}", cita.getEmail(), cita.getId());
 
         } catch (MessagingException e) {
             logger.error("Error al enviar email de confirmación para cita ID {}: {}",
