@@ -10,11 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Servicio refactorizado para envío de emails
@@ -39,19 +41,21 @@ public class EmailService {
 
     /**
      * Envía un email de confirmación con los detalles de la cita
+     * Método ASINCRÓNICO - se ejecuta en background sin bloquear la solicitud
      * Usa DateTimeFormatUtils para formateo consistente
      */
-    public void enviarEmailConfirmacion(Cita cita) {
-        logger.info("📧 INICIANDO envío de email de confirmación para cita ID: {}", cita.getId());
+    @Async
+    public CompletableFuture<Void> enviarEmailConfirmacion(Cita cita) {
+        logger.info("📧 INICIANDO envío ASINCRÓNICO de email de confirmación para cita ID: {}", cita.getId());
         
         if (!isEmailConfigured()) {
             logger.error("❌ EmailService NO ESTÁ CONFIGURADO. JavaMailSender es null. Verificar variables de entorno SPRING_MAIL_*");
-            return;
+            return CompletableFuture.failedFuture(new RuntimeException("EmailService no configurado"));
         }
 
         if (!isEmailValido(cita.getEmail())) {
             logger.error("❌ Email inválido para la cita ID {}: '{}'", cita.getId(), cita.getEmail());
-            return;
+            return CompletableFuture.failedFuture(new RuntimeException("Email inválido"));
         }
         
         logger.info("✅ Validaciones pasadas. Preparando envío a: {}", cita.getEmail());
@@ -73,13 +77,19 @@ public class EmailService {
             helper.setText(contenido, true);
 
             // Enviar email
+            logger.info("Enviando mensaje SMTP a {} para cita {}...", cita.getEmail(), cita.getId());
             emailSender.send(message);
-            logger.info("OK: Email de confirmacion enviado exitosamente a: {} para cita ID {}", cita.getEmail(), cita.getId());
+            logger.info("✅ OK: Email de confirmacion enviado exitosamente a: {} para cita ID {}", cita.getEmail(), cita.getId());
+            return CompletableFuture.completedFuture(null);
 
         } catch (MessagingException e) {
-            logger.error("Error al enviar email de confirmación para cita ID {}: {}",
-                    cita.getId(), e.getMessage(), e);
-            throw new RuntimeException("Error al enviar email de confirmación: " + e.getMessage(), e);
+            logger.error("❌ Error MessagingException al enviar email para cita ID {}: {} | Causa: {}", 
+                    cita.getId(), e.getMessage(), e.getCause(), e);
+            return CompletableFuture.failedFuture(e);
+        } catch (Exception e) {
+            logger.error("❌ Error inesperado al enviar email para cita ID {}: {} | Causa: {}", 
+                    cita.getId(), e.getMessage(), e.getCause(), e);
+            return CompletableFuture.failedFuture(e);
         }
     }
 

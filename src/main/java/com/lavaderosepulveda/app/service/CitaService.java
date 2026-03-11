@@ -49,20 +49,22 @@ public class CitaService {
 
         Cita citaGuardada = citaRepository.save(cita);
 
-        // Enviar email de confirmación si tiene email válido
+        // Enviar email de confirmación de forma asincrónica si tiene email válido
         if (emailService != null) {
             log.info("VERIFICANDO EmailService disponible. Email de cita: {}", citaGuardada.getEmail());
             if (citaGuardada.getEmail() != null && !citaGuardada.getEmail().isBlank()) {
-                try {
-                    log.info("ENVIANDO email de confirmación para cita {}", citaGuardada.getId());
-                    emailService.enviarEmailConfirmacion(citaGuardada);
-                    marcarConfirmacionEnviada(citaGuardada.getId());
-                    log.info("OK: Email de confirmacion enviado exitosamente para cita {}", citaGuardada.getId());
-                } catch (Exception e) {
-                    // La cita se guarda aunque falle el email
-                    log.error("ERROR: Fallo al enviar email para cita {}: {} | Causa: {}",
-                            citaGuardada.getId(), e.getMessage(), e.getCause(), e);
-                }
+                log.info("ENVIANDO email de confirmación para cita {}", citaGuardada.getId());
+                // El email se envía de forma asincrónica - marcar confirmación cuando se complete
+                emailService.enviarEmailConfirmacion(citaGuardada)
+                    .thenRun(() -> {
+                        marcarConfirmacionEnviada(citaGuardada.getId());
+                        log.info("OK: Email de confirmacion enviado exitosamente para cita {}", citaGuardada.getId());
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("ERROR: Fallo al enviar email para cita {}: {}",
+                                citaGuardada.getId(), throwable.getMessage(), throwable);
+                        return null;
+                    });
             } else {
                 log.warn("AVISO: Email vacio para cita {}: '{}'",
                         citaGuardada.getId(), citaGuardada.getEmail());
