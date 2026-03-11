@@ -193,7 +193,7 @@ public class AdminController {
             // Enviar email de confirmación de pago
             try {
                 if (emailService.isServicioDisponible()) {
-                    emailService.enviarEmailConfirmacion(cita);
+                    emailService.enviarEmailConfirmacion(cita.getId());
                     logger.info("Email de confirmación de pago enviado para cita {}", id);
                 }
             } catch (Exception emailEx) {

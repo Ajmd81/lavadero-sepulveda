@@ -725,7 +725,7 @@ public class CitaApiController {
     private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
         if (emailService != null && cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
             try {
-                emailService.enviarEmailConfirmacion(cita);
+                emailService.enviarEmailConfirmacion(cita.getId());
                 logger.info("Email de confirmación enviado a: {}", cita.getEmail());
             } catch (Exception emailError) {
                 // Log del error pero no afecta la creación de la cita

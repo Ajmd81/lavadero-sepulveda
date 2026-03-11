@@ -192,7 +192,7 @@ public class CitaController {
         try {
             if (cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
                 logger.info("ENVIANDO email a: {}", cita.getEmail());
-                emailService.enviarEmailConfirmacion(cita);
+                emailService.enviarEmailConfirmacion(cita.getId());
                 logger.info("OK: Email de confirmación enviado a: {}", cita.getEmail());
             } else {
                 logger.error("ERROR: Email vacío/nulo para cita ID {}: '{}'", cita.getId(), cita.getEmail());
