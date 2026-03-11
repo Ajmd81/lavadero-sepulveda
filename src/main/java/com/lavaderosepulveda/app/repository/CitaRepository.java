@@ -44,24 +44,20 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
 
     List<Cita> findByFechaAndEstado(LocalDate fecha, EstadoCita estado);
 
-    // ✅ CORREGIDO: enum literal en lugar de string
     @Query("SELECT c FROM Cita c WHERE c.estado IN (" +
            "com.lavaderosepulveda.app.model.enums.EstadoCita.PENDIENTE, " +
            "com.lavaderosepulveda.app.model.enums.EstadoCita.CONFIRMADA) " +
            "ORDER BY c.fecha, c.hora")
     List<Cita> findCitasPendientes();
 
-    // ✅ CORREGIDO: enum literal en lugar de string
     @Query("SELECT c FROM Cita c WHERE c.estado = com.lavaderosepulveda.app.model.enums.EstadoCita.COMPLETADA " +
            "AND (c.facturada = false OR c.facturada IS NULL) ORDER BY c.fecha DESC")
     List<Cita> findCitasCompletadasSinFacturar();
 
-    // ✅ CORREGIDO: enum literal en lugar de string
     @Query("SELECT c FROM Cita c WHERE c.estado = com.lavaderosepulveda.app.model.enums.EstadoCita.EN_PROCESO " +
            "ORDER BY c.horaInicio")
     List<Cita> findCitasEnProceso();
 
-    // ✅ CORREGIDO: enum literal en lugar de string
     @Query("SELECT c FROM Cita c WHERE c.fecha = :fechaManana " +
            "AND (c.recordatorioEnviado = false OR c.recordatorioEnviado IS NULL) " +
            "AND c.estado IN (" +
