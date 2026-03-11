@@ -54,8 +54,8 @@ public class CitaService {
             log.info("VERIFICANDO EmailService disponible. Email de cita: {}", citaGuardada.getEmail());
             if (citaGuardada.getEmail() != null && !citaGuardada.getEmail().isBlank()) {
                 log.info("ENVIANDO email de confirmación para cita {}", citaGuardada.getId());
-                // El email se envía de forma asincrónica - marcar confirmación cuando se complete
-                emailService.enviarEmailConfirmacion(citaGuardada)
+                // El email se envía de forma asincrónica - pasar solo el ID para evitar problemas de Hibernate
+                emailService.enviarEmailConfirmacion(citaGuardada.getId())
                     .thenRun(() -> {
                         marcarConfirmacionEnviada(citaGuardada.getId());
                         log.info("OK: Email de confirmacion enviado exitosamente para cita {}", citaGuardada.getId());

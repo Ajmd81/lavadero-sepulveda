@@ -1,6 +1,7 @@
 package com.lavaderosepulveda.app.service;
 
 import com.lavaderosepulveda.app.model.Cita;
+import com.lavaderosepulveda.app.repository.CitaRepository;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -12,6 +13,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -33,6 +35,9 @@ public class EmailService {
     @Autowired
     private TemplateEngine templateEngine;
 
+    @Autowired
+    private CitaRepository citaRepository;
+
     @Value("${spring.mail.username:noreply@lavaderosepulveda.com}")
     private String remitente;
 
@@ -43,10 +48,22 @@ public class EmailService {
      * Envía un email de confirmación con los detalles de la cita
      * Método ASINCRÓNICO - se ejecuta en background sin bloquear la solicitud
      * Usa DateTimeFormatUtils para formateo consistente
+     * NOTA: Recibe citaId para evitar LazyInitializationException de Hibernate
      */
     @Async
-    public CompletableFuture<Void> enviarEmailConfirmacion(Cita cita) {
-        logger.info("📧 INICIANDO envío ASINCRÓNICO de email de confirmación para cita ID: {}", cita.getId());
+    @Transactional(readOnly = true)
+    public CompletableFuture<Void> enviarEmailConfirmacion(Long citaId) {
+        logger.info("📧 INICIANDO envío ASINCRÓNICO de email de confirmación para cita ID: {}", citaId);
+        
+        // Obtener cita en transacción separada para evitar problemas de sesión Hibernate
+        var citaOpt = citaRepository.findById(citaId);
+        if (citaOpt.isEmpty()) {
+            logger.error("❌ No se encontró cita con ID: {}", citaId);
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Cita no encontrada: " + citaId));
+        }
+        
+        Cita cita = citaOpt.get();
+        logger.info("📧 Cita obtenida: {} - Email: {}", cita.getId(), cita.getEmail());
         
         if (!isEmailConfigured()) {
             logger.error("❌ EmailService NO ESTÁ CONFIGURADO. JavaMailSender es null. Verificar variables de entorno SPRING_MAIL_*");
