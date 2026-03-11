@@ -51,33 +51,31 @@ public class EmailService {
      * NOTA: Recibe citaId para evitar LazyInitializationException de Hibernate
      */
     @Async
-    @Transactional(readOnly = true)
     public CompletableFuture<Void> enviarEmailConfirmacion(Long citaId) {
         logger.info("📧 INICIANDO envío ASINCRÓNICO de email de confirmación para cita ID: {}", citaId);
         
-        // Obtener cita en transacción separada para evitar problemas de sesión Hibernate
-        var citaOpt = citaRepository.findById(citaId);
-        if (citaOpt.isEmpty()) {
-            logger.error("❌ No se encontró cita con ID: {}", citaId);
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Cita no encontrada: " + citaId));
-        }
-        
-        Cita cita = citaOpt.get();
-        logger.info("📧 Cita obtenida: {} - Email: {}", cita.getId(), cita.getEmail());
-        
-        if (!isEmailConfigured()) {
-            logger.error("❌ EmailService NO ESTÁ CONFIGURADO. JavaMailSender es null. Verificar variables de entorno SPRING_MAIL_*");
-            return CompletableFuture.failedFuture(new RuntimeException("EmailService no configurado"));
-        }
-
-        if (!isEmailValido(cita.getEmail())) {
-            logger.error("❌ Email inválido para la cita ID {}: '{}'", cita.getId(), cita.getEmail());
-            return CompletableFuture.failedFuture(new RuntimeException("Email inválido"));
-        }
-        
-        logger.info("✅ Validaciones pasadas. Preparando envío a: {}", cita.getEmail());
-
+        // Obtener cita en transacción separada y DENTRO de ella, acceder a todos los datos
         try {
+            Cita cita = obtenerCitaParaEmail(citaId);
+            if (cita == null) {
+                logger.error("❌ No se encontró cita con ID: {}", citaId);
+                return CompletableFuture.failedFuture(new IllegalArgumentException("Cita no encontrada: " + citaId));
+            }
+            
+            logger.info("📧 Cita obtenida: {} - Email: {}", cita.getId(), cita.getEmail());
+            
+            if (!isEmailConfigured()) {
+                logger.error("❌ EmailService NO ESTÁ CONFIGURADO. JavaMailSender es null. Verificar variables de entorno SPRING_MAIL_*");
+                return CompletableFuture.failedFuture(new RuntimeException("EmailService no configurado"));
+            }
+
+            if (!isEmailValido(cita.getEmail())) {
+                logger.error("❌ Email inválido para la cita ID {}: '{}'", cita.getId(), cita.getEmail());
+                return CompletableFuture.failedFuture(new RuntimeException("Email inválido"));
+            }
+            
+            logger.info("✅ Validaciones pasadas. Preparando envío a: {}", cita.getEmail());
+
             MimeMessage message = crearMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -101,13 +99,38 @@ public class EmailService {
 
         } catch (MessagingException e) {
             logger.error("❌ Error MessagingException al enviar email para cita ID {}: {} | Causa: {}", 
-                    cita.getId(), e.getMessage(), e.getCause(), e);
+                    citaId, e.getMessage(), e.getCause(), e);
             return CompletableFuture.failedFuture(e);
         } catch (Exception e) {
             logger.error("❌ Error inesperado al enviar email para cita ID {}: {} | Causa: {}", 
-                    cita.getId(), e.getMessage(), e.getCause(), e);
+                    citaId, e.getMessage(), e.getCause(), e);
             return CompletableFuture.failedFuture(e);
         }
+    }
+
+    /**
+     * Obtiene la cita con todos sus datos de forma sincrónica dentro de una transacción
+     * Esto evita LazyInitializationException cuando accedemos a los datos fuera de la transacción
+     */
+    @Transactional(readOnly = true)
+    private Cita obtenerCitaParaEmail(Long citaId) {
+        var citaOpt = citaRepository.findById(citaId);
+        if (citaOpt.isEmpty()) {
+            return null;
+        }
+        
+        Cita cita = citaOpt.get();
+        // Forzar la inicialización de todos los datos mientras la transacción está activa
+        // Esto evita LazyInitializationException después de cerrar la transacción
+        cita.getId();
+        cita.getEmail();
+        cita.getNombre();
+        cita.getFecha();
+        cita.getHora();
+        cita.getTipoLavado();
+        cita.getPrecio();
+        
+        return cita;
     }
 
     /**
