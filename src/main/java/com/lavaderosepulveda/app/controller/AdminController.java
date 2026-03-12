@@ -98,11 +98,11 @@ public class AdminController {
                 // Filtrar por estado específico
                 citasPorEstado = todasLasCitas.stream()
                         .filter(cita -> cita.getEstado() == estadoFinal)
-                        .collect(Collectors.groupingBy(Cita::getEstado, Collectors.toList()));
+                        .collect(Collectors.<Cita, EstadoCita, List<Cita>>groupingBy(Cita::getEstado));
             } else {
                 // Mostrar todas agrupadas por estado
                 citasPorEstado = todasLasCitas.stream()
-                        .collect(Collectors.groupingBy(Cita::getEstado, Collectors.toList()));
+                        .collect(Collectors.<Cita, EstadoCita, List<Cita>>groupingBy(Cita::getEstado));
             }
 
             model.addAttribute("citasPorEstado", citasPorEstado);
@@ -190,14 +190,18 @@ public class AdminController {
 
             logger.info("Pago registrado para cita {}: {}", id, referenciaPago);
 
-            // Enviar email de confirmación de pago
+            // Enviar email de confirmación de pago de forma asincrónica
             try {
                 if (emailService.isServicioDisponible()) {
-                    emailService.enviarEmailConfirmacion(cita.getId());
+                    emailService.enviarEmailConfirmacion(cita.getId())
+                        .exceptionally(throwable -> {
+                            logger.warn("No se pudo enviar email de confirmación de pago: {}", throwable.getMessage());
+                            return null;
+                        });
                     logger.info("Email de confirmación de pago enviado para cita {}", id);
                 }
             } catch (Exception emailEx) {
-                logger.warn("No se pudo enviar email de confirmación de pago: {}", emailEx.getMessage());
+                logger.warn("Error al iniciar envío de email: {}", emailEx.getMessage());
             }
 
             redirectAttributes.addFlashAttribute("mensaje",
