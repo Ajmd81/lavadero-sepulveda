@@ -98,11 +98,11 @@ public class AdminController {
                 // Filtrar por estado específico
                 citasPorEstado = todasLasCitas.stream()
                         .filter(cita -> cita.getEstado() == estadoFinal)
-                        .collect(Collectors.groupingBy(Cita::getEstado, Collectors.toList()));
+                        .collect(Collectors.groupingBy(cita -> cita.getEstado(), HashMap::new, Collectors.toList()));
             } else {
                 // Mostrar todas agrupadas por estado
                 citasPorEstado = todasLasCitas.stream()
-                        .collect(Collectors.groupingBy(Cita::getEstado, Collectors.toList()));
+                        .collect(Collectors.groupingBy(cita -> cita.getEstado(), HashMap::new, Collectors.toList()));
             }
 
             model.addAttribute("citasPorEstado", citasPorEstado);
