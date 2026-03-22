@@ -129,7 +129,12 @@ const Gastos = () => {
   };
 
   const abrirModalEditar = (gasto) => {
-    setFormData(gasto);
+    let fechaInput = gasto.fecha;
+    if (gasto.fecha && gasto.fecha.includes('/')) {
+      const [d, m, y] = gasto.fecha.split('/');
+      fechaInput = `${y}-${m}-${d}`;
+    }
+    setFormData({... gasto, fecha: fechaInput });
     setEditandoGasto(gasto.id);
     setModalAbierto(true);
   };
@@ -156,11 +161,28 @@ const Gastos = () => {
     }
 
     try {
+      // Convertir fecha de yyyy-MM-dd → dd/MM/yyyy
+      const convertirFecha = (fechaISO) => {
+        if (!fechaISO) return '';
+        if (fechaISO.includes('/')) return fechaISO; // ya está en formato correcto (modo edición)
+        const [y, m, d] = fechaISO.split('-');
+        return `${d}/${m}/${y}`;
+      };
+
+      const payload = {
+        ...formData,
+        fecha: convertirFecha(formData.fecha),
+        // Evitar enviar string vacío donde el backend espera Integer
+        diaRecurrencia: formData.diaRecurrencia !== '' ? parseInt(formData.diaRecurrencia) : null,
+        // Asegurar que importe sea número, no string
+        importe: parseFloat(formData.importe),
+      };
+
       if (editandoGasto) {
-        await gastoService.update(editandoGasto, formData);
+        await gastoService.update(editandoGasto, payload);
         alert('Gasto actualizado correctamente');
       } else {
-        await gastoService.create(formData);
+        await gastoService.create(payload);
         alert('Gasto creado correctamente');
       }
       cerrarModal();
