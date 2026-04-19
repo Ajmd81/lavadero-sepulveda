@@ -1,5 +1,6 @@
 package com.lavaderosepulveda.app.fiscal.controller;
 
+import com.lavaderosepulveda.app.fiscal.service.DeclaracionFiscalService;
 import com.lavaderosepulveda.app.fiscal.service.Modelo130BoeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -9,18 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
-/**
- * Controlador REST para exportar el Modelo 130 (IRPF — Pago fraccionado)
- * en formato BOE importable en la AEAT.
- *
- * Endpoints:
- *   GET  /api/fiscal/modelo130/{ejercicio}/{periodo}/exportar-boe   → caso habitual
- *   POST /api/fiscal/modelo130/exportar-boe                         → caso completo con body JSON
- *
- * El fichero descargado recibe el nombre estándar AEAT: {NIF}{EJERCICIO}{PERIODO}.130
- * Ejemplo: 12345678A20261T.130
- */
 @RestController
 @RequestMapping("/api/fiscal/modelo130")
 @CrossOrigin(origins = "*")
@@ -29,33 +20,9 @@ public class Modelo130BoeController {
     @Autowired
     private Modelo130BoeService modelo130BoeService;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET — caso habitual de Lavadero Sepúlveda
-    // ─────────────────────────────────────────────────────────────────────────
+    @Autowired
+    private DeclaracionFiscalService declaracionFiscalService;
 
-    /**
-     * Exporta el Modelo 130 a partir de ingresos y gastos del trimestre.
-     * El servicio calcula automáticamente el 20% del rendimiento neto.
-     *
-     * Ejemplo de llamada desde React:
-     *   GET /api/fiscal/modelo130/2026/1T/exportar-boe
-     *       ?nif=12345678A
-     *       &nombre=SEPULVEDA GARCIA FRANCISCO
-     *       &ingresosTrimestre=5000.00
-     *       &gastosTrimestre=1800.00
-     *       &retencionesComputadas=0
-     *       &pagosAnteriores=0
-     *
-     * Casillas calculadas automáticamente:
-     *   01 = ingresosTrimestre
-     *   02 = gastosTrimestre
-     *   03 = 01 - 02  (rendimiento neto)
-     *   05 = max(03, 0)
-     *   07 = 05 × 20%  (pago fraccionado bruto)
-     *   11 = retencionesComputadas
-     *   13 = pagosAnteriores
-     *   14 = max(07 - 11 - 13, 0)  (resultado a ingresar)
-     */
     @GetMapping("/{ejercicio}/{periodo}/exportar-boe")
     public ResponseEntity<byte[]> exportarBoeSimple(
             @PathVariable int ejercicio,
@@ -74,47 +41,55 @@ public class Modelo130BoeController {
                 retencionesComputadas, pagosAnteriores
         );
 
-        return descargar(contenido, nif, ejercicio, periodo);
+        String nombreFichero = nif.toUpperCase() + ejercicio + periodo.toUpperCase() + ".130";
+
+        BigDecimal rendimientoNeto = ingresosTrimestre.subtract(gastosTrimestre);
+        if (rendimientoNeto.compareTo(BigDecimal.ZERO) < 0) rendimientoNeto = BigDecimal.ZERO;
+        BigDecimal pagoFraccionado = rendimientoNeto
+                .multiply(new BigDecimal("0.20"))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        declaracionFiscalService.registrarGeneracion130(
+                ejercicio, periodo,
+                ingresosTrimestre, gastosTrimestre,
+                rendimientoNeto, pagoFraccionado,
+                nombreFichero
+        );
+
+        return descargar(contenido, nombreFichero);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // POST completo — con DTO JSON
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Exporta el Modelo 130 a partir de un DTO JSON completo.
-     *
-     * Body JSON:
-     * {
-     *   "nif": "12345678A",
-     *   "nombre": "SEPULVEDA GARCIA FRANCISCO",
-     *   "ejercicio": 2026,
-     *   "periodo": "1T",
-     *   "ingresosTrimestre": 5000.00,
-     *   "gastosTrimestre": 1800.00,
-     *   "retencionesComputadas": 0,
-     *   "pagosAnteriores": 0
-     * }
-     */
     @PostMapping("/exportar-boe")
     public ResponseEntity<byte[]> exportarBoeCompleto(
             @RequestBody Modelo130BoeService.Modelo130Datos datos
     ) throws IOException {
 
         byte[] contenido = modelo130BoeService.generarFicheroBoeCompleto(datos);
-        return descargar(contenido, datos.nif, datos.ejercicio, datos.periodo);
+
+        String nombreFichero = datos.nif.toUpperCase() + datos.ejercicio + datos.periodo.toUpperCase() + ".130";
+
+        BigDecimal rendimientoNeto = orCero(datos.ingresosTrimestre).subtract(orCero(datos.gastosTrimestre));
+        if (rendimientoNeto.compareTo(BigDecimal.ZERO) < 0) rendimientoNeto = BigDecimal.ZERO;
+        BigDecimal pagoFraccionado = rendimientoNeto
+                .multiply(new BigDecimal("0.20"))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        declaracionFiscalService.registrarGeneracion130(
+                datos.ejercicio, datos.periodo,
+                datos.ingresosTrimestre, datos.gastosTrimestre,
+                rendimientoNeto, pagoFraccionado,
+                nombreFichero
+        );
+
+        return descargar(contenido, nombreFichero);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helper
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private ResponseEntity<byte[]> descargar(byte[] contenido, String nif,
-                                              int ejercicio, String periodo) {
-        String nombreFichero = nif.toUpperCase() + ejercicio + periodo.toUpperCase() + ".130";
+    private ResponseEntity<byte[]> descargar(byte[] contenido, String nombreFichero) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombreFichero + "\"")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(contenido);
     }
+
+    private BigDecimal orCero(BigDecimal v) { return v != null ? v : BigDecimal.ZERO; }
 }
