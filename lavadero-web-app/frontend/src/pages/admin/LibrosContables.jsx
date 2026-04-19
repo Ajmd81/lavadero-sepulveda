@@ -146,6 +146,7 @@ export default function LibrosContables() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exportando, setExportando] = useState(false);
+  const [exportandoPDF, setExportandoPDF] = useState(false);
   const [error, setError] = useState(null);
 
   const parsearFecha = (fechaStr) => {
@@ -426,6 +427,282 @@ export default function LibrosContables() {
     }
   };
 
+
+  // ── Generar PDF con jsPDF ──────────────────────────────────────────────────
+  const generarPDF = async () => {
+    if (!data) return;
+    setExportandoPDF(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const W = 210;           // ancho A4 mm
+      const MARGEN = 14;
+      const COL_IZQ = MARGEN;
+      const COL_DER = W - MARGEN;
+      const COL_VALOR = W - MARGEN - 2;
+      let y = 0;
+
+      // ── Helpers ────────────────────────────────────────────────────────────
+      const fmtN = (n) =>
+        new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n ?? 0);
+
+      const nuevaPagina = () => {
+        doc.addPage();
+        y = 14;
+        // cabecera en cada página
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text(`Lavadero Sepúlveda · Libros Contables · ${data.fechaDesde} — ${data.fechaHasta}`, MARGEN, 8);
+        doc.text(`Página ${doc.internal.getNumberOfPages()}`, COL_DER, 8, { align: "right" });
+        doc.setTextColor(0);
+      };
+
+      const checkY = (needed = 7) => {
+        if (y + needed > 280) nuevaPagina();
+      };
+
+      // ── PORTADA ────────────────────────────────────────────────────────────
+      // Banda azul superior
+      doc.setFillColor(13, 71, 161);
+      doc.rect(0, 0, W, 40, "F");
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("LIBROS CONTABLES", W / 2, 16, { align: "center" });
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Lavadero Sepúlveda · Córdoba", W / 2, 24, { align: "center" });
+
+      doc.setFontSize(9);
+      doc.text(`Período: ${data.fechaDesde} — ${data.fechaHasta}   ·   Ejercicio ${data.ejercicio}`, W / 2, 31, { align: "center" });
+      doc.text(`Generado: ${new Date().toLocaleString("es-ES")}`, W / 2, 37, { align: "center" });
+
+      doc.setTextColor(0, 0, 0);
+      y = 50;
+
+      // ── KPIs resumen ───────────────────────────────────────────────────────
+      const kpis = [
+        { label: "Total Ingresos", valor: data.totalIngresos, color: [46, 125, 50] },
+        { label: "Total Gastos", valor: data.totalGastos, color: [198, 40, 40] },
+        {
+          label: resultado >= 0 ? "Beneficio del Ejercicio" : "Pérdida del Ejercicio",
+          valor: Math.abs(data.resultadoEjercicio),
+          color: resultado >= 0 ? [46, 125, 50] : [198, 40, 40]
+        },
+      ];
+
+      const boxW = (W - MARGEN * 2 - 8) / 3;
+      kpis.forEach((k, i) => {
+        const x = MARGEN + i * (boxW + 4);
+        doc.setFillColor(240, 244, 248);
+        doc.roundedRect(x, y, boxW, 18, 2, 2, "F");
+        doc.setFontSize(7);
+        doc.setTextColor(80);
+        doc.setFont("helvetica", "normal");
+        doc.text(k.label.toUpperCase(), x + boxW / 2, y + 6, { align: "center" });
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...k.color);
+        doc.text(fmtN(k.valor), x + boxW / 2, y + 13, { align: "center" });
+      });
+
+      doc.setTextColor(0);
+      y += 26;
+
+      // ── Función para sección con título azul ───────────────────────────────
+      const seccion = (titulo) => {
+        checkY(10);
+        doc.setFillColor(21, 101, 192);
+        doc.rect(MARGEN, y, W - MARGEN * 2, 7, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text(titulo.toUpperCase(), COL_IZQ + 3, y + 5);
+        doc.setTextColor(0);
+        y += 9;
+      };
+
+      const fila = (label, valor, opciones = {}) => {
+        const { negrita = false, total = false, isGasto = false, colored = false, indent = 0 } = opciones;
+        checkY(6);
+
+        if (total) {
+          doc.setFillColor(239, 243, 250);
+          doc.rect(MARGEN, y - 1, W - MARGEN * 2, 7, "F");
+        }
+
+        doc.setFontSize(negrita || total ? 8.5 : 8);
+        doc.setFont("helvetica", negrita || total ? "bold" : "normal");
+
+        const numVal = valor ?? 0;
+        let colorTexto = [0, 0, 0];
+        if (colored) {
+          colorTexto = numVal > 0 ? [46, 125, 50] : numVal < 0 ? [198, 40, 40] : [21, 101, 192];
+        }
+        if (isGasto && numVal !== 0) colorTexto = [198, 40, 40];
+
+        doc.setTextColor(50, 50, 50);
+        doc.text(label, COL_IZQ + 3 + indent * 5, y + 4);
+
+        doc.setTextColor(...colorTexto);
+        const textoValor = isGasto && numVal !== 0 ? `(${fmtN(numVal)})` : fmtN(numVal);
+        doc.text(textoValor, COL_VALOR, y + 4, { align: "right" });
+
+        doc.setTextColor(0);
+        if (!total) {
+          doc.setDrawColor(230);
+          doc.line(MARGEN, y + 5.5, W - MARGEN, y + 5.5);
+        }
+        y += 6.5;
+      };
+
+      // ── A) INGRESOS ────────────────────────────────────────────────────────
+      seccion("A) Ingresos de Explotación");
+      fila("1. Importe neto cifra de negocios", data.ventasNetas, { negrita: true });
+      fila("Servicios de lavado", data.ventasNetas, { indent: 1 });
+      fila("5. Otros ingresos de explotación", data.otrosIngresosExplotacion);
+      y += 2;
+      fila("TOTAL INGRESOS DE EXPLOTACIÓN", data.totalIngresos, { negrita: true, total: true, colored: true });
+      y += 4;
+
+      // ── B) GASTOS ──────────────────────────────────────────────────────────
+      seccion("B) Gastos de Explotación");
+      fila("4. Aprovisionamientos", data.aprovisionamientos, { isGasto: true });
+      fila("6. Gastos de personal", data.gastosPersonal, { negrita: true, isGasto: true });
+      fila("Sueldos y salarios", data.gastosPersonalDetalle?.sueldos, { indent: 1, isGasto: true });
+      fila("Cargas sociales", data.gastosPersonalDetalle?.seguridadSocial, { indent: 1, isGasto: true });
+      fila("7. Otros gastos de explotación", data.otrosGastosExplotacion, { negrita: true, isGasto: true });
+      fila("Servicios exteriores", data.serviciosExteriores, { indent: 1, isGasto: true });
+      fila("Tributos", data.tributos, { indent: 1, isGasto: true });
+      fila("Otros gastos de gestión", data.otrosGastosGestion, { indent: 1, isGasto: true });
+      fila("8. Amortización del inmovilizado", data.amortizacion, { isGasto: true });
+      y += 2;
+      fila("TOTAL GASTOS DE EXPLOTACIÓN", data.totalGastos, { negrita: true, total: true, colored: true });
+      y += 6;
+
+      // ── CUENTA DE RESULTADOS ───────────────────────────────────────────────
+      seccion("Cuenta de Resultados");
+      fila("A.1) Resultado de Explotación", data.resultadoExplotacion, { negrita: true, total: true, colored: true });
+      y += 3;
+      fila("12. Ingresos financieros", data.ingresosFinancieros);
+      fila("13. Gastos financieros", data.gastosFinancieros, { isGasto: true });
+      fila("A.2) Resultado Financiero", data.resultadoFinanciero, { negrita: true, total: true, colored: true });
+      y += 3;
+      fila("A.3) Resultado Antes de Impuestos", data.resultadoAntesImpuestos, { negrita: true, total: true, colored: true });
+      fila("17. Impuesto sobre beneficios (25%)", data.impuestoBeneficios, { isGasto: true });
+      y += 4;
+
+      // Caja resultado final
+      checkY(24);
+      const colorCaja = resultado >= 0 ? [232, 245, 233] : [255, 235, 238];
+      const colorBorde = resultado >= 0 ? [76, 175, 80] : [239, 83, 80];
+      const colorTextoFinal = resultado >= 0 ? [46, 125, 50] : [198, 40, 40];
+      doc.setFillColor(...colorCaja);
+      doc.setDrawColor(...colorBorde);
+      doc.setLineWidth(0.8);
+      doc.roundedRect(MARGEN, y, W - MARGEN * 2, 22, 3, 3, "FD");
+      doc.setLineWidth(0.2);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...colorTextoFinal);
+      const labelFinal = `A.4) ${resultado >= 0 ? "BENEFICIO" : "PÉRDIDA"} DEL EJERCICIO`;
+      doc.text(labelFinal, W / 2, y + 7, { align: "center" });
+
+      doc.setFontSize(16);
+      doc.text(fmtN(Math.abs(data.resultadoEjercicio)), W / 2, y + 15, { align: "center" });
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Margen neto: ${data.margenBeneficio}%`, W / 2, y + 20, { align: "center" });
+      doc.setTextColor(0);
+      y += 28;
+
+      // ── DESGLOSE GASTOS POR CATEGORÍA ──────────────────────────────────────
+      if (data.gastosPorCategoria?.length > 0) {
+        checkY(12);
+        seccion("Desglose de Gastos por Categoría");
+
+        // Cabecera tabla
+        doc.setFillColor(239, 243, 250);
+        doc.rect(MARGEN, y, W - MARGEN * 2, 6.5, "F");
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(21, 101, 192);
+        doc.text("CATEGORÍA", COL_IZQ + 3, y + 4.5);
+        doc.text("IMPORTE", COL_VALOR - 20, y + 4.5, { align: "right" });
+        doc.text("% s/TOTAL", COL_VALOR, y + 4.5, { align: "right" });
+        doc.setTextColor(0);
+        y += 7;
+
+        const sorted = [...data.gastosPorCategoria].sort((a, b) => b.importe - a.importe);
+        sorted.forEach((g, i) => {
+          checkY(6);
+          if (i % 2 === 0) {
+            doc.setFillColor(250, 250, 252);
+            doc.rect(MARGEN, y - 0.5, W - MARGEN * 2, 6, "F");
+          }
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(44, 62, 80);
+          doc.text(g.label, COL_IZQ + 3, y + 3.5);
+          doc.setTextColor(198, 40, 40);
+          doc.text(`(${fmtN(g.importe)})`, COL_VALOR - 20, y + 3.5, { align: "right" });
+          doc.setTextColor(100);
+          const pct = data.totalGastos > 0
+            ? `${((g.importe / data.totalGastos) * 100).toFixed(1)}%`
+            : "0%";
+          doc.text(pct, COL_VALOR, y + 3.5, { align: "right" });
+          doc.setTextColor(0);
+          doc.setDrawColor(230);
+          doc.line(MARGEN, y + 5, W - MARGEN, y + 5);
+          y += 6;
+        });
+
+        // Total
+        y += 1;
+        checkY(7);
+        doc.setFillColor(239, 243, 250);
+        doc.rect(MARGEN, y, W - MARGEN * 2, 7, "F");
+        doc.setFontSize(8.5);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(44, 62, 80);
+        doc.text("TOTAL GASTOS", COL_IZQ + 3, y + 5);
+        doc.setTextColor(198, 40, 40);
+        doc.text(`(${fmtN(data.totalGastos)})`, COL_VALOR - 20, y + 5, { align: "right" });
+        doc.setTextColor(0);
+        doc.text("100%", COL_VALOR, y + 5, { align: "right" });
+        y += 10;
+      }
+
+      // ── Pie de página en todas las páginas ─────────────────────────────────
+      const totalPaginas = doc.internal.getNumberOfPages();
+      for (let p = 1; p <= totalPaginas; p++) {
+        doc.setPage(p);
+        doc.setFillColor(13, 71, 161);
+        doc.rect(0, 287, W, 10, "F");
+        doc.setFontSize(7);
+        doc.setTextColor(255, 255, 255);
+        doc.text("Lavadero Sepúlveda · Córdoba", MARGEN, 293);
+        doc.text(`Página ${p} de ${totalPaginas}`, W / 2, 293, { align: "center" });
+        doc.text(new Date().toLocaleDateString("es-ES"), COL_DER, 293, { align: "right" });
+      }
+
+      // ── Descargar ──────────────────────────────────────────────────────────
+      const nombreFichero = `LibrosContables_${data.fechaDesde.replace(/\//g, "-")}_${data.fechaHasta.replace(/\//g, "-")}.pdf`;
+      doc.save(nombreFichero);
+
+    } catch (err) {
+      console.error("Error al generar PDF:", err);
+      alert("Error al generar el PDF. Asegúrate de que jsPDF está instalado:\nnpm install jspdf");
+    } finally {
+      setExportandoPDF(false);
+    }
+  };
+
   const setQuickFilter = (type) => {
     const y = today.getFullYear();
     const pad = (n) => String(n).padStart(2, "0");
@@ -564,12 +841,21 @@ export default function LibrosContables() {
               {exportando ? "Exportando…" : "Excel"}
             </button>
 
-            <button onClick={() => window.print()} style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "7px 14px", borderRadius: 6, border: "1px solid #1565C0",
-              background: "#E3F2FD", color: "#1565C0", fontWeight: 600, fontSize: 12, cursor: "pointer"
-            }}>
-              <Printer size={14} />Imprimir
+            <button
+              onClick={generarPDF}
+              disabled={!data || exportandoPDF}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 14px", borderRadius: 6, border: "1px solid #1565C0",
+                background: !data || exportandoPDF ? "#F5F5F5" : "#E3F2FD",
+                color: !data || exportandoPDF ? "#9E9E9E" : "#1565C0",
+                fontWeight: 600, fontSize: 12,
+                cursor: !data || exportandoPDF ? "not-allowed" : "pointer",
+                transition: "all 0.15s"
+              }}
+            >
+              <Printer size={14} />
+              {exportandoPDF ? "Generando…" : "PDF"}
             </button>
           </div>
         </div>
