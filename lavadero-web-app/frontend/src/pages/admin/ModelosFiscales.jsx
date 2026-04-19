@@ -144,20 +144,22 @@ const ModelosFiscales = () => {
     const cuotaRepercutida = parseFloat((baseRepercutida * tipoIvaRep / 100).toFixed(2));
     const repercutido = { base: baseRepercutida, cuota: cuotaRepercutida };
 
-    // IVA soportado facturas recibidas: suma bases → aplica tipo una sola vez
+    // IVA soportado — SOLO facturas recibidas (casilla 28 y 29 del Modelo 303).
+    // Los gastos simples (GastoDTO: autónomos, impuestos, ADSL...) NO generan
+    // IVA soportado deducible — no son facturas con IVA repercutido por el proveedor.
+    // Usar cuotaIva del DTO directamente (calculado por el backend, no recalcular).
     const baseSoportadaFR = facturasRecPeriodo.reduce(
         (acc, f) => acc + parseFloat(f.baseImponible || 0), 0
     );
-    const tipoIvaSop = parseFloat(facturasRecPeriodo[0]?.tipoIva || 21);
-    const cuotaSoportadaFR = parseFloat((baseSoportadaFR * tipoIvaSop / 100).toFixed(2));
-    const soportadoFR = { base: baseSoportadaFR, cuota: cuotaSoportadaFR };
-
-    // IVA soportado gastos: usa cuotaIva del DTO si existe, sino calcula
-    const soportadoG = gastosPeriodo.reduce(
-        (acc, g) => { const { base, cuota } = ivaGasto(g); return { base: acc.base + base, cuota: acc.cuota + cuota }; },
-        { base: 0, cuota: 0 }
+    const cuotaSoportadaFR = facturasRecPeriodo.reduce(
+        (acc, f) => acc + parseFloat(f.cuotaIva || 0), 0
     );
-    const soportado = { base: soportadoFR.base + soportadoG.base, cuota: soportadoFR.cuota + soportadoG.cuota };
+    const soportadoFR = { base: baseSoportadaFR, cuota: parseFloat(cuotaSoportadaFR.toFixed(2)) };
+
+    // Gastos simples: no contribuyen al IVA soportado del Modelo 303
+    const soportadoG = { base: 0, cuota: 0 };
+
+    const soportado = { base: soportadoFR.base, cuota: soportadoFR.cuota };
     const liquidacionIva = parseFloat((repercutido.cuota - soportado.cuota).toFixed(2));
 
     const ingresosBrutos = facturasPeriodo.reduce((acc, f) => acc + parseFloat(f.total || 0), 0);
@@ -377,7 +379,7 @@ const ModelosFiscales = () => {
                                             <FilaCasilla c="46/64" desc="Resultado (27 − 45)" val={fmt(liquidacionIva)} bold />
                                             <FilaCasilla c="70" desc="A ingresar" val={fmt(Math.max(0, liquidacionIva))} bold />
                                         </DetalleCasillas>
-                                        <InfoBox texto={`IVA soportado: facturas recibidas ${fmt(soportadoFR.cuota)} + gastos ${fmt(soportadoG.cuota)}.`} />
+                                        <InfoBox texto={`IVA soportado deducible: ${facturasRecPeriodo.length} facturas recibidas. Los gastos simples no generan IVA deducible en el Mod. 303.`} />
                                     </div>
                                 )}
 
