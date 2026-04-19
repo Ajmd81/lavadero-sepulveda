@@ -13,9 +13,6 @@ import facturaService from "../../services/facturaService";
 import facturaRecibidaService from "../../services/facturaRecibidaService";
 import gastoService from "../../services/gastoService";
 
-// ─────────────────────────────────────────────
-// CATEGORÍAS → etiquetas legibles
-// ─────────────────────────────────────────────
 const CATEGORIA_LABELS = {
   PERSONAL: "Personal",
   SEGURIDAD_SOCIAL: "Seguridad Social",
@@ -46,9 +43,6 @@ const PIE_COLORS = [
   "#00838F", "#AD1457", "#37474F"
 ];
 
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
 const fmt = (n) =>
   new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n ?? 0);
 
@@ -57,15 +51,12 @@ const fmtGasto = (n) => {
   return `(${fmt(n)})`;
 };
 
-// ─────────────────────────────────────────────
-// COMPONENTES AUXILIARES
-// ─────────────────────────────────────────────
 function KpiCard({ title, value, sub, color, icon }) {
   const colors = {
     green: { bg: "#E8F5E9", border: "#4CAF50", text: "#2E7D32", iconBg: "#C8E6C9" },
-    red:   { bg: "#FFEBEE", border: "#EF5350", text: "#C62828", iconBg: "#FFCDD2" },
-    blue:  { bg: "#E3F2FD", border: "#1E88E5", text: "#1565C0", iconBg: "#BBDEFB" },
-    grey:  { bg: "#F5F5F5", border: "#9E9E9E", text: "#424242", iconBg: "#E0E0E0" },
+    red: { bg: "#FFEBEE", border: "#EF5350", text: "#C62828", iconBg: "#FFCDD2" },
+    blue: { bg: "#E3F2FD", border: "#1E88E5", text: "#1565C0", iconBg: "#BBDEFB" },
+    grey: { bg: "#F5F5F5", border: "#9E9E9E", text: "#424242", iconBg: "#E0E0E0" },
   };
   const c = colors[color] || colors.blue;
   const IconComp = icon;
@@ -95,7 +86,6 @@ function PyGRow({ label, value, indent = 0, bold = false, isTotal = false, color
   const color = colored
     ? numVal > 0 ? "#2E7D32" : numVal < 0 ? "#C62828" : "#1565C0"
     : "inherit";
-
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -148,19 +138,16 @@ function Section({ title, children, defaultOpen = true }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// COMPONENTE PRINCIPAL
-// ─────────────────────────────────────────────
 export default function LibrosContables() {
   const today = new Date();
   const [desde, setDesde] = useState(`${today.getFullYear()}-01-01`);
   const [hasta, setHasta] = useState(today.toISOString().split("T")[0]);
-  const [activeTab, setActiveTab] = useState("pyg"); // pyg | grafico
+  const [activeTab, setActiveTab] = useState("pyg");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exportando, setExportando] = useState(false);
   const [error, setError] = useState(null);
 
-  // ── Parsear fecha flexible (dd/MM/yyyy ó yyyy-MM-dd) ──
   const parsearFecha = (fechaStr) => {
     if (!fechaStr) return null;
     try {
@@ -173,7 +160,6 @@ export default function LibrosContables() {
     } catch { return null; }
   };
 
-  // ── Extraer array de respuesta API ──
   const extraerArray = (resp) => {
     if (Array.isArray(resp)) return resp;
     if (resp?.content && Array.isArray(resp.content)) return resp.content;
@@ -185,7 +171,6 @@ export default function LibrosContables() {
     return [];
   };
 
-  // ── Calcular PyG desde datos brutos ──
   const calcularPyG = useCallback((facturas, facturasRecibidas, gastos, fechaDesde, fechaHasta) => {
     const inicio = parseISO(fechaDesde);
     const fin = parseISO(fechaHasta);
@@ -199,12 +184,10 @@ export default function LibrosContables() {
     const frPeriodo = facturasRecibidas.filter(enPeriodo);
     const gastosPeriodo = gastos.filter(enPeriodo);
 
-    // ── INGRESOS ──
     const baseIngresos = facturasPeriodo.reduce((s, f) => s + (parseFloat(f.baseImponible) || 0), 0);
     const totalIngresos = facturasPeriodo.reduce((s, f) => s + (parseFloat(f.total) || 0), 0);
     const ventasNetas = baseIngresos;
 
-    // ── GASTOS por categoría (facturas recibidas + gastos simples) ──
     const mapCat = {};
     frPeriodo.forEach((fr) => {
       const cat = fr.categoria || "OTROS";
@@ -225,7 +208,6 @@ export default function LibrosContables() {
       }))
       .sort((a, b) => b.importe - a.importe);
 
-    // ── Agrupaciones PGC ──
     const catPersonal = ["PERSONAL"];
     const catSS = ["SEGURIDAD_SOCIAL", "SEGURIDAD_SOCIAL_A_CARGO_EMPRESA"];
     const catAprov = ["PRODUCTOS", "MAQUINARIA"];
@@ -248,13 +230,12 @@ export default function LibrosContables() {
     const amortizacion = sumarCats(catAmortiz);
 
     const otrosGastosGestion = gastosPorCategoria
-      .filter((g) => ![ ...catPersonal, ...catSS, ...catAprov, ...catFinancieros, ...catTributos, ...catServicios, ...catAmortiz ].includes(g.categoria))
+      .filter((g) => ![...catPersonal, ...catSS, ...catAprov, ...catFinancieros, ...catTributos, ...catServicios, ...catAmortiz].includes(g.categoria))
       .reduce((s, g) => s + g.importe, 0);
 
     const otrosGastosExplotacion = serviciosExteriores + tributos + otrosGastosGestion;
     const totalGastos = gastosPersonal + aprovisionamientos + otrosGastosExplotacion + amortizacion;
 
-    // ── Resultados ──
     const resultadoExplotacion = totalIngresos - totalGastos;
     const ingresosFinancieros = 0;
     const resultadoFinanciero = ingresosFinancieros - gastosFinancieros;
@@ -297,7 +278,6 @@ export default function LibrosContables() {
     };
   }, []);
 
-  // ── Cargar datos desde la API ──
   const generarInforme = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -307,11 +287,9 @@ export default function LibrosContables() {
         facturaRecibidaService.getAll(),
         gastoService.getAll(),
       ]);
-
       const facturas = extraerArray(facturasResp);
       const facturasRecibidas = extraerArray(frResp);
       const gastos = extraerArray(gastosResp);
-
       const resultado = calcularPyG(facturas, facturasRecibidas, gastos, desde, hasta);
       setData(resultado);
     } catch (err) {
@@ -322,12 +300,132 @@ export default function LibrosContables() {
     }
   }, [desde, hasta, calcularPyG]);
 
-  // Cargar al montar
   useEffect(() => {
     generarInforme();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Filtros rápidos ──
+  // ── Exportar a Excel (SheetJS) ─────────────────────────────────────────────
+  const exportarExcel = async () => {
+    if (!data) return;
+    setExportando(true);
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.utils.book_new();
+
+      // ── Hoja 1: Pérdidas y Ganancias ──────────────────────────────────────
+      const pygRows = [
+        ["LAVADERO SEPÚLVEDA — LIBRO DE PÉRDIDAS Y GANANCIAS", ""],
+        [`Período: ${data.fechaDesde} — ${data.fechaHasta}   |   Ejercicio: ${data.ejercicio}`, ""],
+        [`Generado: ${new Date().toLocaleString("es-ES")}`, ""],
+        ["", ""],
+        ["CONCEPTO", "IMPORTE (€)"],
+        // Ingresos
+        ["A) INGRESOS DE EXPLOTACIÓN", ""],
+        ["  1. Importe neto cifra de negocios", data.ventasNetas],
+        ["     Servicios de lavado", data.ventasNetas],
+        ["  5. Otros ingresos de explotación", data.otrosIngresosExplotacion],
+        ["TOTAL INGRESOS DE EXPLOTACIÓN", data.totalIngresos],
+        ["", ""],
+        // Gastos
+        ["B) GASTOS DE EXPLOTACIÓN", ""],
+        ["  4. Aprovisionamientos", -data.aprovisionamientos],
+        ["  6. Gastos de personal", -data.gastosPersonal],
+        ["     Sueldos y salarios", -(data.gastosPersonalDetalle?.sueldos ?? 0)],
+        ["     Cargas sociales", -(data.gastosPersonalDetalle?.seguridadSocial ?? 0)],
+        ["  7. Otros gastos de explotación", -data.otrosGastosExplotacion],
+        ["     Servicios exteriores", -data.serviciosExteriores],
+        ["     Tributos", -data.tributos],
+        ["     Otros gastos de gestión", -data.otrosGastosGestion],
+        ["  8. Amortización del inmovilizado", -data.amortizacion],
+        ["TOTAL GASTOS DE EXPLOTACIÓN", -data.totalGastos],
+        ["", ""],
+        // Resultados
+        ["CUENTA DE RESULTADOS", ""],
+        ["A.1) Resultado de Explotación", data.resultadoExplotacion],
+        ["", ""],
+        ["  12. Ingresos financieros", data.ingresosFinancieros],
+        ["  13. Gastos financieros", -data.gastosFinancieros],
+        ["A.2) Resultado Financiero", data.resultadoFinanciero],
+        ["", ""],
+        ["A.3) Resultado Antes de Impuestos", data.resultadoAntesImpuestos],
+        ["  17. Impuesto sobre beneficios (25%)", -data.impuestoBeneficios],
+        ["", ""],
+        ["A.4) RESULTADO DEL EJERCICIO", data.resultadoEjercicio],
+        ["Margen neto (%)", data.margenBeneficio],
+      ];
+      const wsPyG = XLSX.utils.aoa_to_sheet(pygRows);
+      wsPyG["!cols"] = [{ wch: 52 }, { wch: 18 }];
+      wsPyG["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsPyG, "PyG");
+
+      // ── Hoja 2: Gastos por Categoría ────────────────────────────────────
+      const gastosRows = [
+        ["DESGLOSE DE GASTOS POR CATEGORÍA", "", ""],
+        [`Período: ${data.fechaDesde} — ${data.fechaHasta}`, "", ""],
+        ["", "", ""],
+        ["Categoría", "Importe (€)", "% s/Total Gastos"],
+        ...(data.gastosPorCategoria || [])
+          .sort((a, b) => b.importe - a.importe)
+          .map((g) => [
+            g.label,
+            g.importe,
+            data.totalGastos > 0
+              ? Math.round((g.importe / data.totalGastos) * 1000) / 10
+              : 0,
+          ]),
+        ["", "", ""],
+        ["TOTAL", data.totalGastos, 100],
+      ];
+      const wsGastos = XLSX.utils.aoa_to_sheet(gastosRows);
+      wsGastos["!cols"] = [{ wch: 32 }, { wch: 16 }, { wch: 20 }];
+      wsGastos["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsGastos, "Gastos por Categoría");
+
+      // ── Hoja 3: Resumen KPIs ─────────────────────────────────────────────
+      const kpiRows = [
+        ["RESUMEN EJECUTIVO", ""],
+        [`Período: ${data.fechaDesde} — ${data.fechaHasta}   |   Ejercicio: ${data.ejercicio}`, ""],
+        ["", ""],
+        ["Indicador", "Valor"],
+        ["Total Ingresos", data.totalIngresos],
+        ["Total Gastos", data.totalGastos],
+        ["Resultado de Explotación", data.resultadoExplotacion],
+        ["Resultado Financiero", data.resultadoFinanciero],
+        ["Resultado Antes de Impuestos", data.resultadoAntesImpuestos],
+        ["Impuesto sobre Beneficios (25%)", data.impuestoBeneficios],
+        ["Resultado del Ejercicio", data.resultadoEjercicio],
+        ["Margen Neto (%)", data.margenBeneficio],
+        ["", ""],
+        ["Nº Facturas Emitidas", data.numFacturasEmitidas],
+        ["Nº Facturas Recibidas", data.numFacturasRecibidas],
+        ["Nº Gastos Registrados", data.numGastos],
+      ];
+      const wsKpi = XLSX.utils.aoa_to_sheet(kpiRows);
+      wsKpi["!cols"] = [{ wch: 36 }, { wch: 18 }];
+      wsKpi["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsKpi, "Resumen");
+
+      // ── Descargar ──────────────────────────────────────────────────────────
+      const nombreFichero = `LibrosContables_${data.fechaDesde.replace(/\//g, "-")}_${data.fechaHasta.replace(/\//g, "-")}.xlsx`;
+      XLSX.writeFile(wb, nombreFichero);
+    } catch (err) {
+      console.error("Error al exportar Excel:", err);
+      alert("Error al generar el Excel. Asegúrate de que la librería xlsx está instalada:\nnpm install xlsx");
+    } finally {
+      setExportando(false);
+    }
+  };
+
   const setQuickFilter = (type) => {
     const y = today.getFullYear();
     const pad = (n) => String(n).padStart(2, "0");
@@ -351,28 +449,27 @@ export default function LibrosContables() {
     }
   };
 
-  // ── Valores derivados (con null-safety) ──
   const resultado = data?.resultadoEjercicio ?? 0;
   const resultadoColor = resultado > 0 ? "green" : resultado < 0 ? "red" : "blue";
   const ResultIcon = resultado > 0 ? TrendingUp : resultado < 0 ? TrendingDown : Minus;
 
   const gastosCat = data?.gastosPorCategoria ?? [];
-  const topGastos = [...gastosCat].sort((a,b) => b.importe - a.importe).slice(0,6);
+  const topGastos = [...gastosCat].sort((a, b) => b.importe - a.importe).slice(0, 6);
   const otrosImporte = gastosCat.length > 6
-    ? gastosCat.sort((a,b) => b.importe - a.importe).slice(6).reduce((s,g) => s + g.importe, 0)
+    ? gastosCat.sort((a, b) => b.importe - a.importe).slice(6).reduce((s, g) => s + g.importe, 0)
     : 0;
   const pieData = otrosImporte > 0
     ? [...topGastos, { label: "Otros", importe: otrosImporte }]
     : topGastos;
 
   const barData = [...gastosCat]
-    .sort((a,b) => b.importe - a.importe)
+    .sort((a, b) => b.importe - a.importe)
     .slice(0, 10)
     .map(g => ({ name: g.label.split("/")[0], importe: g.importe }));
 
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: "#F0F4F8", minHeight: "100vh" }}>
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <div style={{
         background: "linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1976D2 100%)",
         padding: "24px 32px 20px", color: "#fff"
@@ -390,7 +487,7 @@ export default function LibrosContables() {
 
       <div style={{ padding: "24px 32px", maxWidth: 1200, margin: "0 auto" }}>
 
-        {/* ── TABS ── */}
+        {/* TABS */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
           {[
             { id: "pyg", label: "Pérdidas y Ganancias", icon: BookOpen },
@@ -398,22 +495,22 @@ export default function LibrosContables() {
           ].map(({ id, label, icon }) => {
             const TabIcon = icon;
             return (
-            <button key={id} onClick={() => setActiveTab(id)} style={{
-              display: "flex", alignItems: "center", gap: 7,
-              padding: "9px 18px", borderRadius: 8, border: "none",
-              background: activeTab === id ? "#1565C0" : "#fff",
-              color: activeTab === id ? "#fff" : "#555",
-              fontWeight: 600, fontSize: 13, cursor: "pointer",
-              boxShadow: activeTab === id ? "0 2px 8px rgba(21,101,192,0.3)" : "0 1px 3px rgba(0,0,0,0.1)",
-              transition: "all 0.15s"
-            }}>
-              <TabIcon size={15} />{label}
-            </button>
+              <button key={id} onClick={() => setActiveTab(id)} style={{
+                display: "flex", alignItems: "center", gap: 7,
+                padding: "9px 18px", borderRadius: 8, border: "none",
+                background: activeTab === id ? "#1565C0" : "#fff",
+                color: activeTab === id ? "#fff" : "#555",
+                fontWeight: 600, fontSize: 13, cursor: "pointer",
+                boxShadow: activeTab === id ? "0 2px 8px rgba(21,101,192,0.3)" : "0 1px 3px rgba(0,0,0,0.1)",
+                transition: "all 0.15s"
+              }}>
+                <TabIcon size={15} />{label}
+              </button>
             );
           })}
         </div>
 
-        {/* ── FILTROS ── */}
+        {/* FILTROS */}
         <div style={{
           background: "#fff", borderRadius: 12, padding: "16px 20px",
           boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 20,
@@ -437,7 +534,7 @@ export default function LibrosContables() {
           </div>
 
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {["mes","T1","T2","T3","T4","anio"].map(f => (
+            {["mes", "T1", "T2", "T3", "T4", "anio"].map(f => (
               <button key={f} onClick={() => setQuickFilter(f)} style={{
                 padding: "5px 11px", borderRadius: 6, fontSize: 11, fontWeight: 600,
                 border: "1px solid #CBD5E0", background: "#F7FAFC", cursor: "pointer",
@@ -449,13 +546,24 @@ export default function LibrosContables() {
           </div>
 
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-            <button onClick={() => alert("Exportar a Excel: conectar con API")} style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "7px 14px", borderRadius: 6, border: "1px solid #2E7D32",
-              background: "#E8F5E9", color: "#2E7D32", fontWeight: 600, fontSize: 12, cursor: "pointer"
-            }}>
-              <FileDown size={14} />Excel
+            {/* ── BOTÓN EXCEL — IMPLEMENTADO ── */}
+            <button
+              onClick={exportarExcel}
+              disabled={!data || exportando}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 14px", borderRadius: 6, border: "1px solid #2E7D32",
+                background: !data || exportando ? "#F5F5F5" : "#E8F5E9",
+                color: !data || exportando ? "#9E9E9E" : "#2E7D32",
+                fontWeight: 600, fontSize: 12,
+                cursor: !data || exportando ? "not-allowed" : "pointer",
+                transition: "all 0.15s"
+              }}
+            >
+              <FileDown size={14} />
+              {exportando ? "Exportando…" : "Excel"}
             </button>
+
             <button onClick={() => window.print()} style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "7px 14px", borderRadius: 6, border: "1px solid #1565C0",
@@ -466,7 +574,7 @@ export default function LibrosContables() {
           </div>
         </div>
 
-        {/* ── ERROR / LOADING ── */}
+        {/* ERROR / LOADING */}
         {error && (
           <div style={{
             background: "#FFEBEE", border: "1px solid #EF5350", borderRadius: 8,
@@ -485,32 +593,27 @@ export default function LibrosContables() {
           </div>
         )}
 
-        {/* ── KPIs ── */}
+        {/* KPIs */}
         {data && (
-        <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-          <KpiCard title="Total Ingresos" value={fmt(data.totalIngresos)}
-            sub={`${data.numFacturasEmitidas} facturas emitidas`} color="green" icon={ArrowUpRight} />
-          <KpiCard title="Total Gastos" value={fmt(data.totalGastos)}
-            sub={`${data.numFacturasRecibidas} facturas + ${data.numGastos} gastos`} color="grey" icon={ArrowDownRight} />
-          <KpiCard
-            title={resultado > 0 ? "Beneficio" : resultado < 0 ? "Pérdida" : "Resultado"}
-            value={fmt(Math.abs(resultado))}
-            sub={`Margen: ${data.margenBeneficio}%`}
-            color={resultadoColor}
-            icon={ResultIcon}
-          />
-        </div>
+          <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+            <KpiCard title="Total Ingresos" value={fmt(data.totalIngresos)}
+              sub={`${data.numFacturasEmitidas} facturas emitidas`} color="green" icon={ArrowUpRight} />
+            <KpiCard title="Total Gastos" value={fmt(data.totalGastos)}
+              sub={`${data.numFacturasRecibidas} facturas + ${data.numGastos} gastos`} color="grey" icon={ArrowDownRight} />
+            <KpiCard
+              title={resultado > 0 ? "Beneficio" : resultado < 0 ? "Pérdida" : "Resultado"}
+              value={fmt(Math.abs(resultado))}
+              sub={`Margen: ${data.margenBeneficio}%`}
+              color={resultadoColor}
+              icon={ResultIcon}
+            />
+          </div>
         )}
 
-        {/* ═══════════════════════════════════════ */}
-        {/* TAB: Pérdidas y Ganancias               */}
-        {/* ═══════════════════════════════════════ */}
+        {/* TAB: Pérdidas y Ganancias */}
         {activeTab === "pyg" && data && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-
-            {/* COLUMNA IZQUIERDA */}
             <div>
-              {/* INGRESOS */}
               <Section title="A) Ingresos de Explotación">
                 <PyGRow label="1. Importe neto cifra de negocios" value={data.ventasNetas} bold />
                 <PyGRow label="Servicios de lavado" value={data.ventasNetas} indent={1} />
@@ -519,7 +622,6 @@ export default function LibrosContables() {
                 <PyGRow label="TOTAL INGRESOS DE EXPLOTACIÓN" value={data.totalIngresos} isTotal colored />
               </Section>
 
-              {/* GASTOS */}
               <Section title="B) Gastos de Explotación">
                 <PyGRow label="4. Aprovisionamientos" value={data.aprovisionamientos} isGasto />
                 <PyGRow label="6. Gastos de personal" value={data.gastosPersonal} isGasto bold />
@@ -534,7 +636,6 @@ export default function LibrosContables() {
                 <PyGRow label="TOTAL GASTOS DE EXPLOTACIÓN" value={data.totalGastos} isTotal colored />
               </Section>
 
-              {/* DESGLOSE POR CATEGORÍA */}
               <Section title="Desglose Gastos por Categoría" defaultOpen={false}>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -565,31 +666,18 @@ export default function LibrosContables() {
               </Section>
             </div>
 
-            {/* COLUMNA DERECHA */}
             <div>
-              {/* RESULTADOS */}
               <Section title="Cuenta de Resultados">
-                {/* Resultado explotación */}
-                <PyGRow
-                  label="A.1) Resultado de Explotación"
-                  value={data.resultadoExplotacion}
-                  isTotal colored
-                />
-
-                {/* Resultado financiero */}
+                <PyGRow label="A.1) Resultado de Explotación" value={data.resultadoExplotacion} isTotal colored />
                 <div style={{ margin: "8px 0 4px", paddingLeft: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase" }}>Resultado Financiero</span>
                 </div>
                 <PyGRow label="12. Ingresos financieros" value={data.ingresosFinancieros} />
                 <PyGRow label="13. Gastos financieros" value={data.gastosFinancieros} isGasto />
                 <PyGRow label="A.2) Resultado Financiero" value={data.resultadoFinanciero} isTotal colored />
-
-                {/* Antes de impuestos */}
                 <div style={{ height: 4 }} />
                 <PyGRow label="A.3) Resultado Antes de Impuestos" value={data.resultadoAntesImpuestos} isTotal colored />
                 <PyGRow label="17. Impuesto sobre beneficios (25%)" value={data.impuestoBeneficios} isGasto />
-
-                {/* RESULTADO FINAL */}
                 <div style={{
                   marginTop: 12, padding: 16,
                   background: resultado >= 0 ? "#E8F5E9" : "#FFEBEE",
@@ -616,14 +704,13 @@ export default function LibrosContables() {
                 </div>
               </Section>
 
-              {/* PIE CHART */}
               <Section title="Distribución de Gastos">
                 <div style={{ height: 260 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPie>
                       <Pie data={pieData} dataKey="importe" nameKey="label"
                         cx="50%" cy="50%" outerRadius={90} labelLine={false}
-                        label={({ percent }) => percent > 0.05 ? `${(percent*100).toFixed(0)}%` : ""}
+                        label={({ percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ""}
                       >
                         {pieData.map((_, i) => (
                           <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
@@ -639,12 +726,9 @@ export default function LibrosContables() {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════ */}
-        {/* TAB: Análisis Gráfico                   */}
-        {/* ═══════════════════════════════════════ */}
+        {/* TAB: Análisis Gráfico */}
         {activeTab === "grafico" && data && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            {/* Barras: gastos por categoría */}
             <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
               <h3 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 700, color: "#1565C0" }}>
                 Top Gastos por Categoría
@@ -652,7 +736,7 @@ export default function LibrosContables() {
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={barData} layout="vertical" margin={{ left: 0, right: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" tickFormatter={v => `${(v/1000).toFixed(1)}k€`} fontSize={10} />
+                  <XAxis type="number" tickFormatter={v => `${(v / 1000).toFixed(1)}k€`} fontSize={10} />
                   <YAxis type="category" dataKey="name" width={110} fontSize={11} />
                   <Tooltip formatter={v => fmt(v)} />
                   <Bar dataKey="importe" fill="#1565C0" radius={[0, 4, 4, 0]}>
@@ -662,7 +746,6 @@ export default function LibrosContables() {
               </ResponsiveContainer>
             </div>
 
-            {/* Pie */}
             <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
               <h3 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 700, color: "#1565C0" }}>
                 Distribución de Gastos
@@ -680,27 +763,24 @@ export default function LibrosContables() {
               </ResponsiveContainer>
             </div>
 
-            {/* Ingresos vs Gastos */}
             <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", gridColumn: "1 / -1" }}>
               <h3 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 700, color: "#1565C0" }}>
                 Resumen Financiero
               </h3>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={[
-                  { name: "Ingresos", value: data.totalIngresos, fill: "#2E7D32" },
-                  { name: "Gastos", value: data.totalGastos, fill: "#C62828" },
-                  { name: "Resultado explotación", value: data.resultadoExplotacion, fill: "#1565C0" },
-                  { name: "Resultado ejercicio", value: data.resultadoEjercicio, fill: resultado >= 0 ? "#43A047" : "#E53935" },
+                  { name: "Ingresos", value: data.totalIngresos },
+                  { name: "Gastos", value: data.totalGastos },
+                  { name: "Resultado explotación", value: data.resultadoExplotacion },
+                  { name: "Resultado ejercicio", value: data.resultadoEjercicio },
                 ]} margin={{ left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="name" fontSize={11} />
-                  <YAxis tickFormatter={v => `${(v/1000).toFixed(0)}k€`} fontSize={10} />
+                  <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k€`} fontSize={10} />
                   <Tooltip formatter={v => fmt(v)} />
-                  <Bar dataKey="value" radius={[6,6,0,0]}>
-                    {[
-                      "#2E7D32","#C62828","#1565C0",
-                      resultado >= 0 ? "#43A047" : "#E53935"
-                    ].map((c,i) => <Cell key={i} fill={c} />)}
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                    {["#2E7D32", "#C62828", "#1565C0", resultado >= 0 ? "#43A047" : "#E53935"]
+                      .map((c, i) => <Cell key={i} fill={c} />)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -708,14 +788,14 @@ export default function LibrosContables() {
           </div>
         )}
 
-        {/* ── FOOTER ── */}
+        {/* FOOTER */}
         <div style={{
           marginTop: 24, padding: "12px 16px",
           background: "#fff", borderRadius: 8, fontSize: 11, color: "#888",
           boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
           display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8
         }}>
-          <span>Lavadero Sepúlveda · CIF: B-XXXXXXXX · Córdoba</span>
+          <span>Antonio Jesús Martínez Díaz · NIF: 44372838L · Córdoba</span>
           <span>Período: {data?.fechaDesde ?? desde} — {data?.fechaHasta ?? hasta} · Ejercicio {data?.ejercicio ?? today.getFullYear()}</span>
           <span>Generado: {new Date().toLocaleString("es-ES")}</span>
         </div>
