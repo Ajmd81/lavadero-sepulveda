@@ -24,13 +24,13 @@ public class FacturaService {
     private static final Logger log = LoggerFactory.getLogger(FacturaService.class);
 
     // Datos fiscales del emisor — inyectados desde variables de entorno de Railway
-    @Value("${app.fiscal.emisor.nombre}")
+    @Value("${app.fiscal.emisor.nombre:ANTONIO JESUS MARTINEZ DIAZ}")
     private String EMISOR_NOMBRE;
 
-    @Value("${app.fiscal.emisor.nif}")
+    @Value("${app.fiscal.emisor.nif:44372838L}")
     private String EMISOR_NIF;
 
-    @Value("${app.fiscal.emisor.direccion}")
+    @Value("${app.fiscal.emisor.direccion:C/ Ingeniero Ruiz de Azua s/n Local 8, 14006 Cordoba}")
     private String EMISOR_DIRECCION;
 
     private static final BigDecimal IVA_PORCENTAJE = new BigDecimal("21.00");
