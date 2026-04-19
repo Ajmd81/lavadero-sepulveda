@@ -186,18 +186,24 @@ export default function LibrosContables() {
     const gastosPeriodo = gastos.filter(enPeriodo);
 
     const baseIngresos = facturasPeriodo.reduce((s, f) => s + (parseFloat(f.baseImponible) || 0), 0);
-    const totalIngresos = facturasPeriodo.reduce((s, f) => s + (parseFloat(f.total) || 0), 0);
+    // Para la PyG contable los ingresos son SIN IVA (base imponible)
+    // El IVA es neutro — se recauda y se ingresa a Hacienda, no es ingreso del negocio
+    const totalIngresos = baseIngresos;
     const ventasNetas = baseIngresos;
 
     const mapCat = {};
     frPeriodo.forEach((fr) => {
       const cat = fr.categoria || "OTROS";
+      // Facturas recibidas: usar baseImponible (coste sin IVA = gasto contable real).
+      // El IVA soportado es neutro — se deduce en el Modelo 303.
       const imp = parseFloat(fr.baseImponible) || parseFloat(fr.total) || 0;
       mapCat[cat] = (mapCat[cat] || 0) + imp;
     });
     gastosPeriodo.forEach((g) => {
       const cat = g.categoria || "OTROS";
-      const imp = parseFloat(g.baseImponible) || parseFloat(g.importe) || 0;
+      // GastoDTO: usar siempre importe — estos gastos no llevan IVA separado
+      // baseImponible puede existir pero el importe es el valor real del gasto
+      const imp = parseFloat(g.importe) || 0;
       mapCat[cat] = (mapCat[cat] || 0) + imp;
     });
 
