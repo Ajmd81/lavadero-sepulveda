@@ -136,20 +136,29 @@ const ModelosFiscales = () => {
     const facturasRecPeriodo = facturasRec.filter(f => enTrimestre(f.fechaFactura, trimestre, anio));
     const gastosPeriodo = gastos.filter(g => enTrimestre(g.fecha, trimestre, anio));
 
-    const repercutido = facturasPeriodo.reduce(
-        (acc, f) => { const { base, cuota } = ivaFacturaEmitida(f); return { base: acc.base + base, cuota: acc.cuota + cuota }; },
-        { base: 0, cuota: 0 }
+    // IVA repercutido: suma bases → aplica tipo una sola vez (correcto AEAT)
+    const baseRepercutida = facturasPeriodo.reduce(
+        (acc, f) => acc + parseFloat(f.baseImponible || 0), 0
     );
-    const soportadoFR = facturasRecPeriodo.reduce(
-        (acc, f) => { const { base, cuota } = ivaFacturaRecibida(f); return { base: acc.base + base, cuota: acc.cuota + cuota }; },
-        { base: 0, cuota: 0 }
+    const tipoIvaRep = parseFloat(facturasPeriodo[0]?.tipoIva || 21);
+    const cuotaRepercutida = parseFloat((baseRepercutida * tipoIvaRep / 100).toFixed(2));
+    const repercutido = { base: baseRepercutida, cuota: cuotaRepercutida };
+
+    // IVA soportado facturas recibidas: suma bases → aplica tipo una sola vez
+    const baseSoportadaFR = facturasRecPeriodo.reduce(
+        (acc, f) => acc + parseFloat(f.baseImponible || 0), 0
     );
+    const tipoIvaSop = parseFloat(facturasRecPeriodo[0]?.tipoIva || 21);
+    const cuotaSoportadaFR = parseFloat((baseSoportadaFR * tipoIvaSop / 100).toFixed(2));
+    const soportadoFR = { base: baseSoportadaFR, cuota: cuotaSoportadaFR };
+
+    // IVA soportado gastos: usa cuotaIva del DTO si existe, sino calcula
     const soportadoG = gastosPeriodo.reduce(
         (acc, g) => { const { base, cuota } = ivaGasto(g); return { base: acc.base + base, cuota: acc.cuota + cuota }; },
         { base: 0, cuota: 0 }
     );
     const soportado = { base: soportadoFR.base + soportadoG.base, cuota: soportadoFR.cuota + soportadoG.cuota };
-    const liquidacionIva = repercutido.cuota - soportado.cuota;
+    const liquidacionIva = parseFloat((repercutido.cuota - soportado.cuota).toFixed(2));
 
     const ingresosBrutos = facturasPeriodo.reduce((acc, f) => acc + parseFloat(f.total || 0), 0);
     const gastosDeducibles = facturasRecPeriodo.reduce((acc, f) => acc + parseFloat(f.total || 0), 0)
