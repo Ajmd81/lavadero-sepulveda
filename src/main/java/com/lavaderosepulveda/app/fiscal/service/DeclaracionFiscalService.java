@@ -25,19 +25,19 @@ public class DeclaracionFiscalService {
 
     /** Devuelve todo el historial (más reciente primero). */
     public List<DeclaracionFiscalDTO> listarTodas() {
-        return repo.findAllByOrderByEjercicioDescPeriodoDesc()
+        return repo.findAllOrdenadas()
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     /** Devuelve el historial filtrado por modelo ("303" o "130"). */
     public List<DeclaracionFiscalDTO> listarPorModelo(String modelo) {
-        return repo.findByModeloOrderByEjercicioDescPeriodoDesc(modelo.toUpperCase())
+        return repo.findByModelo(modelo.toUpperCase())
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     /** Devuelve solo las declaraciones pendientes de presentar. */
     public List<DeclaracionFiscalDTO> listarGeneradas() {
-        return repo.findByEstadoOrderByEjercicioDescPeriodoDesc(EstadoDeclaracion.GENERADO)
+        return repo.findByEstado(EstadoDeclaracion.GENERADO)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
@@ -53,11 +53,11 @@ public class DeclaracionFiscalService {
     public DeclaracionFiscalDTO registrarGeneracion303(
             int ejercicio, String periodo,
             BigDecimal baseRepercutida, BigDecimal cuotaRepercutida,
-            BigDecimal baseSoportada,   BigDecimal cuotaSoportada,
+            BigDecimal baseSoportada, BigDecimal cuotaSoportada,
             String nombreFichero) {
 
         DeclaracionFiscal d = repo
-                .findByModeloAndEjercicioAndPeriodo("303", ejercicio, periodo.toUpperCase())
+                .findByClaveNatural("303", ejercicio, periodo.toUpperCase())
                 .orElse(new DeclaracionFiscal());
 
         d.setModelo("303");
@@ -69,8 +69,10 @@ public class DeclaracionFiscalService {
         d.setCuotaSoportada(orCero(cuotaSoportada));
         d.setResultadoIva(orCero(cuotaRepercutida).subtract(orCero(cuotaSoportada)));
         d.setNombreFichero(nombreFichero);
-        // Si ya estaba PRESENTADO, no retrocedemos el estado — solo actualizamos importes
-        if (d.getEstado() == null) d.setEstado(EstadoDeclaracion.GENERADO);
+        // Si ya estaba PRESENTADO, no retrocedemos el estado — solo actualizamos
+        // importes
+        if (d.getEstado() == null)
+            d.setEstado(EstadoDeclaracion.GENERADO);
 
         return toDTO(repo.save(d));
     }
@@ -82,11 +84,11 @@ public class DeclaracionFiscalService {
     public DeclaracionFiscalDTO registrarGeneracion130(
             int ejercicio, String periodo,
             BigDecimal ingresosTrimestre, BigDecimal gastosTrimestre,
-            BigDecimal rendimientoNeto,   BigDecimal pagoFraccionado,
+            BigDecimal rendimientoNeto, BigDecimal pagoFraccionado,
             String nombreFichero) {
 
         DeclaracionFiscal d = repo
-                .findByModeloAndEjercicioAndPeriodo("130", ejercicio, periodo.toUpperCase())
+                .findByClaveNatural("130", ejercicio, periodo.toUpperCase())
                 .orElse(new DeclaracionFiscal());
 
         d.setModelo("130");
@@ -97,7 +99,8 @@ public class DeclaracionFiscalService {
         d.setRendimientoNeto(orCero(rendimientoNeto));
         d.setPagoFraccionado(orCero(pagoFraccionado));
         d.setNombreFichero(nombreFichero);
-        if (d.getEstado() == null) d.setEstado(EstadoDeclaracion.GENERADO);
+        if (d.getEstado() == null)
+            d.setEstado(EstadoDeclaracion.GENERADO);
 
         return toDTO(repo.save(d));
     }
@@ -109,8 +112,8 @@ public class DeclaracionFiscalService {
     /**
      * Marca una declaración como PRESENTADO ante la AEAT.
      *
-     * @param id                  ID de la declaración
-     * @param fechaPresentacion   Fecha en que se presentó (puede ser null → hoy)
+     * @param id                ID de la declaración
+     * @param fechaPresentacion Fecha en que se presentó (puede ser null → hoy)
      */
     @Transactional
     public DeclaracionFiscalDTO marcarComoPresentado(Long id, LocalDate fechaPresentacion) {
