@@ -292,6 +292,7 @@ public class DataInitializer implements CommandLineRunner {
         turismos.put("Mini", Arrays.asList("mini cooper", "mini one", "mini clubman"));
         turismos.put("Dacia", Arrays.asList("sandero", "logan"));
         turismos.put("Suzuki", Arrays.asList("swift", "baleno"));
+        turismos.put("DS", Arrays.asList("ds 3", "ds 4", "ds 9"));
         // ── Marcas chinas ──
         turismos.put("MG", Arrays.asList("mg3", "mg4", "mg5", "mg7", "cyberster"));
         turismos.put("BYD", Arrays.asList("seal", "dolphin", "han", "atto 3", "seagull", "sea lion 6"));
@@ -366,6 +367,7 @@ public class DataInitializer implements CommandLineRunner {
         monovolumenes.put("Dacia", Arrays.asList("duster", "spring", "jogger"));
         monovolumenes.put("Mini", Arrays.asList("mini paceman", "mini aceman"));
         monovolumenes.put("Lexus", Arrays.asList("ux", "nx"));
+        monovolumenes.put("DS", Arrays.asList("ds 3 crossback", "ds 4 crossback", "ds 7 crossback"));
         // ── Marcas chinas ──
         monovolumenes.put("MG", Arrays.asList("mg zs", "mg hs", "mg one", "ehs", "marvel r"));
         monovolumenes.put("BYD", Arrays.asList("yuan plus", "song plus", "tang", "atto 3"));
@@ -391,7 +393,7 @@ public class DataInitializer implements CommandLineRunner {
         todoterrenos.put("Opel", Arrays.asList("antara", "grandland"));
         todoterrenos.put("Renault", Arrays.asList("koleos"));
         todoterrenos.put("Peugeot", Arrays.asList("4008", "5008"));
-        todoterrenos.put("Citroën", Arrays.asList("c5 aircross", "ds7"));
+        todoterrenos.put("Citroën", Arrays.asList("c5 aircross"));
         todoterrenos.put("BMW", Arrays.asList("x3", "x4", "x5", "x6", "x7", "ix", "xm"));
         todoterrenos.put("Mercedes", Arrays.asList("gle", "gls", "gle coupe", "g class", "eqe suv", "eqs suv"));
         todoterrenos.put("Audi", Arrays.asList("q7", "q8", "e-tron", "sq7", "sq8", "rsq8"));
