@@ -18,8 +18,8 @@ public class VehicleClassificationService {
     private final VehicleModelRepository modelRepository;
     private final VehicleCategoryRepository categoryRepository;
 
-    
-    public VehicleClassificationService(VehicleModelRepository modelRepository, VehicleCategoryRepository categoryRepository) {
+    public VehicleClassificationService(VehicleModelRepository modelRepository,
+            VehicleCategoryRepository categoryRepository) {
         this.modelRepository = modelRepository;
         this.categoryRepository = categoryRepository;
     }
@@ -47,11 +47,14 @@ public class VehicleClassificationService {
 
     /**
      * Normaliza el modelo del vehículo para la búsqueda.
+     * Conserva los espacios para que coincida con los nombres en BBDD
+     * (ej: "Serie 3" → "serie 3", no "serie3").
      */
     private String normalizeVehicleModel(String vehicleModel) {
         return vehicleModel.toLowerCase()
                 .trim()
-                .replaceAll("[^a-zA-Z0-9]", ""); // Quita espacios y caracteres especiales
+                .replaceAll("[^a-zA-Z0-9 ]", "") // Conserva espacios, quita solo caracteres especiales
+                .replaceAll("\\s+", " "); // Normaliza espacios múltiples a uno solo
     }
 
     /**

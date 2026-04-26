@@ -39,4 +39,15 @@ public enum TipoLavado {
     public double getPrecio() {
         return precio;
     }
+
+    /**
+     * Devuelve el nombre del enum (ej: "LAVADO_COMPLETO_TURISMO").
+     * Necesario para que Jackson lo incluya en la serialización JSON como campo
+     * "name",
+     * ya que por defecto los enums con getters se serializan como objeto sin
+     * incluir name().
+     */
+    public String getName() {
+        return this.name();
+    }
 }

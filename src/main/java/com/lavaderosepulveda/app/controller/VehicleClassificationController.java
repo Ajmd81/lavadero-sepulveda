@@ -48,10 +48,64 @@ public class VehicleClassificationController {
         Map<String, List<String>> modelsByCategory = allModels.stream()
                 .collect(Collectors.groupingBy(
                         vm -> vm.getCategory().getName(),
-                        Collectors.mapping(VehicleModel::getName, Collectors.toList())
-                ));
+                        Collectors.mapping(VehicleModel::getName, Collectors.toList())));
 
         return ResponseEntity.ok(modelsByCategory);
+    }
+
+    /**
+     * Devuelve un HashMap ordenado con clave=Marca y valor=Lista de objetos {id,
+     * name}.
+     * Usado por el frontend para los desplegables en cascada Marca → Modelo.
+     * Incluir el id permite clasificar por id (sin depender de normalización de
+     * texto).
+     */
+    @GetMapping("/vehicle/brands-models")
+    public ResponseEntity<Map<String, List<Map<String, Object>>>> getBrandsWithModels() {
+        List<String> brands = modelRepository.findAllDistinctBrands();
+
+        Map<String, List<Map<String, Object>>> result = new java.util.TreeMap<>();
+
+        for (String brand : brands) {
+            List<Map<String, Object>> models = modelRepository.findByBrandIgnoreCase(brand)
+                    .stream()
+                    .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
+                    .map(vm -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("id", vm.getId());
+                        m.put("name", vm.getName());
+                        return m;
+                    })
+                    .collect(Collectors.toList());
+            result.put(brand, models);
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Clasifica un vehículo por su id (más fiable que por nombre).
+     * El frontend envía el id del VehicleModel seleccionado en el desplegable.
+     */
+    @GetMapping("/vehicle/classify-by-id")
+    public ResponseEntity<Map<String, Object>> classifyVehicleById(@RequestParam("id") Long modelId) {
+        try {
+            return modelRepository.findById(modelId).map(vehicleModel -> {
+                String category = vehicleModel.getCategory().getName();
+                List<TipoLavado> availableServices = vehicleClassificationService.getAvailableServices(category);
+                String categoryDescription = vehicleClassificationService.getCategoryDescription(category);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("category", category);
+                response.put("categoryDescription", categoryDescription);
+                response.put("availableServices", availableServices);
+                response.put("modelName", vehicleModel.getName());
+
+                return ResponseEntity.ok(response);
+            }).orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @GetMapping("/debug/buscar-modelo")
@@ -77,7 +131,8 @@ public class VehicleClassificationController {
 
         // Buscar coincidencias sin la primera palabra (marca)
         String[] parts = normalizado.split("\\s+");
-        String sinMarca = parts.length > 1 ? String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length)) : normalizado;
+        String sinMarca = parts.length > 1 ? String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length))
+                : normalizado;
 
         List<VehicleModel> sinMarcaMatches = allModels.stream()
                 .filter(vm -> vm.getName().toLowerCase().contains(sinMarca))

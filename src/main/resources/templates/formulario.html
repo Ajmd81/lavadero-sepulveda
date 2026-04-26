@@ -72,11 +72,21 @@
                     <div class="error-message" th:if="${#fields.hasErrors('telefono')}" th:errors="*{telefono}"></div>
                 </div>
 
+                <!-- Desplegable de MARCA -->
+                <div class="form-group">
+                    <label for="marcaVehiculo">Marca del vehículo:</label>
+                    <select id="marcaVehiculo" required>
+                        <option value="">-- Selecciona una marca --</option>
+                    </select>
+                </div>
+
+                <!-- Desplegable de MODELO (se rellena según la marca) -->
                 <div class="form-group">
                     <label for="modeloVehiculo">Modelo del vehículo:</label>
-                    <input type="text" id="modeloVehiculo" th:field="*{modeloVehiculo}"
-                        th:class="${#fields.hasErrors('modeloVehiculo')} ? 'field-error' : ''"
-                        placeholder="Ej: Volkswagen Golf, Toyota CHR, Ford Transit..." required>
+                    <select id="modeloVehiculo" th:field="*{modeloVehiculo}"
+                        th:class="${#fields.hasErrors('modeloVehiculo')} ? 'field-error' : ''" required disabled>
+                        <option value="">-- Primero selecciona una marca --</option>
+                    </select>
                     <div class="error-message" th:if="${#fields.hasErrors('modeloVehiculo')}"
                         th:errors="*{modeloVehiculo}"></div>
 
@@ -225,7 +235,8 @@
             const horaSelect = document.getElementById('hora');
             const emailInput = document.getElementById('email');
             const tipoLavadoSelect = document.getElementById('tipoLavado');
-            const modeloVehiculoInput = document.getElementById('modeloVehiculo');
+            const marcaVehiculoSelect = document.getElementById('marcaVehiculo');
+            const modeloVehiculoSelect = document.getElementById('modeloVehiculo');
             const vehicleCategoryInfo = document.getElementById('vehicleCategoryInfo');
             const categoryName = document.getElementById('categoryName');
             const loadingServices = document.getElementById('loadingServices');
@@ -233,16 +244,13 @@
 
             // Variables para control de clasificación
             let currentVehicleCategory = null;
-            let classificationTimeout = null;
             let availableServicesData = null;
             let fp = null; // Instancia de Flatpickr
+            let brandsModelsData = {}; // HashMap cargado desde la API
 
             // Constantes para Tapicería
             const SERVICIO_TAPICERIA_SIN = 'TAPICERIA_SIN_DESMONTAR';
             const SERVICIO_TAPICERIA_CON = 'TAPICERIA_DESMONTANDO';
-
-            // Establecer fecha mínima como hoy
-            const hoy = new Date();
 
             // Inicializar Flatpickr
             initFlatpickr();
@@ -252,7 +260,7 @@
                     locale: "es",
                     minDate: "today",
                     dateFormat: "Y-m-d",
-                    disable: [], // Se llenará dinámicamente
+                    disable: [],
                     onChange: function (selectedDates, dateStr, instance) {
                         cargarHorarios(dateStr);
                     },
@@ -264,6 +272,74 @@
                     }
                 });
             }
+
+            // ── Cargar marcas y modelos desde la API al inicio ──────────
+            fetch('/api/vehicle/brands-models')
+                .then(response => response.json())
+                .then(data => {
+                    brandsModelsData = data;
+                    const brands = Object.keys(data).sort();
+                    brands.forEach(brand => {
+                        const option = document.createElement('option');
+                        option.value = brand;
+                        option.textContent = brand;
+                        marcaVehiculoSelect.appendChild(option);
+                    });
+
+                    // Si el form ya tiene modelo (reenvío con errores), preseleccionar marca y modelo
+                    const modeloActual = modeloVehiculoSelect.value;
+                    if (modeloActual) {
+                        // Buscar qué marca tiene ese modelo (ahora los modelos son objetos {id, name})
+                        for (const [brand, models] of Object.entries(data)) {
+                            const found = models.find(m => String(m.id) === String(modeloActual));
+                            if (found) {
+                                marcaVehiculoSelect.value = brand;
+                                rellenarModelos(brand, String(found.id));
+                                break;
+                            }
+                        }
+                    }
+                })
+                .catch(err => console.error('Error cargando marcas:', err));
+
+            // ── Al cambiar la marca → rellenar modelos ──────────────────
+            marcaVehiculoSelect.addEventListener('change', function () {
+                const brand = this.value;
+                resetVehicleClassification();
+                if (!brand) {
+                    modeloVehiculoSelect.innerHTML = '<option value="">-- Primero selecciona una marca --</option>';
+                    modeloVehiculoSelect.disabled = true;
+                    return;
+                }
+                rellenarModelos(brand, null);
+            });
+
+            function rellenarModelos(brand, preselect) {
+                const models = brandsModelsData[brand] || [];
+                modeloVehiculoSelect.innerHTML = '<option value="">-- Selecciona un modelo --</option>';
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    // Guardar el id como value (más fiable que el nombre para clasificar)
+                    option.value = model.id;
+                    option.textContent = model.name.charAt(0).toUpperCase() + model.name.slice(1);
+                    option.dataset.name = model.name; // Guardar nombre por si se necesita mostrar
+                    modeloVehiculoSelect.appendChild(option);
+                });
+                modeloVehiculoSelect.disabled = false;
+                if (preselect) {
+                    modeloVehiculoSelect.value = preselect;
+                }
+            }
+
+            // ── Al cambiar el modelo → clasificar vehículo ──────────────
+            modeloVehiculoSelect.addEventListener('change', function () {
+                const vehicleModel = this.value;
+                if (!vehicleModel) {
+                    resetVehicleClassification();
+                    return;
+                }
+                classifyVehicle(vehicleModel);
+            });
 
             // Validación de email
             emailInput.addEventListener('input', function () {
@@ -277,27 +353,6 @@
                 }
             });
 
-            // Clasificación automática del vehículo
-            modeloVehiculoInput.addEventListener('input', function () {
-                const vehicleModel = this.value.trim();
-
-                // Limpiar timeout anterior
-                if (classificationTimeout) {
-                    clearTimeout(classificationTimeout);
-                }
-
-                // Si el campo está vacío, resetear
-                if (vehicleModel === '') {
-                    resetVehicleClassification();
-                    return;
-                }
-
-                // Esperar 500ms después de que el usuario deje de escribir
-                classificationTimeout = setTimeout(() => {
-                    classifyVehicle(vehicleModel);
-                }, 500);
-            });
-
             // Event listeners para el toggle de turismo
             document.querySelectorAll('input[name="turismoType"]').forEach(radio => {
                 radio.addEventListener('change', function () {
@@ -307,12 +362,12 @@
                 });
             });
 
-            function classifyVehicle(vehicleModel) {
+            function classifyVehicle(modelId) {
                 loadingServices.style.display = 'block';
                 vehicleCategoryInfo.classList.remove('show');
                 turismoToggle.style.display = 'none';
 
-                fetch(`/api/vehicle/classify?model=${encodeURIComponent(vehicleModel)}`)
+                fetch(`/api/vehicle/classify-by-id?id=${encodeURIComponent(modelId)}`)
                     .then(response => response.json())
                     .then(data => {
                         console.log('Respuesta completa de la API:', data);
@@ -322,6 +377,9 @@
                         // Mostrar información de la categoría
                         categoryName.textContent = data.categoryDescription;
                         vehicleCategoryInfo.classList.add('show');
+
+                        // Normalizar servicios (el enum Java puede llegar como objeto o como string)
+                        const serviciosNormalizados = normalizeServices(data.availableServices);
 
                         // Si es turismo, mostrar toggle
                         if (data.category === 'turismo' || data.category === 'ranchera') {
@@ -340,7 +398,7 @@
                         } else {
                             turismoToggle.style.display = 'none';
                             // Para otras categorías, actualizar servicios directamente
-                            updateServiceSelect(data.availableServices);
+                            updateServiceSelect(serviciosNormalizados);
                         }
 
                         loadingServices.style.display = 'none';
@@ -353,58 +411,54 @@
                     });
             }
 
+            /**
+             * Normaliza la lista de servicios del API.
+             * El enum TipoLavado puede llegar como string ("LAVADO_COMPLETO_TURISMO")
+             * o como objeto { name, descripcion, precio } según la configuración de Jackson.
+             * Devuelve siempre un array de objetos { key, label } para usar en updateServiceSelect.
+             */
+            function normalizeServices(services) {
+                if (!services || !Array.isArray(services)) return [];
+                return services.map(service => {
+                    if (typeof service === 'string') {
+                        // Caso string: el nombre del enum ES el valor
+                        return { key: service, label: null, precio: null };
+                    } else if (service && typeof service === 'object') {
+                        // Caso objeto: Jackson serializó el enum con sus propiedades
+                        const key = service.name || service.key || String(service);
+                        const label = service.descripcion || service.label || null;
+                        const precio = service.precio || null;
+                        return { key, label, precio };
+                    }
+                    return { key: String(service), label: null, precio: null };
+                });
+            }
+
             function updateTurismoServices(turismoType) {
                 if (!availableServicesData || availableServicesData.length === 0) return;
 
-                // Asegurémonos de que estamos trabajando con strings
-                let serviceNames = availableServicesData.map(service => {
-                    if (typeof service === 'string') {
-                        return service;
-                    } else if (service && service.name) {
-                        return service.name;
+                // Normalizar y filtrar según el tipo de turismo
+                const normalized = normalizeServices(availableServicesData);
+                let filtered = normalized.filter(s => {
+                    const name = s.key.toUpperCase();
+                    if (turismoType === 'ranchera') {
+                        return name.includes('RANCHERA') || name.includes('OZONO') ||
+                            name.includes('ENCERADO') || name.includes('TAPICERIA');
                     } else {
-                        return String(service);
+                        return (name.includes('TURISMO') && !name.includes('RANCHERA')) ||
+                            name.includes('OZONO') || name.includes('ENCERADO') ||
+                            name.includes('TAPICERIA');
                     }
                 });
 
-                // Filtrar según el tipo
-                let filtered = [];
-
-                for (let serviceName of serviceNames) {
-                    let shouldInclude = false;
-
-                    if (turismoType === 'ranchera') {
-                        // Para ranchera: servicios con RANCHERA + servicios especiales
-                        if (serviceName.includes('RANCHERA') ||
-                            serviceName.includes('OZONO') ||
-                            serviceName.includes('ENCERADO') ||
-                            serviceName.includes('TAPICERIA')) {
-                            shouldInclude = true;
-                        }
-                    } else {
-                        // Para sedán: servicios con TURISMO pero sin RANCHERA + servicios especiales
-                        if ((serviceName.includes('TURISMO') && !serviceName.includes('RANCHERA')) ||
-                            serviceName.includes('OZONO') ||
-                            serviceName.includes('ENCERADO') ||
-                            serviceName.includes('TAPICERIA')) {
-                            shouldInclude = true;
-                        }
-                    }
-
-                    if (shouldInclude) {
-                        filtered.push(serviceName);
-                    }
-                }
-
-                // Actualizar el select
                 updateServiceSelect(filtered);
             }
 
-            function updateServiceSelect(serviceNames) {
+            function updateServiceSelect(services) {
                 // Limpiar select
                 tipoLavadoSelect.innerHTML = '<option value="">-- Seleccione un servicio --</option>';
 
-                if (serviceNames.length === 0) {
+                if (!services || services.length === 0) {
                     const option = document.createElement('option');
                     option.value = "";
                     option.textContent = "No hay servicios disponibles";
@@ -413,8 +467,8 @@
                     return;
                 }
 
-                // Mapa de servicios con sus datos
-                const serviceData = {
+                // Mapa de fallback por si el objeto no trae descripcion/precio
+                const serviceDataFallback = {
                     'LAVADO_COMPLETO_TURISMO': 'Lavado Completo Turismo - 25€',
                     'LAVADO_INTERIOR_TURISMO': 'Lavado Interior Turismo - 17€',
                     'LAVADO_EXTERIOR_TURISMO': 'Lavado Exterior Turismo - 13€',
@@ -439,11 +493,31 @@
                     'TAPICERIA_DESMONTANDO': 'Limpieza de tapicería desmontando asientos - 150€'
                 };
 
-                // Añadir opciones
-                serviceNames.forEach(serviceName => {
+                // Añadir opciones — acepta tanto strings como objetos { key, label, precio }
+                services.forEach(service => {
                     const option = document.createElement('option');
-                    option.value = serviceName;
-                    option.textContent = serviceData[serviceName] || serviceName;
+                    let key, label;
+
+                    if (typeof service === 'string') {
+                        key = service;
+                        label = serviceDataFallback[key] || key;
+                    } else if (service && service.key) {
+                        // Objeto normalizado de normalizeServices()
+                        key = service.key;
+                        label = (service.label && service.precio)
+                            ? `${service.label} - ${service.precio}€`
+                            : (serviceDataFallback[key] || key);
+                    } else if (service && service.descripcion) {
+                        // Objeto enum crudo de Jackson
+                        key = service.name || String(service);
+                        label = `${service.descripcion} - ${service.precio}€`;
+                    } else {
+                        key = String(service);
+                        label = serviceDataFallback[key] || key;
+                    }
+
+                    option.value = key;
+                    option.textContent = label;
                     tipoLavadoSelect.appendChild(option);
                 });
             }
@@ -647,9 +721,9 @@
                 cargarHorarios(fechaInput.value);
             }
 
-            // Si hay un modelo de vehículo al cargar la página, clasificar
-            if (modeloVehiculoInput.value.trim() !== '') {
-                classifyVehicle(modeloVehiculoInput.value.trim());
+            // Si hay un modelo de vehículo ya seleccionado al cargar la página (reenvío), clasificar
+            if (modeloVehiculoSelect.value && modeloVehiculoSelect.value.trim() !== '') {
+                classifyVehicle(modeloVehiculoSelect.value.trim()); // Ahora es el id
             }
         });
     </script>
