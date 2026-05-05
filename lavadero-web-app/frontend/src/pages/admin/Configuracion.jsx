@@ -1,9 +1,9 @@
-import { useState} from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import {
-  Building2, FileText, Mail, Settings as SettingsIcon,
-  Save, Upload, X, AlertCircle, CheckCircle, Eye
+  Building2, FileText, Settings as SettingsIcon,
+  Save, Upload, X, AlertCircle, CheckCircle
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
@@ -13,18 +13,8 @@ const Configuracion = () => {
   const [tabActiva, setTabActiva] = useState('empresa');
   const [mensaje, setMensaje] = useState(null);
 
-  // Query para obtener configuración
-  const { data: configuracion, isLoading } = useQuery({
-    queryKey: ['plantilla-factura'],
-    queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/config/plantilla-factura`);
-      return data;
-    }
-  });
-
-  // ✅ Estado inicializado con valores por defecto
-  const [config, setConfig] = useState(() => ({
-    // Datos empresa (backend)
+  // ── Estado local único de verdad ─────────────────────────────────────────
+  const [config, setConfig] = useState({
     emisorNombre: '',
     emisorNif: '',
     emisorDireccion: '',
@@ -35,25 +25,84 @@ const Configuracion = () => {
     emisorEmail: '',
     emisorWeb: '',
     logoBase64: '',
-    // Datos factura (backend)
     colorPrimario: '#2196F3',
     colorSecundario: '#1976D2',
     mostrarLogo: true,
     textoGracias: 'Gracias por confiar en nosotros',
     pieFactura: '',
     cuentaBancaria: ''
-  }));
+  });
 
-  // ✅ Usar los datos de la query directamente SI existen, si no usar el estado local
-  const configActual = configuracion || config;
+  // ── Query para cargar configuración ──────────────────────────────────────
+  const { data: configuracion, isLoading } = useQuery({
+    queryKey: ['plantilla-factura'],
+    queryFn: async () => {
+      const { data } = await axios.get(`${API_URL}/config/plantilla-factura`);
+      return data;
+    }
+  });
 
-  // Mutation para guardar configuración
+  // ✅ Cuando llegan los datos del servidor, inicializar el estado local UNA sola vez
+  useEffect(() => {
+    if (configuracion) {
+      setConfig({
+        emisorNombre: configuracion.emisorNombre || '',
+        emisorNif: configuracion.emisorNif || '',
+        emisorDireccion: configuracion.emisorDireccion || '',
+        emisorCodigoPostal: configuracion.emisorCodigoPostal || '',
+        emisorCiudad: configuracion.emisorCiudad || '',
+        emisorProvincia: configuracion.emisorProvincia || '',
+        emisorTelefono: configuracion.emisorTelefono || '',
+        emisorEmail: configuracion.emisorEmail || '',
+        emisorWeb: configuracion.emisorWeb || '',
+        logoBase64: configuracion.logoBase64 || '',
+        colorPrimario: configuracion.colorPrimario || '#2196F3',
+        colorSecundario: configuracion.colorSecundario || '#1976D2',
+        mostrarLogo: configuracion.mostrarLogo ?? true,
+        textoGracias: configuracion.textoGracias || 'Gracias por confiar en nosotros',
+        pieFactura: configuracion.pieFactura || '',
+        cuentaBancaria: configuracion.cuentaBancaria || ''
+      });
+    }
+  }, [configuracion]);
+
+  // ✅ Handler limpio: solo actualiza el campo que cambia, sin mezclar con el servidor
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setConfig(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // ── Subir logo ────────────────────────────────────────────────────────────
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMensaje({ tipo: 'error', texto: 'El logo no debe superar 2MB' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setConfig(prev => ({ ...prev, logoBase64: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ── Eliminar logo ─────────────────────────────────────────────────────────
+  const handleEliminarLogo = () => {
+    setConfig(prev => ({ ...prev, logoBase64: '' }));
+  };
+
+  // ── Mutation para guardar ─────────────────────────────────────────────────
   const guardarMutation = useMutation({
     mutationFn: async (data) => {
       const backendData = {
         id: 1,
         ...data,
-        // Valores por defecto para campos obligatorios del backend
         logoAncho: 150,
         logoAlto: 60,
         colorTexto: '#333333',
@@ -67,13 +116,12 @@ const Configuracion = () => {
         condicionesPago: 'Pago al contado',
         textoIva: 'IVA incluido según normativa vigente',
         mostrarDatosContacto: true,
-        mostrarCuentaBancaria: data.cuentaBancaria ? true : false,
+        mostrarCuentaBancaria: !!data.cuentaBancaria,
         mostrarCondicionesPago: true,
         mostrarTextoGracias: true,
         mostrarMarcaAgua: false,
         usarFilasAlternas: true
       };
-
       const response = await axios.post(`${API_URL}/config/plantilla-factura`, backendData);
       return response.data;
     },
@@ -91,56 +139,9 @@ const Configuracion = () => {
     }
   });
 
-  // ✅ Handler único para todos los cambios
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const newValue = type === 'checkbox' ? checked : value;
-    
-    // Actualizar usando la configuración actual como base
-    setConfig(prev => {
-      const base = configuracion || prev;
-      return {
-        ...base,
-        [name]: newValue
-      };
-    });
-  };
+  const handleGuardar = () => guardarMutation.mutate(config);
 
-  // Subir logo
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setMensaje({ tipo: 'error', texto: 'El logo no debe superar 2MB' });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setConfig(prev => {
-          const base = configuracion || prev;
-          return { ...base, logoBase64: reader.result };
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Eliminar logo
-  const handleEliminarLogo = () => {
-    setConfig(prev => {
-      const base = configuracion || prev;
-      return { ...base, logoBase64: '' };
-    });
-  };
-
-  // Guardar configuración
-  const handleGuardar = () => {
-    // Guardar la configuración actual (merge de data del servidor + cambios locales)
-    guardarMutation.mutate(configActual);
-  };
-
-  // Tabs
+  // ── Tabs ──────────────────────────────────────────────────────────────────
   const tabs = [
     { id: 'empresa', label: 'Datos Empresa', icon: Building2 },
     { id: 'factura', label: 'Plantilla Facturas', icon: FileText },
@@ -150,13 +151,15 @@ const Configuracion = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
+
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-3">
@@ -172,15 +175,15 @@ const Configuracion = () => {
 
       {/* Mensajes */}
       {mensaje && (
-        <div className={`rounded-lg p-4 flex items-center justify-between ${
-          mensaje.tipo === 'exito' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-        }`}>
+        <div className={`rounded-lg p-4 flex items-center justify-between ${mensaje.tipo === 'exito'
+            ? 'bg-green-50 border border-green-200'
+            : 'bg-red-50 border border-red-200'
+          }`}>
           <div className="flex items-center">
-            {mensaje.tipo === 'exito' ? (
-              <CheckCircle className="text-green-600 mr-2" size={20} />
-            ) : (
-              <AlertCircle className="text-red-600 mr-2" size={20} />
-            )}
+            {mensaje.tipo === 'exito'
+              ? <CheckCircle className="text-green-600 mr-2" size={20} />
+              : <AlertCircle className="text-red-600 mr-2" size={20} />
+            }
             <span className={mensaje.tipo === 'exito' ? 'text-green-800' : 'text-red-800'}>
               {mensaje.texto}
             </span>
@@ -201,11 +204,10 @@ const Configuracion = () => {
                 <button
                   key={tab.id}
                   onClick={() => setTabActiva(tab.id)}
-                  className={`flex items-center px-6 py-4 font-medium transition-colors whitespace-nowrap ${
-                    tabActiva === tab.id
+                  className={`flex items-center px-6 py-4 font-medium transition-colors whitespace-nowrap ${tabActiva === tab.id
                       ? 'border-b-2 border-blue-600 text-blue-600'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <Icon size={20} className="mr-2" />
                   {tab.label}
@@ -216,12 +218,14 @@ const Configuracion = () => {
         </div>
 
         <div className="p-6">
-          {/* Tab Empresa */}
+
+          {/* ── Tab Empresa ──────────────────────────────────────────────── */}
           {tabActiva === 'empresa' && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Datos de la Empresa</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Nombre Comercial *
@@ -229,7 +233,7 @@ const Configuracion = () => {
                     <input
                       type="text"
                       name="emisorNombre"
-                      value={configActual.emisorNombre}
+                      value={config.emisorNombre}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
@@ -243,7 +247,7 @@ const Configuracion = () => {
                     <input
                       type="text"
                       name="emisorNif"
-                      value={configActual.emisorNif}
+                      value={config.emisorNif}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
@@ -257,7 +261,7 @@ const Configuracion = () => {
                     <input
                       type="text"
                       name="emisorDireccion"
-                      value={configActual.emisorDireccion}
+                      value={config.emisorDireccion}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
@@ -271,7 +275,7 @@ const Configuracion = () => {
                     <input
                       type="text"
                       name="emisorCodigoPostal"
-                      value={configActual.emisorCodigoPostal}
+                      value={config.emisorCodigoPostal}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -284,7 +288,7 @@ const Configuracion = () => {
                     <input
                       type="text"
                       name="emisorCiudad"
-                      value={configActual.emisorCiudad}
+                      value={config.emisorCiudad}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -297,7 +301,7 @@ const Configuracion = () => {
                     <input
                       type="text"
                       name="emisorProvincia"
-                      value={configActual.emisorProvincia}
+                      value={config.emisorProvincia}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -310,7 +314,7 @@ const Configuracion = () => {
                     <input
                       type="tel"
                       name="emisorTelefono"
-                      value={configActual.emisorTelefono}
+                      value={config.emisorTelefono}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -323,7 +327,7 @@ const Configuracion = () => {
                     <input
                       type="email"
                       name="emisorEmail"
-                      value={configActual.emisorEmail}
+                      value={config.emisorEmail}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -336,12 +340,13 @@ const Configuracion = () => {
                     <input
                       type="url"
                       name="emisorWeb"
-                      value={configActual.emisorWeb}
+                      value={config.emisorWeb}
                       onChange={handleChange}
                       placeholder="https://www.ejemplo.com"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
+
                 </div>
               </div>
 
@@ -367,11 +372,11 @@ const Configuracion = () => {
                     </label>
                   </div>
 
-                  {configActual.logoBase64 && (
+                  {config.logoBase64 && (
                     <div className="flex-1">
                       <div className="border border-gray-300 rounded-lg p-4 relative">
                         <img
-                          src={configActual.logoBase64}
+                          src={config.logoBase64}
                           alt="Logo"
                           className="max-w-full h-32 object-contain mx-auto"
                         />
@@ -389,19 +394,19 @@ const Configuracion = () => {
             </div>
           )}
 
-          {/* Tab Plantilla Facturas */}
+          {/* ── Tab Plantilla Facturas ────────────────────────────────────── */}
           {tabActiva === 'factura' && (
             <div className="space-y-6">
-              {/* Diseño */}
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Diseño y Colores</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
                   <div>
                     <label className="flex items-center space-x-2">
                       <input
                         type="checkbox"
                         name="mostrarLogo"
-                        checked={configActual.mostrarLogo}
+                        checked={config.mostrarLogo}
                         onChange={handleChange}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                       />
@@ -417,17 +422,15 @@ const Configuracion = () => {
                       <input
                         type="color"
                         name="colorPrimario"
-                        value={configActual.colorPrimario}
+                        value={config.colorPrimario}
                         onChange={handleChange}
                         className="w-12 h-10 rounded border border-gray-300"
                       />
                       <input
                         type="text"
-                        value={configActual.colorPrimario}
-                        onChange={(e) => setConfig(prev => {
-                          const base = configuracion || prev;
-                          return { ...base, colorPrimario: e.target.value };
-                        })}
+                        name="colorPrimario"
+                        value={config.colorPrimario}
+                        onChange={handleChange}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                       />
                     </div>
@@ -441,35 +444,34 @@ const Configuracion = () => {
                       <input
                         type="color"
                         name="colorSecundario"
-                        value={configActual.colorSecundario}
+                        value={config.colorSecundario}
                         onChange={handleChange}
                         className="w-12 h-10 rounded border border-gray-300"
                       />
                       <input
                         type="text"
-                        value={configActual.colorSecundario}
-                        onChange={(e) => setConfig(prev => {
-                          const base = configuracion || prev;
-                          return { ...base, colorSecundario: e.target.value };
-                        })}
+                        name="colorSecundario"
+                        value={config.colorSecundario}
+                        onChange={handleChange}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                       />
                     </div>
                   </div>
+
                 </div>
               </div>
 
-              {/* Textos */}
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Textos de la Factura</h3>
                 <div className="space-y-4">
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Texto del Pie de Página
                     </label>
                     <textarea
                       name="textoGracias"
-                      value={configActual.textoGracias}
+                      value={config.textoGracias}
                       onChange={handleChange}
                       rows="2"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -482,7 +484,7 @@ const Configuracion = () => {
                     </label>
                     <textarea
                       name="pieFactura"
-                      value={configActual.pieFactura}
+                      value={config.pieFactura}
                       onChange={handleChange}
                       rows="3"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -496,18 +498,19 @@ const Configuracion = () => {
                     <input
                       type="text"
                       name="cuentaBancaria"
-                      value={configActual.cuentaBancaria}
+                      value={config.cuentaBancaria}
                       onChange={handleChange}
                       placeholder="ES00 0000 0000 0000 0000 0000"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
                     />
                   </div>
+
                 </div>
               </div>
             </div>
           )}
 
-          {/* Tab Sistema */}
+          {/* ── Tab Sistema ───────────────────────────────────────────────── */}
           {tabActiva === 'sistema' && (
             <div className="space-y-6">
               <div>
@@ -517,15 +520,15 @@ const Configuracion = () => {
                     <p className="text-sm text-gray-600">Versión del Sistema</p>
                     <p className="text-lg font-bold text-gray-900">1.0.0</p>
                   </div>
-
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <p className="text-sm text-gray-600">Última Actualización</p>
-                    <p className="text-lg font-bold text-gray-900">Febrero 2026</p>
+                    <p className="text-lg font-bold text-gray-900">Mayo 2026</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
+
         </div>
       </div>
 
@@ -533,7 +536,9 @@ const Configuracion = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-end gap-4">
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              if (configuracion) setConfig({ ...configuracion });
+            }}
             className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Cancelar
@@ -548,6 +553,7 @@ const Configuracion = () => {
           </button>
         </div>
       </div>
+
     </div>
   );
 };
