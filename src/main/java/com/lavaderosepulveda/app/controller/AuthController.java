@@ -23,40 +23,43 @@ public class AuthController {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // ─── LOGIN ────────────────────────────────────────────────────────────────
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(request.getUsername());
-        
+
         if (usuarioOpt.isEmpty() || !usuarioOpt.get().getActivo()) {
             return ResponseEntity.status(401).body("Credenciales inválidas");
         }
-        
+
         Usuario usuario = usuarioOpt.get();
-        
+
         if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
             return ResponseEntity.status(401).body("Credenciales inválidas");
         }
-        
-        // Actualizar último acceso
+
         usuario.setUltimoAcceso(LocalDateTime.now());
         usuarioRepository.save(usuario);
-        
+
         UserDTO user = new UserDTO();
         user.setUsername(usuario.getUsername());
         user.setNombre(usuario.getNombreCompleto());
         user.setRole("ADMIN");
-        
+
         LoginResponse response = new LoginResponse();
         response.setToken("Bearer-token-" + System.currentTimeMillis());
         response.setUser(user);
-        
+
         return ResponseEntity.ok(response);
     }
-    
+
+    // ─── VERIFY TOKEN ─────────────────────────────────────────────────────────
+
     @GetMapping("/verify")
-    public ResponseEntity<?> verifyToken(@RequestHeader(value = "Authorization", required = false) String token) {
+    public ResponseEntity<?> verifyToken(
+            @RequestHeader(value = "Authorization", required = false) String token) {
         if (token != null && token.startsWith("Bearer")) {
-            // En producción usarías JWT real
             UserDTO user = new UserDTO();
             user.setUsername("admin");
             user.setNombre("Administrador");
@@ -66,12 +69,34 @@ public class AuthController {
         return ResponseEntity.status(401).body("Token inválido");
     }
 
-    // Actualizar datos personales (nombre y email)
+    // ─── OBTENER PERFIL ───────────────────────────────────────────────────────
+
+    @GetMapping("/perfil")
+    public ResponseEntity<?> getPerfil(@RequestParam String username) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+        }
+
+        Usuario usuario = usuarioOpt.get();
+
+        Map<String, Object> perfil = new HashMap<>();
+        perfil.put("username", usuario.getUsername());
+        perfil.put("nombreCompleto", usuario.getNombreCompleto());
+        perfil.put("email", usuario.getEmail());
+        perfil.put("dni", usuario.getDni()); // null si aún no tiene
+
+        return ResponseEntity.ok(perfil);
+    }
+
+    // ─── ACTUALIZAR DATOS PERSONALES ──────────────────────────────────────────
+
     @PutMapping("/perfil/datos")
     public ResponseEntity<?> actualizarDatos(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");
         String nombreCompleto = payload.get("nombreCompleto");
-        String email = payload.get("email");    
+        String email = payload.get("email");
+        String dni = payload.get("dni");
 
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
         if (usuarioOpt.isEmpty()) {
@@ -79,56 +104,90 @@ public class AuthController {
         }
 
         Usuario usuario = usuarioOpt.get();
-        usuario.setNombreCompleto(nombreCompleto);
-        usuario.setEmail(email);
-        usuarioRepository.save(usuario);    
 
-        return ResponseEntity.ok(Map.of("message", "Datos actualizados"));
+        if (nombreCompleto != null && !nombreCompleto.isBlank()) {
+            usuario.setNombreCompleto(nombreCompleto);
+        }
+        if (email != null && !email.isBlank()) {
+            usuario.setEmail(email);
+        }
+
+        // Validar y guardar DNI
+        if (dni != null && !dni.isBlank()) {
+            if (!dni.matches("^[0-9]{8}[A-Z]$")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Formato de DNI inválido. Ejemplo: 12345678A"));
+            }
+            // Comprobar que el DNI no pertenece a otro usuario
+            Optional<Usuario> dniExistente = usuarioRepository.findByDni(dni);
+            if (dniExistente.isPresent() && !dniExistente.get().getUsername().equals(username)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "El DNI ya está registrado en otro usuario"));
+            }
+            usuario.setDni(dni);
+        }
+
+        usuarioRepository.save(usuario);
+        return ResponseEntity.ok(Map.of("message", "Datos actualizados correctamente"));
     }
-    
-    // Cambiar username
+
+    // ─── CAMBIAR USERNAME ─────────────────────────────────────────────────────
+
     @PutMapping("/perfil/username")
     public ResponseEntity<?> cambiarUsername(@RequestBody Map<String, String> payload) {
         String currentUsername = payload.get("currentUsername");
         String nuevoUsername = payload.get("nuevoUsername");
-        
+
+        if (nuevoUsername == null || nuevoUsername.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "El nuevo username no puede estar vacío"));
+        }
+
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(currentUsername);
         if (usuarioOpt.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
         }
-        
+
         if (usuarioRepository.findByUsername(nuevoUsername).isPresent()) {
-            return ResponseEntity.status(400).body(Map.of("error", "El username ya existe"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "El username ya está en uso"));
         }
-        
+
         Usuario usuario = usuarioOpt.get();
         usuario.setUsername(nuevoUsername);
         usuarioRepository.save(usuario);
-        
+
         return ResponseEntity.ok(Map.of("message", "Username actualizado"));
     }
-    
-    // Cambiar password
+
+    // ─── CAMBIAR CONTRASEÑA ───────────────────────────────────────────────────
+
     @PutMapping("/perfil/password")
     public ResponseEntity<?> cambiarPassword(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");
         String passwordActual = payload.get("passwordActual");
         String passwordNueva = payload.get("passwordNueva");
-        
+
+        if (passwordNueva == null || passwordNueva.length() < 6) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "La contraseña debe tener al menos 6 caracteres"));
+        }
+
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
         if (usuarioOpt.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
         }
-        
+
         Usuario usuario = usuarioOpt.get();
-        
+
         if (!passwordEncoder.matches(passwordActual, usuario.getPassword())) {
-            return ResponseEntity.status(400).body(Map.of("error", "Contraseña actual incorrecta"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "La contraseña actual es incorrecta"));
         }
-        
+
         usuario.setPassword(passwordEncoder.encode(passwordNueva));
         usuarioRepository.save(usuario);
-        
-        return ResponseEntity.ok(Map.of("message", "Contraseña actualizada"));
+
+        return ResponseEntity.ok(Map.of("message", "Contraseña actualizada correctamente"));
     }
 }

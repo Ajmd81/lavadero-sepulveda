@@ -11,21 +11,24 @@ public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(unique = true, nullable = false)
     private String username;
-    
+
     @Column(nullable = false)
     private String password; // BCrypt
-    
+
     @Column(nullable = false)
     private String nombreCompleto = "Administrador";
-    
+
     private String email;
-    
+
+    @Column(unique = true)
+    private String dni;
+
     @Column(nullable = false)
     private Boolean activo = true;
-    
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
