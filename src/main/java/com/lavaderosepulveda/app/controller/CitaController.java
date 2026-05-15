@@ -93,9 +93,8 @@ public class CitaController {
                 return "formulario";
             }
 
+            // Resolver ID numérico del modelo de vehículo al nombre real
             resolverModeloVehiculo(cita);
-
-            // Crear cita usando servicio refactorizado
             logger.info("GUARDANDO cita para cliente: {} (email: {})", cita.getNombre(), cita.getEmail());
             Cita citaGuardada = citaService.crearCita(cita);
             logger.info("OK: Cita creada exitosamente: ID {}, Cliente: {}",
@@ -233,8 +232,9 @@ public class CitaController {
     }
 
     /**
-     * El select del formulario envía el id numérico de VehicleModel.
-     * Este método lo resuelve al nombre para guardarlo como texto en la cita.
+     * El select del formulario envía el id numérico de VehicleModel como value.
+     * Este método lo resuelve al nombre real antes de persistir la cita.
+     * Si el valor ya es texto (ej: reenvío del form con errores) lo deja intacto.
      */
     private void resolverModeloVehiculo(Cita cita) {
         String valor = cita.getModeloVehiculo();
@@ -242,9 +242,10 @@ public class CitaController {
             return;
         try {
             Long id = Long.parseLong(valor);
-            modelRepository.findById(id).ifPresent(m -> cita.setModeloVehiculo(m.getName()));
+            modelRepository.findById(id)
+                    .ifPresent(m -> cita.setModeloVehiculo(m.getName()));
         } catch (NumberFormatException e) {
-            // Ya venía como texto (ej: reenvío del form con errores) — no tocar
+            // Ya venía como texto — no tocar
         }
     }
 }

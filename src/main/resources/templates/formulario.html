@@ -558,32 +558,44 @@
                 // Nota: mes en JS es 0-11, API espera 1-12
                 const mesApi = mes + 1;
 
-                fetch(`/api/citas/disponibilidad-mensual?mes=${mesApi}&anio=${anio}&tipoLavado=${tipoLavado}`)
-                    .then(response => response.json())
-                    .then(diasNoDisponibles => {
-                        console.log("Días no disponibles:", diasNoDisponibles);
+                // Calcular primer y último día del mes para la consulta de días cerrados
+                const primerDiaMes = `${anio}-${String(mesApi).padStart(2, '0')}-01`;
+                const ultimoDia = new Date(anio, mesApi, 0).getDate();
+                const ultimoDiaMes = `${anio}-${String(mesApi).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
-                        // Actualizar Flatpickr con los días deshabilitados
-                        if (fp) {
-                            // Mantener domingo como deshabilitado siempre function
-                            fp.set('disable', [
-                                function (date) {
-                                    // Deshabilitar domingos siempre
-                                    if (date.getDay() === 0) return true;
+                Promise.all([
+                    fetch(`/api/citas/disponibilidad-mensual?mes=${mesApi}&anio=${anio}&tipoLavado=${tipoLavado}`)
+                        .then(response => response.json()),
+                    fetch(`/api/dias-cerrados/fechas-cerradas?inicio=${primerDiaMes}&fin=${ultimoDiaMes}`)
+                        .then(response => response.json())
+                        .catch(() => []) // Si el endpoint falla, no bloquear el calendario
+                ])
+                .then(([diasNoDisponibles, diasCerrados]) => {
+                    console.log("Días no disponibles:", diasNoDisponibles);
+                    console.log("Días cerrados:", diasCerrados);
 
-                                    // Convertir fecha a string YYYY-MM-DD local para comparar
-                                    // NO usar toISOString() porque convierte a UTC y puede cambiar el día
-                                    const year = date.getFullYear();
-                                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                                    const day = String(date.getDate()).padStart(2, '0');
-                                    const dateString = `${year}-${month}-${day}`;
+                    const bloqueados = new Set([...diasNoDisponibles, ...diasCerrados]);
 
-                                    return diasNoDisponibles.includes(dateString);
-                                }
-                            ]);
-                        }
-                    })
-                    .catch(error => console.error("Error obteniendo disponibilidad:", error));
+                    // Actualizar Flatpickr con los días deshabilitados
+                    if (fp) {
+                        fp.set('disable', [
+                            function (date) {
+                                // Deshabilitar domingos siempre
+                                if (date.getDay() === 0) return true;
+
+                                // Convertir fecha a string YYYY-MM-DD local para comparar
+                                // NO usar toISOString() porque convierte a UTC y puede cambiar el día
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const day = String(date.getDate()).padStart(2, '0');
+                                const dateString = `${year}-${month}-${day}`;
+
+                                return bloqueados.has(dateString);
+                            }
+                        ]);
+                    }
+                })
+                .catch(error => console.error("Error obteniendo disponibilidad:", error));
             }
 
             // Calcular y mostrar información de pago cuando se selecciona un servicio
