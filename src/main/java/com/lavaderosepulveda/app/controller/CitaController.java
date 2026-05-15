@@ -3,6 +3,7 @@ package com.lavaderosepulveda.app.controller;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.model.VehicleModel;
+import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
 import com.lavaderosepulveda.app.repository.VehicleModelRepository;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
@@ -52,6 +53,9 @@ public class CitaController {
 
     @Autowired
     private VehicleModelRepository modelRepository;
+
+    @Autowired
+    private DiaCerradoRepository diasCerradoRepository;
 
     /**
      * Página principal
@@ -139,6 +143,12 @@ public class CitaController {
             @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
 
         try {
+            // Si el día está marcado como cerrado, devolver lista vacía directamente
+            if (diasCerradoRepository.existsByFecha(fecha)) {
+                logger.info("Horarios solicitados para día cerrado {}: devolviendo lista vacía", fecha);
+                return List.of();
+            }
+
             // Usar servicio especializado en horarios
             List<LocalTime> horariosDisponibles = horarioService.obtenerHorariosDisponibles(fecha);
 

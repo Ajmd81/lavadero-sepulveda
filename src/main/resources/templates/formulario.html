@@ -247,6 +247,7 @@
             let availableServicesData = null;
             let fp = null; // Instancia de Flatpickr
             let brandsModelsData = {}; // HashMap cargado desde la API
+            let fechasCerradasCargadas = new Set(); // Días cerrados del mes actual
 
             // Constantes para Tapicería
             const SERVICIO_TAPICERIA_SIN = 'TAPICERIA_SIN_DESMONTAR';
@@ -570,32 +571,33 @@
                         .then(response => response.json())
                         .catch(() => []) // Si el endpoint falla, no bloquear el calendario
                 ])
-                .then(([diasNoDisponibles, diasCerrados]) => {
-                    console.log("Días no disponibles:", diasNoDisponibles);
-                    console.log("Días cerrados:", diasCerrados);
+                    .then(([diasNoDisponibles, diasCerrados]) => {
+                        console.log("Días no disponibles:", diasNoDisponibles);
+                        console.log("Días cerrados:", diasCerrados);
 
-                    const bloqueados = new Set([...diasNoDisponibles, ...diasCerrados]);
+                        fechasCerradasCargadas = new Set(diasCerrados);
+                        const bloqueados = new Set([...diasNoDisponibles, ...diasCerrados]);
 
-                    // Actualizar Flatpickr con los días deshabilitados
-                    if (fp) {
-                        fp.set('disable', [
-                            function (date) {
-                                // Deshabilitar domingos siempre
-                                if (date.getDay() === 0) return true;
+                        // Actualizar Flatpickr con los días deshabilitados
+                        if (fp) {
+                            fp.set('disable', [
+                                function (date) {
+                                    // Deshabilitar domingos siempre
+                                    if (date.getDay() === 0) return true;
 
-                                // Convertir fecha a string YYYY-MM-DD local para comparar
-                                // NO usar toISOString() porque convierte a UTC y puede cambiar el día
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
-                                const day = String(date.getDate()).padStart(2, '0');
-                                const dateString = `${year}-${month}-${day}`;
+                                    // Convertir fecha a string YYYY-MM-DD local para comparar
+                                    // NO usar toISOString() porque convierte a UTC y puede cambiar el día
+                                    const year = date.getFullYear();
+                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                    const day = String(date.getDate()).padStart(2, '0');
+                                    const dateString = `${year}-${month}-${day}`;
 
-                                return bloqueados.has(dateString);
-                            }
-                        ]);
-                    }
-                })
-                .catch(error => console.error("Error obteniendo disponibilidad:", error));
+                                    return bloqueados.has(dateString);
+                                }
+                            ]);
+                        }
+                    })
+                    .catch(error => console.error("Error obteniendo disponibilidad:", error));
             }
 
             // Calcular y mostrar información de pago cuando se selecciona un servicio
@@ -677,6 +679,18 @@
 
             function cargarHorarios(dateStr) {
                 if (!dateStr) return;
+
+                // Si el día está marcado como cerrado, no ofrecer horas
+                if (fechasCerradasCargadas.has(dateStr)) {
+                    horaSelect.innerHTML = '';
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'El lavadero está cerrado este día';
+                    opt.disabled = true;
+                    opt.selected = true;
+                    horaSelect.appendChild(opt);
+                    return;
+                }
 
                 const selectedService = tipoLavadoSelect.value;
                 const isTapiceria = (selectedService === SERVICIO_TAPICERIA_SIN || selectedService === SERVICIO_TAPICERIA_CON);
