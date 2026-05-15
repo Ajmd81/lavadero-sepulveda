@@ -32,7 +32,8 @@ import java.util.stream.Collectors;
 
 /**
  * Controlador refactorizado para la interfaz web PÚBLICA de citas
- * SOLO contiene endpoints públicos - Los endpoints /admin/* están en AdminController
+ * SOLO contiene endpoints públicos - Los endpoints /admin/* están en
+ * AdminController
  * Usa los nuevos services y utilities para eliminar duplicación
  */
 @Controller
@@ -75,9 +76,9 @@ public class CitaController {
      */
     @PostMapping("/guardar-cita")
     public String guardarCita(@Valid @ModelAttribute Cita cita,
-                              BindingResult bindingResult,
-                              Model model,
-                              RedirectAttributes redirectAttributes) {
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("tiposLavado", TipoLavado.values());
@@ -91,6 +92,8 @@ public class CitaController {
                 model.addAttribute("tiposLavado", TipoLavado.values());
                 return "formulario";
             }
+
+            resolverModeloVehiculo(cita);
 
             // Crear cita usando servicio refactorizado
             logger.info("GUARDANDO cita para cliente: {} (email: {})", cita.getNombre(), cita.getEmail());
@@ -155,7 +158,8 @@ public class CitaController {
     }
 
     /**
-     * API PÚBLICA para obtener todos los modelos (usado por JavaScript en el formulario)
+     * API PÚBLICA para obtener todos los modelos (usado por JavaScript en el
+     * formulario)
      * Este endpoint es público y no causa conflicto
      */
     @GetMapping("/api/modelos")
@@ -176,19 +180,20 @@ public class CitaController {
      */
     private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
         logger.info("VERIFICANDO disponibilidad de EmailService...");
-        
+
         if (emailService == null) {
             logger.error("ERROR: EmailService es NULL en CitaController - Verificar inyección");
             return;
         }
-        
+
         if (!emailService.isServicioDisponible()) {
-            logger.error("ERROR: Servicio de email NO DISPONIBLE. Estado: {}", emailService.obtenerEstadoConfiguracion());
+            logger.error("ERROR: Servicio de email NO DISPONIBLE. Estado: {}",
+                    emailService.obtenerEstadoConfiguracion());
             return;
         }
-        
+
         logger.info("OK: EmailService disponible. Procesando envío...");
-        
+
         try {
             if (cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
                 logger.info("ENVIANDO email a: {}", cita.getEmail());
@@ -225,5 +230,21 @@ public class CitaController {
 
         logger.info("Diagnóstico de email solicitado: {}", diagnostico);
         return diagnostico;
+    }
+
+    /**
+     * El select del formulario envía el id numérico de VehicleModel.
+     * Este método lo resuelve al nombre para guardarlo como texto en la cita.
+     */
+    private void resolverModeloVehiculo(Cita cita) {
+        String valor = cita.getModeloVehiculo();
+        if (valor == null || valor.isBlank())
+            return;
+        try {
+            Long id = Long.parseLong(valor);
+            modelRepository.findById(id).ifPresent(m -> cita.setModeloVehiculo(m.getName()));
+        } catch (NumberFormatException e) {
+            // Ya venía como texto (ej: reenvío del form con errores) — no tocar
+        }
     }
 }
