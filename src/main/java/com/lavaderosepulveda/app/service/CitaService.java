@@ -6,6 +6,7 @@ import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.repository.CitaRepository;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
+import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,19 +32,18 @@ public class CitaService {
     @Autowired
     private HorarioService horarioService;
 
-    // ✅ AÑADIDO: inyección del EmailService
+    @Autowired
+    private DiaCerradoRepository diasCerradoRepository;
+
     @Autowired(required = false)
     private EmailService emailService;
 
-    /**
-     * Crear una nueva cita con validaciones de negocio
-     * ✅ CORREGIDO: ahora envía email de confirmación tras guardar
-     */
     public Cita crearCita(Cita cita) {
         if (cita == null) {
             throw new IllegalArgumentException("La cita no puede ser nula");
         }
 
+        validarDiaCerrado(cita.getFecha());
         validarDisponibilidadHorario(cita);
         validarFechaFutura(cita.getFecha());
 
@@ -54,17 +54,19 @@ public class CitaService {
             log.info("VERIFICANDO EmailService disponible. Email de cita: {}", citaGuardada.getEmail());
             if (citaGuardada.getEmail() != null && !citaGuardada.getEmail().isBlank()) {
                 log.info("ENVIANDO email de confirmación para cita {}", citaGuardada.getId());
-                // El email se envía de forma asincrónica - pasar solo el ID para evitar problemas de Hibernate
+                // El email se envía de forma asincrónica - pasar solo el ID para evitar
+                // problemas de Hibernate
                 emailService.enviarEmailConfirmacion(citaGuardada.getId())
-                    .thenRun(() -> {
-                        marcarConfirmacionEnviada(citaGuardada.getId());
-                        log.info("OK: Email de confirmacion enviado exitosamente para cita {}", citaGuardada.getId());
-                    })
-                    .exceptionally(throwable -> {
-                        log.error("ERROR: Fallo al enviar email para cita {}: {}",
-                                citaGuardada.getId(), throwable.getMessage(), throwable);
-                        return null;
-                    });
+                        .thenRun(() -> {
+                            marcarConfirmacionEnviada(citaGuardada.getId());
+                            log.info("OK: Email de confirmacion enviado exitosamente para cita {}",
+                                    citaGuardada.getId());
+                        })
+                        .exceptionally(throwable -> {
+                            log.error("ERROR: Fallo al enviar email para cita {}: {}",
+                                    citaGuardada.getId(), throwable.getMessage(), throwable);
+                            return null;
+                        });
             } else {
                 log.warn("AVISO: Email vacio para cita {}: '{}'",
                         citaGuardada.getId(), citaGuardada.getEmail());
@@ -115,6 +117,7 @@ public class CitaService {
                             !citaExistente.getHora().equals(citaActualizada.getHora());
 
                     if (cambioFechaHora) {
+                        validarDiaCerrado(citaActualizada.getFecha());
                         validarDisponibilidadHorario(citaActualizada);
                         validarFechaFutura(citaActualizada.getFecha());
                         citaExistente.setFecha(citaActualizada.getFecha());
@@ -124,6 +127,13 @@ public class CitaService {
                     return citaRepository.save(citaExistente);
                 })
                 .orElseThrow(() -> new RuntimeException("Cita no encontrada con ID: " + id));
+    }
+
+    private void validarDiaCerrado(LocalDate fecha) {
+        if (diasCerradoRepository.existsByFecha(fecha)) {
+            throw new RuntimeException(
+                    "El lavadero está cerrado el " + fecha + ". No se pueden crear citas en días cerrados.");
+        }
     }
 
     /**
@@ -490,7 +500,8 @@ public class CitaService {
     }
 
     private String formatearNombreServicio(String tipoLavado) {
-        if (tipoLavado == null) return "N/A";
+        if (tipoLavado == null)
+            return "N/A";
         try {
             TipoLavado tipo = TipoLavado.valueOf(tipoLavado);
             return tipo.getDescripcion();

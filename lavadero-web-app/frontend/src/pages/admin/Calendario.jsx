@@ -1,17 +1,76 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import citaService from '../../services/citaService';
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+const TIPOS_CIERRE = [
+  { value: 'FESTIVO', label: '🎉 Festivo' },
+  { value: 'VACACIONES', label: '🏖️ Vacaciones' },
+  { value: 'MANTENIMIENTO', label: '🔧 Mantenimiento' },
+  { value: 'OTRO', label: '📌 Otro' },
+];
+
+function parseFecha(fechaStr) {
+  if (!fechaStr) return null;
+  const s = fechaStr.includes('T') ? fechaStr.split('T')[0] : fechaStr;
+  const sep = s.includes('/') ? '/' : '-';
+  const p = s.split(sep);
+  if (sep === '/') return new Date(+p[2], +p[1] - 1, +p[0]);
+  return new Date(+p[0], +p[1] - 1, +p[2]);
+}
+
+function toISODate(d) {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function getDiasDelMes(fecha) {
+  const year = fecha.getFullYear(), month = fecha.getMonth();
+  const primerDia = new Date(year, month, 1);
+  const ultimoDia = new Date(year, month + 1, 0);
+  const dias = [];
+  for (let i = primerDia.getDay(); i > 0; i--)
+    dias.push({ fecha: new Date(year, month, -i + 1), esDelMesActual: false });
+  for (let i = 1; i <= ultimoDia.getDate(); i++)
+    dias.push({ fecha: new Date(year, month, i), esDelMesActual: true });
+  const restantes = 42 - dias.length;
+  for (let i = 1; i <= restantes; i++)
+    dias.push({ fecha: new Date(year, month + 1, i), esDelMesActual: false });
+  return dias;
+}
+
+// ── Componente ────────────────────────────────────────────────────────────────
 
 const Calendario = () => {
   const [fecha, setFecha] = useState(new Date());
   const [citasDelMes, setCitasDelMes] = useState({});
+  const [diasCerrados, setDiasCerrados] = useState({}); // { 'yyyy-MM-dd': DiaCerrado }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [citasSeleccionadas, setCitasSeleccionadas] = useState([]);
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const [todasLasCitas, setTodasLasCitas] = useState([]);
 
+  // ── Estado del formulario de cierre ──────────────────────────────────
+  const [mostrarFormCierre, setMostrarFormCierre] = useState(false);
+  const [guardandoCierre, setGuardandoCierre] = useState(false);
+  const [formCierre, setFormCierre] = useState({ tipo: 'FESTIVO', motivo: '' });
+
+  // ── Carga inicial ─────────────────────────────────────────────────────
+
   useEffect(() => { cargarCitas(); }, []);
-  useEffect(() => { agruparCitasPorMes(); }, [fecha, todasLasCitas]);
+
+  useEffect(() => {
+    agruparCitasPorMes();
+    cargarDiasCerradosDelMes();
+  }, [fecha, todasLasCitas]);
 
   const cargarCitas = async () => {
     setLoading(true);
@@ -26,60 +85,105 @@ const Calendario = () => {
     }
   };
 
+  const cargarDiasCerradosDelMes = async () => {
+    try {
+      const year = fecha.getFullYear();
+      const month = fecha.getMonth();
+      const inicio = toISODate(new Date(year, month, 1));
+      const fin = toISODate(new Date(year, month + 1, 0));
+      const response = await citaService.getDiasCerradosPorRango(inicio, fin);
+      const mapa = {};
+      (response.data || []).forEach(d => { mapa[d.fecha] = d; });
+      setDiasCerrados(mapa);
+    } catch {
+      // Si el endpoint aún no existe, ignorar silenciosamente
+    }
+  };
+
   const agruparCitasPorMes = () => {
     const citasPorFecha = {};
     todasLasCitas.forEach(cita => {
-      if (cita.fecha) {
-        try {
-          let fechaCita;
-          if (typeof cita.fecha === 'string') {
-            if (cita.fecha.includes('/')) {
-              const p = cita.fecha.split('/');
-              fechaCita = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
-            } else {
-              const p = cita.fecha.split('T')[0].split('-');
-              fechaCita = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
-            }
-          } else return;
-          if (fechaCita.getFullYear() === fecha.getFullYear() && fechaCita.getMonth() === fecha.getMonth()) {
-            const dia = fechaCita.getDate();
-            if (!citasPorFecha[dia]) citasPorFecha[dia] = [];
-            citasPorFecha[dia].push(cita);
-          }
-        } catch { /* skip */ }
+      const fechaCita = parseFecha(cita.fecha);
+      if (!fechaCita) return;
+      if (
+        fechaCita.getFullYear() === fecha.getFullYear() &&
+        fechaCita.getMonth() === fecha.getMonth()
+      ) {
+        const dia = fechaCita.getDate();
+        if (!citasPorFecha[dia]) citasPorFecha[dia] = [];
+        citasPorFecha[dia].push(cita);
       }
     });
     setCitasDelMes(citasPorFecha);
   };
 
-  const getDiasDelMes = () => {
-    const year = fecha.getFullYear(), month = fecha.getMonth();
-    const primerDia = new Date(year, month, 1);
-    const ultimoDia = new Date(year, month + 1, 0);
-    const dias = [];
-    for (let i = primerDia.getDay(); i > 0; i--) dias.push({ fecha: new Date(year, month, -i + 1), esDelMesActual: false });
-    for (let i = 1; i <= ultimoDia.getDate(); i++) dias.push({ fecha: new Date(year, month, i), esDelMesActual: true });
-    const restantes = 42 - dias.length;
-    for (let i = 1; i <= restantes; i++) dias.push({ fecha: new Date(year, month + 1, i), esDelMesActual: false });
-    return dias;
-  };
+  // ── Navegación ────────────────────────────────────────────────────────
 
   const mesAnterior = () => setFecha(new Date(fecha.getFullYear(), fecha.getMonth() - 1, 1));
   const mesSiguiente = () => setFecha(new Date(fecha.getFullYear(), fecha.getMonth() + 1, 1));
 
-  const seleccionarDia = (dia) => {
-    setDiaSeleccionado(dia);
-    setCitasSeleccionadas(citasDelMes[dia] || []);
+  // ── Selección de día ──────────────────────────────────────────────────
+
+  const seleccionarDia = (diaNum) => {
+    setDiaSeleccionado(diaNum);
+    setCitasSeleccionadas(citasDelMes[diaNum] || []);
+    setMostrarFormCierre(false);
+    setFormCierre({ tipo: 'FESTIVO', motivo: '' });
   };
 
-  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  const diasDelMes = getDiasDelMes();
+  // ── Gestión días cerrados ─────────────────────────────────────────────
+
+  const fechaSeleccionadaISO = diaSeleccionado
+    ? toISODate(new Date(fecha.getFullYear(), fecha.getMonth(), diaSeleccionado))
+    : null;
+
+  const diaEstaAbierto = !fechaSeleccionadaISO || !diasCerrados[fechaSeleccionadaISO];
+  const infoCierre = fechaSeleccionadaISO ? diasCerrados[fechaSeleccionadaISO] : null;
+
+  const handleMarcarCerrado = async () => {
+    if (!fechaSeleccionadaISO) return;
+    setGuardandoCierre(true);
+    try {
+      await citaService.marcarDiaCerrado({
+        fecha: fechaSeleccionadaISO,
+        tipo: formCierre.tipo,
+        motivo: formCierre.motivo || null,
+      });
+      await cargarDiasCerradosDelMes();
+      setMostrarFormCierre(false);
+      setFormCierre({ tipo: 'FESTIVO', motivo: '' });
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message;
+      setError('No se pudo marcar el día: ' + msg);
+    } finally {
+      setGuardandoCierre(false);
+    }
+  };
+
+  const handleReabrirDia = async () => {
+    if (!fechaSeleccionadaISO) return;
+    setGuardandoCierre(true);
+    try {
+      await citaService.eliminarDiaCerradoPorFecha(fechaSeleccionadaISO);
+      await cargarDiasCerradosDelMes();
+    } catch (err) {
+      setError('No se pudo reabrir el día: ' + err.message);
+    } finally {
+      setGuardandoCierre(false);
+    }
+  };
+
+  // ── Render calendario ─────────────────────────────────────────────────
+
+  const diasDelMes = getDiasDelMes(fecha);
   const semanas = [];
   for (let i = 0; i < diasDelMes.length; i += 7) semanas.push(diasDelMes.slice(i, i + 7));
 
+  const hoy = new Date();
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
+      {/* Cabecera */}
       <div className="flex items-center gap-3 mb-6">
         <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src="/assets/icons/calendario.png" alt="Calendario" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -87,95 +191,245 @@ const Calendario = () => {
         <h1 className="text-3xl font-bold text-gray-900">Calendario de Citas</h1>
       </div>
 
-      {error && <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded flex justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="font-bold ml-4">✕</button>
+        </div>
+      )}
+
       {loading && <div className="text-center py-8"><p className="text-gray-500">Cargando citas...</p></div>}
 
       {!loading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendario */}
+
+          {/* ── Calendario ────────────────────────────────────────────── */}
           <div className="lg:col-span-2">
             <div className="bg-gray-50 rounded-lg p-4">
+              {/* Navegación mes */}
               <div className="flex justify-between items-center mb-6">
-                <button onClick={mesAnterior} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">← Anterior</button>
-                <h3 className="text-xl font-bold">{meses[fecha.getMonth()]} {fecha.getFullYear()}</h3>
-                <button onClick={mesSiguiente} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">Siguiente →</button>
+                <button onClick={mesAnterior} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
+                  ← Anterior
+                </button>
+                <h3 className="text-xl font-bold">{MESES[fecha.getMonth()]} {fecha.getFullYear()}</h3>
+                <button onClick={mesSiguiente} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
+                  Siguiente →
+                </button>
               </div>
+
+              {/* Cabecera días semana */}
               <div className="grid grid-cols-7 gap-1 mb-2">
-                {diasSemana.map(dia => <div key={dia} className="text-center font-bold text-gray-700 py-2">{dia}</div>)}
+                {DIAS_SEMANA.map(d => (
+                  <div key={d} className="text-center font-bold text-gray-700 py-2">{d}</div>
+                ))}
               </div>
+
+              {/* Celdas */}
               <div className="grid grid-cols-7 gap-1">
                 {semanas.map((semana, si) =>
                   semana.map((dia, di) => {
                     const diaNum = dia.fecha.getDate();
-                    const tieneCitas = citasDelMes[diaNum] && dia.esDelMesActual;
-                    const cantidadCitas = tieneCitas ? citasDelMes[diaNum].length : 0;
-                    const esHoy = new Date().getDate() === diaNum && new Date().getMonth() === fecha.getMonth() && new Date().getFullYear() === fecha.getFullYear();
+                    const isoFecha = toISODate(dia.fecha);
+                    const tieneCitas = dia.esDelMesActual && !!citasDelMes[diaNum];
+                    const cantCitas = tieneCitas ? citasDelMes[diaNum].length : 0;
+                    const esCerrado = dia.esDelMesActual && !!diasCerrados[isoFecha];
+                    const esHoy =
+                      hoy.getDate() === diaNum &&
+                      hoy.getMonth() === fecha.getMonth() &&
+                      hoy.getFullYear() === fecha.getFullYear();
+                    const esSelec = diaSeleccionado === diaNum && dia.esDelMesActual;
+
+                    let clases = 'p-2 rounded text-sm h-20 relative transition-all ';
+                    if (!dia.esDelMesActual) {
+                      clases += 'bg-gray-200 text-gray-400 cursor-not-allowed';
+                    } else if (esSelec) {
+                      clases += 'bg-purple-500 text-white font-bold border-2 border-purple-700';
+                    } else if (esCerrado) {
+                      clases += 'bg-red-100 hover:bg-red-200 border-2 border-red-400 text-red-700';
+                    } else if (esHoy) {
+                      clases += 'bg-blue-500 text-white font-bold border-2 border-blue-700';
+                    } else if (tieneCitas) {
+                      clases += 'bg-green-100 hover:bg-green-200 border-2 border-green-500';
+                    } else {
+                      clases += 'bg-white hover:bg-gray-100 border border-gray-300';
+                    }
+
                     return (
                       <button
                         key={`${si}-${di}`}
-                        onClick={() => seleccionarDia(diaNum)}
+                        onClick={() => dia.esDelMesActual && seleccionarDia(diaNum)}
                         disabled={!dia.esDelMesActual}
-                        className={`p-2 rounded text-sm h-20 relative transition-all ${!dia.esDelMesActual ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
-                            diaSeleccionado === diaNum ? 'bg-purple-500 text-white font-bold border-2 border-purple-700' :
-                              esHoy ? 'bg-blue-500 text-white font-bold border-2 border-blue-700' :
-                                tieneCitas ? 'bg-green-100 hover:bg-green-200 border-2 border-green-500' :
-                                  'bg-white hover:bg-gray-100 border border-gray-300'
-                          }`}
+                        className={clases}
                       >
-                        <div className="font-bold">{diaNum}</div>
-                        {tieneCitas && <div className="text-xs mt-1 font-semibold text-green-700">{cantidadCitas} {cantidadCitas === 1 ? 'cita' : 'citas'}</div>}
+                        <div className="font-bold flex items-center justify-between">
+                          <span>{diaNum}</span>
+                          {esCerrado && <span title="Día cerrado">🔒</span>}
+                        </div>
+                        {esCerrado && (
+                          <div className="text-xs mt-1 font-semibold text-red-600 truncate">
+                            {diasCerrados[isoFecha]?.tipo || 'Cerrado'}
+                          </div>
+                        )}
+                        {!esCerrado && tieneCitas && (
+                          <div className="text-xs mt-1 font-semibold text-green-700">
+                            {cantCitas} {cantCitas === 1 ? 'cita' : 'citas'}
+                          </div>
+                        )}
                       </button>
                     );
                   })
                 )}
               </div>
+
+              {/* Leyenda */}
+              <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-600">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-500 inline-block" /><span>Hoy</span></span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-200 border border-green-500 inline-block" /><span>Con citas</span></span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 border border-red-400 inline-block" /><span>🔒 Cerrado</span></span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-500 inline-block" /><span>Seleccionado</span></span>
+              </div>
             </div>
           </div>
 
-          {/* Panel de detalle */}
-          <div className="lg:col-span-1">
+          {/* ── Panel lateral ──────────────────────────────────────────── */}
+          <div className="lg:col-span-1 space-y-4">
+
+            {/* Información del día seleccionado */}
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="text-lg font-bold mb-4">
-                {diaSeleccionado ? `Citas del ${diaSeleccionado}/${fecha.getMonth() + 1}/${fecha.getFullYear()}` : 'Citas del día'}
+                {diaSeleccionado
+                  ? `${diaSeleccionado}/${fecha.getMonth() + 1}/${fecha.getFullYear()}`
+                  : 'Citas del día'}
               </h4>
+
+              {/* ── Bloque días cerrados ── */}
+              {diaSeleccionado && (
+                <div className="mb-4">
+                  {infoCierre ? (
+                    /* Día CERRADO */
+                    <div className="bg-red-50 border border-red-300 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">🔒</span>
+                        <span className="font-bold text-red-700">Día cerrado</span>
+                      </div>
+                      <div className="text-sm text-red-600">
+                        <span className="font-semibold">Tipo: </span>{infoCierre.tipo}
+                      </div>
+                      {infoCierre.motivo && (
+                        <div className="text-sm text-red-600 mt-1">
+                          <span className="font-semibold">Motivo: </span>{infoCierre.motivo}
+                        </div>
+                      )}
+                      <button
+                        onClick={handleReabrirDia}
+                        disabled={guardandoCierre}
+                        className="mt-3 w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm py-1.5 rounded font-semibold"
+                      >
+                        {guardandoCierre ? 'Procesando...' : '✅ Reabrir día'}
+                      </button>
+                    </div>
+                  ) : (
+                    /* Día ABIERTO — botón para cerrar */
+                    !mostrarFormCierre ? (
+                      <button
+                        onClick={() => setMostrarFormCierre(true)}
+                        className="w-full bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 text-sm py-2 rounded-lg font-semibold flex items-center justify-center gap-2"
+                      >
+                        🔒 Marcar como día cerrado
+                      </button>
+                    ) : (
+                      /* Formulario de cierre */
+                      <div className="bg-red-50 border border-red-300 rounded-lg p-3 space-y-3">
+                        <p className="text-sm font-bold text-red-700">Marcar como cerrado</p>
+
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 block mb-1">Tipo</label>
+                          <select
+                            value={formCierre.tipo}
+                            onChange={e => setFormCierre(f => ({ ...f, tipo: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                          >
+                            {TIPOS_CIERRE.map(t => (
+                              <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 block mb-1">Motivo (opcional)</label>
+                          <input
+                            type="text"
+                            placeholder="Ej: Día de la Constitución"
+                            value={formCierre.motivo}
+                            onChange={e => setFormCierre(f => ({ ...f, motivo: e.target.value }))}
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                          />
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleMarcarCerrado}
+                            disabled={guardandoCierre}
+                            className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm py-1.5 rounded font-semibold"
+                          >
+                            {guardandoCierre ? 'Guardando...' : '🔒 Confirmar cierre'}
+                          </button>
+                          <button
+                            onClick={() => { setMostrarFormCierre(false); setFormCierre({ tipo: 'FESTIVO', motivo: '' }); }}
+                            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1.5 rounded"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+
+              {/* ── Lista de citas ── */}
               {!diaSeleccionado ? (
                 <p className="text-gray-500 text-center py-8">Selecciona un día para ver sus citas</p>
               ) : citasSeleccionadas.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No hay citas programadas para este día</p>
+                <p className="text-gray-500 text-center py-4">No hay citas programadas para este día</p>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {[...citasSeleccionadas].sort((a, b) => {
-                    const ha = a.hora ? a.hora.substring(0, 5) : '00:00';
-                    const hb = b.hora ? b.hora.substring(0, 5) : '00:00';
-                    return ha.localeCompare(hb);
-                  }).map((cita, idx) => (
-                    <div key={idx} className="bg-white rounded p-3 border-l-4 border-blue-500 shadow-sm">
-                      {/* Hora + ID en la misma fila */}
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="font-bold text-blue-600">
-                          {cita.hora ? cita.hora.substring(0, 5) : '—'}
+                  {[...citasSeleccionadas]
+                    .sort((a, b) => {
+                      const ha = a.hora ? a.hora.substring(0, 5) : '00:00';
+                      const hb = b.hora ? b.hora.substring(0, 5) : '00:00';
+                      return ha.localeCompare(hb);
+                    })
+                    .map((cita, idx) => (
+                      <div key={idx} className="bg-white rounded p-3 border-l-4 border-blue-500 shadow-sm">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-bold text-blue-600">
+                            {cita.hora ? cita.hora.substring(0, 5) : '—'}
+                          </div>
+                          <span className="text-xs font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                            #{cita.id}
+                          </span>
                         </div>
-                        <span className="text-xs font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                          #{cita.id}
-                        </span>
+                        <div className="text-sm font-semibold">{cita.nombre}</div>
+                        <div className="text-xs text-gray-600">{cita.modeloVehiculo}</div>
+                        <div className="text-xs text-gray-500 mt-1">{cita.tipoLavado}</div>
+                        <div className="text-xs mt-2">
+                          <span className={`px-2 py-1 rounded font-semibold ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
+                              cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800' :
+                                cita.estado === 'COMPLETADA' ? 'bg-blue-100 text-blue-800' :
+                                  cita.estado === 'EN_PROCESO' ? 'bg-orange-100 text-orange-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                            }`}>
+                            {cita.estado}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-sm font-semibold">{cita.nombre}</div>
-                      <div className="text-xs text-gray-600">{cita.modeloVehiculo}</div>
-                      <div className="text-xs text-gray-500 mt-1">{cita.tipoLavado}</div>
-                      <div className="text-xs mt-2">
-                        <span className={`px-2 py-1 rounded font-semibold ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
-                            cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                          }`}>
-                          {cita.estado}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>
           </div>
+
         </div>
       )}
     </div>

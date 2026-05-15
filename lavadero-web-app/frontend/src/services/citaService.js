@@ -3,9 +3,9 @@ import api from './api';
 const citaService = {
   // CRUD Básico
   getAll: () => api.get('/citas'),
-  getAllPaginado: (page = 0, size = 10, sortBy = 'fecha', sortDir = 'desc') => 
-    api.get('/citas/paginado', { 
-      params: { page, size, sortBy, sortDir } 
+  getAllPaginado: (page = 0, size = 10, sortBy = 'fecha', sortDir = 'desc') =>
+    api.get('/citas/paginado', {
+      params: { page, size, sortBy, sortDir }
     }),
   getById: (id) => api.get(`/citas/${id}`),
   create: (citaData) => api.post('/citas', citaData),
@@ -16,14 +16,14 @@ const citaService = {
   getByFecha: (fecha) => api.get(`/citas/fecha/${fecha}`),
   getByRango: (fechaInicio, fechaFin) =>
     api.get('/citas/rango', { params: { inicio: fechaInicio, fin: fechaFin } }),
-  
+
   // Estados
   getByEstado: (estado) => api.get(`/citas/estado/${estado}`),
   getPendientes: () => api.get('/citas/pendientes'),
   getNoFacturadas: () => api.get('/citas/no-facturadas'),
   getEnProceso: () => api.get('/citas/en-proceso'),
   getHoy: () => api.get('/citas/hoy'),
-  
+
   // Cambiar estado
   cambiarEstado: (id, nuevoEstado) => api.put(`/citas/${id}/estado/${nuevoEstado}`),
 
@@ -36,11 +36,11 @@ const citaService = {
     api.get('/citas/verificar-disponibilidad', { params: { fecha, hora } }),
   getHorariosDisponibles: (fecha) =>
     api.get('/citas/horarios-disponibles', { params: { fecha } }),
-  getHorariosConfigurados: () => 
+  getHorariosConfigurados: () =>
     api.get('/horarios-configurados'),
   getDisponibilidadMensual: (mes, anio, tipoLavado) =>
     api.get('/citas/disponibilidad-mensual', { params: { mes, anio, tipoLavado } }),
-  
+
   // Citas por fecha (agrupadas)
   getCitasPorFecha: () => api.get('/citas/por-fecha'),
 
@@ -53,6 +53,20 @@ const citaService = {
 
   // Migraciones
   migrarEmail: (datos) => api.post('/citas/migrar-email', datos),
+
+  // ── Días cerrados ────────────────────────────────────────────────────
+
+  /** Obtiene días cerrados en un rango para el calendario del CRM */
+  getDiasCerradosPorRango: (inicio, fin) =>
+    api.get('/dias-cerrados/rango', { params: { inicio, fin } }),
+
+  /** Marca un día como cerrado */
+  marcarDiaCerrado: (datos) =>
+    api.post('/dias-cerrados', datos),  // { fecha, tipo, motivo }
+
+  /** Reabre (desmarca) un día cerrado por su fecha ISO (yyyy-MM-dd) */
+  eliminarDiaCerradoPorFecha: (fecha) =>
+    api.delete(`/dias-cerrados/fecha/${fecha}`),
 };
 
 export default citaService;
