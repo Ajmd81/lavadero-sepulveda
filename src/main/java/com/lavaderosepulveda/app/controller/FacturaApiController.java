@@ -53,35 +53,34 @@ public class FacturaApiController {
             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
             @RequestParam(value = "size", required = false, defaultValue = "20") int size,
             @RequestParam(value = "ordenar", required = false, defaultValue = "numero") String ordenar) {
-        
+
         // Configurar ordenamiento
         Sort.Direction direction = Sort.Direction.DESC;
         String orderByField = "numero";
-        
+
         if ("fecha".equalsIgnoreCase(ordenar)) {
             orderByField = "fecha";
             direction = Sort.Direction.DESC;
         }
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderByField));
         Page<Factura> pageFacturas = facturaRepository.findAll(pageable);
-        
+
         // Convertir a DTO
         List<FacturaDTO> facturasDTO = pageFacturas.getContent().stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
-        
+
         // Crear respuesta con información de paginación
         Map<String, Object> respuesta = Map.of(
-            "content", facturasDTO,
-            "totalElements", pageFacturas.getTotalElements(),
-            "totalPages", pageFacturas.getTotalPages(),
-            "currentPage", pageFacturas.getNumber(),
-            "pageSize", pageFacturas.getSize(),
-            "hasNext", pageFacturas.hasNext(),
-            "hasPrevious", pageFacturas.hasPrevious()
-        );
-        
+                "content", facturasDTO,
+                "totalElements", pageFacturas.getTotalElements(),
+                "totalPages", pageFacturas.getTotalPages(),
+                "currentPage", pageFacturas.getNumber(),
+                "pageSize", pageFacturas.getSize(),
+                "hasNext", pageFacturas.hasNext(),
+                "hasPrevious", pageFacturas.hasPrevious());
+
         return ResponseEntity.ok(respuesta);
     }
 
@@ -107,6 +106,20 @@ public class FacturaApiController {
         return facturaService.obtenerPorId(id)
                 .map(factura -> ResponseEntity.ok(convertirADTO(factura)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * GET /api/facturas/siguiente-numero
+     * Obtener el siguiente número de factura disponible
+     */
+    @GetMapping("/siguiente-numero")
+    public ResponseEntity<Map<String, String>> obtenerSiguienteNumero() {
+        int anio = LocalDate.now().getYear();
+        Integer siguienteNumero = facturaRepository.findMaxNumeroSecuencialByAnio(anio)
+                .map(max -> max + 1)
+                .orElse(1);
+        String numero = String.format("%d/%03d", anio, siguienteNumero);
+        return ResponseEntity.ok(Map.of("numero", numero));
     }
 
     /**
@@ -137,16 +150,14 @@ public class FacturaApiController {
                     .body(Map.of(
                             "error", e.getMessage(),
                             "codigo", "ERROR_ELIMINAR_FACTURA",
-                            "id", id
-                    ));
+                            "id", id));
         } catch (Exception e) {
             log.error("❌ Error inesperado al eliminar factura {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "error", "Error interno del servidor: " + e.getMessage(),
                             "codigo", "ERROR_INTERNO",
-                            "id", id
-                    ));
+                            "id", id));
         }
     }
 
@@ -188,7 +199,7 @@ public class FacturaApiController {
 
             // Guardar la factura
             factura = facturaRepository.save(factura);
-            log.info("✅ Factura creada: ID={}, Número={}, Fecha={}", 
+            log.info("✅ Factura creada: ID={}, Número={}, Fecha={}",
                     factura.getId(), factura.getNumero(), factura.getFecha());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(convertirADTO(factura));
@@ -253,7 +264,8 @@ public class FacturaApiController {
             log.info("📥 Parámetros: numeroFactura={}, fechaEmision={}", numeroFactura, fechaEmision);
 
             if (facturaDTO.getTipo() == null || facturaDTO.getTipo().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "El tipo de factura es obligatorio", "field", "tipo"));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "El tipo de factura es obligatorio", "field", "tipo"));
             }
 
             TipoFactura tipo;
@@ -261,28 +273,32 @@ public class FacturaApiController {
                 tipo = TipoFactura.valueOf(facturaDTO.getTipo());
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Tipo de factura inválido: " + facturaDTO.getTipo(),
-                    "field", "tipo",
-                    "validValues", Arrays.toString(TipoFactura.values())
-                ));
+                        "error", "Tipo de factura inválido: " + facturaDTO.getTipo(),
+                        "field", "tipo",
+                        "validValues", Arrays.toString(TipoFactura.values())));
             }
 
             if (facturaDTO.getClienteNombre() == null || facturaDTO.getClienteNombre().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "El nombre del cliente es obligatorio", "field", "clienteNombre"));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "El nombre del cliente es obligatorio", "field", "clienteNombre"));
             }
 
             List<LineaFactura> lineas = new ArrayList<>();
             if (facturaDTO.getLineas() == null || facturaDTO.getLineas().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Debe incluir al menos una línea en la factura", "field", "lineas"));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Debe incluir al menos una línea en la factura", "field", "lineas"));
             }
 
             for (int i = 0; i < facturaDTO.getLineas().size(); i++) {
                 FacturaDTO.LineaFacturaDTO lineaDTO = facturaDTO.getLineas().get(i);
                 if (lineaDTO.getConcepto() == null || lineaDTO.getConcepto().isEmpty()) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "La línea " + (i + 1) + " no tiene concepto", "field", "lineas[" + i + "].concepto"));
+                    return ResponseEntity.badRequest().body(Map.of("error",
+                            "La línea " + (i + 1) + " no tiene concepto", "field", "lineas[" + i + "].concepto"));
                 }
                 if (lineaDTO.getPrecioUnitario() == null) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "La línea " + (i + 1) + " no tiene precio unitario", "field", "lineas[" + i + "].precioUnitario"));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "La línea " + (i + 1) + " no tiene precio unitario", "field",
+                                    "lineas[" + i + "].precioUnitario"));
                 }
                 LineaFactura linea = new LineaFactura();
                 linea.setConcepto(lineaDTO.getConcepto());
@@ -301,7 +317,8 @@ public class FacturaApiController {
                     facturaDTO.getClienteEmail(),
                     lineas);
 
-            // ✅ FIX 1: Número de factura personalizado — parsear y aplicar también el numeroSecuencial
+            // ✅ FIX 1: Número de factura personalizado — parsear y aplicar también el
+            // numeroSecuencial
             if (numeroFactura != null && !numeroFactura.isEmpty()) {
                 factura.setNumero(numeroFactura);
                 // Extraer la parte numérica para mantener el contador sincronizado
@@ -355,16 +372,16 @@ public class FacturaApiController {
             factura = facturaRepository.save(factura);
 
             log.info("📋 Factura guardada: numero='{}', estado='{}', metodoPago='{}', total={}, id={}",
-                    factura.getNumero(), factura.getEstado(), factura.getMetodoPago(), factura.getTotal(), factura.getId());
+                    factura.getNumero(), factura.getEstado(), factura.getMetodoPago(), factura.getTotal(),
+                    factura.getId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(convertirADTO(factura));
 
         } catch (Exception e) {
             log.error("❌ Error inesperado al crear factura manual: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of(
-                "error", "Error al crear la factura: " + e.getMessage(),
-                "type", e.getClass().getSimpleName()
-            ));
+                    "error", "Error al crear la factura: " + e.getMessage(),
+                    "type", e.getClass().getSimpleName()));
         }
     }
 
@@ -418,9 +435,9 @@ public class FacturaApiController {
             BigDecimal baseImponible = facturaExistente.getLineas().stream()
                     .map(LineaFactura::getSubtotal)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
+
             facturaExistente.setBaseImponible(baseImponible);
-            
+
             // Aplicar IVA si se proporciona
             if (facturaDTO.getTipoIva() != null) {
                 facturaExistente.setTipoIva(facturaDTO.getTipoIva());
@@ -432,7 +449,7 @@ public class FacturaApiController {
             }
 
             facturaExistente = facturaRepository.save(facturaExistente);
-            
+
             log.info("✅ Factura actualizada: id='{}', numero='{}', cliente='{}'",
                     facturaExistente.getId(), facturaExistente.getNumero(), facturaExistente.getClienteNombre());
 
@@ -594,9 +611,11 @@ public class FacturaApiController {
     private FacturaDTO convertirADTO(Factura factura) {
         FacturaDTO dto = new FacturaDTO();
         dto.setId(factura.getId());
-        // ✅ CORREGIDO: Usar 'numero' para compatibilidad con cliente FacturaEmitidaDTO que espera 'numeroFactura' (mapeado via @JsonAlias)
+        // ✅ CORREGIDO: Usar 'numero' para compatibilidad con cliente FacturaEmitidaDTO
+        // que espera 'numeroFactura' (mapeado via @JsonAlias)
         dto.setNumero(factura.getNumero());
-        // ✅ CORREGIDO: Usar LocalDate directamente - Jackson lo formateará con @JsonFormat(pattern="dd/MM/yyyy")
+        // ✅ CORREGIDO: Usar LocalDate directamente - Jackson lo formateará con
+        // @JsonFormat(pattern="dd/MM/yyyy")
         dto.setFecha(factura.getFecha());
         dto.setTipo(factura.getTipo().name());
         dto.setEstado(factura.getEstado().name());

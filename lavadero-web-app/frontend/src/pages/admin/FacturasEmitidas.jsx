@@ -1,15 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
-import facturaService from '../../services/facturaService';
-import clienteService from '../../services/clienteService';
-import enumsService from '../../services/enumsService';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import axios from 'axios';
-import * as XLSX from 'xlsx';
-
+import { useState, useEffect, useRef } from "react";
+import facturaService from "../../services/facturaService";
+import clienteService from "../../services/clienteService";
+import enumsService from "../../services/enumsService";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import axios from "axios";
+import * as XLSX from "xlsx";
 
 const FacturasEmitidas = () => {
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
   const [facturas, setFacturas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [metodosPago, setMetodosPago] = useState([]);
@@ -19,39 +18,39 @@ const FacturasEmitidas = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modalCobrarAbierto, setModalCobrarAbierto] = useState(false);
   const [facturaParaCobrar, setFacturaParaCobrar] = useState(null);
-  const [metodoPagoCobro, setMetodoPagoCobro] = useState('EFECTIVO');
+  const [metodoPagoCobro, setMetodoPagoCobro] = useState("EFECTIVO");
   const [editandoFactura, setEditandoFactura] = useState(null);
   const [paginaActual, setPaginaActual] = useState(0);
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [totalFacturas, setTotalFacturas] = useState(0);
   const [formData, setFormData] = useState({
-    numero: '',
-    fecha: '',
-    tipo: 'SIMPLIFICADA',
-    estado: 'PENDIENTE',
-    metodoPago: 'EFECTIVO',
-    clienteId: '',
-    clienteNombre: '',
-    clienteNif: '',
-    clienteDireccion: '',
-    clienteEmail: '',
-    clienteTelefono: '',
+    numero: "",
+    fecha: "",
+    tipo: "SIMPLIFICADA",
+    estado: "PENDIENTE",
+    metodoPago: "EFECTIVO",
+    clienteId: "",
+    clienteNombre: "",
+    clienteNif: "",
+    clienteDireccion: "",
+    clienteEmail: "",
+    clienteTelefono: "",
     lineas: [],
-    baseImponible: '',
-    tipoIva: '21',
-    importeIva: '',
-    total: '',
-    observaciones: '',
+    baseImponible: "",
+    tipoIva: "21",
+    importeIva: "",
+    total: "",
+    observaciones: "",
   });
 
   const [nuevaLinea, setNuevaLinea] = useState({
-    concepto: '',
+    concepto: "",
     cantidad: 1,
-    precioUnitario: '',
+    precioUnitario: "",
   });
 
   const [lineaEditando, setLineaEditando] = useState(null);
-  const [conceptoEditado, setConceptoEditado] = useState('');
+  const [conceptoEditado, setConceptoEditado] = useState("");
 
   useEffect(() => {
     // Inicializar datos en componente
@@ -62,12 +61,12 @@ const FacturasEmitidas = () => {
         await cargarClientes();
         await cargarFacturas();
       } catch (err) {
-        console.error('❌ Error en inicialización:', err);
+        console.error("❌ Error en inicialización:", err);
         setFacturas([]);
         setClientes([]);
       }
     };
-    
+
     inicializar();
   }, []);
 
@@ -75,7 +74,7 @@ const FacturasEmitidas = () => {
   const cargarFacturas = async (page = 0) => {
     setLoading(true);
     try {
-      const response = await facturaService.getAll(page, 20, 'numero');
+      const response = await facturaService.getAll(page, 20, "numero");
       const data = response.data;
 
       if (data && data.content && Array.isArray(data.content)) {
@@ -85,14 +84,14 @@ const FacturasEmitidas = () => {
         setPaginaActual(data.currentPage);
         setError(null);
       } else {
-        console.warn('⚠️ Formato de respuesta inesperado:', data);
+        console.warn("⚠️ Formato de respuesta inesperado:", data);
         setFacturas([]);
         setTotalPaginas(0);
         setTotalFacturas(0);
       }
     } catch (err) {
-      setError('Error al cargar las facturas: ' + err.message);
-      console.error('❌ Error cargar facturas:', err);
+      setError("Error al cargar las facturas: " + err.message);
+      console.error("❌ Error cargar facturas:", err);
       setFacturas([]);
       setTotalPaginas(0);
       setTotalFacturas(0);
@@ -115,15 +114,15 @@ const FacturasEmitidas = () => {
         setMetodosPago(response.data);
       }
     } catch (err) {
-      console.error('Error al cargar métodos de pago:', err);
+      console.error("Error al cargar métodos de pago:", err);
       // Fallback
       setMetodosPago([
-        { valor: 'EFECTIVO', descripcion: 'Efectivo' },
-        { valor: 'TARJETA', descripcion: 'Tarjeta' },
-        { valor: 'TRANSFERENCIA', descripcion: 'Transferencia' },
-        { valor: 'BIZUM', descripcion: 'Bizum' },
-        { valor: 'CHEQUE', descripcion: 'Cheque' },
-        { valor: 'DOMICILIACION', descripcion: 'Domiciliación' },
+        { valor: "EFECTIVO", descripcion: "Efectivo" },
+        { valor: "TARJETA", descripcion: "Tarjeta" },
+        { valor: "TRANSFERENCIA", descripcion: "Transferencia" },
+        { valor: "BIZUM", descripcion: "Bizum" },
+        { valor: "CHEQUE", descripcion: "Cheque" },
+        { valor: "DOMICILIACION", descripcion: "Domiciliación" },
       ]);
     }
   };
@@ -135,7 +134,7 @@ const FacturasEmitidas = () => {
         setTiposLavado(response.data);
       }
     } catch (err) {
-      console.error('Error al cargar tipos de lavado:', err);
+      console.error("Error al cargar tipos de lavado:", err);
       setTiposLavado([]);
     }
   };
@@ -143,54 +142,71 @@ const FacturasEmitidas = () => {
   const cargarClientes = async () => {
     try {
       // Usar getAllPaginated con tamaño grande para obtener todos los clientes en una sola llamada
-      const response = await clienteService.getAllPaginated(0, 1000, 'nombre', 'asc');
+      const response = await clienteService.getAllPaginated(
+        0,
+        1000,
+        "nombre",
+        "asc",
+      );
       let clientesData = response.data || [];
-      
+
       // Si es un objeto con content (paginado), extraer content
-      if (clientesData && clientesData.content && Array.isArray(clientesData.content)) {
+      if (
+        clientesData &&
+        clientesData.content &&
+        Array.isArray(clientesData.content)
+      ) {
         clientesData = clientesData.content;
       }
-      
+
       // Validar que sea un array
       if (!Array.isArray(clientesData)) {
-        console.warn('⚠️ response.data no es un array:', typeof clientesData);
+        console.warn("⚠️ response.data no es un array:", typeof clientesData);
         clientesData = [];
       }
-      
-      console.log('✅ Clientes cargados:', clientesData.length);
+
+      console.log("✅ Clientes cargados:", clientesData.length);
       setClientes(clientesData);
     } catch (err) {
-      console.error('❌ Error al cargar clientes:', err);
+      console.error("❌ Error al cargar clientes:", err);
       setClientes([]);
     }
   };
 
   // Abrir modal para crear nueva factura
-  const abrirModalNuevo = () => {
+  const abrirModalNuevo = async () => {
+    // Obtener siguiente número disponible del backend
+    let siguienteNumero = "";
+    try {
+      const response = await axios.get(`${API_URL}/facturas/siguiente-numero`);
+      siguienteNumero = response.data.numero;
+    } catch (err) {
+      console.error("Error al obtener siguiente número:", err);
+      // Fallback: generar localmente
+      const anio = new Date().getFullYear();
+      siguienteNumero = `${anio}/001`;
+    }
+
     setFormData({
-      numero: '',
-      fecha: new Date().toISOString().split('T')[0],
-      tipo: 'SIMPLIFICADA',
-      estado: 'PENDIENTE',
-      metodoPago: 'EFECTIVO',
-      clienteId: '',
-      clienteNombre: '',
-      clienteNif: '',
-      clienteDireccion: '',
-      clienteEmail: '',
-      clienteTelefono: '',
+      numero: siguienteNumero,
+      fecha: new Date().toISOString().split("T")[0],
+      tipo: "SIMPLIFICADA",
+      estado: "PENDIENTE",
+      metodoPago: "EFECTIVO",
+      clienteId: "",
+      clienteNombre: "",
+      clienteNif: "",
+      clienteDireccion: "",
+      clienteEmail: "",
+      clienteTelefono: "",
       lineas: [],
-      baseImponible: '',
-      tipoIva: '21',
-      importeIva: '',
-      total: '',
-      observaciones: '',
+      baseImponible: "",
+      tipoIva: "21",
+      importeIva: "",
+      total: "",
+      observaciones: "",
     });
-    setNuevaLinea({
-      concepto: '',
-      cantidad: 1,
-      precioUnitario: '',
-    });
+    setNuevaLinea({ concepto: "", cantidad: 1, precioUnitario: "" });
     setEditandoFactura(null);
     setModalAbierto(true);
   };
@@ -203,7 +219,7 @@ const FacturasEmitidas = () => {
     });
     setEditandoFactura(factura.id);
     setLineaEditando(null);
-    setConceptoEditado('');
+    setConceptoEditado("");
     setModalAbierto(true);
   };
 
@@ -212,18 +228,18 @@ const FacturasEmitidas = () => {
     setModalAbierto(false);
     setEditandoFactura(null);
     setLineaEditando(null);
-    setConceptoEditado('');
+    setConceptoEditado("");
   };
 
   // Manejar cambios en los inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    if (name === 'tipoIva' && formData.lineas.length > 0) {
+    if (name === "tipoIva" && formData.lineas.length > 0) {
       recalcularTotales(formData.lineas, value);
     }
   };
@@ -233,28 +249,28 @@ const FacturasEmitidas = () => {
     const clienteId = e.target.value;
 
     if (!clienteId) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        clienteId: '',
-        clienteNombre: '',
-        clienteNif: '',
-        clienteDireccion: '',
-        clienteEmail: '',
-        clienteTelefono: '',
+        clienteId: "",
+        clienteNombre: "",
+        clienteNif: "",
+        clienteDireccion: "",
+        clienteEmail: "",
+        clienteTelefono: "",
       }));
       return;
     }
 
-    const cliente = clientes.find(c => c.id === parseInt(clienteId));
+    const cliente = clientes.find((c) => c.id === parseInt(clienteId));
     if (cliente) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         clienteId: cliente.id,
-        clienteNombre: `${cliente.nombre} ${cliente.apellidos || ''}`.trim(),
-        clienteNif: cliente.nif || '',
-        clienteDireccion: cliente.direccion || '',
-        clienteEmail: cliente.email || '',
-        clienteTelefono: cliente.telefono || '',
+        clienteNombre: `${cliente.nombre} ${cliente.apellidos || ""}`.trim(),
+        clienteNif: cliente.nif || "",
+        clienteDireccion: cliente.direccion || "",
+        clienteEmail: cliente.email || "",
+        clienteTelefono: cliente.telefono || "",
       }));
     }
   };
@@ -263,19 +279,22 @@ const FacturasEmitidas = () => {
   // La API devuelve el precio CON IVA incluido, necesitamos extraer la base imponible
   const buscarPrecioServicio = (concepto, tipoIva = 21) => {
     if (!concepto || !tiposLavado.length) return null;
-    
+
     // Buscar coincidencia exacta
-    let tipoEncontrado = tiposLavado.find(t => 
-      t.descripcion && t.descripcion.toLowerCase() === concepto.toLowerCase()
+    let tipoEncontrado = tiposLavado.find(
+      (t) =>
+        t.descripcion && t.descripcion.toLowerCase() === concepto.toLowerCase(),
     );
-    
+
     // Si no hay coincidencia exacta, buscar si el concepto comienza con el tipo de lavado
     if (!tipoEncontrado) {
-      tipoEncontrado = tiposLavado.find(t => 
-        t.descripcion && concepto.toLowerCase().startsWith(t.descripcion.toLowerCase())
+      tipoEncontrado = tiposLavado.find(
+        (t) =>
+          t.descripcion &&
+          concepto.toLowerCase().startsWith(t.descripcion.toLowerCase()),
       );
     }
-    
+
     // Si encontramos un tipo, extraer la base imponible del precio con IVA
     if (tipoEncontrado && (tipoEncontrado.precio || tipoEncontrado.importe)) {
       const precioConIva = tipoEncontrado.precio || tipoEncontrado.importe;
@@ -283,14 +302,14 @@ const FacturasEmitidas = () => {
       const baseImponible = precioConIva / (1 + tipoIva / 100);
       return baseImponible;
     }
-    
+
     return null;
   };
 
   // Manejar cambios en la nueva línea
   const handleNuevaLineaChange = (e) => {
     const { name, value } = e.target;
-    setNuevaLinea(prev => ({
+    setNuevaLinea((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -301,14 +320,14 @@ const FacturasEmitidas = () => {
     const concepto = e.target.value;
     const tipoIva = parseFloat(formData.tipoIva) || 21;
     const precioEncontrado = buscarPrecioServicio(concepto, tipoIva);
-    
+
     if (precioEncontrado) {
       if (isEditMode) {
         // En modo edición, solo actualizamos el estado de concepto editado
         // El precio se calculará cuando se guarde
       } else {
         // En modo nueva línea, actualizamos el precio unitario (base imponible SIN IVA)
-        setNuevaLinea(prev => ({
+        setNuevaLinea((prev) => ({
           ...prev,
           precioUnitario: precioEncontrado.toString(),
         }));
@@ -318,8 +337,12 @@ const FacturasEmitidas = () => {
 
   // Agregar línea
   const agregarLinea = () => {
-    if (!nuevaLinea.concepto || !nuevaLinea.cantidad || !nuevaLinea.precioUnitario) {
-      alert('Por favor completa todos los campos de la línea');
+    if (
+      !nuevaLinea.concepto ||
+      !nuevaLinea.cantidad ||
+      !nuevaLinea.precioUnitario
+    ) {
+      alert("Por favor completa todos los campos de la línea");
       return;
     }
 
@@ -336,7 +359,7 @@ const FacturasEmitidas = () => {
     };
 
     const nuevasLineas = [...formData.lineas, linea];
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       lineas: nuevasLineas,
     }));
@@ -344,9 +367,9 @@ const FacturasEmitidas = () => {
     recalcularTotales(nuevasLineas, formData.tipoIva);
 
     setNuevaLinea({
-      concepto: '',
+      concepto: "",
       cantidad: 1,
-      precioUnitario: '',
+      precioUnitario: "",
     });
   };
 
@@ -359,50 +382,50 @@ const FacturasEmitidas = () => {
   // Guardar cambios de concepto
   const guardarEdicionLinea = (lineaId) => {
     if (!conceptoEditado) {
-      alert('Por favor selecciona un concepto');
+      alert("Por favor selecciona un concepto");
       return;
     }
 
     const tipoIva = parseFloat(formData.tipoIva) || 21;
-    const nuevasLineas = formData.lineas.map(l => {
+    const nuevasLineas = formData.lineas.map((l) => {
       if (l.id === lineaId) {
         const nuevaLinea = { ...l, concepto: conceptoEditado };
-        
+
         // Buscar el precio del servicio (base imponible sin IVA)
         const precioEncontrado = buscarPrecioServicio(conceptoEditado, tipoIva);
-        
+
         if (precioEncontrado) {
           nuevaLinea.precioUnitario = precioEncontrado;
           nuevaLinea.subtotal = l.cantidad * precioEncontrado;
         }
-        
+
         return nuevaLinea;
       }
       return l;
     });
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
       lineas: nuevasLineas,
     }));
-    
+
     // Recalcular totales si el precio cambió
     recalcularTotales(nuevasLineas, formData.tipoIva);
-    
+
     setLineaEditando(null);
-    setConceptoEditado('');
+    setConceptoEditado("");
   };
 
   // Cancelar edición de línea
   const cancelarEdicionLinea = () => {
     setLineaEditando(null);
-    setConceptoEditado('');
+    setConceptoEditado("");
   };
 
   // Eliminar línea
   const eliminarLinea = (lineaId) => {
-    const nuevasLineas = formData.lineas.filter(l => l.id !== lineaId);
-    setFormData(prev => ({
+    const nuevasLineas = formData.lineas.filter((l) => l.id !== lineaId);
+    setFormData((prev) => ({
       ...prev,
       lineas: nuevasLineas,
     }));
@@ -410,18 +433,21 @@ const FacturasEmitidas = () => {
     // Si estaba editando esta línea, cancelar edición
     if (lineaEditando === lineaId) {
       setLineaEditando(null);
-      setConceptoEditado('');
+      setConceptoEditado("");
     }
   };
 
   // Recalcular totales
   const recalcularTotales = (lineas, tipoIva) => {
-    const baseImponible = lineas.reduce((sum, linea) => sum + linea.subtotal, 0);
+    const baseImponible = lineas.reduce(
+      (sum, linea) => sum + linea.subtotal,
+      0,
+    );
     const iva = parseFloat(tipoIva) ?? 21;
     const importeIva = (baseImponible * iva) / 100;
     const total = baseImponible + importeIva;
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       baseImponible: baseImponible.toFixed(2),
       importeIva: importeIva.toFixed(2),
@@ -434,31 +460,31 @@ const FacturasEmitidas = () => {
     e.preventDefault();
 
     if (!formData.numero || !formData.clienteNombre || !formData.total) {
-      alert('Por favor completa los campos obligatorios');
+      alert("Por favor completa los campos obligatorios");
       return;
     }
 
     if (formData.lineas.length === 0) {
-      alert('Debes agregar al menos una línea a la factura');
+      alert("Debes agregar al menos una línea a la factura");
       return;
     }
 
     try {
       setLoading(true);
-      
+
       // Preparar datos limpios para enviar al backend
-      const lineasLimpias = formData.lineas.map(linea => ({
+      const lineasLimpias = formData.lineas.map((linea) => ({
         concepto: linea.concepto,
         cantidad: parseInt(linea.cantidad) || 1,
         precioUnitario: parseFloat(linea.precioUnitario) || 0,
-        subtotal: parseFloat(linea.subtotal) || 0
+        subtotal: parseFloat(linea.subtotal) || 0,
         // NO incluir id de frontend (Date.now()) - el backend generará su propio ID
       }));
 
       const datosLimpios = {
-        tipo: formData.tipo || 'SIMPLIFICADA',
-        estado: formData.estado || 'PENDIENTE',
-        metodoPago: formData.metodoPago || 'EFECTIVO',
+        tipo: formData.tipo || "SIMPLIFICADA",
+        estado: formData.estado || "PENDIENTE",
+        metodoPago: formData.metodoPago || "EFECTIVO",
         clienteNombre: formData.clienteNombre,
         clienteNif: formData.clienteNif || null,
         clienteDireccion: formData.clienteDireccion || null,
@@ -469,79 +495,88 @@ const FacturasEmitidas = () => {
         tipoIva: parseFloat(formData.tipoIva) || 21,
         importeIva: parseFloat(formData.importeIva) || 0,
         total: parseFloat(formData.total) || 0,
-        observaciones: formData.observaciones || null
+        observaciones: formData.observaciones || null,
       };
-      
+
       if (editandoFactura) {
         // Actualizar factura existente
         const params = {};
-        
+
         // Convertir fecha de yyyy-MM-dd a dd/MM/yyyy si es necesario
-        if (formData.fecha && formData.fecha.includes('-')) {
-          const [year, month, day] = formData.fecha.split('-');
+        if (formData.fecha && formData.fecha.includes("-")) {
+          const [year, month, day] = formData.fecha.split("-");
           params.fechaEmision = `${day}/${month}/${year}`;
-          console.log(`📅 Fecha convertida: ${formData.fecha} → ${params.fechaEmision}`);
+          console.log(
+            `📅 Fecha convertida: ${formData.fecha} → ${params.fechaEmision}`,
+          );
         }
 
-        console.log('📤 Actualizando factura:', { id: editandoFactura, data: datosLimpios });
+        console.log("📤 Actualizando factura:", {
+          id: editandoFactura,
+          data: datosLimpios,
+        });
         await facturaService.update(editandoFactura, datosLimpios);
-        alert('✅ Factura actualizada correctamente');
-        
+        alert("✅ Factura actualizada correctamente");
+
         cerrarModal();
         // Mantener en la misma página al actualizar
         await cargarFacturas(paginaActual);
       } else {
         // Crear nueva factura con número y fecha personalizados
         const params = {};
-        
+
         if (formData.numero) {
           params.numeroFactura = formData.numero;
         }
-        
+
         // Convertir fecha de yyyy-MM-dd a dd/MM/yyyy
         if (formData.fecha) {
-          const [year, month, day] = formData.fecha.split('-');
+          const [year, month, day] = formData.fecha.split("-");
           params.fechaEmision = `${day}/${month}/${year}`;
-          console.log(`📅 Fecha convertida: ${formData.fecha} → ${params.fechaEmision}`);
+          console.log(
+            `📅 Fecha convertida: ${formData.fecha} → ${params.fechaEmision}`,
+          );
         }
 
-        console.log('📤 Enviando factura:', { data: datosLimpios, params });
-        console.log('📤 JSON a enviar:', JSON.stringify(datosLimpios, null, 2));
+        console.log("📤 Enviando factura:", { data: datosLimpios, params });
+        console.log("📤 JSON a enviar:", JSON.stringify(datosLimpios, null, 2));
         await facturaService.createManual(datosLimpios, params);
-        alert('✅ Factura creada correctamente');
-        
+        alert("✅ Factura creada correctamente");
+
         cerrarModal();
         // Cargar la última página para ver la nueva factura
         // Primero cargar página 0 para actualizar totalPaginas
-        const response = await facturaService.getAll(0, 20, 'numero');
+        const response = await facturaService.getAll(0, 20, "numero");
         const nuevoTotal = response.data?.totalPages || 1;
         await cargarFacturas(Math.max(0, nuevoTotal - 1));
       }
     } catch (err) {
-      console.error('❌ Error al guardar factura:', err);
-      console.error('❌ Response completo:', err.response);
-      console.error('❌ Response data:', err.response?.data);
-      console.error('❌ Response status:', err.response?.status);
-      
+      console.error("❌ Error al guardar factura:", err);
+      console.error("❌ Response completo:", err.response);
+      console.error("❌ Response data:", err.response?.data);
+      console.error("❌ Response status:", err.response?.status);
+
       // Extraer mensaje de error detallado
-      let errorMessage = 'Error desconocido';
-      
+      let errorMessage = "Error desconocido";
+
       if (err.response?.data) {
         const responseData = err.response.data;
-        
+
         // Si es un objeto con detalles
-        if (typeof responseData === 'object') {
-          errorMessage = responseData.message 
-            || responseData.error 
-            || responseData.details
-            || JSON.stringify(responseData);
-            
+        if (typeof responseData === "object") {
+          errorMessage =
+            responseData.message ||
+            responseData.error ||
+            responseData.details ||
+            JSON.stringify(responseData);
+
           // Si hay errores de validación, mostrarlos
           if (responseData.errors) {
-            errorMessage += '\n\nErrores de validación:\n' + 
+            errorMessage +=
+              "\n\nErrores de validación:\n" +
               Object.entries(responseData.errors)
                 .map(([field, msg]) => `- ${field}: ${msg}`)
-                .join('\n');
+                .join("\n");
           }
         } else {
           errorMessage = String(responseData);
@@ -549,8 +584,8 @@ const FacturasEmitidas = () => {
       } else {
         errorMessage = err.message;
       }
-      
-      alert('❌ Error al guardar factura:\n\n' + errorMessage);
+
+      alert("❌ Error al guardar factura:\n\n" + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -558,16 +593,16 @@ const FacturasEmitidas = () => {
 
   // Eliminar factura
   const eliminarFactura = async (id) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta factura?')) {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta factura?")) {
       return;
     }
 
     try {
       await facturaService.delete(id);
-      alert('Factura eliminada correctamente');
+      alert("Factura eliminada correctamente");
       cargarFacturas();
     } catch (err) {
-      alert('Error al eliminar factura: ' + err.message);
+      alert("Error al eliminar factura: " + err.message);
       console.error(err);
     }
   };
@@ -575,7 +610,7 @@ const FacturasEmitidas = () => {
   // Abrir modal para cobrar factura
   const abrirModalCobrar = (factura) => {
     setFacturaParaCobrar(factura);
-    setMetodoPagoCobro('EFECTIVO');
+    setMetodoPagoCobro("EFECTIVO");
     setModalCobrarAbierto(true);
   };
 
@@ -583,28 +618,33 @@ const FacturasEmitidas = () => {
   const cerrarModalCobrar = () => {
     setModalCobrarAbierto(false);
     setFacturaParaCobrar(null);
-    setMetodoPagoCobro('EFECTIVO');
+    setMetodoPagoCobro("EFECTIVO");
   };
 
   // Procesar pago de factura
   const procesarPago = async () => {
     if (!facturaParaCobrar) {
-      alert('Error: no hay factura seleccionada');
+      alert("Error: no hay factura seleccionada");
       return;
     }
 
     try {
       setLoading(true);
       await facturaService.marcarComoPagada(facturaParaCobrar.id, {
-        metodoPago: metodoPagoCobro
+        metodoPago: metodoPagoCobro,
       });
-      
-      alert(`✅ Factura ${facturaParaCobrar.numero} marcada como pagada (${metodoPagoCobro})`);
+
+      alert(
+        `✅ Factura ${facturaParaCobrar.numero} marcada como pagada (${metodoPagoCobro})`,
+      );
       cerrarModalCobrar();
       await cargarFacturas();
     } catch (err) {
-      console.error('Error al procesar pago:', err);
-      alert('❌ Error al marcar como pagada: ' + (err.response?.data?.message || err.message));
+      console.error("Error al procesar pago:", err);
+      alert(
+        "❌ Error al marcar como pagada: " +
+          (err.response?.data?.message || err.message),
+      );
     } finally {
       setLoading(false);
     }
@@ -614,30 +654,32 @@ const FacturasEmitidas = () => {
   const generarPdf = async (facturaId) => {
     try {
       // 1. Obtener configuración del sistema
-      const configResponse = await axios.get(`${API_URL}/config/plantilla-factura`);
+      const configResponse = await axios.get(
+        `${API_URL}/config/plantilla-factura`,
+      );
       const plantilla = configResponse.data;
-      
+
       // Mapear datos del backend al formato esperado
       const config = {
         empresa: {
-          nombre: plantilla.emisorNombre || 'Antonio Jesús Martínez Díaz',
-          cif: plantilla.emisorNif || '44372738L',
-          direccion: plantilla.emisorDireccion || '',
-          codigoPostal: plantilla.emisorCodigoPostal || '',
-          ciudad: plantilla.emisorCiudad || '',
-          provincia: plantilla.emisorProvincia || '',
-          telefono: plantilla.emisorTelefono || '',
-          email: plantilla.emisorEmail || '',
-          logoBase64: plantilla.logoBase64 || ''
+          nombre: plantilla.emisorNombre || "Antonio Jesús Martínez Díaz",
+          cif: plantilla.emisorNif || "44372738L",
+          direccion: plantilla.emisorDireccion || "",
+          codigoPostal: plantilla.emisorCodigoPostal || "",
+          ciudad: plantilla.emisorCiudad || "",
+          provincia: plantilla.emisorProvincia || "",
+          telefono: plantilla.emisorTelefono || "",
+          email: plantilla.emisorEmail || "",
+          logoBase64: plantilla.logoBase64 || "",
         },
         factura: {
-          colorPrimario: plantilla.colorPrimario || '#2196F3',
+          colorPrimario: plantilla.colorPrimario || "#2196F3",
           mostrarLogo: plantilla.mostrarLogo !== false,
-          textoPie: plantilla.textoGracias || 'Gracias por confiar en nosotros',
-          iban: plantilla.cuentaBancaria || ''
-        }
+          textoPie: plantilla.textoGracias || "Gracias por confiar en nosotros",
+          iban: plantilla.cuentaBancaria || "",
+        },
       };
-      
+
       // 2. Obtener factura completa
       const facturaResponse = await facturaService.getById(facturaId);
       const factura = facturaResponse.data;
@@ -652,11 +694,13 @@ const FacturasEmitidas = () => {
       // Convertir hex a RGB
       const hexToRgb = (hex) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } : { r: 33, g: 150, b: 243 }; // Default blue
+        return result
+          ? {
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16),
+            }
+          : { r: 33, g: 150, b: 243 }; // Default blue
       };
 
       const primaryRgb = hexToRgb(config.factura.colorPrimario);
@@ -666,28 +710,42 @@ const FacturasEmitidas = () => {
         try {
           const logoWidth = 35;
           const logoHeight = 35;
-          doc.addImage(config.empresa.logoBase64, 'PNG', margin, yPos -10, logoWidth, logoHeight);
+          doc.addImage(
+            config.empresa.logoBase64,
+            "PNG",
+            margin,
+            yPos - 10,
+            logoWidth,
+            logoHeight,
+          );
         } catch (err) {
-          console.warn('Error añadiendo logo:', err);
+          console.warn("Error añadiendo logo:", err);
         }
       }
 
       // ========== TÍTULO "FACTURA" GRANDE DERECHA ==========
       doc.setFontSize(24);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont("helvetica", "bold");
       doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.text('FACTURA', pageWidth - margin, yPos + 5, { align: 'right' });
-      
+      doc.text("FACTURA", pageWidth - margin, yPos + 5, { align: "right" });
+
       yPos += 12;
-      
+
       // Número y fecha a la derecha
       doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont("helvetica", "normal");
       doc.setTextColor(60, 60, 60);
-      doc.text(`Nº: ${factura.numero}`, pageWidth - margin, yPos, { align: 'right' });
+      doc.text(`Nº: ${factura.numero}`, pageWidth - margin, yPos, {
+        align: "right",
+      });
       yPos += 6;
-      doc.text(`Fecha: ${formatearFecha(factura.fecha)}`, pageWidth - margin, yPos, { align: 'right' });
-      
+      doc.text(
+        `Fecha: ${formatearFecha(factura.fecha)}`,
+        pageWidth - margin,
+        yPos,
+        { align: "right" },
+      );
+
       // ========== LÍNEA SEPARADORA ==========
       yPos += 8;
       doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
@@ -697,37 +755,39 @@ const FacturasEmitidas = () => {
 
       // ========== DATOS EMPRESA IZQUIERDA (compacto) ==========
       doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont("helvetica", "bold");
       doc.setTextColor(60, 60, 60);
       doc.text(config.empresa.nombre, margin, yPos);
-      
+
       yPos += 6;
       doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont("helvetica", "normal");
       doc.setTextColor(80, 80, 80);
-      
+
       if (config.empresa.cif) {
         doc.text(`NIF: ${config.empresa.cif}`, margin, yPos);
         yPos += 4.5;
       }
-      
+
       if (config.empresa.direccion) {
         const direccionCompleta = [
           config.empresa.direccion,
-          config.empresa.codigoPostal && config.empresa.ciudad 
-            ? `${config.empresa.codigoPostal} ${config.empresa.ciudad}` 
-            : config.empresa.ciudad || config.empresa.codigoPostal
-        ].filter(Boolean).join(', ');
-        
+          config.empresa.codigoPostal && config.empresa.ciudad
+            ? `${config.empresa.codigoPostal} ${config.empresa.ciudad}`
+            : config.empresa.ciudad || config.empresa.codigoPostal,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
         doc.text(direccionCompleta, margin, yPos);
         yPos += 4.5;
       }
-      
+
       if (config.empresa.telefono) {
         doc.text(`Tel: ${config.empresa.telefono}`, margin, yPos);
         yPos += 4.5;
       }
-      
+
       if (config.empresa.email) {
         doc.text(config.empresa.email, margin, yPos);
         yPos += 4.5;
@@ -738,93 +798,107 @@ const FacturasEmitidas = () => {
       // ========== BLOQUE CLIENTE CON FONDO AZUL ==========
       const clienteHeaderHeight = 6;
       doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.rect(margin, yPos, pageWidth - 2 * margin, clienteHeaderHeight, 'F');
-      
+      doc.rect(margin, yPos, pageWidth - 2 * margin, clienteHeaderHeight, "F");
+
       // Texto "CLIENTE" en blanco
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont("helvetica", "bold");
       doc.setTextColor(255, 255, 255);
-      doc.text('CLIENTE', margin + 3, yPos + 4);
-      
+      doc.text("CLIENTE", margin + 3, yPos + 4);
+
       yPos += 9;
-      
+
       // Datos del cliente
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont("helvetica", "bold");
       doc.setTextColor(60, 60, 60);
-      doc.text(factura.clienteNombre || 'Sin nombre', margin + 3, yPos);
-      
+      doc.text(factura.clienteNombre || "Sin nombre", margin + 3, yPos);
+
       yPos += 5;
       doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      
+      doc.setFont("helvetica", "normal");
+
       if (factura.clienteNif) {
         doc.text(factura.clienteNif, margin + 3, yPos);
         yPos += 4.5;
       }
-      
+
       if (factura.clienteDireccion) {
-        const direccionCliente = doc.splitTextToSize(factura.clienteDireccion, pageWidth - 2 * margin - 6);
+        const direccionCliente = doc.splitTextToSize(
+          factura.clienteDireccion,
+          pageWidth - 2 * margin - 6,
+        );
         doc.text(direccionCliente, margin + 3, yPos);
-        yPos += (direccionCliente.length * 4.5);
+        yPos += direccionCliente.length * 4.5;
       }
 
       yPos += 8;
 
       // ========== TABLA DE LÍNEAS ==========
-      const lineasTabla = factura.lineas && factura.lineas.length > 0
-        ? factura.lineas.map(linea => [
-            linea.concepto || 'Sin concepto',
-            linea.cantidad?.toString() || '1',
-            `${(linea.precioUnitario || 0).toFixed(2)} €`,
-            `${(linea.subtotal || 0).toFixed(2)} €`
-          ])
-        : [['Sin líneas registradas', '-', '-', '-']];
+      const lineasTabla =
+        factura.lineas && factura.lineas.length > 0
+          ? factura.lineas.map((linea) => [
+              linea.concepto || "Sin concepto",
+              linea.cantidad?.toString() || "1",
+              `${(linea.precioUnitario || 0).toFixed(2)} €`,
+              `${(linea.subtotal || 0).toFixed(2)} €`,
+            ])
+          : [["Sin líneas registradas", "-", "-", "-"]];
 
       doc.autoTable({
         startY: yPos,
-        head: [['Concepto', 'Cant.', 'Precio', 'Importe']],
+        head: [["Concepto", "Cant.", "Precio", "Importe"]],
         body: lineasTabla,
-        theme: 'grid',
+        theme: "grid",
         headStyles: {
           fillColor: [primaryRgb.r, primaryRgb.g, primaryRgb.b],
           textColor: 255,
-          fontStyle: 'bold',
-          halign: 'center',
-          fontSize: 10
+          fontStyle: "bold",
+          halign: "center",
+          fontSize: 10,
         },
         styles: {
           fontSize: 9,
           cellPadding: 4,
-          textColor: [60, 60, 60]
+          textColor: [60, 60, 60],
         },
         columnStyles: {
-          0: { cellWidth: 'auto', halign: 'left' },
-          1: { halign: 'center', cellWidth: 20 },
-          2: { halign: 'right', cellWidth: 30 },
-          3: { halign: 'right', cellWidth: 30 }
+          0: { cellWidth: "auto", halign: "left" },
+          1: { halign: "center", cellWidth: 20 },
+          2: { halign: "right", cellWidth: 30 },
+          3: { halign: "right", cellWidth: 30 },
         },
-        margin: { left: margin, right: margin }
+        margin: { left: margin, right: margin },
       });
 
       yPos = doc.lastAutoTable.finalY + 10;
 
       // ========== TOTALES ALINEADOS DERECHA ==========
       const totalesX = pageWidth - margin - 60;
-      
-      doc.setFont('helvetica', 'normal');
+
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(60, 60, 60);
 
       // Base Imponible
-      doc.text('Base Imponible:', totalesX, yPos);
-      doc.text(`${parseFloat(factura.baseImponible || 0).toFixed(2)} €`, totalesX + 55, yPos, { align: 'right' });
+      doc.text("Base Imponible:", totalesX, yPos);
+      doc.text(
+        `${parseFloat(factura.baseImponible || 0).toFixed(2)} €`,
+        totalesX + 55,
+        yPos,
+        { align: "right" },
+      );
       yPos += 6;
 
       // IVA
       doc.text(`IVA (${factura.tipoIva || 21}%):`, totalesX, yPos);
-      doc.text(`${parseFloat(factura.importeIva || 0).toFixed(2)} €`, totalesX + 55, yPos, { align: 'right' });
-      
+      doc.text(
+        `${parseFloat(factura.importeIva || 0).toFixed(2)} €`,
+        totalesX + 55,
+        yPos,
+        { align: "right" },
+      );
+
       yPos += 2;
       doc.setLineWidth(0.3);
       doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
@@ -832,17 +906,29 @@ const FacturasEmitidas = () => {
       yPos += 5;
 
       // TOTAL
-      doc.setFont('helvetica', 'bold');
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.text('TOTAL:', totalesX, yPos);
-      doc.text(`${parseFloat(factura.total || 0).toFixed(2)} €`, totalesX + 55, yPos, { align: 'right' });
+      doc.text("TOTAL:", totalesX, yPos);
+      doc.text(
+        `${parseFloat(factura.total || 0).toFixed(2)} €`,
+        totalesX + 55,
+        yPos,
+        { align: "right" },
+      );
 
       yPos += 15;
 
       // ========== TEXTO LEGAL RGPD (compacto) ==========
-      const textoLegal = "De conformidad con el artículo 13 de la sección 2 del Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de estos datos, le informamos que el responsable del tratamiento es " + config.empresa.nombre + ", que dicho tratamiento se lleva a cabo para la gestión contable, fiscal y administrativa y para el envío de comunicaciones comerciales sobre productos y servicios de la empresa que puedan ser de su interés. La base legal que permite legitimar este tratamiento es la ejecución del contrato de venta. Se comunicarán datos a terceros para poder llevar a cabo las finalidades objeto de este contrato. Puede usted acceder, rectificar y suprimir sus datos, así como otros derechos, dirigiéndose por escrito a " + config.empresa.email + ". Puede usted obtener información ampliada sobre protección de datos solicitándola a " + config.empresa.email + ".";
-      
+      const textoLegal =
+        "De conformidad con el artículo 13 de la sección 2 del Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de estos datos, le informamos que el responsable del tratamiento es " +
+        config.empresa.nombre +
+        ", que dicho tratamiento se lleva a cabo para la gestión contable, fiscal y administrativa y para el envío de comunicaciones comerciales sobre productos y servicios de la empresa que puedan ser de su interés. La base legal que permite legitimar este tratamiento es la ejecución del contrato de venta. Se comunicarán datos a terceros para poder llevar a cabo las finalidades objeto de este contrato. Puede usted acceder, rectificar y suprimir sus datos, así como otros derechos, dirigiéndose por escrito a " +
+        config.empresa.email +
+        ". Puede usted obtener información ampliada sobre protección de datos solicitándola a " +
+        config.empresa.email +
+        ".";
+
       // Verificar espacio
       if (yPos > pageHeight - 80) {
         doc.addPage();
@@ -850,64 +936,67 @@ const FacturasEmitidas = () => {
       }
 
       doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont("helvetica", "normal");
       doc.setTextColor(100, 100, 100);
-      const lineasLegal = doc.splitTextToSize(textoLegal, pageWidth - 2 * margin);
+      const lineasLegal = doc.splitTextToSize(
+        textoLegal,
+        pageWidth - 2 * margin,
+      );
       doc.text(lineasLegal, margin, yPos);
-      yPos += (lineasLegal.length * 2.5) + 5;
+      yPos += lineasLegal.length * 2.5 + 5;
 
       // ========== FORMA DE PAGO ==========
       if (factura.metodoPago) {
         doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
+        doc.setFont("helvetica", "normal");
         doc.setTextColor(60, 60, 60);
-        
+
         // Mapear método de pago a texto legible
         const metodoPagoTexto = {
-          'EFECTIVO': 'Efectivo',
-          'TARJETA': 'Tarjeta',
-          'TRANSFERENCIA': 'Transferencia',
-          'BIZUM': 'Bizum',
-          'CHEQUE': 'Cheque',
-          'DOMICILIACION': 'Domiciliación'
+          EFECTIVO: "Efectivo",
+          TARJETA: "Tarjeta",
+          TRANSFERENCIA: "Transferencia",
+          BIZUM: "Bizum",
+          CHEQUE: "Cheque",
+          DOMICILIACION: "Domiciliación",
         };
-        
+
         const textoPago = `Forma de pago: ${metodoPagoTexto[factura.metodoPago] || factura.metodoPago}`;
-        doc.text(textoPago, pageWidth / 2, yPos, { align: 'center' });
+        doc.text(textoPago, pageWidth / 2, yPos, { align: "center" });
         yPos += 6;
       }
 
       // ========== PIE DE PÁGINA ==========
-      const textoPie = config.factura.textoPie || 'Gracias por confiar en nosotros';
+      const textoPie =
+        config.factura.textoPie || "Gracias por confiar en nosotros";
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'italic');
+      doc.setFont("helvetica", "italic");
       doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.text(textoPie, pageWidth / 2, pageHeight - 15, { align: 'center' });
+      doc.text(textoPie, pageWidth / 2, pageHeight - 15, { align: "center" });
 
       // ========== DESCARGAR ==========
-      doc.save(`factura_${factura.numero.replace(/\//g, '_')}.pdf`);
-
+      doc.save(`factura_${factura.numero.replace(/\//g, "_")}.pdf`);
     } catch (err) {
-      console.error('Error generando PDF:', err);
-      alert('Error al generar PDF: ' + err.message);
+      console.error("Error generando PDF:", err);
+      alert("Error al generar PDF: " + err.message);
     }
   };
 
   // Función auxiliar para formatear fecha
   const formatearFecha = (fecha) => {
-    if (!fecha) return '—';
+    if (!fecha) return "—";
 
     try {
       let day, month, year;
 
-      if (typeof fecha === 'string') {
-        if (fecha.includes('/')) {
-          const partes = fecha.split('/');
+      if (typeof fecha === "string") {
+        if (fecha.includes("/")) {
+          const partes = fecha.split("/");
           day = parseInt(partes[0]);
           month = parseInt(partes[1]);
           year = parseInt(partes[2]);
-        } else if (fecha.includes('-')) {
-          const partes = fecha.split('-');
+        } else if (fecha.includes("-")) {
+          const partes = fecha.split("-");
           year = parseInt(partes[0]);
           month = parseInt(partes[1]);
           day = parseInt(partes[2]);
@@ -915,39 +1004,42 @@ const FacturasEmitidas = () => {
       }
 
       if (day && month && year) {
-        return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+        return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
       }
       return fecha;
     } catch (err) {
-      console.error('Error formateando fecha:', err);
+      console.error("Error formateando fecha:", err);
       return fecha;
     }
   };
 
   // Formatear moneda
   const formatearMoneda = (cantidad) => {
-    if (!cantidad) return '€0,00';
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
+    if (!cantidad) return "€0,00";
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
     }).format(parseFloat(cantidad));
   };
 
   // Obtener color de estado
   const getColorEstado = (estado) => {
     switch (estado) {
-      case 'PAGADA':
-        return 'bg-green-100 text-green-800';
-      case 'PENDIENTE':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'CANCELADA':
-        return 'bg-red-100 text-red-800';
+      case "PAGADA":
+        return "bg-green-100 text-green-800";
+      case "PENDIENTE":
+        return "bg-yellow-100 text-yellow-800";
+      case "CANCELADA":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const totalVentas = facturas.reduce((sum, factura) => sum + (parseFloat(factura.total) || 0), 0);
+  const totalVentas = facturas.reduce(
+    (sum, factura) => sum + (parseFloat(factura.total) || 0),
+    0,
+  );
 
   // ── Importar desde Excel ──
   const fileInputRef = useRef(null);
@@ -955,19 +1047,19 @@ const FacturasEmitidas = () => {
   const handleImportExcel = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    e.target.value = '';
+    e.target.value = "";
 
     try {
       setLoading(true);
       setError(null);
 
       const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array' });
+      const workbook = XLSX.read(buffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet);
 
       if (rows.length === 0) {
-        alert('El archivo Excel está vacío');
+        alert("El archivo Excel está vacío");
         return;
       }
 
@@ -977,14 +1069,14 @@ const FacturasEmitidas = () => {
       for (const row of rows) {
         try {
           // Convertir fecha Excel (número serial) o string a dd/MM/yyyy
-          let fechaEmision = '';
+          let fechaEmision = "";
           if (row.fecha) {
-            if (typeof row.fecha === 'number') {
+            if (typeof row.fecha === "number") {
               const date = XLSX.SSF.parse_date_code(row.fecha);
-              fechaEmision = `${String(date.d).padStart(2,'0')}/${String(date.m).padStart(2,'0')}/${date.y}`;
-            } else if (typeof row.fecha === 'string') {
-              if (row.fecha.includes('-')) {
-                const [y, m, d] = row.fecha.split('-');
+              fechaEmision = `${String(date.d).padStart(2, "0")}/${String(date.m).padStart(2, "0")}/${date.y}`;
+            } else if (typeof row.fecha === "string") {
+              if (row.fecha.includes("-")) {
+                const [y, m, d] = row.fecha.split("-");
                 fechaEmision = `${d}/${m}/${y}`;
               } else {
                 fechaEmision = row.fecha;
@@ -994,30 +1086,32 @@ const FacturasEmitidas = () => {
 
           const base = parseFloat(row.baseImponible) || 0;
           const iva = parseFloat(row.tipoIva) || 21;
-          const importeIva = Math.round(base * iva / 100 * 100) / 100;
-          const total = parseFloat(row.total) || (base + importeIva);
+          const importeIva = Math.round(((base * iva) / 100) * 100) / 100;
+          const total = parseFloat(row.total) || base + importeIva;
 
           const datosFactura = {
-            tipo: row.tipo || 'SIMPLIFICADA',
-            estado: row.estado || 'PENDIENTE',
-            metodoPago: row.metodoPago || 'EFECTIVO',
+            tipo: row.tipo || "SIMPLIFICADA",
+            estado: row.estado || "PENDIENTE",
+            metodoPago: row.metodoPago || "EFECTIVO",
             clienteId: row.clienteId ? Number(row.clienteId) : null,
-            clienteNombre: row.clienteNombre || '',
-            clienteNif: row.clienteNif || '',
-            clienteDireccion: row.clienteDireccion || '',
-            clienteEmail: row.clienteEmail || '',
-            clienteTelefono: row.clienteTelefono || '',
-            lineas: [{
-              concepto: row.concepto || 'Servicio importado',
-              cantidad: parseInt(row.cantidad) || 1,
-              precioUnitario: base,
-              subtotal: base,
-            }],
+            clienteNombre: row.clienteNombre || "",
+            clienteNif: row.clienteNif || "",
+            clienteDireccion: row.clienteDireccion || "",
+            clienteEmail: row.clienteEmail || "",
+            clienteTelefono: row.clienteTelefono || "",
+            lineas: [
+              {
+                concepto: row.concepto || "Servicio importado",
+                cantidad: parseInt(row.cantidad) || 1,
+                precioUnitario: base,
+                subtotal: base,
+              },
+            ],
             baseImponible: base,
             tipoIva: iva,
             importeIva,
             total,
-            observaciones: row.observaciones || '',
+            observaciones: row.observaciones || "",
           };
 
           const params = {};
@@ -1027,15 +1121,19 @@ const FacturasEmitidas = () => {
           await facturaService.createManual(datosFactura, params);
           creadas++;
         } catch (err) {
-          errores.push(`Fila ${rows.indexOf(row) + 2}: ${err.response?.data?.message || err.message}`);
+          errores.push(
+            `Fila ${rows.indexOf(row) + 2}: ${err.response?.data?.message || err.message}`,
+          );
         }
       }
 
       await cargarFacturas(0);
-      alert(`✅ Importación completada:\n- ${creadas} facturas creadas\n${errores.length > 0 ? `- ${errores.length} errores:\n${errores.join('\n')}` : '- Sin errores'}`);
+      alert(
+        `✅ Importación completada:\n- ${creadas} facturas creadas\n${errores.length > 0 ? `- ${errores.length} errores:\n${errores.join("\n")}` : "- Sin errores"}`,
+      );
     } catch (err) {
-      console.error('Error importando Excel:', err);
-      setError('Error al leer el archivo Excel');
+      console.error("Error importando Excel:", err);
+      setError("Error al leer el archivo Excel");
     } finally {
       setLoading(false);
     }
@@ -1045,8 +1143,21 @@ const FacturasEmitidas = () => {
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/assets/icons/invoice.png" alt="Facturas Emitidas" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <img
+              src="/assets/icons/invoice.png"
+              alt="Facturas Emitidas"
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
           </div>
           <div>
             <h2 className="text-2xl font-bold">Facturas Emitidas</h2>
@@ -1097,26 +1208,32 @@ const FacturasEmitidas = () => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100 border-b">
-                <th className="px-4 py-2 text-left font-semibold">Nº Factura</th>
+                <th className="px-4 py-2 text-left font-semibold">
+                  Nº Factura
+                </th>
                 <th className="px-4 py-2 text-left font-semibold">Fecha</th>
                 <th className="px-4 py-2 text-left font-semibold">Cliente</th>
                 <th className="px-4 py-2 text-left font-semibold">Concepto</th>
                 <th className="px-4 py-2 text-left font-semibold">Tipo</th>
                 <th className="px-4 py-2 text-right font-semibold">Total</th>
                 <th className="px-4 py-2 text-center font-semibold">Estado</th>
-                <th className="px-4 py-2 text-center font-semibold">Acciones</th>
+                <th className="px-4 py-2 text-center font-semibold">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody>
-              {facturas.map(factura => (
+              {facturas.map((factura) => (
                 <tr key={factura.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3 font-semibold text-blue-600">{factura.numero}</td>
+                  <td className="px-4 py-3 font-semibold text-blue-600">
+                    {factura.numero}
+                  </td>
                   <td className="px-4 py-3">{formatearFecha(factura.fecha)}</td>
                   <td className="px-4 py-3">{factura.clienteNombre}</td>
                   <td className="px-4 py-3 max-w-xs truncate text-sm text-gray-600">
-                    {factura.lineas && factura.lineas.length > 0 
-                      ? factura.lineas.map(l => l.concepto).join(', ')
-                      : '-'}
+                    {factura.lineas && factura.lineas.length > 0
+                      ? factura.lineas.map((l) => l.concepto).join(", ")
+                      : "-"}
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 bg-gray-200 rounded text-xs font-semibold">
@@ -1127,7 +1244,9 @@ const FacturasEmitidas = () => {
                     {formatearMoneda(factura.total)}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getColorEstado(factura.estado)}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-semibold ${getColorEstado(factura.estado)}`}
+                    >
                       {factura.estado}
                     </span>
                   </td>
@@ -1138,7 +1257,7 @@ const FacturasEmitidas = () => {
                     >
                       Editar
                     </button>
-                    {factura.estado === 'PENDIENTE' && (
+                    {factura.estado === "PENDIENTE" && (
                       <button
                         onClick={() => abrirModalCobrar(factura)}
                         className="text-green-600 hover:text-green-800 font-semibold text-sm"
@@ -1169,9 +1288,15 @@ const FacturasEmitidas = () => {
           {totalPaginas > 1 && (
             <div className="flex items-center justify-between mt-6 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600">
-                Mostrando <span className="font-semibold">{paginaActual * 20 + 1}</span> a <span className="font-semibold">{Math.min((paginaActual + 1) * 20, totalFacturas)}</span> de <span className="font-semibold">{totalFacturas}</span> facturas
+                Mostrando{" "}
+                <span className="font-semibold">{paginaActual * 20 + 1}</span> a{" "}
+                <span className="font-semibold">
+                  {Math.min((paginaActual + 1) * 20, totalFacturas)}
+                </span>{" "}
+                de <span className="font-semibold">{totalFacturas}</span>{" "}
+                facturas
               </div>
-              
+
               <div className="flex gap-2">
                 <button
                   onClick={() => irAlaPagina(paginaActual - 1)}
@@ -1188,8 +1313,8 @@ const FacturasEmitidas = () => {
                       onClick={() => irAlaPagina(i)}
                       className={`px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
                         paginaActual === i
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                       }`}
                     >
                       {i + 1}
@@ -1217,7 +1342,9 @@ const FacturasEmitidas = () => {
             {/* Header del modal */}
             <div className="px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
               <h3 className="text-3xl font-bold text-gray-900">
-                {editandoFactura ? 'Editar Factura Emitida' : 'Nueva Factura Emitida'}
+                {editandoFactura
+                  ? "Editar Factura Emitida"
+                  : "Nueva Factura Emitida"}
               </h3>
             </div>
 
@@ -1326,9 +1453,10 @@ const FacturasEmitidas = () => {
                         required
                       >
                         <option value="">-- Selecciona un cliente --</option>
-                        {clientes.map(cliente => (
+                        {clientes.map((cliente) => (
                           <option key={cliente.id} value={cliente.id}>
-                            {cliente.nombre} {cliente.apellidos} {cliente.nif && `(${cliente.nif})`}
+                            {cliente.nombre} {cliente.apellidos}{" "}
+                            {cliente.nif && `(${cliente.nif})`}
                           </option>
                         ))}
                       </select>
@@ -1464,22 +1592,37 @@ const FacturasEmitidas = () => {
                       <table className="w-full">
                         <thead className="bg-gray-100">
                           <tr>
-                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Concepto</th>
-                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Cantidad</th>
-                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Precio Sin IVA</th>
-                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">Base Imponible</th>
-                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">Acción</th>
+                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                              Concepto
+                            </th>
+                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">
+                              Cantidad
+                            </th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">
+                              Precio Sin IVA
+                            </th>
+                            <th className="px-4 py-2 text-right text-sm font-semibold text-gray-700">
+                              Base Imponible
+                            </th>
+                            <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">
+                              Acción
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {formData.lineas.map((linea) => (
-                            <tr key={linea.id} className="border-t border-gray-200 hover:bg-gray-50">
+                            <tr
+                              key={linea.id}
+                              className="border-t border-gray-200 hover:bg-gray-50"
+                            >
                               <td className="px-4 py-3 text-sm">
                                 {lineaEditando === linea.id ? (
                                   <input
                                     type="text"
                                     value={conceptoEditado}
-                                    onChange={(e) => setConceptoEditado(e.target.value)}
+                                    onChange={(e) =>
+                                      setConceptoEditado(e.target.value)
+                                    }
                                     onBlur={(e) => handleConceptoBlur(e, true)}
                                     className="w-full border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500"
                                     placeholder="Ej: Lavado Completo Turismo - 1234ABC"
@@ -1490,19 +1633,30 @@ const FacturasEmitidas = () => {
                                 )}
                                 <datalist id="tiposLavadoEditList">
                                   {tiposLavado.map((tipo) => (
-                                    <option key={tipo.valor} value={tipo.descripcion} />
+                                    <option
+                                      key={tipo.valor}
+                                      value={tipo.descripcion}
+                                    />
                                   ))}
                                 </datalist>
                               </td>
-                              <td className="px-4 py-3 text-sm text-center">{linea.cantidad}</td>
-                              <td className="px-4 py-3 text-sm text-right">{linea.precioUnitario.toFixed(2)} €</td>
-                              <td className="px-4 py-3 text-sm text-right font-semibold">{linea.subtotal.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-sm text-center">
+                                {linea.cantidad}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right">
+                                {linea.precioUnitario.toFixed(2)} €
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right font-semibold">
+                                {linea.subtotal.toFixed(2)} €
+                              </td>
                               <td className="px-4 py-3 text-center space-x-1">
                                 {lineaEditando === linea.id ? (
                                   <>
                                     <button
                                       type="button"
-                                      onClick={() => guardarEdicionLinea(linea.id)}
+                                      onClick={() =>
+                                        guardarEdicionLinea(linea.id)
+                                      }
                                       className="text-green-600 hover:text-green-800 font-semibold text-sm"
                                       title="Guardar cambios"
                                     >
@@ -1521,7 +1675,12 @@ const FacturasEmitidas = () => {
                                   <>
                                     <button
                                       type="button"
-                                      onClick={() => iniciarEdicionLinea(linea.id, linea.concepto)}
+                                      onClick={() =>
+                                        iniciarEdicionLinea(
+                                          linea.id,
+                                          linea.concepto,
+                                        )
+                                      }
                                       className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
                                       title="Editar concepto"
                                     >
@@ -1544,7 +1703,10 @@ const FacturasEmitidas = () => {
                     </div>
                   ) : (
                     <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500">No hay líneas agregadas. Usa el formulario de arriba para agregar líneas.</p>
+                      <p className="text-gray-500">
+                        No hay líneas agregadas. Usa el formulario de arriba
+                        para agregar líneas.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1561,7 +1723,11 @@ const FacturasEmitidas = () => {
                       </label>
                       <input
                         type="text"
-                        value={formData.baseImponible ? `${formData.baseImponible} €` : '0,00 €'}
+                        value={
+                          formData.baseImponible
+                            ? `${formData.baseImponible} €`
+                            : "0,00 €"
+                        }
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 font-semibold"
                         readOnly
                       />
@@ -1588,7 +1754,11 @@ const FacturasEmitidas = () => {
                       </label>
                       <input
                         type="text"
-                        value={formData.importeIva ? `${formData.importeIva} €` : '0,00 €'}
+                        value={
+                          formData.importeIva
+                            ? `${formData.importeIva} €`
+                            : "0,00 €"
+                        }
                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 font-semibold"
                         readOnly
                       />
@@ -1600,7 +1770,7 @@ const FacturasEmitidas = () => {
                     </label>
                     <input
                       type="text"
-                      value={formData.total ? `${formData.total} €` : '0,00 €'}
+                      value={formData.total ? `${formData.total} €` : "0,00 €"}
                       className="w-full border-2 border-green-500 rounded-lg px-4 py-3 bg-green-50 text-xl font-bold text-green-700"
                       readOnly
                     />
@@ -1638,7 +1808,7 @@ const FacturasEmitidas = () => {
                 onClick={guardarFactura}
                 className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
               >
-                {editandoFactura ? 'Actualizar Factura' : 'Crear Factura'}
+                {editandoFactura ? "Actualizar Factura" : "Crear Factura"}
               </button>
             </div>
           </div>
@@ -1649,18 +1819,24 @@ const FacturasEmitidas = () => {
       {modalCobrarAbierto && facturaParaCobrar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
-            <h3 className="text-2xl font-bold mb-4 text-gray-800">💰 Registrar Pago</h3>
-            
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">
+              💰 Registrar Pago
+            </h3>
+
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600">Factura Nº</p>
-              <p className="text-xl font-bold text-blue-600 mb-2">{facturaParaCobrar.numero}</p>
+              <p className="text-xl font-bold text-blue-600 mb-2">
+                {facturaParaCobrar.numero}
+              </p>
               <p className="text-sm text-gray-600">Cliente</p>
-              <p className="text-lg font-semibold text-gray-800 mb-2">{facturaParaCobrar.clienteNombre}</p>
+              <p className="text-lg font-semibold text-gray-800 mb-2">
+                {facturaParaCobrar.clienteNombre}
+              </p>
               <p className="text-sm text-gray-600">Importe a Cobrar</p>
               <p className="text-2xl font-bold text-green-600">
-                {new Intl.NumberFormat('es-ES', {
-                  style: 'currency',
-                  currency: 'EUR',
+                {new Intl.NumberFormat("es-ES", {
+                  style: "currency",
+                  currency: "EUR",
                 }).format(facturaParaCobrar.total)}
               </p>
             </div>
@@ -1695,7 +1871,7 @@ const FacturasEmitidas = () => {
                 disabled={loading}
                 className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors shadow-md"
               >
-                {loading ? 'Procesando...' : '✓ Confirmar Pago'}
+                {loading ? "Procesando..." : "✓ Confirmar Pago"}
               </button>
             </div>
           </div>
