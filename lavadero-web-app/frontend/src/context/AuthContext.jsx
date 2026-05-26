@@ -17,16 +17,42 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.login(credentials);
       const { token, user } = response.data;
-      
+
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
-      
+
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Error al iniciar sesión' 
+      const status = error.response?.status;
+      const data = error.response?.data;
+
+      // 429 — demasiados intentos
+      if (status === 429) {
+        const segundos = data?.retryAfter ?? 60;
+        const minutos = Math.ceil(segundos / 60);
+        return {
+          success: false,
+          status: 429,
+          retryAfter: segundos,
+          error: `Demasiados intentos fallidos. Espera ${minutos} minuto${minutos !== 1 ? 's' : ''} antes de intentarlo de nuevo.`,
+        };
+      }
+
+      // 401 — credenciales incorrectas
+      if (status === 401) {
+        return {
+          success: false,
+          status: 401,
+          error: 'Usuario o contraseña incorrectos.',
+        };
+      }
+
+      // Cualquier otro error (red, servidor caído, etc.)
+      return {
+        success: false,
+        status: status ?? 0,
+        error: data?.error || data?.message || 'Error de conexión. Inténtalo de nuevo.',
       };
     }
   };

@@ -5,6 +5,8 @@ import com.lavaderosepulveda.app.dto.LoginResponse;
 import com.lavaderosepulveda.app.dto.UserDTO;
 import com.lavaderosepulveda.app.model.Usuario;
 import com.lavaderosepulveda.app.repository.UsuarioRepository;
+import com.lavaderosepulveda.app.security.LoginRateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,11 +24,26 @@ public class AuthController {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LoginRateLimiter rateLimiter;  // ← NUEVO
 
     // ─── LOGIN ────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(
+            @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest) {       // ← NUEVO parámetro
+
+        // ① Rate limiting por IP — SIEMPRE lo primero, antes de tocar la BD
+        String ip = obtenerIpReal(httpRequest);
+        if (!rateLimiter.intentoPermitido(ip)) {
+            long espera = rateLimiter.segundosHastaReset(ip);
+            return ResponseEntity.status(429).body(Map.of(
+                    "error", "Demasiados intentos fallidos. Espera " + espera + " segundos.",
+                    "retryAfter", espera
+            ));
+        }
+
+        // ② Buscar usuario — respuesta genérica para no filtrar si el user existe
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(request.getUsername());
 
         if (usuarioOpt.isEmpty() || !usuarioOpt.get().getActivo()) {
@@ -39,6 +56,7 @@ public class AuthController {
             return ResponseEntity.status(401).body("Credenciales inválidas");
         }
 
+        // ③ Login correcto — actualizar último acceso
         usuario.setUltimoAcceso(LocalDateTime.now());
         usuarioRepository.save(usuario);
 
@@ -84,7 +102,7 @@ public class AuthController {
         perfil.put("username", usuario.getUsername());
         perfil.put("nombreCompleto", usuario.getNombreCompleto());
         perfil.put("email", usuario.getEmail());
-        perfil.put("dni", usuario.getDni()); // null si aún no tiene
+        perfil.put("dni", usuario.getDni());
 
         return ResponseEntity.ok(perfil);
     }
@@ -112,13 +130,11 @@ public class AuthController {
             usuario.setEmail(email);
         }
 
-        // Validar y guardar DNI
         if (dni != null && !dni.isBlank()) {
             if (!dni.matches("^[0-9]{8}[A-Z]$")) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "Formato de DNI inválido. Ejemplo: 12345678A"));
             }
-            // Comprobar que el DNI no pertenece a otro usuario
             Optional<Usuario> dniExistente = usuarioRepository.findByDni(dni);
             if (dniExistente.isPresent() && !dniExistente.get().getUsername().equals(username)) {
                 return ResponseEntity.badRequest()
@@ -189,5 +205,20 @@ public class AuthController {
         usuarioRepository.save(usuario);
 
         return ResponseEntity.ok(Map.of("message", "Contraseña actualizada correctamente"));
+    }
+
+    // ─── HELPER PRIVADO ───────────────────────────────────────────────────────
+
+    /**
+     * Extrae la IP real del cliente respetando el header X-Forwarded-For
+     * que inyecta el proxy de Railway/Vercel.
+     */
+    private String obtenerIpReal(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            // El primer valor es la IP original del cliente
+            return xff.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
