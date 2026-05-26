@@ -18,6 +18,9 @@ public class Usuario {
     @Column(nullable = false)
     private String password; // BCrypt
 
+    @Column(name = "token_activo", length = 64)
+    private String tokenActivo; // null cuando no hay sesión activa
+
     @Column(nullable = false)
     private String nombreCompleto = "Administrador";
 

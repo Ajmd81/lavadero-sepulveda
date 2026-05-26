@@ -22,18 +22,21 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthController {
 
+    // Duración de sesión: 8 horas (tiempo de jornada laboral)
+    private static final long HORAS_SESION = 8L;
+
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final LoginRateLimiter rateLimiter;  // ← NUEVO
+    private final LoginRateLimiter rateLimiter;
 
     // ─── LOGIN ────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
     public ResponseEntity<?> login(
             @RequestBody LoginRequest request,
-            HttpServletRequest httpRequest) {       // ← NUEVO parámetro
+            HttpServletRequest httpRequest) {
 
-        // ① Rate limiting por IP — SIEMPRE lo primero, antes de tocar la BD
+        // ① Rate limiting por IP
         String ip = obtenerIpReal(httpRequest);
         if (!rateLimiter.intentoPermitido(ip)) {
             long espera = rateLimiter.segundosHastaReset(ip);
@@ -43,7 +46,7 @@ public class AuthController {
             ));
         }
 
-        // ② Buscar usuario — respuesta genérica para no filtrar si el user existe
+        // ② Validar credenciales
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(request.getUsername());
 
         if (usuarioOpt.isEmpty() || !usuarioOpt.get().getActivo()) {
@@ -56,8 +59,12 @@ public class AuthController {
             return ResponseEntity.status(401).body("Credenciales inválidas");
         }
 
-        // ③ Login correcto — actualizar último acceso
+        // ③ Generar token con timestamp de emisión y guardarlo en BD
+        long ahora = System.currentTimeMillis();
+        String token = "Bearer-token-" + ahora;
+
         usuario.setUltimoAcceso(LocalDateTime.now());
+        usuario.setTokenActivo(token);          // guardamos el token para poder invalidarlo en logout
         usuarioRepository.save(usuario);
 
         UserDTO user = new UserDTO();
@@ -66,7 +73,7 @@ public class AuthController {
         user.setRole("ADMIN");
 
         LoginResponse response = new LoginResponse();
-        response.setToken("Bearer-token-" + System.currentTimeMillis());
+        response.setToken(token);
         response.setUser(user);
 
         return ResponseEntity.ok(response);
@@ -77,14 +84,54 @@ public class AuthController {
     @GetMapping("/verify")
     public ResponseEntity<?> verifyToken(
             @RequestHeader(value = "Authorization", required = false) String token) {
-        if (token != null && token.startsWith("Bearer")) {
-            UserDTO user = new UserDTO();
-            user.setUsername("admin");
-            user.setNombre("Administrador");
-            user.setRole("ADMIN");
-            return ResponseEntity.ok(user);
+
+        if (token == null || !token.startsWith("Bearer-token-")) {
+            return ResponseEntity.status(401).body("Token inválido");
         }
-        return ResponseEntity.status(401).body("Token inválido");
+
+        // ① Verificar expiración por timestamp
+        try {
+            long emitidoEn = Long.parseLong(token.replace("Bearer-token-", ""));
+            long horasTranscurridas = (System.currentTimeMillis() - emitidoEn) / 3_600_000L;
+            if (horasTranscurridas >= HORAS_SESION) {
+                return ResponseEntity.status(401).body("Sesión expirada. Inicia sesión de nuevo.");
+            }
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+
+        // ② Verificar que el token existe en BD (permite logout real desde servidor)
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByTokenActivo(token);
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.status(401).body("Sesión inválida o cerrada");
+        }
+
+        Usuario usuario = usuarioOpt.get();
+
+        // ③ Devolver datos reales del usuario, no hardcodeados
+        UserDTO user = new UserDTO();
+        user.setUsername(usuario.getUsername());
+        user.setNombre(usuario.getNombreCompleto());
+        user.setRole("ADMIN");
+
+        return ResponseEntity.ok(user);
+    }
+
+    // ─── LOGOUT ───────────────────────────────────────────────────────────────
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(
+            @RequestHeader(value = "Authorization", required = false) String token) {
+
+        if (token != null && token.startsWith("Bearer-token-")) {
+            // Invalidar el token en BD — aunque alguien tenga el token robado, deja de funcionar
+            usuarioRepository.findByTokenActivo(token).ifPresent(usuario -> {
+                usuario.setTokenActivo(null);
+                usuarioRepository.save(usuario);
+            });
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Sesión cerrada correctamente"));
     }
 
     // ─── OBTENER PERFIL ───────────────────────────────────────────────────────
@@ -202,6 +249,8 @@ public class AuthController {
         }
 
         usuario.setPassword(passwordEncoder.encode(passwordNueva));
+        // Invalidar sesión activa al cambiar contraseña — fuerza nuevo login
+        usuario.setTokenActivo(null);
         usuarioRepository.save(usuario);
 
         return ResponseEntity.ok(Map.of("message", "Contraseña actualizada correctamente"));
@@ -209,14 +258,9 @@ public class AuthController {
 
     // ─── HELPER PRIVADO ───────────────────────────────────────────────────────
 
-    /**
-     * Extrae la IP real del cliente respetando el header X-Forwarded-For
-     * que inyecta el proxy de Railway/Vercel.
-     */
     private String obtenerIpReal(HttpServletRequest request) {
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank()) {
-            // El primer valor es la IP original del cliente
             return xff.split(",")[0].trim();
         }
         return request.getRemoteAddr();
