@@ -5,733 +5,422 @@ import com.lavaderosepulveda.app.mapper.CitaMapper;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
+import com.lavaderosepulveda.app.security.CitaRateLimiter;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
 import com.lavaderosepulveda.app.service.HorarioService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import java.time.DayOfWeek;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * API REST refactorizada para gestión de citas
- * Usa utilities centralizadas y manejo de errores globalizado
- */
 @RestController
 @RequestMapping("/api")
 public class CitaApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(CitaApiController.class);
 
-    @Autowired
-    private CitaService citaService;
+    @Autowired private CitaService citaService;
+    @Autowired private HorarioService horarioService;
+    @Autowired private EmailService emailService;
+    @Autowired private CitaMapper citaMapper;
+    @Autowired private CitaRateLimiter citaRateLimiter;    // ← NUEVO
+    @Autowired private javax.sql.DataSource dataSource;
 
-    @Autowired
-    private HorarioService horarioService;
+    // ─── LISTAR CITAS ─────────────────────────────────────────────────────────
 
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private CitaMapper citaMapper;
-
-    /**
-     * Obtener todas las citas
-     */
     @GetMapping("/citas")
     public ResponseEntity<List<CitaDTO>> listarCitas() {
-        List<Cita> citas = citaService.obtenerTodasLasCitas();
-        List<CitaDTO> citasDTO = citas.stream()
+        List<CitaDTO> citasDTO = citaService.obtenerTodasLasCitas().stream()
                 .map(citaMapper::toDTO)
                 .collect(Collectors.toList());
-
         return ResponseEntity.ok(citasDTO);
     }
 
-    /**
-     * GET /api/citas/paginado
-     * Obtener citas con paginación y ordenamiento
-     * IMPORTANTE: Este método debe estar ANTES de @GetMapping("/citas/{id}")
-     */
     @GetMapping("/citas/paginado")
     public ResponseEntity<Page<CitaDTO>> listarCitasPaginado(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "fecha") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        
         try {
-            logger.debug("Obteniendo citas paginadas: page={}, size={}, sortBy={}, sortDir={}", 
-                         page, size, sortBy, sortDir);
-            
-            // Crear ordenamiento
-            Sort sort = sortDir.equalsIgnoreCase("asc") 
-                ? Sort.by(sortBy).ascending() 
-                : Sort.by(sortBy).descending();
-            
-            // Crear Pageable
+            Sort sort = sortDir.equalsIgnoreCase("asc")
+                    ? Sort.by(sortBy).ascending()
+                    : Sort.by(sortBy).descending();
             Pageable pageable = PageRequest.of(page, size, sort);
-            
-            // Obtener página de citas
-            Page<Cita> citasPage = citaService.obtenerCitasPaginadas(pageable);
-            
-            // Convertir a DTOs
-            Page<CitaDTO> citasDTOPage = citasPage.map(citaMapper::toDTO);
-            
-            logger.debug("Citas paginadas obtenidas: {} de {}", 
-                         citasDTOPage.getNumberOfElements(), citasDTOPage.getTotalElements());
-            
+            Page<CitaDTO> citasDTOPage = citaService.obtenerCitasPaginadas(pageable).map(citaMapper::toDTO);
             return ResponseEntity.ok(citasDTOPage);
-            
         } catch (Exception e) {
             logger.error("Error en paginación de citas: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * Obtener cita por ID
-     */
     @GetMapping("/citas/{id}")
     public ResponseEntity<CitaDTO> obtenerCitaPorId(@PathVariable Long id) {
-        Optional<Cita> cita = citaService.obtenerCitaPorId(id);
-
-        if (cita.isPresent()) {
-            CitaDTO citaDTO = citaMapper.toDTO(cita.get());
-            return ResponseEntity.ok(citaDTO);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return citaService.obtenerCitaPorId(id)
+                .map(cita -> ResponseEntity.ok(citaMapper.toDTO(cita)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Crear nueva cita - Simplificado usando CitaMapper
-     */
+    // ─── CREAR CITA (API pública — usada por la app móvil) ───────────────────
+
     @PostMapping("/citas")
-    public ResponseEntity<CitaDTO> crearCita(@RequestBody CitaDTO citaDTO) {
+    public ResponseEntity<?> crearCita(
+            @Valid @RequestBody CitaDTO citaDTO,
+            HttpServletRequest httpRequest) {
+
+        // ① Rate limiting por IP
+        String ip = obtenerIpReal(httpRequest);
+        if (!citaRateLimiter.intentoPermitido(ip)) {
+            long espera = citaRateLimiter.segundosHastaReset(ip);
+            logger.warn("Rate limit superado en POST /api/citas desde IP: {}", ip);
+            return ResponseEntity.status(429).body(Map.of(
+                    "error", "Demasiadas solicitudes. Espera " + Math.max(1, espera / 60) + " minuto(s).",
+                    "retryAfter", espera
+            ));
+        }
+
+        // ② Validación de rango de fecha
+        LocalDate hoy = LocalDate.now();
+        if (citaDTO.getFecha() != null) {
+            if (citaDTO.getFecha().isBefore(hoy)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "La fecha no puede ser pasada."));
+            }
+            if (citaDTO.getFecha().isAfter(hoy.plusDays(60))) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Máximo 60 días de antelación."));
+            }
+        }
+
         logger.info("Recibida solicitud para crear cita: {}", citaDTO);
-
-        // Mapeo automático usando CitaMapper (maneja validaciones)
         Cita cita = citaMapper.toEntity(citaDTO);
-
-        // Guardar cita usando servicio
         Cita nuevaCita = citaService.crearCita(cita);
         logger.info("Cita creada exitosamente con ID: {}", nuevaCita.getId());
 
-        // Enviar email de confirmación si está configurado y hay email
         enviarEmailConfirmacionSiEsPosible(nuevaCita);
 
-        // Retornar DTO de respuesta
-        CitaDTO respuestaDTO = citaMapper.toDTO(nuevaCita);
-        return ResponseEntity.status(HttpStatus.CREATED).body(respuestaDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(citaMapper.toDTO(nuevaCita));
     }
 
-    /**
-     * Obtener horarios disponibles para una fecha - Simplificado
-     */
+    // ─── HORARIOS ─────────────────────────────────────────────────────────────
+
     @GetMapping("/citas/horarios-disponibles")
     public ResponseEntity<List<String>> obtenerHorariosDisponibles(@RequestParam("fecha") String fechaStr) {
-        logger.debug("Solicitando horarios disponibles para: {}", fechaStr);
-
-        // Parsear fecha usando utility centralizada
         LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
-
-        // Obtener horarios usando servicio especializado
-        List<LocalTime> horariosDisponibles = horarioService.obtenerHorariosDisponibles(fecha);
-
-        // Aplicar filtro específico para API (excluir 15:00)
-        List<LocalTime> horariosFiltrados = horariosDisponibles.stream()
+        List<String> horariosFormateados = horarioService.obtenerHorariosDisponibles(fecha).stream()
                 .filter(hora -> hora.getHour() != 15)
-                .collect(Collectors.toList());
-
-        // Convertir a strings usando utility
-        List<String> horariosFormateados = horariosFiltrados.stream()
                 .map(DateTimeFormatUtils::formatearHoraCorta)
                 .collect(Collectors.toList());
-
-        logger.debug("Horarios disponibles enviados: {}", horariosFormateados);
         return ResponseEntity.ok(horariosFormateados);
     }
 
-    /**
-     * Obtener días NO disponibles para un mes y servicio específico
-     */
     @GetMapping("/citas/disponibilidad-mensual")
     public ResponseEntity<List<String>> obtenerDisponibilidadMensual(
             @RequestParam("mes") int mes,
             @RequestParam("anio") int anio,
             @RequestParam("tipoLavado") String tipoLavadoStr) {
-
         try {
             YearMonth yearMonth = YearMonth.of(anio, mes);
             TipoLavado tipoLavado = TipoLavado.valueOf(tipoLavadoStr);
-
-            List<String> diasNoDisponibles = horarioService.obtenerDiasNoDisponibles(yearMonth, tipoLavado);
-            return ResponseEntity.ok(diasNoDisponibles);
+            return ResponseEntity.ok(horarioService.obtenerDiasNoDisponibles(yearMonth, tipoLavado));
         } catch (Exception e) {
-            logger.error("Error obteniendo disponibilidad mensual: {}", e.getMessage());
+            logger.error("Error disponibilidad mensual: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
 
-    @GetMapping("/tipos-lavado")
-    public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
-        List<Map<String, Object>> tiposLavado = Arrays.stream(TipoLavado.values())
-                .map(tipo -> {
-                    Map<String, Object> tipoMap = new HashMap<>();
-                    tipoMap.put("id", tipo.name());
-                    tipoMap.put("nombre", tipo.name());
-                    tipoMap.put("descripcion", tipo.getDescripcion());
-                    tipoMap.put("precio", tipo.getPrecio());
-                    return tipoMap;
-                })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(tiposLavado);
+    @GetMapping("/citas/verificar-disponibilidad")
+    public ResponseEntity<Boolean> verificarDisponibilidad(
+            @RequestParam("fecha") String fechaStr,
+            @RequestParam("hora") String horaStr) {
+        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
+        LocalTime hora = DateTimeFormatUtils.parsearHoraCorta(horaStr);
+        return ResponseEntity.ok(!horarioService.esHorarioDisponible(fecha, hora));
     }
 
-    /**
-     * Eliminar cita por ID
-     */
+    // ─── TIPOS DE LAVADO ──────────────────────────────────────────────────────
+
+    @GetMapping("/tipos-lavado")
+    public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
+        List<Map<String, Object>> tipos = Arrays.stream(TipoLavado.values())
+                .map(tipo -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", tipo.name());
+                    m.put("nombre", tipo.name());
+                    m.put("descripcion", tipo.getDescripcion());
+                    m.put("precio", tipo.getPrecio());
+                    return m;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(tipos);
+    }
+
+    // ─── CRUD ─────────────────────────────────────────────────────────────────
+
     @DeleteMapping("/citas/{id}")
     public ResponseEntity<Void> eliminarCita(@PathVariable Long id) {
         citaService.eliminarCita(id);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Verificar disponibilidad de un horario específico
-     */
-    @GetMapping("/citas/verificar-disponibilidad")
-    public ResponseEntity<Boolean> verificarDisponibilidad(
-            @RequestParam("fecha") String fechaStr,
-            @RequestParam("hora") String horaStr) {
-
-        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
-        LocalTime hora = DateTimeFormatUtils.parsearHoraCorta(horaStr);
-        boolean disponible = horarioService.esHorarioDisponible(fecha, hora);
-
-        return ResponseEntity.ok(!disponible); // ← Devolver solo el boolean
+    @PutMapping("/citas/{id}")
+    public ResponseEntity<CitaDTO> actualizarCita(@PathVariable Long id, @RequestBody CitaDTO citaDTO) {
+        Cita cita = citaService.actualizarCita(id, citaMapper.toEntity(citaDTO));
+        return ResponseEntity.ok(citaMapper.toDTO(cita));
     }
 
-    /**
-     * Obtener citas agrupadas por fecha - Mejorado
-     */
+    // ─── CONSULTAS ADICIONALES ────────────────────────────────────────────────
+
     @GetMapping("/citas/por-fecha")
-    public ResponseEntity<Map<String, List<CitaDTO>>> obtenerCitasPorFecha() {
-        // Obtener citas agrupadas desde el servicio (ya formateadas)
-        Map<String, List<Cita>> citasPorFecha = citaService.obtenerCitasAgrupadasPorFechaFormateada();
-
-        // Convertir entidades a DTOs
-        Map<String, List<CitaDTO>> citasPorFechaDTO = new LinkedHashMap<>();
-        citasPorFecha.forEach((fecha, citas) -> {
-            List<CitaDTO> citasDTO = citas.stream()
-                    .map(citaMapper::toDTO)
-                    .collect(Collectors.toList());
-            citasPorFechaDTO.put(fecha, citasDTO);
-        });
-
-        return ResponseEntity.ok(citasPorFechaDTO);
+    public ResponseEntity<Map<String, List<CitaDTO>>> obtenerCitasPorFechaAgrupadas() {
+        Map<String, List<CitaDTO>> result = new LinkedHashMap<>();
+        citaService.obtenerCitasAgrupadasPorFechaFormateada().forEach((fecha, citas) ->
+                result.put(fecha, citas.stream().map(citaMapper::toDTO).collect(Collectors.toList())));
+        return ResponseEntity.ok(result);
     }
 
-    /**
-     * Obtener citas por teléfono (historial del cliente)
-     */
     @GetMapping("/citas/cliente/{telefono}")
     public ResponseEntity<List<CitaDTO>> obtenerCitasPorTelefono(@PathVariable String telefono) {
-        logger.info("Buscando citas para el teléfono: {}", telefono);
-        
         try {
-            // Obtener citas del servicio
             List<Cita> citas = citaService.obtenerCitasPorTelefono(telefono);
-            
-            // Si no hay citas, devolver lista vacía (NO error 404)
-            if (citas == null || citas.isEmpty()) {
-                logger.debug("No se encontraron citas para el teléfono: {}", telefono);
-                return ResponseEntity.ok(Collections.emptyList());
-            }
-            
-            // Convertir a DTOs
-            List<CitaDTO> citasDTO = citas.stream()
-                    .map(citaMapper::toDTO)
-                    .collect(Collectors.toList());
-            
-            logger.info("Encontradas {} citas para el teléfono: {}", citasDTO.size(), telefono);
-            return ResponseEntity.ok(citasDTO);
-            
+            if (citas == null || citas.isEmpty()) return ResponseEntity.ok(Collections.emptyList());
+            return ResponseEntity.ok(citas.stream().map(citaMapper::toDTO).collect(Collectors.toList()));
         } catch (Exception e) {
-            logger.error("Error obteniendo citas por teléfono {}: {}", telefono, e.getMessage(), e);
-            // En caso de error, devolver lista vacía en vez de 500
+            logger.error("Error citas por teléfono {}: {}", telefono, e.getMessage(), e);
             return ResponseEntity.ok(Collections.emptyList());
         }
     }
-    
-    /**
-     * Actualizar cita existente
-     */
-    @PutMapping("/citas/{id}")
-    public ResponseEntity<CitaDTO> actualizarCita(@PathVariable Long id, @RequestBody CitaDTO citaDTO) {
-        logger.info("Actualizando cita ID: {} con datos: {}", id, citaDTO);
 
-        // Mapear DTO a entidad
-        Cita citaActualizada = citaMapper.toEntity(citaDTO);
-
-        // Actualizar usando servicio
-        Cita cita = citaService.actualizarCita(id, citaActualizada);
-
-        // Retornar DTO actualizado
-        CitaDTO respuestaDTO = citaMapper.toDTO(cita);
-        return ResponseEntity.ok(respuestaDTO);
-    }
-
-    /**
-     * Obtener estadísticas de ocupación para una fecha
-     */
-    @GetMapping("/citas/estadisticas")
-    public ResponseEntity<Map<String, Object>> obtenerEstadisticas(@RequestParam("fecha") String fechaStr) {
-        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
-        Map<String, Object> estadisticas = horarioService.obtenerEstadisticasOcupacion(fecha);
-
-        return ResponseEntity.ok(estadisticas);
-    }
-
-    /**
-     * POST /api/citas/migrar-email
-     * Permitir NULL en columna email
-     */
-    @PostMapping("/citas/migrar-email")
-    public ResponseEntity<Map<String, String>> migrarColumnaEmail() {
-        try (java.sql.Connection connection = dataSource.getConnection();
-             java.sql.Statement statement = connection.createStatement()) {
-
-            // Cambiar la columna para permitir NULL
-            String sql = "ALTER TABLE citas MODIFY COLUMN email VARCHAR(255) NULL";
-            statement.executeUpdate(sql);
-
-            logger.info("Migración de columna email completada exitosamente");
-
-            Map<String, String> response = new HashMap<>();
-            response.put("mensaje", "Migración completada");
-            response.put("detalle", "Columna 'email' ahora permite NULL");
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Error en migración de columna email: {}", e.getMessage());
-
-            Map<String, String> response = new HashMap<>();
-            response.put("error", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
-    // ========================================
-    // NUEVOS ENDPOINTS PARA INTEGRACIÓN CRM
-    // ========================================
-
-    /**
-     * GET /api/citas/fecha/{fecha}
-     * Obtener citas por fecha específica
-     */
     @GetMapping("/citas/fecha/{fecha}")
     public ResponseEntity<List<CitaDTO>> obtenerCitasPorFecha(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        logger.info("Obteniendo citas para fecha: {}", fecha);
-        List<Cita> citas = citaService.obtenerCitasPorFecha(fecha);
-        List<CitaDTO> citasDTO = citas.stream()
-                .map(citaMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(citasDTO);
+        return ResponseEntity.ok(citaService.obtenerCitasPorFecha(fecha).stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
     }
 
-    /**
-     * GET /api/citas/rango
-     * Obtener citas por rango de fechas
-     */
     @GetMapping("/citas/rango")
     public ResponseEntity<List<CitaDTO>> obtenerCitasPorRango(
             @RequestParam("inicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam("fin") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
-        logger.info("Obteniendo citas desde {} hasta {}", inicio, fin);
-        List<Cita> citas = citaService.obtenerCitasEnRango(inicio, fin);
-        List<CitaDTO> citasDTO = citas.stream()
-                .map(citaMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(citasDTO);
+        return ResponseEntity.ok(citaService.obtenerCitasEnRango(inicio, fin).stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
     }
 
-    /**
-     * GET /api/citas/estado/{estado}
-     * Obtener citas por estado
-     */
     @GetMapping("/citas/estado/{estado}")
     public ResponseEntity<List<CitaDTO>> obtenerCitasPorEstado(@PathVariable String estado) {
         try {
-            EstadoCita estadoCita = EstadoCita.valueOf(estado.toUpperCase());
-            List<Cita> citas = citaService.obtenerCitasPorEstado(estadoCita);
-            List<CitaDTO> citasDTO = citas.stream()
-                    .map(citaMapper::toDTO)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(citasDTO);
+            EstadoCita e = EstadoCita.valueOf(estado.toUpperCase());
+            return ResponseEntity.ok(citaService.obtenerCitasPorEstado(e).stream()
+                    .map(citaMapper::toDTO).collect(Collectors.toList()));
         } catch (IllegalArgumentException e) {
-            logger.warn("Estado no válido: {}", estado);
             return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * GET /api/citas/pendientes
-     * Obtener citas pendientes (PENDIENTE o CONFIRMADA)
-     */
     @GetMapping("/citas/pendientes")
     public ResponseEntity<List<CitaDTO>> obtenerCitasPendientes() {
-        List<Cita> citas = citaService.obtenerCitasPendientes();
-        List<CitaDTO> citasDTO = citas.stream()
-                .map(citaMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(citasDTO);
+        return ResponseEntity.ok(citaService.obtenerCitasPendientes().stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
     }
 
-    /**
-     * GET /api/citas/no-facturadas
-     * Obtener citas completadas sin facturar
-     */
     @GetMapping("/citas/no-facturadas")
     public ResponseEntity<List<CitaDTO>> obtenerCitasNoFacturadas() {
-        List<Cita> citas = citaService.obtenerCitasCompletadasSinFacturar();
-        List<CitaDTO> citasDTO = citas.stream()
-                .map(citaMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(citasDTO);
+        return ResponseEntity.ok(citaService.obtenerCitasCompletadasSinFacturar().stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
     }
 
-    /**
-     * GET /api/citas/hoy
-     * Obtener citas de hoy
-     */
     @GetMapping("/citas/hoy")
     public ResponseEntity<List<CitaDTO>> obtenerCitasHoy() {
-        List<Cita> citas = citaService.obtenerCitasDeHoy();
-        List<CitaDTO> citasDTO = citas.stream()
-                .map(citaMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(citasDTO);
+        return ResponseEntity.ok(citaService.obtenerCitasDeHoy().stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
     }
 
-    /**
-     * GET /api/citas/en-proceso
-     * Obtener citas en proceso
-     */
     @GetMapping("/citas/en-proceso")
     public ResponseEntity<List<CitaDTO>> obtenerCitasEnProceso() {
-        List<Cita> citas = citaService.obtenerCitasEnProceso();
-        List<CitaDTO> citasDTO = citas.stream()
-                .map(citaMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(citasDTO);
+        return ResponseEntity.ok(citaService.obtenerCitasEnProceso().stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
     }
 
-    /**
-     * GET /api/citas/cliente-id/{clienteId}
-     * Obtener citas por ID de cliente
-     */
     @GetMapping("/citas/cliente-id/{clienteId}")
     public ResponseEntity<List<CitaDTO>> obtenerCitasPorClienteId(@PathVariable Long clienteId) {
-        List<Cita> citas = citaService.obtenerCitasPorClienteId(clienteId);
-        List<CitaDTO> citasDTO = citas.stream()
-                .map(citaMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(citasDTO);
+        return ResponseEntity.ok(citaService.obtenerCitasPorClienteId(clienteId).stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
     }
 
-    // ========================================
-    // ENDPOINTS DE CAMBIO DE ESTADO
-    // ========================================
+    // ─── CAMBIOS DE ESTADO ────────────────────────────────────────────────────
 
-    /**
-     * PUT /api/citas/{id}/estado/{estado}
-     * Cambiar estado de una cita
-     */
     @PutMapping("/citas/{id}/estado/{estado}")
-    public ResponseEntity<CitaDTO> cambiarEstadoCita(
-            @PathVariable Long id,
-            @PathVariable String estado) {
+    public ResponseEntity<CitaDTO> cambiarEstadoCita(@PathVariable Long id, @PathVariable String estado) {
         try {
-            EstadoCita nuevoEstado = EstadoCita.valueOf(estado.toUpperCase());
-            Cita cita = citaService.cambiarEstado(id, nuevoEstado);
-            CitaDTO citaDTO = citaMapper.toDTO(cita);
-            logger.info("Estado de cita {} cambiado a {}", id, estado);
-            return ResponseEntity.ok(citaDTO);
+            Cita cita = citaService.cambiarEstado(id, EstadoCita.valueOf(estado.toUpperCase()));
+            return ResponseEntity.ok(citaMapper.toDTO(cita));
         } catch (IllegalArgumentException e) {
-            logger.warn("Estado no válido: {}", estado);
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
-            logger.error("Error al cambiar estado de cita {}: {}", id, e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }
 
-    /**
-     * POST /api/citas/{id}/cancelar
-     * Cancelar una cita
-     */
     @PostMapping("/citas/{id}/cancelar")
-    public ResponseEntity<CitaDTO> cancelarCita(
-            @PathVariable Long id,
+    public ResponseEntity<CitaDTO> cancelarCita(@PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body) {
         try {
-            String motivo = body != null ? body.get("motivo") : null;
-            Cita cita = citaService.cancelarCita(id, motivo);
-            CitaDTO citaDTO = citaMapper.toDTO(cita);
-            logger.info("Cita {} cancelada", id);
-            return ResponseEntity.ok(citaDTO);
+            Cita cita = citaService.cancelarCita(id, body != null ? body.get("motivo") : null);
+            return ResponseEntity.ok(citaMapper.toDTO(cita));
         } catch (RuntimeException e) {
-            logger.error("Error al cancelar cita {}: {}", id, e.getMessage());
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * POST /api/citas/{id}/confirmar
-     * Confirmar una cita
-     */
     @PostMapping("/citas/{id}/confirmar")
     public ResponseEntity<CitaDTO> confirmarCita(@PathVariable Long id) {
-        try {
-            Cita cita = citaService.confirmarCita(id);
-            CitaDTO citaDTO = citaMapper.toDTO(cita);
-            return ResponseEntity.ok(citaDTO);
-        } catch (RuntimeException e) {
-            logger.error("Error al confirmar cita {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
+        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.confirmarCita(id))); }
+        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
     }
 
-    /**
-     * POST /api/citas/{id}/iniciar
-     * Iniciar servicio (marcar en proceso)
-     */
     @PostMapping("/citas/{id}/iniciar")
     public ResponseEntity<CitaDTO> iniciarServicio(@PathVariable Long id) {
-        try {
-            Cita cita = citaService.iniciarServicio(id);
-            CitaDTO citaDTO = citaMapper.toDTO(cita);
-            return ResponseEntity.ok(citaDTO);
-        } catch (RuntimeException e) {
-            logger.error("Error al iniciar servicio de cita {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
+        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.iniciarServicio(id))); }
+        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
     }
 
-    /**
-     * POST /api/citas/{id}/completar
-     * Completar una cita
-     */
     @PostMapping("/citas/{id}/completar")
     public ResponseEntity<CitaDTO> completarCita(@PathVariable Long id) {
-        try {
-            Cita cita = citaService.completarCita(id);
-            CitaDTO citaDTO = citaMapper.toDTO(cita);
-            return ResponseEntity.ok(citaDTO);
-        } catch (RuntimeException e) {
-            logger.error("Error al completar cita {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
+        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.completarCita(id))); }
+        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
     }
 
-    /**
-     * POST /api/citas/{id}/no-presentado
-     * Marcar como no presentado
-     */
     @PostMapping("/citas/{id}/no-presentado")
     public ResponseEntity<CitaDTO> marcarNoPresentado(@PathVariable Long id) {
-        try {
-            Cita cita = citaService.marcarNoPresentado(id);
-            CitaDTO citaDTO = citaMapper.toDTO(cita);
-            return ResponseEntity.ok(citaDTO);
-        } catch (RuntimeException e) {
-            logger.error("Error al marcar no presentado cita {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
+        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.marcarNoPresentado(id))); }
+        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
     }
 
-    /**
-     * POST /api/citas/{id}/llegada
-     * Registrar llegada del cliente
-     */
     @PostMapping("/citas/{id}/llegada")
     public ResponseEntity<CitaDTO> registrarLlegada(@PathVariable Long id) {
-        try {
-            Cita cita = citaService.registrarLlegada(id);
-            CitaDTO citaDTO = citaMapper.toDTO(cita);
-            return ResponseEntity.ok(citaDTO);
-        } catch (RuntimeException e) {
-            logger.error("Error al registrar llegada de cita {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
+        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.registrarLlegada(id))); }
+        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
     }
 
-    /**
-     * POST /api/citas/{id}/facturar
-     * Marcar cita como facturada
-     */
     @PostMapping("/citas/{id}/facturar")
-    public ResponseEntity<CitaDTO> marcarComoFacturada(
-            @PathVariable Long id,
+    public ResponseEntity<CitaDTO> marcarComoFacturada(@PathVariable Long id,
             @RequestBody Map<String, Long> body) {
         try {
-            Long facturaId = body.get("facturaId");
-            Cita cita = citaService.marcarComoFacturada(id, facturaId);
-            CitaDTO citaDTO = citaMapper.toDTO(cita);
-            return ResponseEntity.ok(citaDTO);
+            Cita cita = citaService.marcarComoFacturada(id, body.get("facturaId"));
+            return ResponseEntity.ok(citaMapper.toDTO(cita));
         } catch (RuntimeException e) {
-            logger.error("Error al marcar como facturada cita {}: {}", id, e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }
 
-    // ========================================
-    // ENDPOINTS DE CONTEO (DASHBOARD)
-    // ========================================
+    // ─── DASHBOARD / CONTEO ───────────────────────────────────────────────────
 
-    /**
-     * GET /api/citas/count/hoy
-     * Contar citas de hoy
-     */
     @GetMapping("/citas/count/hoy")
     public ResponseEntity<Map<String, Long>> contarCitasHoy() {
-        long total = citaService.contarCitasHoy();
-        return ResponseEntity.ok(Map.of("total", total));
+        return ResponseEntity.ok(Map.of("total", citaService.contarCitasHoy()));
     }
 
-    /**
-     * GET /api/citas/count/estado/{estado}
-     * Contar citas por estado
-     */
     @GetMapping("/citas/count/estado/{estado}")
     public ResponseEntity<Map<String, Long>> contarCitasPorEstado(@PathVariable String estado) {
         try {
-            EstadoCita estadoCita = EstadoCita.valueOf(estado.toUpperCase());
-            long count = citaService.contarCitasPorEstado(estadoCita);
-            return ResponseEntity.ok(Map.of("count", count, "estado", (long) estadoCita.ordinal()));
+            EstadoCita e = EstadoCita.valueOf(estado.toUpperCase());
+            return ResponseEntity.ok(Map.of("count", citaService.contarCitasPorEstado(e),
+                    "estado", (long) e.ordinal()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * GET /api/citas/resumen/hoy
-     * Resumen de citas de hoy por estado
-     */
     @GetMapping("/citas/resumen/hoy")
     public ResponseEntity<Map<String, Object>> obtenerResumenHoy() {
-        Map<String, Object> resumen = citaService.obtenerResumenCitasHoy();
-        return ResponseEntity.ok(resumen);
+        return ResponseEntity.ok(citaService.obtenerResumenCitasHoy());
     }
 
-    // ========================================
-    // ENDPOINT DE MIGRACIÓN
-    // ========================================
-
-    @Autowired
-    private javax.sql.DataSource dataSource;
-
-    /**
-     * POST /api/citas/migrar-estado
-     * Migrar columna estado de ENUM a VARCHAR para permitir nuevos valores
-     */
-    @PostMapping("/citas/migrar-estado")
-    public ResponseEntity<Map<String, String>> migrarColumnaEstado() {
-        try (java.sql.Connection connection = dataSource.getConnection();
-                java.sql.Statement statement = connection.createStatement()) {
-
-            // Cambiar la columna de ENUM a VARCHAR(20)
-            String sql = "ALTER TABLE citas MODIFY COLUMN estado VARCHAR(20)";
-            statement.executeUpdate(sql);
-
-            logger.info("Migración de columna estado completada exitosamente");
-
-            Map<String, String> response = new HashMap<>();
-            response.put("mensaje", "Migración completada");
-            response.put("detalle", "Columna 'estado' cambiada a VARCHAR(20)");
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Error en migración de columna estado: {}", e.getMessage());
-
-            Map<String, String> response = new HashMap<>();
-            response.put("error", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+    @GetMapping("/citas/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas(@RequestParam("fecha") String fechaStr) {
+        return ResponseEntity.ok(horarioService.obtenerEstadisticasOcupacion(
+                DateTimeFormatUtils.parsearFechaCorta(fechaStr)));
     }
 
-    /**
-     * GET /api/horarios-configurados
-     * Obtener todos los horarios configurados del sistema
-     */
     @GetMapping("/horarios-configurados")
     public ResponseEntity<?> obtenerHorariosConfigurados() {
         try {
-            logger.debug("Obteniendo horarios configurados del sistema");
-            
-            // Usar un lunes como referencia para obtener horarios regulares
-            LocalDate fechaEjemplo = LocalDate.now();
-            while (fechaEjemplo.getDayOfWeek() == DayOfWeek.SATURDAY || 
-                   fechaEjemplo.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                fechaEjemplo = fechaEjemplo.plusDays(1);
+            LocalDate fecha = LocalDate.now();
+            while (fecha.getDayOfWeek() == DayOfWeek.SATURDAY || fecha.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                fecha = fecha.plusDays(1);
             }
-            
-            // Obtener horarios del servicio
-            List<LocalTime> horarios = horarioService.generarHorariosPorDia(fechaEjemplo);
-            
-            // Formatear a strings
-            List<String> horariosFormateados = horarios.stream()
+            List<String> horarios = horarioService.generarHorariosPorDia(fecha).stream()
                     .map(DateTimeFormatUtils::formatearHoraCorta)
                     .sorted()
                     .collect(Collectors.toList());
-            
-            logger.debug("Horarios configurados: {}", horariosFormateados);
-            return ResponseEntity.ok(horariosFormateados);
-            
+            return ResponseEntity.ok(horarios);
         } catch (Exception e) {
-            logger.error("Error obteniendo horarios configurados: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "error", "Error al obtener horarios configurados",
-                "message", e.getMessage()
-            ));
+            logger.error("Error horarios configurados: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
-    /**
-     * Método privado para enviar email de confirmación
-     */
+    // ─── MIGRACIONES (solo para uso puntual, no exponer en producción) ────────
+
+    @PostMapping("/citas/migrar-email")
+    public ResponseEntity<Map<String, String>> migrarColumnaEmail() {
+        try (java.sql.Connection conn = dataSource.getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE citas MODIFY COLUMN email VARCHAR(255) NULL");
+            return ResponseEntity.ok(Map.of("mensaje", "Migración completada",
+                    "detalle", "Columna 'email' ahora permite NULL"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/citas/migrar-estado")
+    public ResponseEntity<Map<String, String>> migrarColumnaEstado() {
+        try (java.sql.Connection conn = dataSource.getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE citas MODIFY COLUMN estado VARCHAR(20)");
+            return ResponseEntity.ok(Map.of("mensaje", "Migración completada",
+                    "detalle", "Columna 'estado' cambiada a VARCHAR(20)"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ─── HELPERS PRIVADOS ─────────────────────────────────────────────────────
+
     private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
         if (emailService != null && cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
             try {
                 emailService.enviarEmailConfirmacion(cita.getId());
-                logger.info("Email de confirmación enviado a: {}", cita.getEmail());
-            } catch (Exception emailError) {
-                // Log del error pero no afecta la creación de la cita
-                logger.warn("Error al enviar email de confirmación a {}: {}",
-                        cita.getEmail(), emailError.getMessage());
+            } catch (Exception e) {
+                logger.warn("Error email confirmación {}: {}", cita.getEmail(), e.getMessage());
             }
         }
+    }
+
+    private String obtenerIpReal(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+        return request.getRemoteAddr();
     }
 }

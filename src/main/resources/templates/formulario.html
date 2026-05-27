@@ -48,6 +48,23 @@
             <h2 class="card-title">Formulario de reserva</h2>
 
             <form th:action="@{/guardar-cita}" th:object="${cita}" method="post" novalidate>
+
+                <!-- ══ HONEYPOT — trampa para bots ══════════════════════════════
+                     Invisible para humanos (position absolute fuera de pantalla).
+                     Los bots rellenan todos los campos; si este llega con valor,
+                     CitaController lo detecta y descarta la petición silenciosamente.
+                     NO añadir label visible, placeholder ni autocomplete="on".       -->
+                <div style="position:absolute;left:-9999px;top:-9999px;width:0;height:0;overflow:hidden;"
+                     aria-hidden="true">
+                    <input type="text"
+                           name="website"
+                           value=""
+                           autocomplete="off"
+                           tabindex="-1"
+                           focusable="false">
+                </div>
+                <!-- ══ FIN HONEYPOT ══════════════════════════════════════════════ -->
+
                 <div class="form-group">
                     <label for="nombre">Nombre completo:</label>
                     <input type="text" id="nombre" th:field="*{nombre}"
@@ -149,7 +166,7 @@
                     </div>
                 </div>
 
-                <!-- Información de pago anticipado - Se muestra al seleccionar servicio -->
+                <!-- Información de pago anticipado -->
                 <div class="important-note note-info" id="paymentInfo" style="display: none;">
                     <h4>Información de Pago Anticipado</h4>
                     <p>Para confirmar su cita, es necesario realizar un pago anticipado del 50% del valor del servicio
@@ -242,18 +259,15 @@
             const loadingServices = document.getElementById('loadingServices');
             const turismoToggle = document.getElementById('turismoToggle');
 
-            // Variables para control de clasificación
             let currentVehicleCategory = null;
             let availableServicesData = null;
-            let fp = null; // Instancia de Flatpickr
-            let brandsModelsData = {}; // HashMap cargado desde la API
-            let fechasCerradasCargadas = new Set(); // Días cerrados del mes actual
+            let fp = null;
+            let brandsModelsData = {};
+            let fechasCerradasCargadas = new Set();
 
-            // Constantes para Tapicería
             const SERVICIO_TAPICERIA_SIN = 'TAPICERIA_SIN_DESMONTAR';
             const SERVICIO_TAPICERIA_CON = 'TAPICERIA_DESMONTANDO';
 
-            // Inicializar Flatpickr
             initFlatpickr();
 
             function initFlatpickr() {
@@ -274,7 +288,6 @@
                 });
             }
 
-            // ── Cargar marcas y modelos desde la API al inicio ──────────
             fetch('/api/vehicle/brands-models')
                 .then(response => response.json())
                 .then(data => {
@@ -287,10 +300,8 @@
                         marcaVehiculoSelect.appendChild(option);
                     });
 
-                    // Si el form ya tiene modelo (reenvío con errores), preseleccionar marca y modelo
                     const modeloActual = modeloVehiculoSelect.value;
                     if (modeloActual) {
-                        // Buscar qué marca tiene ese modelo (ahora los modelos son objetos {id, name})
                         for (const [brand, models] of Object.entries(data)) {
                             const found = models.find(m => String(m.id) === String(modeloActual));
                             if (found) {
@@ -303,7 +314,6 @@
                 })
                 .catch(err => console.error('Error cargando marcas:', err));
 
-            // ── Al cambiar la marca → rellenar modelos ──────────────────
             marcaVehiculoSelect.addEventListener('change', function () {
                 const brand = this.value;
                 resetVehicleClassification();
@@ -320,10 +330,9 @@
                 modeloVehiculoSelect.innerHTML = '<option value="">-- Selecciona un modelo --</option>';
                 models.forEach(model => {
                     const option = document.createElement('option');
-                    // Guardar el id como value (más fiable que el nombre para clasificar)
                     option.value = model.id;
                     option.textContent = model.name.charAt(0).toUpperCase() + model.name.slice(1);
-                    option.dataset.name = model.name; // Guardar nombre por si se necesita mostrar
+                    option.dataset.name = model.name;
                     modeloVehiculoSelect.appendChild(option);
                 });
                 modeloVehiculoSelect.disabled = false;
@@ -332,7 +341,6 @@
                 }
             }
 
-            // ── Al cambiar el modelo → clasificar vehículo ──────────────
             modeloVehiculoSelect.addEventListener('change', function () {
                 const vehicleModel = this.value;
                 if (!vehicleModel) {
@@ -342,7 +350,6 @@
                 classifyVehicle(vehicleModel);
             });
 
-            // Validación de email
             emailInput.addEventListener('input', function () {
                 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                 if (emailRegex.test(this.value)) {
@@ -354,7 +361,6 @@
                 }
             });
 
-            // Event listeners para el toggle de turismo
             document.querySelectorAll('input[name="turismoType"]').forEach(radio => {
                 radio.addEventListener('change', function () {
                     if ((currentVehicleCategory === 'turismo' || currentVehicleCategory === 'ranchera') && availableServicesData) {
@@ -371,34 +377,26 @@
                 fetch(`/api/vehicle/classify-by-id?id=${encodeURIComponent(modelId)}`)
                     .then(response => response.json())
                     .then(data => {
-                        console.log('Respuesta completa de la API:', data);
                         currentVehicleCategory = data.category;
                         availableServicesData = data.availableServices;
 
-                        // Mostrar información de la categoría
                         categoryName.textContent = data.categoryDescription;
                         vehicleCategoryInfo.classList.add('show');
 
-                        // Normalizar servicios (el enum Java puede llegar como objeto o como string)
                         const serviciosNormalizados = normalizeServices(data.availableServices);
 
-                        // Si es turismo, mostrar toggle
                         if (data.category === 'turismo' || data.category === 'ranchera') {
                             turismoToggle.style.display = 'block';
-
-                            // Si se detectó como ranchera, preseleccionar ranchera
                             if (data.category === 'ranchera') {
                                 document.querySelector('input[name="turismoType"][value="ranchera"]').checked = true;
                                 setTimeout(() => updateTurismoServices('ranchera'), 100);
-                                categoryName.textContent = 'Turismo'; // Mostrar como turismo en la UI
+                                categoryName.textContent = 'Turismo';
                             } else {
-                                // Resetear toggle a sedán por defecto
                                 document.querySelector('input[name="turismoType"][value="sedan"]').checked = true;
                                 setTimeout(() => updateTurismoServices('sedan'), 100);
                             }
                         } else {
                             turismoToggle.style.display = 'none';
-                            // Para otras categorías, actualizar servicios directamente
                             updateServiceSelect(serviciosNormalizados);
                         }
 
@@ -407,25 +405,16 @@
                     .catch(error => {
                         console.error('Error clasificando vehículo:', error);
                         loadingServices.style.display = 'none';
-                        // En caso de error, mostrar todos los servicios
                         showAllServices();
                     });
             }
 
-            /**
-             * Normaliza la lista de servicios del API.
-             * El enum TipoLavado puede llegar como string ("LAVADO_COMPLETO_TURISMO")
-             * o como objeto { name, descripcion, precio } según la configuración de Jackson.
-             * Devuelve siempre un array de objetos { key, label } para usar en updateServiceSelect.
-             */
             function normalizeServices(services) {
                 if (!services || !Array.isArray(services)) return [];
                 return services.map(service => {
                     if (typeof service === 'string') {
-                        // Caso string: el nombre del enum ES el valor
                         return { key: service, label: null, precio: null };
                     } else if (service && typeof service === 'object') {
-                        // Caso objeto: Jackson serializó el enum con sus propiedades
                         const key = service.name || service.key || String(service);
                         const label = service.descripcion || service.label || null;
                         const precio = service.precio || null;
@@ -437,8 +426,6 @@
 
             function updateTurismoServices(turismoType) {
                 if (!availableServicesData || availableServicesData.length === 0) return;
-
-                // Normalizar y filtrar según el tipo de turismo
                 const normalized = normalizeServices(availableServicesData);
                 let filtered = normalized.filter(s => {
                     const name = s.key.toUpperCase();
@@ -451,12 +438,10 @@
                             name.includes('TAPICERIA');
                     }
                 });
-
                 updateServiceSelect(filtered);
             }
 
             function updateServiceSelect(services) {
-                // Limpiar select
                 tipoLavadoSelect.innerHTML = '<option value="">-- Seleccione un servicio --</option>';
 
                 if (!services || services.length === 0) {
@@ -468,7 +453,6 @@
                     return;
                 }
 
-                // Mapa de fallback por si el objeto no trae descripcion/precio
                 const serviceDataFallback = {
                     'LAVADO_COMPLETO_TURISMO': 'Lavado Completo Turismo - 25€',
                     'LAVADO_INTERIOR_TURISMO': 'Lavado Interior Turismo - 17€',
@@ -494,7 +478,6 @@
                     'TAPICERIA_DESMONTANDO': 'Limpieza de tapicería desmontando asientos - 150€'
                 };
 
-                // Añadir opciones — acepta tanto strings como objetos { key, label, precio }
                 services.forEach(service => {
                     const option = document.createElement('option');
                     let key, label;
@@ -503,13 +486,11 @@
                         key = service;
                         label = serviceDataFallback[key] || key;
                     } else if (service && service.key) {
-                        // Objeto normalizado de normalizeServices()
                         key = service.key;
                         label = (service.label && service.precio)
                             ? `${service.label} - ${service.precio}€`
                             : (serviceDataFallback[key] || key);
                     } else if (service && service.descripcion) {
-                        // Objeto enum crudo de Jackson
                         key = service.name || String(service);
                         label = `${service.descripcion} - ${service.precio}€`;
                     } else {
@@ -524,11 +505,8 @@
             }
 
             function showAllServices() {
-                // Mostrar todos los servicios si hay error en la clasificación
                 const allOptions = tipoLavadoSelect.querySelectorAll('option[style*="display: none"]');
-                allOptions.forEach(option => {
-                    option.style.display = '';
-                });
+                allOptions.forEach(option => { option.style.display = ''; });
                 tipoLavadoSelect.innerHTML = '<option value="">-- Seleccione un servicio --</option>' +
                     Array.from(allOptions).map(opt => opt.outerHTML).join('');
             }
@@ -539,27 +517,17 @@
                 vehicleCategoryInfo.classList.remove('show');
                 turismoToggle.style.display = 'none';
                 loadingServices.style.display = 'none';
-
-                // Resetear selector de servicios
                 tipoLavadoSelect.innerHTML = '<option value="">-- Primero introduce el modelo del vehículo --</option>';
                 tipoLavadoSelect.value = '';
-
-                // Ocultar información de pago
                 const paymentInfo = document.getElementById('paymentInfo');
-                if (paymentInfo) {
-                    paymentInfo.style.display = 'none';
-                }
+                if (paymentInfo) paymentInfo.style.display = 'none';
             }
 
-            // Función para actualizar disponibilidad mensual en Flatpickr
             function actualizarDisponibilidadMensual(mes, anio) {
                 const tipoLavado = tipoLavadoSelect.value;
                 if (!tipoLavado) return;
 
-                // Nota: mes en JS es 0-11, API espera 1-12
                 const mesApi = mes + 1;
-
-                // Calcular primer y último día del mes para la consulta de días cerrados
                 const primerDiaMes = `${anio}-${String(mesApi).padStart(2, '0')}-01`;
                 const ultimoDia = new Date(anio, mesApi, 0).getDate();
                 const ultimoDiaMes = `${anio}-${String(mesApi).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
@@ -569,43 +537,32 @@
                         .then(response => response.json()),
                     fetch(`/api/dias-cerrados/fechas-cerradas?inicio=${primerDiaMes}&fin=${ultimoDiaMes}`)
                         .then(response => response.json())
-                        .catch(() => []) // Si el endpoint falla, no bloquear el calendario
+                        .catch(() => [])
                 ])
                     .then(([diasNoDisponibles, diasCerrados]) => {
-                        console.log("Días no disponibles:", diasNoDisponibles);
-                        console.log("Días cerrados:", diasCerrados);
-
                         fechasCerradasCargadas = new Set(diasCerrados);
                         const bloqueados = new Set([...diasNoDisponibles, ...diasCerrados]);
 
-                        // Actualizar Flatpickr con los días deshabilitados
                         if (fp) {
                             fp.set('disable', [
                                 function (date) {
-                                    // Deshabilitar domingos siempre
                                     if (date.getDay() === 0) return true;
-
-                                    // Convertir fecha a string YYYY-MM-DD local para comparar
-                                    // NO usar toISOString() porque convierte a UTC y puede cambiar el día
                                     const year = date.getFullYear();
                                     const month = String(date.getMonth() + 1).padStart(2, '0');
                                     const day = String(date.getDate()).padStart(2, '0');
-                                    const dateString = `${year}-${month}-${day}`;
-
-                                    return bloqueados.has(dateString);
+                                    return bloqueados.has(`${year}-${month}-${day}`);
                                 }
                             ]);
                         }
                     })
-                    .catch(error => console.error("Error obteniendo disponibilidad:", error));
+                    .catch(error => console.error("Error disponibilidad:", error));
             }
 
-            // Calcular y mostrar información de pago cuando se selecciona un servicio
             tipoLavadoSelect.addEventListener('change', function () {
                 const paymentInfo = document.getElementById('paymentInfo');
                 const paymentAmount = document.getElementById('paymentAmount');
+
                 function validarRestriccionesTapiceria() {
-                    // 1. Mostrar mensaje de advertencia info
                     let warningDiv = document.getElementById('tapiceriaWarning');
                     if (!warningDiv) {
                         warningDiv = document.createElement('div');
@@ -616,17 +573,14 @@
                         tipoLavadoSelect.parentNode.appendChild(warningDiv);
                     }
 
-                    // 2. Validar día de la semana si ya hay fecha
                     if (fechaInput.value) {
                         const date = new Date(fechaInput.value);
-                        const day = date.getDay(); // 0=Domingo, 1=Lunes, ..., 5=Viernes, 6=Sábado
-
-                        if (day === 0 || day === 5 || day === 6) { // Domingo, Viernes, Sábado
+                        const day = date.getDay();
+                        if (day === 0 || day === 5 || day === 6) {
                             alert('La limpieza de tapicería solo está disponible de Lunes a Jueves.');
                             fechaInput.value = '';
                             horaSelect.innerHTML = '<option value="">-- Seleccione una hora --</option>';
                         } else {
-                            // Forzar recarga de horarios para filtrar
                             fechaInput.dispatchEvent(new Event('change'));
                         }
                     }
@@ -634,53 +588,36 @@
 
                 const selectedService = this.value;
 
-                // Validación de reglas para Tapicería y actualización de calendario
                 if (selectedService) {
-                    // Actualizar calendario con restricciones
                     const now = new Date();
                     actualizarDisponibilidadMensual(now.getMonth(), now.getFullYear());
-
-                    // Limpiar fecha seleccionada ya que podría no ser válida
                     fp.clear();
                     horaSelect.innerHTML = '<option value="">-- Seleccione una hora --</option>';
 
-                    // Mostrar info de pago
                     const selectedOption = this.options[this.selectedIndex];
-                    const text = selectedOption.textContent;
-                    const priceMatch = text.match(/(\d+)€/);
-
+                    const priceMatch = selectedOption.textContent.match(/(\d+)€/);
                     if (priceMatch) {
                         const precio = parseFloat(priceMatch[1]);
-                        const cincuentaPorciento = (precio / 2).toFixed(2);
-                        paymentAmount.textContent = cincuentaPorciento + '€';
+                        paymentAmount.textContent = (precio / 2).toFixed(2) + '€';
                         paymentInfo.style.display = 'block';
                     }
 
-                    // Si es servicio de tapicería, aplicar restricciones
                     if (selectedService === SERVICIO_TAPICERIA_SIN || selectedService === SERVICIO_TAPICERIA_CON) {
                         validarRestriccionesTapiceria();
                     } else {
-                        // Ocultar advertencia si no es tapicería
                         const warningDiv = document.getElementById('tapiceriaWarning');
-                        if (warningDiv) {
-                            warningDiv.remove();
-                        }
+                        if (warningDiv) warningDiv.remove();
                     }
-
                 } else {
                     paymentInfo.style.display = 'none';
-                    // Ocultar advertencia si no hay servicio seleccionado
                     const warningDiv = document.getElementById('tapiceriaWarning');
-                    if (warningDiv) {
-                        warningDiv.remove();
-                    }
+                    if (warningDiv) warningDiv.remove();
                 }
             });
 
             function cargarHorarios(dateStr) {
                 if (!dateStr) return;
 
-                // Si el día está marcado como cerrado, no ofrecer horas
                 if (fechasCerradasCargadas.has(dateStr)) {
                     horaSelect.innerHTML = '';
                     const opt = document.createElement('option');
@@ -698,41 +635,31 @@
                 fetch(`/horarios-disponibles?fecha=${dateStr}`)
                     .then(response => response.json())
                     .then(horarios => {
-                        // Limpiar opciones actuales
                         horaSelect.innerHTML = '<option value="">-- Seleccione una hora --</option>';
 
-                        // Filtrar horarios si es tapicería
                         let horariosMostrar = horarios;
                         if (isTapiceria) {
-                            // Buscar si existe 08, 09 y 10.
                             const has08 = horarios.some(h => h.startsWith('08:00'));
                             const has09 = horarios.some(h => h.startsWith('09:00'));
                             const has10 = horarios.some(h => h.startsWith('10:00'));
-
-                            if (has08 && has09 && has10) {
-                                horariosMostrar = horarios.filter(h => h.startsWith('08:00'));
-                            } else {
-                                horariosMostrar = []; // No disponible el bloque de 3h
-                            }
+                            horariosMostrar = (has08 && has09 && has10)
+                                ? horarios.filter(h => h.startsWith('08:00'))
+                                : [];
                         }
 
-                        // Agregar nuevas opciones
                         horariosMostrar.forEach(hora => {
                             const option = document.createElement('option');
                             option.value = hora;
-                            option.textContent = hora.substring(0, 5); // Mostrar solo HH:MM
+                            option.textContent = hora.substring(0, 5);
                             horaSelect.appendChild(option);
                         });
 
-                        // Si no hay horarios disponibles, mostrar mensaje
                         if (horariosMostrar.length === 0) {
                             const option = document.createElement('option');
                             option.value = "";
-                            if (isTapiceria && horarios.length > 0) {
-                                option.textContent = "No hay hueco de 3 horas a las 08:00 disponible";
-                            } else {
-                                option.textContent = "No hay horarios disponibles para esta fecha";
-                            }
+                            option.textContent = (isTapiceria && horarios.length > 0)
+                                ? "No hay hueco de 3 horas a las 08:00 disponible"
+                                : "No hay horarios disponibles para esta fecha";
                             option.disabled = true;
                             horaSelect.appendChild(option);
                         }
@@ -740,16 +667,13 @@
                     .catch(error => console.error('Error al cargar horarios:', error));
             }
 
-            // Si hay una fecha seleccionada al cargar la página, cargar horarios
             if (fechaInput.value) {
-                // Iniciar Flatpickr con fecha preseleccionada
                 fp.setDate(fechaInput.value);
                 cargarHorarios(fechaInput.value);
             }
 
-            // Si hay un modelo de vehículo ya seleccionado al cargar la página (reenvío), clasificar
             if (modeloVehiculoSelect.value && modeloVehiculoSelect.value.trim() !== '') {
-                classifyVehicle(modeloVehiculoSelect.value.trim()); // Ahora es el id
+                classifyVehicle(modeloVehiculoSelect.value.trim());
             }
         });
     </script>

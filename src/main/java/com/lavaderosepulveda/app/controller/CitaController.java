@@ -5,10 +5,13 @@ import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.model.VehicleModel;
 import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
 import com.lavaderosepulveda.app.repository.VehicleModelRepository;
+import com.lavaderosepulveda.app.security.CitaRateLimiter;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
 import com.lavaderosepulveda.app.service.HorarioService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,56 +21,33 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
-import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.DayOfWeek;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Controlador refactorizado para la interfaz web PÚBLICA de citas
- * SOLO contiene endpoints públicos - Los endpoints /admin/* están en
- * AdminController
- * Usa los nuevos services y utilities para eliminar duplicación
- */
 @Controller
 public class CitaController {
 
     private static final Logger logger = LoggerFactory.getLogger(CitaController.class);
 
-    @Autowired
-    private CitaService citaService;
+    @Autowired private CitaService citaService;
+    @Autowired private HorarioService horarioService;
+    @Autowired private EmailService emailService;
+    @Autowired private VehicleModelRepository modelRepository;
+    @Autowired private DiaCerradoRepository diasCerradoRepository;
+    @Autowired private CitaRateLimiter citaRateLimiter;   // ← NUEVO
 
-    @Autowired
-    private HorarioService horarioService;
+    // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────
 
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private VehicleModelRepository modelRepository;
-
-    @Autowired
-    private DiaCerradoRepository diasCerradoRepository;
-
-    /**
-     * Página principal
-     */
     @GetMapping("/")
     public String index() {
         return "index";
     }
 
-    /**
-     * Mostrar formulario para crear una cita
-     */
+    // ─── FORMULARIO DE NUEVA CITA ─────────────────────────────────────────────
+
     @GetMapping("/nueva-cita")
     public String mostrarFormulario(Model model) {
         model.addAttribute("cita", new Cita());
@@ -75,40 +55,71 @@ public class CitaController {
         return "formulario";
     }
 
-    /**
-     * Procesar el formulario para crear una cita - Refactorizado
-     */
-    @PostMapping("/guardar-cita")
-    public String guardarCita(@Valid @ModelAttribute Cita cita,
-            BindingResult bindingResult,
-            Model model,
-            RedirectAttributes redirectAttributes) {
+    // ─── GUARDAR CITA ─────────────────────────────────────────────────────────
 
+    @PostMapping("/guardar-cita")
+    public String guardarCita(
+            @Valid @ModelAttribute Cita cita,
+            BindingResult bindingResult,
+            // Campo honeypot — los bots lo rellenan, los humanos no lo ven
+            @RequestParam(value = "website", required = false) String honeypot,
+            Model model,
+            RedirectAttributes redirectAttributes,
+            HttpServletRequest httpRequest) {
+
+        // ① Honeypot — bot detectado si el campo oculto viene relleno
+        if (honeypot != null && !honeypot.isBlank()) {
+            logger.warn("BOT detectado (honeypot) desde IP: {}", obtenerIpReal(httpRequest));
+            // Respuesta silenciosa — el bot cree que ha tenido éxito
+            return "redirect:/confirmacion";
+        }
+
+        // ② Rate limiting por IP
+        String ip = obtenerIpReal(httpRequest);
+        if (!citaRateLimiter.intentoPermitido(ip)) {
+            long espera = citaRateLimiter.segundosHastaReset(ip);
+            long minutos = Math.max(1, espera / 60);
+            logger.warn("Rate limit superado para IP: {}", ip);
+            model.addAttribute("error",
+                    "Demasiadas solicitudes. Por favor, espera " + minutos + " minuto(s) antes de intentarlo de nuevo.");
+            model.addAttribute("tiposLavado", TipoLavado.values());
+            return "formulario";
+        }
+
+        // ③ Validaciones de Bean Validation
         if (bindingResult.hasErrors()) {
             model.addAttribute("tiposLavado", TipoLavado.values());
             return "formulario";
         }
 
+        // ④ Validación de rango de fecha (no en el pasado, máximo 60 días)
+        LocalDate hoy = LocalDate.now();
+        if (cita.getFecha().isBefore(hoy)) {
+            model.addAttribute("error", "No puedes reservar en una fecha pasada.");
+            model.addAttribute("tiposLavado", TipoLavado.values());
+            return "formulario";
+        }
+        if (cita.getFecha().isAfter(hoy.plusDays(60))) {
+            model.addAttribute("error", "Solo puedes reservar con un máximo de 60 días de antelación.");
+            model.addAttribute("tiposLavado", TipoLavado.values());
+            return "formulario";
+        }
+
         try {
-            // Validaciones adicionales usando HorarioService
             if (!horarioService.esHorarioDisponible(cita.getFecha(), cita.getHora())) {
-                model.addAttribute("error", "El horario seleccionado no está disponible");
+                model.addAttribute("error", "El horario seleccionado no está disponible.");
                 model.addAttribute("tiposLavado", TipoLavado.values());
                 return "formulario";
             }
 
-            // Resolver ID numérico del modelo de vehículo al nombre real
             resolverModeloVehiculo(cita);
             logger.info("GUARDANDO cita para cliente: {} (email: {})", cita.getNombre(), cita.getEmail());
             Cita citaGuardada = citaService.crearCita(cita);
             logger.info("OK: Cita creada exitosamente: ID {}, Cliente: {}",
                     citaGuardada.getId(), citaGuardada.getNombre());
 
-            // Enviar email si el servicio está disponible (redundante pero como respaldo)
-            logger.info("PROCESANDO envio de email desde controlador como respaldo...");
             enviarEmailConfirmacionSiEsPosible(citaGuardada);
 
-            // Preparar mensajes para la vista usando DateTimeFormatUtils
             String fechaFormateada = DateTimeFormatUtils.formatearFechaCompleta(citaGuardada.getFecha());
             String horaFormateada = DateTimeFormatUtils.formatearHoraCorta(citaGuardada.getHora());
 
@@ -125,52 +136,34 @@ public class CitaController {
         }
     }
 
-    /**
-     * Página de confirmación
-     */
+    // ─── CONFIRMACIÓN ─────────────────────────────────────────────────────────
+
     @GetMapping("/confirmacion")
     public String confirmacion() {
         return "confirmacion";
     }
 
-    /**
-     * Endpoint AJAX para obtener horarios disponibles - Simplificado
-     * Usa HorarioService en lugar de lógica duplicada
-     */
+    // ─── HORARIOS DISPONIBLES (AJAX) ──────────────────────────────────────────
+
     @GetMapping("/horarios-disponibles")
     @ResponseBody
     public List<String> obtenerHorariosDisponibles(
             @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-
         try {
-            // Si el día está marcado como cerrado, devolver lista vacía directamente
             if (diasCerradoRepository.existsByFecha(fecha)) {
-                logger.info("Horarios solicitados para día cerrado {}: devolviendo lista vacía", fecha);
                 return List.of();
             }
-
-            // Usar servicio especializado en horarios
-            List<LocalTime> horariosDisponibles = horarioService.obtenerHorariosDisponibles(fecha);
-
-            // Convertir a strings usando utility centralizada
-            List<String> horariosFormateados = horariosDisponibles.stream()
+            return horarioService.obtenerHorariosDisponibles(fecha).stream()
                     .map(DateTimeFormatUtils::formatearHoraCorta)
                     .collect(Collectors.toList());
-
-            logger.debug("Horarios disponibles para {}: {}", fecha, horariosFormateados);
-            return horariosFormateados;
-
         } catch (Exception e) {
             logger.error("Error obteniendo horarios disponibles para {}: {}", fecha, e.getMessage());
-            return List.of(); // Retornar lista vacía en caso de error
+            return List.of();
         }
     }
 
-    /**
-     * API PÚBLICA para obtener todos los modelos (usado por JavaScript en el
-     * formulario)
-     * Este endpoint es público y no causa conflicto
-     */
+    // ─── MODELOS (API PÚBLICA) ────────────────────────────────────────────────
+
     @GetMapping("/api/modelos")
     @ResponseBody
     public List<VehicleModel> obtenerTodosLosModelos() {
@@ -179,77 +172,39 @@ public class CitaController {
                     .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Error obteniendo modelos para API: {}", e.getMessage(), e);
+            logger.error("Error obteniendo modelos: {}", e.getMessage(), e);
             return List.of();
         }
     }
 
-    /**
-     * Método privado para envío de email - Centralizado
-     */
+    // ─── DIAGNÓSTICO EMAIL — ELIMINADO DEL CONTROLADOR PÚBLICO ───────────────
+    // Era accesible sin autenticación y exponía estado interno del servidor.
+    // Si necesitas diagnóstico, accede desde AdminController con autenticación.
+
+    // ─── HELPERS PRIVADOS ─────────────────────────────────────────────────────
+
     private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
-        logger.info("VERIFICANDO disponibilidad de EmailService...");
-
         if (emailService == null) {
-            logger.error("ERROR: EmailService es NULL en CitaController - Verificar inyección");
+            logger.error("EmailService es NULL");
             return;
         }
-
         if (!emailService.isServicioDisponible()) {
-            logger.error("ERROR: Servicio de email NO DISPONIBLE. Estado: {}",
-                    emailService.obtenerEstadoConfiguracion());
+            logger.error("Servicio de email NO DISPONIBLE: {}", emailService.obtenerEstadoConfiguracion());
             return;
         }
-
-        logger.info("OK: EmailService disponible. Procesando envío...");
-
         try {
             if (cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
-                logger.info("ENVIANDO email a: {}", cita.getEmail());
                 emailService.enviarEmailConfirmacion(cita.getId());
-                logger.info("OK: Email de confirmación enviado a: {}", cita.getEmail());
-            } else {
-                logger.error("ERROR: Email vacío/nulo para cita ID {}: '{}'", cita.getId(), cita.getEmail());
+                logger.info("Email enviado a: {}", cita.getEmail());
             }
         } catch (Exception e) {
-            // Error en email no debe afectar la creación de la cita
-            logger.error("ERROR al enviar email para cita ID {}: {} | Causa: {} | Estado: {}",
-                    cita.getId(), e.getMessage(), e.getCause(), emailService.obtenerEstadoConfiguracion(), e);
+            logger.error("Error al enviar email para cita ID {}: {}", cita.getId(), e.getMessage(), e);
         }
     }
 
-    /**
-     * Endpoint de diagnóstico para verificar estado de email
-     * Accede en: http://localhost:8080/diagnostico-email
-     */
-    @GetMapping("/diagnostico-email")
-    @ResponseBody
-    public Map<String, String> diagnosticoEmail() {
-        Map<String, String> diagnostico = new java.util.LinkedHashMap<>();
-
-        if (emailService != null) {
-            diagnostico.put("estado", "EmailService inyectado correctamente");
-            diagnostico.put("disponible", String.valueOf(emailService.isServicioDisponible()));
-            diagnostico.put("configuracion", emailService.obtenerEstadoConfiguracion());
-        } else {
-            diagnostico.put("estado", "ERROR: EmailService no inyectado");
-            diagnostico.put("disponible", "false");
-            diagnostico.put("configuracion", "No disponible");
-        }
-
-        logger.info("Diagnóstico de email solicitado: {}", diagnostico);
-        return diagnostico;
-    }
-
-    /**
-     * El select del formulario envía el id numérico de VehicleModel como value.
-     * Este método lo resuelve al nombre real antes de persistir la cita.
-     * Si el valor ya es texto (ej: reenvío del form con errores) lo deja intacto.
-     */
     private void resolverModeloVehiculo(Cita cita) {
         String valor = cita.getModeloVehiculo();
-        if (valor == null || valor.isBlank())
-            return;
+        if (valor == null || valor.isBlank()) return;
         try {
             Long id = Long.parseLong(valor);
             modelRepository.findById(id)
@@ -257,5 +212,11 @@ public class CitaController {
         } catch (NumberFormatException e) {
             // Ya venía como texto — no tocar
         }
+    }
+
+    private String obtenerIpReal(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+        return request.getRemoteAddr();
     }
 }
