@@ -1,23 +1,25 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Aumentar el límite de warning de chunk size a 1 MB
-    chunkSizeWarningLimit: 1024,
-    // Configurar rollup para mejor code splitting
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        // Separar vendors para mejor caching
         manualChunks: {
-          'vendor': [
+          // React core — se cachea bien, cambia poco
+          'vendor-react': [
             'react',
             'react-dom',
             'react-router-dom'
           ],
-          'api': [
+          // Librerías pesadas separadas — solo cargan cuando se necesitan
+          'vendor-charts': ['recharts'],
+          'vendor-pdf':    ['jspdf'],
+          'vendor-excel':  ['xlsx'],
+          // Tus servicios — separados del bundle de componentes
+          'services': [
             './src/services/api.js',
             './src/services/facturaService.js',
             './src/services/citaService.js',
