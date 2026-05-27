@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Table(name = "usuarios")
 @Data
 public class Usuario {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,8 +19,7 @@ public class Usuario {
     @Column(nullable = false)
     private String password; // BCrypt
 
-    @Column(name = "token_activo", length = 64)
-    private String tokenActivo; // null cuando no hay sesión activa
+    // tokenActivo eliminado — con JWT real la validez es criptográfica, sin estado en BD
 
     @Column(nullable = false)
     private String nombreCompleto = "Administrador";

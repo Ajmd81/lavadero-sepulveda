@@ -9,12 +9,13 @@ const api = axios.create({
   },
 });
 
-// ─── REQUEST: adjuntar token ──────────────────────────────────────────────────
+// ─── REQUEST: adjuntar JWT ────────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      config.headers.Authorization = token; // el token ya incluye el prefijo "Bearer-token-..."
+      // JWT estándar: "Bearer <token>"
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -28,7 +29,8 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const url = error.config?.url ?? '';
 
-    // 401 en cualquier endpoint salvo el propio login (evita bucle de redirección)
+    // Redirigir al login si el JWT expiró o es inválido,
+    // pero nunca en el propio endpoint de login (evita bucle)
     if (status === 401 && !url.includes('/auth/login')) {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
@@ -43,18 +45,17 @@ export default api;
 
 
 // ─── authService ──────────────────────────────────────────────────────────────
-// Centralizado aquí para que api.js y services/index.js no dupliquen lógica.
 
 export const authService = {
   login: (credentials) => api.post('/auth/login', credentials),
 
-  // Llama al backend para invalidar el token en BD
+  // Con JWT stateless el logout real es eliminar el token en cliente.
+  // Llamamos igualmente al backend para tener un punto de cierre limpio.
   logout: () => api.post('/auth/logout'),
 
-  // Verifica el token activo contra el backend (expiración + existencia en BD)
+  // Verifica el JWT contra el backend (firma + expiración + usuario activo en BD)
   verify: () => api.get('/auth/verify'),
 
-  // Solo limpia el storage local — úsalo cuando el backend no está disponible
   limpiarStorage: () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
