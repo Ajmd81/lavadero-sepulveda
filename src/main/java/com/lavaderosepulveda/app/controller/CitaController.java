@@ -7,7 +7,6 @@ import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
 import com.lavaderosepulveda.app.repository.VehicleModelRepository;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
 import com.lavaderosepulveda.app.service.CitaService;
-import com.lavaderosepulveda.app.service.EmailService;
 import com.lavaderosepulveda.app.service.HorarioService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,10 +32,9 @@ public class CitaController {
 
     @Autowired private CitaService citaService;
     @Autowired private HorarioService horarioService;
-    @Autowired private EmailService emailService;
     @Autowired private VehicleModelRepository modelRepository;
     @Autowired private DiaCerradoRepository diasCerradoRepository;
-    @Autowired private CitaRateLimiter citaRateLimiter;   // ← NUEVO
+    @Autowired private CitaRateLimiter citaRateLimiter;
 
     // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────
 
@@ -61,16 +58,14 @@ public class CitaController {
     public String guardarCita(
             @Valid @ModelAttribute Cita cita,
             BindingResult bindingResult,
-            // Campo honeypot — los bots lo rellenan, los humanos no lo ven
             @RequestParam(value = "website", required = false) String honeypot,
             Model model,
             RedirectAttributes redirectAttributes,
             HttpServletRequest httpRequest) {
 
-        // ① Honeypot — bot detectado si el campo oculto viene relleno
+        // ① Honeypot
         if (honeypot != null && !honeypot.isBlank()) {
             logger.warn("BOT detectado (honeypot) desde IP: {}", obtenerIpReal(httpRequest));
-            // Respuesta silenciosa — el bot cree que ha tenido éxito
             return "redirect:/confirmacion";
         }
 
@@ -86,13 +81,13 @@ public class CitaController {
             return "formulario";
         }
 
-        // ③ Validaciones de Bean Validation
+        // ③ Bean Validation
         if (bindingResult.hasErrors()) {
             model.addAttribute("tiposLavado", TipoLavado.values());
             return "formulario";
         }
 
-        // ④ Validación de rango de fecha (no en el pasado, máximo 60 días)
+        // ④ Rango de fecha
         LocalDate hoy = LocalDate.now();
         if (cita.getFecha().isBefore(hoy)) {
             model.addAttribute("error", "No puedes reservar en una fecha pasada.");
@@ -114,14 +109,14 @@ public class CitaController {
 
             resolverModeloVehiculo(cita);
             logger.info("GUARDANDO cita para cliente: {} (email: {})", cita.getNombre(), cita.getEmail());
+
+            // crearCita() ya gestiona el envío de email de forma asíncrona internamente
             Cita citaGuardada = citaService.crearCita(cita);
             logger.info("OK: Cita creada exitosamente: ID {}, Cliente: {}",
                     citaGuardada.getId(), citaGuardada.getNombre());
 
-            enviarEmailConfirmacionSiEsPosible(citaGuardada);
-
             String fechaFormateada = DateTimeFormatUtils.formatearFechaCompleta(citaGuardada.getFecha());
-            String horaFormateada = DateTimeFormatUtils.formatearHoraCorta(citaGuardada.getHora());
+            String horaFormateada  = DateTimeFormatUtils.formatearHoraCorta(citaGuardada.getHora());
 
             redirectAttributes.addFlashAttribute("mensaje",
                     "¡Cita reservada con éxito para el " + fechaFormateada + " a las " + horaFormateada + "!");
@@ -177,30 +172,7 @@ public class CitaController {
         }
     }
 
-    // ─── DIAGNÓSTICO EMAIL — ELIMINADO DEL CONTROLADOR PÚBLICO ───────────────
-    // Era accesible sin autenticación y exponía estado interno del servidor.
-    // Si necesitas diagnóstico, accede desde AdminController con autenticación.
-
     // ─── HELPERS PRIVADOS ─────────────────────────────────────────────────────
-
-    private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
-        if (emailService == null) {
-            logger.error("EmailService es NULL");
-            return;
-        }
-        if (!emailService.isServicioDisponible()) {
-            logger.error("Servicio de email NO DISPONIBLE: {}", emailService.obtenerEstadoConfiguracion());
-            return;
-        }
-        try {
-            if (cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {
-                emailService.enviarEmailConfirmacion(cita.getId());
-                logger.info("Email enviado a: {}", cita.getEmail());
-            }
-        } catch (Exception e) {
-            logger.error("Error al enviar email para cita ID {}: {}", cita.getId(), e.getMessage(), e);
-        }
-    }
 
     private void resolverModeloVehiculo(Cita cita) {
         String valor = cita.getModeloVehiculo();
