@@ -12,10 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chatbot")
-@CrossOrigin(origins = {
-        "https://lavadero-sepulveda-production.up.railway.app",
-        "http://localhost:8080"
-})
+
 public class ChatbotController {
 
     private final ChatbotService chatbotService;
