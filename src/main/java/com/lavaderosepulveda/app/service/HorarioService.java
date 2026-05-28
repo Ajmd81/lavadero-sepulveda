@@ -31,7 +31,6 @@ public class HorarioService {
 
     public List<LocalTime> obtenerHorariosDisponibles(LocalDate fecha) {
         if (fecha == null) throw new IllegalArgumentException("La fecha no puede ser nula");
-
         if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY) return Collections.emptyList();
 
         List<LocalTime> todosLosHorarios = generarHorariosPorDia(fecha);
@@ -63,29 +62,46 @@ public class HorarioService {
     private List<LocalTime> generarHorariosSabado() {
         List<LocalTime> horarios = new ArrayList<>();
         HorariosConfig.Turno sabado = horariosConfig.getSabado();
-        for (int h = sabado.getInicio(); h < sabado.getFin(); h++)
-            if (!sabado.isHoraExcluida(h)) horarios.add(LocalTime.of(h, 0));
+        for (int h = sabado.getInicio(); h < sabado.getFin(); h++) {
+            if (!sabado.isHoraExcluida(h) && h != 13) { // ← 13:00 eliminado permanentemente
+                horarios.add(LocalTime.of(h, 0));
+            }
+        }
         return horarios;
     }
 
-    // ─── HORARIOS OCUPADOS (por fecha individual) ─────────────────────────────
+    // ─── HORARIOS OCUPADOS ────────────────────────────────────────────────────
 
     private Set<LocalTime> obtenerHorariosOcupados(LocalDate fecha) {
         return construirHorariosOcupados(citaRepository.findByFecha(fecha));
     }
 
     /**
-     * Construye el set de horas ocupadas a partir de una lista de citas ya cargada.
-     * Reutilizable tanto para consultas individuales como para el batch mensual.
+     * Construye el set de horas ocupadas a partir de una lista de citas.
+     * Tiene en cuenta duracionEstimada para bloquear slots adicionales:
+     *   - 60 min (defecto) → bloquea 1 hora
+     *   - 120 min          → bloquea 2 horas consecutivas
+     *   - tapicería        → bloquea 3 horas (lógica existente)
      */
     private Set<LocalTime> construirHorariosOcupados(List<Cita> citas) {
         Set<LocalTime> ocupados = new HashSet<>();
         for (Cita cita : citas) {
-            ocupados.add(cita.getHora());
+            LocalTime hora = cita.getHora();
+            ocupados.add(hora);
+
             TipoLavado tipo = cita.getTipoLavado();
+
+            // Tapicería — bloquea 3 horas (comportamiento existente sin cambios)
             if (tipo == TipoLavado.TAPICERIA_SIN_DESMONTAR || tipo == TipoLavado.TAPICERIA_DESMONTANDO) {
-                ocupados.add(cita.getHora().plusHours(1));
-                ocupados.add(cita.getHora().plusHours(2));
+                ocupados.add(hora.plusHours(1));
+                ocupados.add(hora.plusHours(2));
+                continue;
+            }
+
+            // Cita de 2 horas — bloquea la hora siguiente
+            Integer duracion = cita.getDuracionEstimada();
+            if (duracion != null && duracion >= 120) {
+                ocupados.add(hora.plusHours(1));
             }
         }
         return ocupados;
@@ -100,6 +116,20 @@ public class HorarioService {
         return !citaRepository.existsByFechaAndHora(fecha, hora);
     }
 
+    /**
+     * Verifica si hay disponibilidad para una cita de duración específica.
+     * Para citas de 2 horas comprueba que el slot siguiente también esté libre.
+     */
+    public boolean esHorarioDisponibleParaDuracion(LocalDate fecha, LocalTime hora, int duracionMinutos) {
+        if (!esHorarioDisponible(fecha, hora)) return false;
+        if (duracionMinutos >= 120) {
+            LocalTime horaSiguiente = hora.plusHours(1);
+            if (!generarHorariosPorDia(fecha).contains(horaSiguiente)) return false;
+            return !citaRepository.existsByFechaAndHora(fecha, horaSiguiente);
+        }
+        return true;
+    }
+
     public Optional<LocalTime> siguienteHorarioDisponible(LocalDate fecha, LocalTime horaActual) {
         return obtenerHorariosDisponibles(fecha).stream()
                 .filter(h -> h.isAfter(horaActual))
@@ -108,28 +138,19 @@ public class HorarioService {
 
     // ─── DISPONIBILIDAD MENSUAL (OPTIMIZADA) ─────────────────────────────────
 
-    /**
-     * Versión optimizada: carga TODAS las citas del mes en UNA sola query
-     * en lugar de una query por cada día. Antes hacía 31+ queries; ahora hace 1.
-     */
     public List<String> obtenerDiasNoDisponibles(YearMonth mes, TipoLavado tipoServicio) {
         List<String> diasNoDisponibles = new ArrayList<>();
         LocalDate fechaInicio = mes.atDay(1);
         LocalDate fechaFin    = mes.atEndOfMonth();
 
-        // Días pasados del mes actual → ya no disponibles
         LocalDate hoy = LocalDate.now();
         if (mes.equals(YearMonth.now()) && hoy.isAfter(fechaInicio)) {
-            for (LocalDate d = fechaInicio; d.isBefore(hoy); d = d.plusDays(1)) {
+            for (LocalDate d = fechaInicio; d.isBefore(hoy); d = d.plusDays(1))
                 diasNoDisponibles.add(d.toString());
-            }
             fechaInicio = hoy;
         }
 
-        // ── UNA SOLA QUERY para todo el mes ──────────────────────────────────
         List<Cita> citasDelMes = citaRepository.findCitasBetweenDates(fechaInicio, fechaFin);
-
-        // Agrupar por fecha en un Map para acceso O(1)
         Map<LocalDate, List<Cita>> citasPorFecha = citasDelMes.stream()
                 .collect(Collectors.groupingBy(Cita::getFecha));
 
@@ -137,20 +158,16 @@ public class HorarioService {
                 || tipoServicio == TipoLavado.TAPICERIA_DESMONTANDO);
 
         for (LocalDate fecha = fechaInicio; !fecha.isAfter(fechaFin); fecha = fecha.plusDays(1)) {
-            // Domingo → cerrado siempre
             if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY) {
                 diasNoDisponibles.add(fecha.toString());
                 continue;
             }
-
-            // Tapicería solo L-J
             if (esTapiceria && (fecha.getDayOfWeek() == DayOfWeek.FRIDAY
                     || fecha.getDayOfWeek() == DayOfWeek.SATURDAY)) {
                 diasNoDisponibles.add(fecha.toString());
                 continue;
             }
 
-            // Verificar disponibilidad usando las citas ya cargadas (sin nueva query)
             List<Cita> citasDia = citasPorFecha.getOrDefault(fecha, Collections.emptyList());
             Set<LocalTime> ocupados = construirHorariosOcupados(citasDia);
 
@@ -162,9 +179,6 @@ public class HorarioService {
         return diasNoDisponibles;
     }
 
-    /**
-     * Versión sin BD — trabaja con el set de ocupados ya cargado en memoria.
-     */
     private boolean hayHorarioDisponibleEnMemoria(LocalDate fecha, TipoLavado tipoServicio,
                                                    Set<LocalTime> horariosOcupados) {
         List<LocalTime> todosLosHorarios = generarHorariosPorDia(fecha);
@@ -188,9 +202,8 @@ public class HorarioService {
     // ─── ESTADÍSTICAS Y CONFIGURACIÓN ────────────────────────────────────────
 
     public Map<String, Object> obtenerEstadisticasOcupacion(LocalDate fecha) {
-        List<LocalTime> todos   = generarHorariosPorDia(fecha);
+        List<LocalTime> todos    = generarHorariosPorDia(fecha);
         Set<LocalTime>  ocupados = obtenerHorariosOcupados(fecha);
-
         int total = todos.size();
         double pct = total > 0 ? (double) ocupados.size() / total * 100 : 0.0;
 
@@ -209,13 +222,13 @@ public class HorarioService {
         HorariosConfig.Turno sabado = horariosConfig.getSabado();
 
         Map<String, Object> config = new HashMap<>();
-        config.put("horaAperturaMañana",  manana.getInicio());
-        config.put("horaCierreMañana",    manana.getFin());
-        config.put("horaAperturaTarde",   tarde.getInicio());
-        config.put("horaCierreTarde",     tarde.getFin());
-        config.put("horaAperturaSabado",  sabado.getInicio());
-        config.put("horaCierreSabado",    sabado.getFin());
-        config.put("intervaloMinutos",    horariosConfig.getIntervaloMinutos());
+        config.put("horaAperturaMañana",   manana.getInicio());
+        config.put("horaCierreMañana",     manana.getFin());
+        config.put("horaAperturaTarde",    tarde.getInicio());
+        config.put("horaCierreTarde",      tarde.getFin());
+        config.put("horaAperturaSabado",   sabado.getInicio());
+        config.put("horaCierreSabado",     sabado.getFin());
+        config.put("intervaloMinutos",     horariosConfig.getIntervaloMinutos());
         config.put("horasExcluidasMañana", manana.getExcluir());
         config.put("horasExcluidasTarde",  tarde.getExcluir());
         return config;

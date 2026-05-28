@@ -24,7 +24,6 @@ public class CitaDTO {
              message = "El nombre solo puede contener letras, espacios, guiones y puntos")
     private String nombre;
 
-    // Email opcional en API — solo validado si viene relleno
     @Email(message = "Formato de email no válido")
     @Size(max = 150, message = "El email no puede superar 150 caracteres")
     private String email;
@@ -47,11 +46,19 @@ public class CitaDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate fecha;
 
-    // Deserializador flexible: acepta "HH:mm" y "HH:mm:ss"
     @NotNull(message = "La hora es obligatoria")
     @JsonDeserialize(using = FlexibleLocalTimeDeserializer.class)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime hora;
+
+    /**
+     * Duración en minutos. Por defecto 60.
+     * Solo el CRM puede enviar 120 para reservar 2 horas consecutivas.
+     * Los clientes públicos siempre usan 60 (el @PrePersist de Cita lo garantiza).
+     */
+    @Min(value = 60, message = "La duración mínima es 60 minutos")
+    @Max(value = 180, message = "La duración máxima es 180 minutos")
+    private Integer duracionEstimada = 60;
 
     private String estado = "PENDIENTE";
     private Boolean pagoAdelantado = false;
@@ -69,15 +76,11 @@ public class CitaDTO {
     // ─── Deserializador flexible para LocalTime ───────────────────────────────
 
     public static class FlexibleLocalTimeDeserializer extends StdDeserializer<LocalTime> {
-
-        public FlexibleLocalTimeDeserializer() {
-            super(LocalTime.class);
-        }
+        public FlexibleLocalTimeDeserializer() { super(LocalTime.class); }
 
         @Override
         public LocalTime deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
             String value = p.getText().trim();
-            // Intentar HH:mm primero, luego HH:mm:ss
             try {
                 return LocalTime.parse(value, DateTimeFormatter.ofPattern("HH:mm"));
             } catch (DateTimeParseException e1) {
@@ -106,6 +109,7 @@ public class CitaDTO {
         this.hora = hora;
         this.estado = "PENDIENTE";
         this.pagoAdelantado = false;
+        this.duracionEstimada = 60;
     }
 
     // ─── Getters y Setters ────────────────────────────────────────────────────
@@ -134,6 +138,9 @@ public class CitaDTO {
     public LocalTime getHora() { return hora; }
     public void setHora(LocalTime hora) { this.hora = hora; }
 
+    public Integer getDuracionEstimada() { return duracionEstimada; }
+    public void setDuracionEstimada(Integer duracionEstimada) { this.duracionEstimada = duracionEstimada; }
+
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
@@ -153,6 +160,6 @@ public class CitaDTO {
     public String toString() {
         return "CitaDTO{nombre='" + nombre + "', email='" + email + "', telefono='" + telefono +
                "', modeloVehiculo='" + modeloVehiculo + "', tipoLavado=" + tipoLavado +
-               ", fecha=" + fecha + ", hora=" + hora + ", estado='" + estado + "'}";
+               ", fecha=" + fecha + ", hora=" + hora + ", duracion=" + duracionEstimada + "}";
     }
 }

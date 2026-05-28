@@ -26,22 +26,15 @@ public class CitaService {
 
     private static final Logger log = LoggerFactory.getLogger(CitaService.class);
 
-    @Autowired
-    private CitaRepository citaRepository;
-
-    @Autowired
-    private HorarioService horarioService;
-
-    @Autowired
-    private DiaCerradoRepository diasCerradoRepository;
+    @Autowired private CitaRepository citaRepository;
+    @Autowired private HorarioService horarioService;
+    @Autowired private DiaCerradoRepository diasCerradoRepository;
 
     @Autowired(required = false)
     private EmailService emailService;
 
     public Cita crearCita(Cita cita) {
-        if (cita == null) {
-            throw new IllegalArgumentException("La cita no puede ser nula");
-        }
+        if (cita == null) throw new IllegalArgumentException("La cita no puede ser nula");
 
         validarDiaCerrado(cita.getFecha());
         validarDisponibilidadHorario(cita);
@@ -49,18 +42,14 @@ public class CitaService {
 
         Cita citaGuardada = citaRepository.save(cita);
 
-        // Enviar email de confirmación de forma asincrónica si tiene email válido
         if (emailService != null) {
             log.info("VERIFICANDO EmailService disponible. Email de cita: {}", citaGuardada.getEmail());
             if (citaGuardada.getEmail() != null && !citaGuardada.getEmail().isBlank()) {
                 log.info("ENVIANDO email de confirmación para cita {}", citaGuardada.getId());
-                // El email se envía de forma asincrónica - pasar solo el ID para evitar
-                // problemas de Hibernate
                 emailService.enviarEmailConfirmacion(citaGuardada.getId())
                         .thenRun(() -> {
                             marcarConfirmacionEnviada(citaGuardada.getId());
-                            log.info("OK: Email de confirmacion enviado exitosamente para cita {}",
-                                    citaGuardada.getId());
+                            log.info("OK: Email de confirmacion enviado exitosamente para cita {}", citaGuardada.getId());
                         })
                         .exceptionally(throwable -> {
                             log.error("ERROR: Fallo al enviar email para cita {}: {}",
@@ -68,42 +57,29 @@ public class CitaService {
                             return null;
                         });
             } else {
-                log.warn("AVISO: Email vacio para cita {}: '{}'",
-                        citaGuardada.getId(), citaGuardada.getEmail());
+                log.warn("AVISO: Email vacio para cita {}: '{}'", citaGuardada.getId(), citaGuardada.getEmail());
             }
         } else {
-            log.error("ERROR: EmailService es NULL - no se enviaran emails. Verificar inyeccion de dependencias");
+            log.error("ERROR: EmailService es NULL");
         }
 
         return citaGuardada;
     }
 
-    /**
-     * Obtener todas las citas ordenadas por fecha y hora
-     */
     public List<Cita> obtenerTodasLasCitas() {
         return citaRepository.findAll().stream()
                 .sorted(Comparator.comparing(Cita::getFecha).reversed().thenComparing(Cita::getHora).reversed())
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Obtener cita por ID
-     */
     public Optional<Cita> obtenerCitaPorId(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("El ID no puede ser nulo");
-        }
+        if (id == null) throw new IllegalArgumentException("El ID no puede ser nulo");
         return citaRepository.findById(id);
     }
 
-    /**
-     * Actualizar cita existente con validaciones
-     */
     public Cita actualizarCita(Long id, Cita citaActualizada) {
-        if (id == null || citaActualizada == null) {
+        if (id == null || citaActualizada == null)
             throw new IllegalArgumentException("El ID y la cita no pueden ser nulos");
-        }
 
         return citaRepository.findById(id)
                 .map(citaExistente -> {
@@ -112,6 +88,11 @@ public class CitaService {
                     citaExistente.setTelefono(citaActualizada.getTelefono());
                     citaExistente.setModeloVehiculo(citaActualizada.getModeloVehiculo());
                     citaExistente.setTipoLavado(citaActualizada.getTipoLavado());
+
+                    // Actualizar duración si se especifica
+                    if (citaActualizada.getDuracionEstimada() != null) {
+                        citaExistente.setDuracionEstimada(citaActualizada.getDuracionEstimada());
+                    }
 
                     boolean cambioFechaHora = !citaExistente.getFecha().equals(citaActualizada.getFecha()) ||
                             !citaExistente.getHora().equals(citaActualizada.getHora());
@@ -136,135 +117,79 @@ public class CitaService {
         }
     }
 
-    /**
-     * Eliminar cita por ID
-     */
     public void eliminarCita(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("El ID no puede ser nulo");
-        }
-        if (!citaRepository.existsById(id)) {
+        if (id == null) throw new IllegalArgumentException("El ID no puede ser nulo");
+        if (!citaRepository.existsById(id))
             throw new RuntimeException("No se encontró la cita con ID: " + id);
-        }
         citaRepository.deleteById(id);
     }
 
-    /**
-     * Obtener citas por fecha
-     */
     public List<Cita> obtenerCitasPorFecha(LocalDate fecha) {
-        if (fecha == null) {
-            throw new IllegalArgumentException("La fecha no puede ser nula");
-        }
+        if (fecha == null) throw new IllegalArgumentException("La fecha no puede ser nula");
         return citaRepository.findByFecha(fecha).stream()
                 .sorted(Comparator.comparing(Cita::getHora))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Obtener citas de un cliente por teléfono
-     */
     public List<Cita> obtenerCitasPorTelefono(String telefono) {
-        if (telefono == null || telefono.trim().isEmpty()) {
+        if (telefono == null || telefono.trim().isEmpty())
             throw new IllegalArgumentException("El teléfono no puede estar vacío");
-        }
         return citaRepository.findByTelefono(telefono.trim()).stream()
                 .sorted(Comparator.comparing(Cita::getFecha).reversed().thenComparing(Cita::getHora).reversed())
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Obtener citas agrupadas por fecha formateada para la vista
-     */
     public Map<String, List<Cita>> obtenerCitasAgrupadasPorFechaFormateada() {
         List<Cita> todasLasCitas = obtenerTodasLasCitas();
-
         Map<LocalDate, List<Cita>> citasPorFecha = todasLasCitas.stream()
                 .collect(Collectors.groupingBy(
                         Cita::getFecha,
                         () -> new TreeMap<>(Collections.reverseOrder()),
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                lista -> {
-                                    lista.sort(Comparator.comparing(Cita::getHora));
-                                    return lista;
-                                })));
+                        Collectors.collectingAndThen(Collectors.toList(), lista -> {
+                            lista.sort(Comparator.comparing(Cita::getHora));
+                            return lista;
+                        })));
 
         Map<String, List<Cita>> citasFormateadas = new LinkedHashMap<>();
-        citasPorFecha.forEach((fecha, citas) -> {
-            String fechaFormateada = DateTimeFormatUtils.formatearFechaCompleta(fecha);
-            citasFormateadas.put(fechaFormateada, citas);
-        });
-
+        citasPorFecha.forEach((fecha, citas) ->
+                citasFormateadas.put(DateTimeFormatUtils.formatearFechaCompleta(fecha), citas));
         return citasFormateadas;
     }
 
-    /**
-     * Obtener horarios disponibles para una fecha
-     */
     public List<LocalTime> obtenerHorariosDisponibles(LocalDate fecha) {
         return horarioService.obtenerHorariosDisponibles(fecha);
     }
 
-    /**
-     * Verificar si existe una cita en fecha y hora específica
-     */
     public boolean existeCitaEnFechaHora(LocalDate fecha, LocalTime hora) {
-        if (fecha == null || hora == null) {
-            return false;
-        }
+        if (fecha == null || hora == null) return false;
         return citaRepository.existsByFechaAndHora(fecha, hora);
     }
 
-    /**
-     * Obtener citas para un rango de fechas
-     */
     public List<Cita> obtenerCitasEnRango(LocalDate fechaInicio, LocalDate fechaFin) {
-        if (fechaInicio == null || fechaFin == null) {
+        if (fechaInicio == null || fechaFin == null)
             throw new IllegalArgumentException("Las fechas de inicio y fin no pueden ser nulas");
-        }
-        if (fechaInicio.isAfter(fechaFin)) {
+        if (fechaInicio.isAfter(fechaFin))
             throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha fin");
-        }
         return citaRepository.findCitasBetweenDates(fechaInicio, fechaFin);
     }
 
-    /**
-     * Obtener próximas citas
-     */
     public List<Cita> obtenerProximasCitas(int dias) {
         LocalDate hoy = LocalDate.now();
-        LocalDate fechaLimite = hoy.plusDays(dias);
-        return obtenerCitasEnRango(hoy, fechaLimite);
+        return obtenerCitasEnRango(hoy, hoy.plusDays(dias));
     }
 
-    // ========================================
-    // MÉTODOS ADICIONALES PARA CRM
-    // ========================================
-
     public List<Cita> obtenerCitasPorEstado(EstadoCita estado) {
-        if (estado == null) {
-            throw new IllegalArgumentException("El estado no puede ser nulo");
-        }
+        if (estado == null) throw new IllegalArgumentException("El estado no puede ser nulo");
         return citaRepository.findByEstadoOrderByFechaDescHoraDesc(estado);
     }
 
-    public List<Cita> obtenerCitasPendientes() {
-        return citaRepository.findCitasPendientes();
-    }
-
-    public List<Cita> obtenerCitasCompletadasSinFacturar() {
-        return citaRepository.findCitasCompletadasSinFacturar();
-    }
-
-    public List<Cita> obtenerCitasDeHoy() {
-        return citaRepository.findCitasDeHoy(LocalDate.now());
-    }
+    public List<Cita> obtenerCitasPendientes() { return citaRepository.findCitasPendientes(); }
+    public List<Cita> obtenerCitasCompletadasSinFacturar() { return citaRepository.findCitasCompletadasSinFacturar(); }
+    public List<Cita> obtenerCitasDeHoy() { return citaRepository.findCitasDeHoy(LocalDate.now()); }
+    public List<Cita> obtenerCitasEnProceso() { return citaRepository.findCitasEnProceso(); }
 
     public List<Cita> obtenerCitasPorClienteId(Long clienteId) {
-        if (clienteId == null) {
-            throw new IllegalArgumentException("El ID del cliente no puede ser nulo");
-        }
+        if (clienteId == null) throw new IllegalArgumentException("El ID del cliente no puede ser nulo");
         return citaRepository.findByClienteIdOrderByFechaDescHoraDesc(clienteId);
     }
 
@@ -272,26 +197,19 @@ public class CitaService {
         return citaRepository.findAll(pageable);
     }
 
-    /**
-     * Cambiar estado de una cita
-     */
     @Transactional
     public Cita cambiarEstado(Long id, EstadoCita nuevoEstado) {
-        if (id == null || nuevoEstado == null) {
+        if (id == null || nuevoEstado == null)
             throw new IllegalArgumentException("El ID y el estado no pueden ser nulos");
-        }
 
         return citaRepository.findById(id)
                 .map(cita -> {
                     EstadoCita estadoAnterior = cita.getEstado();
                     cita.setEstado(nuevoEstado);
-
                     LocalTime ahora = LocalTime.now();
                     switch (nuevoEstado) {
                         case EN_PROCESO:
-                            if (cita.getHoraLlegada() == null) {
-                                cita.setHoraLlegada(ahora);
-                            }
+                            if (cita.getHoraLlegada() == null) cita.setHoraLlegada(ahora);
                             cita.setHoraInicio(ahora);
                             break;
                         case COMPLETADA:
@@ -300,71 +218,48 @@ public class CitaService {
                         default:
                             break;
                     }
-
                     log.info("Cita {} cambió de estado: {} -> {}", id, estadoAnterior, nuevoEstado);
                     return citaRepository.save(cita);
                 })
                 .orElseThrow(() -> new RuntimeException("Cita no encontrada con ID: " + id));
     }
 
-    /**
-     * Cancelar una cita
-     * ✅ CORREGIDO: ahora envía email de cancelación
-     */
     @Transactional
     public Cita cancelarCita(Long id, String motivo) {
-        if (id == null) {
-            throw new IllegalArgumentException("El ID no puede ser nulo");
-        }
+        if (id == null) throw new IllegalArgumentException("El ID no puede ser nulo");
 
         return citaRepository.findById(id)
                 .map(cita -> {
-                    if (cita.getEstado() == EstadoCita.COMPLETADA) {
+                    if (cita.getEstado() == EstadoCita.COMPLETADA)
                         throw new RuntimeException("No se puede cancelar una cita ya completada");
-                    }
 
                     cita.setEstado(EstadoCita.CANCELADA);
                     if (motivo != null && !motivo.trim().isEmpty()) {
-                        String observacionesActuales = cita.getObservaciones() != null ? cita.getObservaciones() : "";
-                        cita.setObservaciones(observacionesActuales + "\n[CANCELACIÓN] " + motivo);
+                        String obs = cita.getObservaciones() != null ? cita.getObservaciones() : "";
+                        cita.setObservaciones(obs + "\n[CANCELACIÓN] " + motivo);
                     }
 
                     Cita citaCancelada = citaRepository.save(cita);
                     log.info("Cita {} cancelada. Motivo: {}", id, motivo);
 
-                    // Enviar email de cancelación si tiene email válido
-                    if (emailService != null
-                            && citaCancelada.getEmail() != null
+                    if (emailService != null && citaCancelada.getEmail() != null
                             && !citaCancelada.getEmail().isBlank()) {
                         try {
                             emailService.enviarEmailCancelacion(citaCancelada, motivo);
                             log.info("Email de cancelación enviado para cita {}", id);
                         } catch (Exception e) {
-                            log.warn("No se pudo enviar el email de cancelación para cita {}: {}",
-                                    id, e.getMessage());
+                            log.warn("No se pudo enviar email de cancelación para cita {}: {}", id, e.getMessage());
                         }
                     }
-
                     return citaCancelada;
                 })
                 .orElseThrow(() -> new RuntimeException("Cita no encontrada con ID: " + id));
     }
 
-    public Cita marcarNoPresentado(Long id) {
-        return cambiarEstado(id, EstadoCita.NO_PRESENTADO);
-    }
-
-    public Cita confirmarCita(Long id) {
-        return cambiarEstado(id, EstadoCita.CONFIRMADA);
-    }
-
-    public Cita iniciarServicio(Long id) {
-        return cambiarEstado(id, EstadoCita.EN_PROCESO);
-    }
-
-    public Cita completarCita(Long id) {
-        return cambiarEstado(id, EstadoCita.COMPLETADA);
-    }
+    public Cita marcarNoPresentado(Long id) { return cambiarEstado(id, EstadoCita.NO_PRESENTADO); }
+    public Cita confirmarCita(Long id) { return cambiarEstado(id, EstadoCita.CONFIRMADA); }
+    public Cita iniciarServicio(Long id) { return cambiarEstado(id, EstadoCita.EN_PROCESO); }
+    public Cita completarCita(Long id) { return cambiarEstado(id, EstadoCita.COMPLETADA); }
 
     @Transactional
     public Cita marcarComoFacturada(Long citaId, Long facturaId) {
@@ -389,18 +284,8 @@ public class CitaService {
                 .orElseThrow(() -> new RuntimeException("Cita no encontrada con ID: " + id));
     }
 
-    // ========================================
-    // MÉTODOS DE CONTEO PARA DASHBOARD
-    // ========================================
-
-    public long contarCitasHoy() {
-        return citaRepository.countByFecha(LocalDate.now());
-    }
-
-    public long contarCitasPorEstado(EstadoCita estado) {
-        return citaRepository.countByEstado(estado);
-    }
-
+    public long contarCitasHoy() { return citaRepository.countByFecha(LocalDate.now()); }
+    public long contarCitasPorEstado(EstadoCita estado) { return citaRepository.countByEstado(estado); }
     public long contarCitasHoyPorEstado(EstadoCita estado) {
         return citaRepository.countByEstadoAndFecha(estado, LocalDate.now());
     }
@@ -408,19 +293,18 @@ public class CitaService {
     public Map<String, Object> obtenerResumenCitasHoy() {
         LocalDate hoy = LocalDate.now();
         Map<String, Object> resumen = new HashMap<>();
-        resumen.put("total", citaRepository.countByFecha(hoy));
-        resumen.put("pendientes", citaRepository.countByEstadoAndFecha(EstadoCita.PENDIENTE, hoy));
-        resumen.put("confirmadas", citaRepository.countByEstadoAndFecha(EstadoCita.CONFIRMADA, hoy));
-        resumen.put("enProceso", citaRepository.countByEstadoAndFecha(EstadoCita.EN_PROCESO, hoy));
-        resumen.put("completadas", citaRepository.countByEstadoAndFecha(EstadoCita.COMPLETADA, hoy));
-        resumen.put("canceladas", citaRepository.countByEstadoAndFecha(EstadoCita.CANCELADA, hoy));
-        resumen.put("noPresentados", citaRepository.countByEstadoAndFecha(EstadoCita.NO_PRESENTADO, hoy));
+        resumen.put("total",        citaRepository.countByFecha(hoy));
+        resumen.put("pendientes",   citaRepository.countByEstadoAndFecha(EstadoCita.PENDIENTE, hoy));
+        resumen.put("confirmadas",  citaRepository.countByEstadoAndFecha(EstadoCita.CONFIRMADA, hoy));
+        resumen.put("enProceso",    citaRepository.countByEstadoAndFecha(EstadoCita.EN_PROCESO, hoy));
+        resumen.put("completadas",  citaRepository.countByEstadoAndFecha(EstadoCita.COMPLETADA, hoy));
+        resumen.put("canceladas",   citaRepository.countByEstadoAndFecha(EstadoCita.CANCELADA, hoy));
+        resumen.put("noPresentados",citaRepository.countByEstadoAndFecha(EstadoCita.NO_PRESENTADO, hoy));
         return resumen;
     }
 
     public List<Cita> obtenerCitasParaRecordatorio() {
-        LocalDate manana = LocalDate.now().plusDays(1);
-        return citaRepository.findCitasParaRecordatorio(manana);
+        return citaRepository.findCitasParaRecordatorio(LocalDate.now().plusDays(1));
     }
 
     @Transactional
@@ -445,24 +329,16 @@ public class CitaService {
         return citaRepository.findCitasByMes(anio, mes);
     }
 
-    public List<Cita> obtenerCitasEnProceso() {
-        return citaRepository.findCitasEnProceso();
-    }
-
-    // ==================== MÉTODOS DE ESTADÍSTICAS ====================
+    // ── Estadísticas ──────────────────────────────────────────────────────────
 
     public List<ClienteEstadisticaDTO> obtenerTop10ClientesUltimoAnio() {
         LocalDate fechaHaceUnAnio = LocalDate.now().minusYears(1);
-
         List<Object[]> resultados = citaRepository.findTop10ClientesRaw(fechaHaceUnAnio);
 
         List<ClienteEstadisticaDTO> clientes = resultados.stream()
                 .map(row -> new ClienteEstadisticaDTO(
-                        (String) row[0],
-                        (String) row[1],
-                        (String) row[2],
-                        ((Number) row[3]).longValue(),
-                        ((Number) row[4]).doubleValue()))
+                        (String) row[0], (String) row[1], (String) row[2],
+                        ((Number) row[3]).longValue(), ((Number) row[4]).doubleValue()))
                 .collect(Collectors.toList());
 
         clientes.forEach(cliente -> {
@@ -471,7 +347,6 @@ public class CitaService {
             cliente.setServicioMasFrecuente(
                     servicioMasFrecuente != null ? formatearNombreServicio(servicioMasFrecuente) : "Variado");
         });
-
         return clientes;
     }
 
@@ -490,85 +365,83 @@ public class CitaService {
                 servicioMasPopular != null ? formatearNombreServicio(servicioMasPopular) : "N/A");
 
         if (clientesUnicos != null && clientesUnicos > 0) {
-            double promedioReservas = (double) reservasCompletadas / clientesUnicos;
-            estadisticas.put("promedioReservasPorCliente", String.format("%.1f", promedioReservas));
+            estadisticas.put("promedioReservasPorCliente",
+                    String.format("%.1f", (double) reservasCompletadas / clientesUnicos));
         } else {
             estadisticas.put("promedioReservasPorCliente", "0.0");
         }
-
         return estadisticas;
     }
 
     private String formatearNombreServicio(String tipoLavado) {
-        if (tipoLavado == null)
-            return "N/A";
+        if (tipoLavado == null) return "N/A";
         try {
-            TipoLavado tipo = TipoLavado.valueOf(tipoLavado);
-            return tipo.getDescripcion();
+            return TipoLavado.valueOf(tipoLavado).getDescripcion();
         } catch (IllegalArgumentException e) {
             return switch (tipoLavado) {
-                case "LAVADO_COMPLETO_TURISMO" -> "Lavado Completo Turismo";
-                case "LAVADO_INTERIOR_TURISMO" -> "Lavado Interior Turismo";
-                case "LAVADO_EXTERIOR_TURISMO" -> "Lavado Exterior Turismo";
-                case "LAVADO_COMPLETO_RANCHERA" -> "Lavado Completo Turismo Ranchera";
-                case "LAVADO_INTERIOR_RANCHERA" -> "Lavado Interior Turismo Ranchera";
-                case "LAVADO_EXTERIOR_RANCHERA" -> "Lavado Exterior Turismo Ranchera";
-                case "LAVADO_COMPLETO_MONOVOLUMEN" -> "Lavado Completo Monovolumen/Todoterreno Pequeño";
-                case "LAVADO_INTERIOR_MONOVOLUMEN" -> "Lavado Interior Monovolumen/Todoterreno Pequeño";
-                case "LAVADO_EXTERIOR_MONOVOLUMEN" -> "Lavado Exterior Monovolumen/Todoterreno Pequeño";
-                case "LAVADO_COMPLETO_TODOTERRENO" -> "Lavado Completo Todoterreno Grande";
-                case "LAVADO_INTERIOR_TODOTERRENO" -> "Lavado Interior Todoterreno Grande";
-                case "LAVADO_EXTERIOR_TODOTERRENO" -> "Lavado Exterior Todoterreno Grande";
-                case "LAVADO_COMPLETO_FURGONETA_PEQUEÑA" -> "Lavado Completo Furgoneta Pequeña";
-                case "LAVADO_INTERIOR_FURGONETA_PEQUEÑA" -> "Lavado Interior Furgoneta Pequeña";
-                case "LAVADO_EXTERIOR_FURGONETA_PEQUEÑA" -> "Lavado Exterior Furgoneta Pequeña";
-                case "LAVADO_COMPLETO_FURGONETA_GRANDE" -> "Lavado Completo Furgoneta Grande";
-                case "LAVADO_INTERIOR_FURGONETA_GRANDE" -> "Lavado Interior Furgoneta Grande";
-                case "LAVADO_EXTERIOR_FURGONETA_GRANDE" -> "Lavado Exterior Furgoneta Grande";
-                case "TRATAMIENTO_OZONO" -> "Tratamiento de Ozono";
-                case "ENCERADO" -> "Encerado de Vehículo a Mano";
-                case "TAPICERIA_SIN_DESMONTAR" -> "Limpieza de tapicería sin desmontar asientos";
-                case "TAPICERIA_DESMONTANDO" -> "Limpieza de tapicería desmontando asientos";
+                case "LAVADO_COMPLETO_TURISMO"        -> "Lavado Completo Turismo";
+                case "LAVADO_INTERIOR_TURISMO"        -> "Lavado Interior Turismo";
+                case "LAVADO_EXTERIOR_TURISMO"        -> "Lavado Exterior Turismo";
+                case "LAVADO_COMPLETO_RANCHERA"       -> "Lavado Completo Turismo Ranchera";
+                case "LAVADO_INTERIOR_RANCHERA"       -> "Lavado Interior Turismo Ranchera";
+                case "LAVADO_EXTERIOR_RANCHERA"       -> "Lavado Exterior Turismo Ranchera";
+                case "LAVADO_COMPLETO_MONOVOLUMEN"    -> "Lavado Completo Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_INTERIOR_MONOVOLUMEN"    -> "Lavado Interior Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_EXTERIOR_MONOVOLUMEN"    -> "Lavado Exterior Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_COMPLETO_TODOTERRENO"    -> "Lavado Completo Todoterreno Grande";
+                case "LAVADO_INTERIOR_TODOTERRENO"    -> "Lavado Interior Todoterreno Grande";
+                case "LAVADO_EXTERIOR_TODOTERRENO"    -> "Lavado Exterior Todoterreno Grande";
+                case "LAVADO_COMPLETO_FURGONETA_PEQUEÑA"  -> "Lavado Completo Furgoneta Pequeña";
+                case "LAVADO_INTERIOR_FURGONETA_PEQUEÑA"  -> "Lavado Interior Furgoneta Pequeña";
+                case "LAVADO_EXTERIOR_FURGONETA_PEQUEÑA"  -> "Lavado Exterior Furgoneta Pequeña";
+                case "LAVADO_COMPLETO_FURGONETA_GRANDE"   -> "Lavado Completo Furgoneta Grande";
+                case "LAVADO_INTERIOR_FURGONETA_GRANDE"   -> "Lavado Interior Furgoneta Grande";
+                case "LAVADO_EXTERIOR_FURGONETA_GRANDE"   -> "Lavado Exterior Furgoneta Grande";
+                case "TRATAMIENTO_OZONO"              -> "Tratamiento de Ozono";
+                case "ENCERADO"                       -> "Encerado de Vehículo a Mano";
+                case "TAPICERIA_SIN_DESMONTAR"        -> "Limpieza de tapicería sin desmontar asientos";
+                case "TAPICERIA_DESMONTANDO"          -> "Limpieza de tapicería desmontando asientos";
                 default -> tipoLavado.replace("_", " ");
             };
         }
     }
 
-    // ==================== VALIDACIONES PRIVADAS ====================
+    // ── Validaciones privadas ─────────────────────────────────────────────────
 
     private void validarDisponibilidadHorario(Cita cita) {
-        LocalDate fecha = cita.getFecha();
-        LocalTime hora = cita.getHora();
-        TipoLavado tipo = cita.getTipoLavado();
+        LocalDate fecha    = cita.getFecha();
+        LocalTime hora     = cita.getHora();
+        TipoLavado tipo    = cita.getTipoLavado();
+        Integer duracion   = cita.getDuracionEstimada();
 
+        // Tapicería — reglas específicas sin cambios
         if (tipo == TipoLavado.TAPICERIA_SIN_DESMONTAR || tipo == TipoLavado.TAPICERIA_DESMONTANDO) {
             DayOfWeek dia = fecha.getDayOfWeek();
-            if (dia == DayOfWeek.FRIDAY || dia == DayOfWeek.SATURDAY || dia == DayOfWeek.SUNDAY) {
-                throw new RuntimeException(
-                        "Las citas de Limpieza de Tapicería solo están disponibles de Lunes a Jueves.");
-            }
-            if (!hora.equals(LocalTime.of(8, 0))) {
-                throw new RuntimeException(
-                        "Las citas de Limpieza de Tapicería solo se pueden reservar a las 08:00 (duración de 3 horas).");
-            }
-            if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(1))) {
-                throw new RuntimeException(
-                        "No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 09:00 está ocupado.");
-            }
-            if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(2))) {
-                throw new RuntimeException(
-                        "No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 10:00 está ocupado.");
-            }
+            if (dia == DayOfWeek.FRIDAY || dia == DayOfWeek.SATURDAY || dia == DayOfWeek.SUNDAY)
+                throw new RuntimeException("Las citas de Limpieza de Tapicería solo están disponibles de Lunes a Jueves.");
+            if (!hora.equals(LocalTime.of(8, 0)))
+                throw new RuntimeException("Las citas de Limpieza de Tapicería solo se pueden reservar a las 08:00 (duración de 3 horas).");
+            if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(1)))
+                throw new RuntimeException("No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 09:00 está ocupado.");
+            if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(2)))
+                throw new RuntimeException("No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 10:00 está ocupado.");
         }
 
-        if (!horarioService.esHorarioDisponible(fecha, hora)) {
+        // Validar slot principal
+        if (!horarioService.esHorarioDisponible(fecha, hora))
             throw new RuntimeException("El horario seleccionado no está disponible. Por favor, elija otro horario.");
+
+        // Cita de 2 horas — validar que el slot siguiente también esté libre
+        if (duracion != null && duracion >= 120) {
+            if (!horarioService.esHorarioDisponibleParaDuracion(fecha, hora, duracion))
+                throw new RuntimeException(
+                        "No hay disponibilidad para 2 horas consecutivas. El horario de las " +
+                        hora.plusHours(1) + " está ocupado.");
         }
     }
 
     private void validarFechaFutura(LocalDate fecha) {
-        if (fecha.isBefore(LocalDate.now())) {
+        if (fecha.isBefore(LocalDate.now()))
             throw new RuntimeException("No se pueden crear citas en fechas pasadas");
-        }
     }
 }
