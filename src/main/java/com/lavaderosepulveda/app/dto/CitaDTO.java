@@ -10,6 +10,9 @@ import java.time.LocalTime;
 /**
  * DTO completo para transferencia de datos de Cita.
  * Incluye validaciones defensivas contra bots y entradas maliciosas.
+ *
+ * NOTA sobre email: obligatorio en el formulario Thymeleaf (validado por Bean Validation
+ * en CitaController), pero opcional en la API REST (app móvil y CRM pueden no enviarlo).
  */
 public class CitaDTO {
 
@@ -24,8 +27,7 @@ public class CitaDTO {
     )
     private String nombre;
 
-    // ─── EMAIL ────────────────────────────────────────────────────────────────
-    @NotBlank(message = "El email es obligatorio")
+    // ─── EMAIL — opcional en API, validado solo si viene relleno ──────────────
     @Email(message = "Formato de email no válido")
     @Size(max = 150, message = "El email no puede superar 150 caracteres")
     private String email;
@@ -52,17 +54,18 @@ public class CitaDTO {
     private TipoLavado tipoLavado;
 
     // ─── FECHA ────────────────────────────────────────────────────────────────
+    // shape = STRING necesario para que Jackson deserialice "2026-06-05" correctamente
     @NotNull(message = "La fecha es obligatoria")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Future(message = "La fecha debe ser futura")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate fecha;
 
     // ─── HORA ─────────────────────────────────────────────────────────────────
+    // Acepta tanto "HH:mm" como "HH:mm:ss" — Jackson es flexible con LocalTime
     @NotNull(message = "La hora es obligatoria")
-    @JsonFormat(pattern = "HH:mm")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
     private LocalTime hora;
 
-    // ─── CAMPOS OPCIONALES (sin restricciones estrictas pero sí de longitud) ──
+    // ─── CAMPOS OPCIONALES ────────────────────────────────────────────────────
 
     private String estado = "PENDIENTE";
 
