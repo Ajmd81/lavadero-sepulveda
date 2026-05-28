@@ -17,7 +17,7 @@ public class VehicleModel {
     @Column(nullable = true)
     private String brand;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
     private VehicleCategory category;
 
