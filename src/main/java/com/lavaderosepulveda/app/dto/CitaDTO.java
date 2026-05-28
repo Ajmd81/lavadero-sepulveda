@@ -1,92 +1,99 @@
 package com.lavaderosepulveda.app.dto;
 
-import com.lavaderosepulveda.app.model.enums.TipoLavado;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import jakarta.validation.constraints.*;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
-/**
- * DTO completo para transferencia de datos de Cita.
- * Incluye validaciones defensivas contra bots y entradas maliciosas.
- *
- * NOTA sobre email: obligatorio en el formulario Thymeleaf (validado por Bean Validation
- * en CitaController), pero opcional en la API REST (app móvil y CRM pueden no enviarlo).
- */
 public class CitaDTO {
 
     private Long id;
 
-    // ─── NOMBRE ───────────────────────────────────────────────────────────────
     @NotBlank(message = "El nombre es obligatorio")
     @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
-    @Pattern(
-        regexp = "^[\\p{L}\\s'\\-\\.]+$",
-        message = "El nombre solo puede contener letras, espacios, guiones y puntos"
-    )
+    @Pattern(regexp = "^[\\p{L}\\s'\\-\\.]+$",
+             message = "El nombre solo puede contener letras, espacios, guiones y puntos")
     private String nombre;
 
-    // ─── EMAIL — opcional en API, validado solo si viene relleno ──────────────
+    // Email opcional en API — solo validado si viene relleno
     @Email(message = "Formato de email no válido")
     @Size(max = 150, message = "El email no puede superar 150 caracteres")
     private String email;
 
-    // ─── TELÉFONO ─────────────────────────────────────────────────────────────
     @NotBlank(message = "El teléfono es obligatorio")
-    @Pattern(
-        regexp = "^[6789]\\d{8}$",
-        message = "El teléfono debe ser un número español válido (9 dígitos empezando por 6, 7, 8 o 9)"
-    )
+    @Pattern(regexp = "^[6789]\\d{8}$",
+             message = "El teléfono debe ser un número español válido (9 dígitos empezando por 6, 7, 8 o 9)")
     private String telefono;
 
-    // ─── MODELO VEHÍCULO ──────────────────────────────────────────────────────
     @NotBlank(message = "El modelo del vehículo es obligatorio")
     @Size(max = 100, message = "El modelo no puede superar 100 caracteres")
-    @Pattern(
-        regexp = "^[\\p{L}\\p{N}\\s\\-\\.]+$",
-        message = "El modelo del vehículo contiene caracteres no permitidos"
-    )
+    @Pattern(regexp = "^[\\p{L}\\p{N}\\s\\-\\.]+$",
+             message = "El modelo del vehículo contiene caracteres no permitidos")
     private String modeloVehiculo;
 
-    // ─── TIPO LAVADO ──────────────────────────────────────────────────────────
     @NotNull(message = "El tipo de lavado es obligatorio")
     private TipoLavado tipoLavado;
 
-    // ─── FECHA ────────────────────────────────────────────────────────────────
-    // shape = STRING necesario para que Jackson deserialice "2026-06-05" correctamente
     @NotNull(message = "La fecha es obligatoria")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate fecha;
 
-    // ─── HORA ─────────────────────────────────────────────────────────────────
-    // Acepta tanto "HH:mm" como "HH:mm:ss" — Jackson es flexible con LocalTime
+    // Deserializador flexible: acepta "HH:mm" y "HH:mm:ss"
     @NotNull(message = "La hora es obligatoria")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
+    @JsonDeserialize(using = FlexibleLocalTimeDeserializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime hora;
 
-    // ─── CAMPOS OPCIONALES ────────────────────────────────────────────────────
-
     private String estado = "PENDIENTE";
-
     private Boolean pagoAdelantado = false;
 
-    @Size(max = 100, message = "La referencia de pago no puede superar 100 caracteres")
+    @Size(max = 100)
     private String referenciaPago;
 
-    @Pattern(
-        regexp = "^[6789]\\d{8}$|^$",
-        message = "El número de Bizum debe ser un teléfono español válido o estar vacío"
-    )
+    @Pattern(regexp = "^[6789]\\d{8}$|^$",
+             message = "El número de Bizum debe ser un teléfono español válido o estar vacío")
     private String numeroBizum;
 
-    @Size(max = 500, message = "Las observaciones no pueden superar 500 caracteres")
+    @Size(max = 500)
     private String observaciones;
 
-    // ─── CONSTRUCTORES ────────────────────────────────────────────────────────
+    // ─── Deserializador flexible para LocalTime ───────────────────────────────
 
-    public CitaDTO() {
+    public static class FlexibleLocalTimeDeserializer extends StdDeserializer<LocalTime> {
+
+        public FlexibleLocalTimeDeserializer() {
+            super(LocalTime.class);
+        }
+
+        @Override
+        public LocalTime deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+            String value = p.getText().trim();
+            // Intentar HH:mm primero, luego HH:mm:ss
+            try {
+                return LocalTime.parse(value, DateTimeFormatter.ofPattern("HH:mm"));
+            } catch (DateTimeParseException e1) {
+                try {
+                    return LocalTime.parse(value, DateTimeFormatter.ofPattern("HH:mm:ss"));
+                } catch (DateTimeParseException e2) {
+                    throw new IOException("No se puede parsear la hora '" + value +
+                            "'. Formatos aceptados: HH:mm o HH:mm:ss");
+                }
+            }
+        }
     }
+
+    // ─── Constructores ────────────────────────────────────────────────────────
+
+    public CitaDTO() {}
 
     public CitaDTO(String nombre, String email, String telefono, String modeloVehiculo,
                    TipoLavado tipoLavado, LocalDate fecha, LocalTime hora) {
@@ -101,7 +108,7 @@ public class CitaDTO {
         this.pagoAdelantado = false;
     }
 
-    // ─── GETTERS Y SETTERS ────────────────────────────────────────────────────
+    // ─── Getters y Setters ────────────────────────────────────────────────────
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -144,17 +151,8 @@ public class CitaDTO {
 
     @Override
     public String toString() {
-        return "CitaDTO{" +
-                "id=" + id +
-                ", nombre='" + nombre + '\'' +
-                ", email='" + email + '\'' +
-                ", telefono='" + telefono + '\'' +
-                ", modeloVehiculo='" + modeloVehiculo + '\'' +
-                ", tipoLavado=" + tipoLavado +
-                ", fecha=" + fecha +
-                ", hora=" + hora +
-                ", estado='" + estado + '\'' +
-                ", pagoAdelantado=" + pagoAdelantado +
-                '}';
+        return "CitaDTO{nombre='" + nombre + "', email='" + email + "', telefono='" + telefono +
+               "', modeloVehiculo='" + modeloVehiculo + "', tipoLavado=" + tipoLavado +
+               ", fecha=" + fecha + ", hora=" + hora + ", estado='" + estado + "'}";
     }
 }
