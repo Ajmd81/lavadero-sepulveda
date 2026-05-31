@@ -13,7 +13,7 @@ const Dashboard = () => {
 
   const { data: clientes } = useQuery({
     queryKey: ['clientes-dashboard'],
-    queryFn: () => clienteService.getAll(),
+    queryFn: () => clienteService.getCount(),
   });
 
   const { data: facturas } = useQuery({
@@ -34,23 +34,25 @@ const Dashboard = () => {
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  const citasArray = Array.isArray(citas?.data) 
-    ? citas.data 
-    : (citas?.data?.content && Array.isArray(citas.data.content) 
-      ? citas.data.content 
+  const citasArray = Array.isArray(citas?.data)
+    ? citas.data
+    : (citas?.data?.content && Array.isArray(citas.data.content)
+      ? citas.data.content
       : []);
 
-  const clientesArray = Array.isArray(clientes?.data) 
-    ? clientes.data 
-    : (clientes?.data?.content && Array.isArray(clientes.data.content) 
-      ? clientes.data.content 
+  const facturasArray = Array.isArray(facturas?.data)
+    ? facturas.data
+    : (facturas?.data?.content && Array.isArray(facturas.data.content)
+      ? facturas.data.content
       : []);
 
-  const facturasArray = Array.isArray(facturas?.data) 
-    ? facturas.data 
-    : (facturas?.data?.content && Array.isArray(facturas.data.content) 
-      ? facturas.data.content 
-      : []);
+  // Lee totalElements de la respuesta paginada; si no existe, cae en length de content
+  const totalClientes =
+    clientes?.data?.totalElements ??
+    clientes?.data?.total ??
+    (Array.isArray(clientes?.data?.content) ? clientes.data.content.length : 0);
+
+  const totalFacturas = facturasArray.length || 0;
 
   const proximasCitas = (citasArray || [])
     .filter(c => c.fecha === today && c.estado !== 'COMPLETADA' && c.estado !== 'CANCELADA')
@@ -60,24 +62,15 @@ const Dashboard = () => {
     })
     .slice(0, 5);
 
-  const totalClientes = clientesArray.length || 0;
-  const totalFacturas = facturasArray.length || 0;
-
   const mesActual = new Date().getMonth() + 1;
   const anioActual = new Date().getFullYear();
-  
+
   const facturacionMes = (facturasArray || [])
     .filter(f => {
       if (!f.fecha) return false;
-      
       let fechaStr = f.fecha;
-      
-      if (fechaStr instanceof Date) {
-        fechaStr = format(fechaStr, 'yyyy-MM-dd');
-      }
-      
+      if (fechaStr instanceof Date) fechaStr = format(fechaStr, 'yyyy-MM-dd');
       let mes, anio;
-      
       if (fechaStr.includes('/')) {
         const partes = fechaStr.split('/');
         mes = parseInt(partes[1]);
@@ -90,7 +83,6 @@ const Dashboard = () => {
       } else {
         return false;
       }
-      
       return mes === mesActual && anio === anioActual;
     })
     .reduce((sum, f) => {
@@ -179,8 +171,8 @@ const Dashboard = () => {
                     <p className="font-semibold text-blue-600">{cita.hora}</p>
                     <span className={`inline-block px-2 py-1 text-xs rounded ${
                       cita.estado === 'COMPLETADA' ? 'bg-green-100 text-green-800' :
-                      cita.estado === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                      cita.estado === 'PENDIENTE'  ? 'bg-yellow-100 text-yellow-800' :
+                                                     'bg-gray-100 text-gray-800'
                     }`}>
                       {cita.estado}
                     </span>
