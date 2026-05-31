@@ -1,11 +1,30 @@
 @import "tailwindcss";
 
+@theme {
+  /* ── Paleta Lavadero Sepúlveda ── */
+  --color-sepulveda-blue:         #1a3aff;
+  --color-sepulveda-blue-dark:    #0a1aaa;
+  --color-sepulveda-blue-light:   #3d5afe;
+  --color-sepulveda-carbon:       #1c1c1e;
+  --color-sepulveda-graphite:     #2e2e30;
+  --color-sepulveda-silver:       #c0c4cc;
+  --color-sepulveda-silver-light: #e8eaed;
+
+  /* ── Semánticos ── */
+  --color-success: #10b981;
+  --color-danger:  #ef4444;
+  --color-warning: #f59e0b;
+}
+
 :root {
-  --primary-color: #2563eb;
-  --secondary-color: #1e40af;
-  --success-color: #10b981;
-  --danger-color: #ef4444;
-  --warning-color: #f59e0b;
+  --primary-color:  #1a3aff;
+  --primary-dark:   #0a1aaa;
+  --primary-light:  #3d5afe;
+  --surface:        #1c1c1e;
+  --surface-raised: #2e2e30;
+  --color-border:   #c0c4cc;
+  --text-on-dark:   #e8eaed;
+  --text-muted:     #c0c4cc;
 }
 
 * {
@@ -21,7 +40,7 @@ body {
 }
 
 .spinner {
-  border: 3px solid #f3f4f6;
+  border: 3px solid var(--surface-raised);
   border-top: 3px solid var(--primary-color);
   border-radius: 50%;
   width: 40px;
@@ -31,132 +50,40 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
+  0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--surface-raised); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-on-dark); }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-/* Estilos personalizados para el menú mejorado */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Animaciones suaves */
 @keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-/* Efectos de gradiente animado */
-.gradient-animate {
-  background-size: 200% 200%;
-  animation: gradientShift 3s ease infinite;
-}
-
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* Mejora de transiciones suaves */
-* {
-  transition-property: colors, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Enlaces activados con borde izquierdo */
-a.active {
-  position: relative;
-}
-
-/* Efecto de entrada para elementos */
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-body {
-  animation: fadeInUp 0.5s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Animaciones para el login */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+body { animation: fadeInUp 0.5s ease; }
 
 @keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  75% {
-    transform: translateX(5px);
-  }
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-5px); }
+  75%       { transform: translateX(5px); }
 }
 
-.animate-fadeInUp {
-  animation: fadeInUp 0.6s ease-out;
-}
+.animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
+.animate-shake    { animation: shake 0.5s ease-in-out; }
 
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
+* {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

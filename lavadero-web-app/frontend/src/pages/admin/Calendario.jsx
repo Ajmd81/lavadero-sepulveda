@@ -10,10 +10,10 @@ const MESES = [
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 const TIPOS_CIERRE = [
-  { value: 'FESTIVO', label: '🎉 Festivo' },
-  { value: 'VACACIONES', label: '🏖️ Vacaciones' },
+  { value: 'FESTIVO',       label: '🎉 Festivo' },
+  { value: 'VACACIONES',    label: '🏖️ Vacaciones' },
   { value: 'MANTENIMIENTO', label: '🔧 Mantenimiento' },
-  { value: 'OTRO', label: '📌 Otro' },
+  { value: 'OTRO',          label: '📌 Otro' },
 ];
 
 function parseFecha(fechaStr) {
@@ -51,22 +51,18 @@ function getDiasDelMes(fecha) {
 const Calendario = () => {
   const [fecha, setFecha] = useState(new Date());
   const [citasDelMes, setCitasDelMes] = useState({});
-  const [diasCerrados, setDiasCerrados] = useState({}); // { 'yyyy-MM-dd': DiaCerrado }
+  const [diasCerrados, setDiasCerrados] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [citasSeleccionadas, setCitasSeleccionadas] = useState([]);
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const [todasLasCitas, setTodasLasCitas] = useState([]);
 
-  // ── Estado del formulario de cierre ──────────────────────────────────
   const [mostrarFormCierre, setMostrarFormCierre] = useState(false);
   const [guardandoCierre, setGuardandoCierre] = useState(false);
   const [formCierre, setFormCierre] = useState({ tipo: 'FESTIVO', motivo: '' });
 
-  // ── Carga inicial ─────────────────────────────────────────────────────
-
   useEffect(() => { cargarCitas(); }, []);
-
   useEffect(() => {
     agruparCitasPorMes();
     cargarDiasCerradosDelMes();
@@ -90,13 +86,13 @@ const Calendario = () => {
       const year = fecha.getFullYear();
       const month = fecha.getMonth();
       const inicio = toISODate(new Date(year, month, 1));
-      const fin = toISODate(new Date(year, month + 1, 0));
+      const fin    = toISODate(new Date(year, month + 1, 0));
       const response = await citaService.getDiasCerradosPorRango(inicio, fin);
       const mapa = {};
       (response.data || []).forEach(d => { mapa[d.fecha] = d; });
       setDiasCerrados(mapa);
     } catch {
-      // Si el endpoint aún no existe, ignorar silenciosamente
+      // endpoint aún no desplegado — ignorar silenciosamente
     }
   };
 
@@ -107,7 +103,7 @@ const Calendario = () => {
       if (!fechaCita) return;
       if (
         fechaCita.getFullYear() === fecha.getFullYear() &&
-        fechaCita.getMonth() === fecha.getMonth()
+        fechaCita.getMonth()    === fecha.getMonth()
       ) {
         const dia = fechaCita.getDate();
         if (!citasPorFecha[dia]) citasPorFecha[dia] = [];
@@ -117,12 +113,8 @@ const Calendario = () => {
     setCitasDelMes(citasPorFecha);
   };
 
-  // ── Navegación ────────────────────────────────────────────────────────
-
-  const mesAnterior = () => setFecha(new Date(fecha.getFullYear(), fecha.getMonth() - 1, 1));
+  const mesAnterior  = () => setFecha(new Date(fecha.getFullYear(), fecha.getMonth() - 1, 1));
   const mesSiguiente = () => setFecha(new Date(fecha.getFullYear(), fecha.getMonth() + 1, 1));
-
-  // ── Selección de día ──────────────────────────────────────────────────
 
   const seleccionarDia = (diaNum) => {
     setDiaSeleccionado(diaNum);
@@ -131,13 +123,10 @@ const Calendario = () => {
     setFormCierre({ tipo: 'FESTIVO', motivo: '' });
   };
 
-  // ── Gestión días cerrados ─────────────────────────────────────────────
-
   const fechaSeleccionadaISO = diaSeleccionado
     ? toISODate(new Date(fecha.getFullYear(), fecha.getMonth(), diaSeleccionado))
     : null;
 
-  const diaEstaAbierto = !fechaSeleccionadaISO || !diasCerrados[fechaSeleccionadaISO];
   const infoCierre = fechaSeleccionadaISO ? diasCerrados[fechaSeleccionadaISO] : null;
 
   const handleMarcarCerrado = async () => {
@@ -145,8 +134,8 @@ const Calendario = () => {
     setGuardandoCierre(true);
     try {
       await citaService.marcarDiaCerrado({
-        fecha: fechaSeleccionadaISO,
-        tipo: formCierre.tipo,
+        fecha:  fechaSeleccionadaISO,
+        tipo:   formCierre.tipo,
         motivo: formCierre.motivo || null,
       });
       await cargarDiasCerradosDelMes();
@@ -173,8 +162,6 @@ const Calendario = () => {
     }
   };
 
-  // ── Render calendario ─────────────────────────────────────────────────
-
   const diasDelMes = getDiasDelMes(fecha);
   const semanas = [];
   for (let i = 0; i < diasDelMes.length; i += 7) semanas.push(diasDelMes.slice(i, i + 7));
@@ -182,37 +169,52 @@ const Calendario = () => {
   const hoy = new Date();
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      {/* Cabecera */}
+    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-6">
+
+      {/* ── Cabecera ── */}
       <div className="flex items-center gap-3 mb-6">
         <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src="/assets/icons/calendario.png" alt="Calendario" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900">Calendario de Citas</h1>
+        <h1 className="text-3xl font-bold text-sepulveda-silver-light">Calendario de Citas</h1>
       </div>
 
+      {/* ── Error ── */}
       {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded flex justify-between">
+        <div className="mb-4 p-4 bg-red-900/40 border border-red-500 text-red-300 rounded-lg flex justify-between">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="font-bold ml-4">✕</button>
+          <button onClick={() => setError(null)} className="font-bold ml-4 text-red-300 hover:text-white">✕</button>
         </div>
       )}
 
-      {loading && <div className="text-center py-8"><p className="text-gray-500">Cargando citas...</p></div>}
+      {loading && (
+        <div className="text-center py-8">
+          <p className="text-sepulveda-silver">Cargando citas...</p>
+        </div>
+      )}
 
       {!loading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* ── Calendario ────────────────────────────────────────────── */}
+          {/* ── Calendario ── */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-sepulveda-carbon rounded-lg p-4 border border-sepulveda-silver/20">
+
               {/* Navegación mes */}
               <div className="flex justify-between items-center mb-6">
-                <button onClick={mesAnterior} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
+                <button
+                  onClick={mesAnterior}
+                  className="bg-sepulveda-blue hover:bg-sepulveda-blue-dark text-white px-3 py-1 rounded font-semibold transition-colors"
+                >
                   ← Anterior
                 </button>
-                <h3 className="text-xl font-bold">{MESES[fecha.getMonth()]} {fecha.getFullYear()}</h3>
-                <button onClick={mesSiguiente} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
+                <h3 className="text-xl font-bold text-sepulveda-silver-light">
+                  {MESES[fecha.getMonth()]} {fecha.getFullYear()}
+                </h3>
+                <button
+                  onClick={mesSiguiente}
+                  className="bg-sepulveda-blue hover:bg-sepulveda-blue-dark text-white px-3 py-1 rounded font-semibold transition-colors"
+                >
                   Siguiente →
                 </button>
               </div>
@@ -220,7 +222,9 @@ const Calendario = () => {
               {/* Cabecera días semana */}
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {DIAS_SEMANA.map(d => (
-                  <div key={d} className="text-center font-bold text-gray-700 py-2">{d}</div>
+                  <div key={d} className="text-center font-bold text-sepulveda-silver py-2 text-sm">
+                    {d}
+                  </div>
                 ))}
               </div>
 
@@ -228,30 +232,30 @@ const Calendario = () => {
               <div className="grid grid-cols-7 gap-1">
                 {semanas.map((semana, si) =>
                   semana.map((dia, di) => {
-                    const diaNum = dia.fecha.getDate();
+                    const diaNum   = dia.fecha.getDate();
                     const isoFecha = toISODate(dia.fecha);
                     const tieneCitas = dia.esDelMesActual && !!citasDelMes[diaNum];
-                    const cantCitas = tieneCitas ? citasDelMes[diaNum].length : 0;
-                    const esCerrado = dia.esDelMesActual && !!diasCerrados[isoFecha];
+                    const cantCitas  = tieneCitas ? citasDelMes[diaNum].length : 0;
+                    const esCerrado  = dia.esDelMesActual && !!diasCerrados[isoFecha];
                     const esHoy =
-                      hoy.getDate() === diaNum &&
-                      hoy.getMonth() === fecha.getMonth() &&
-                      hoy.getFullYear() === fecha.getFullYear();
+                      hoy.getDate()        === diaNum &&
+                      hoy.getMonth()       === fecha.getMonth() &&
+                      hoy.getFullYear()    === fecha.getFullYear();
                     const esSelec = diaSeleccionado === diaNum && dia.esDelMesActual;
 
                     let clases = 'p-2 rounded text-sm h-20 relative transition-all ';
                     if (!dia.esDelMesActual) {
-                      clases += 'bg-gray-200 text-gray-400 cursor-not-allowed';
+                      clases += 'bg-sepulveda-carbon/50 text-sepulveda-silver/30 cursor-not-allowed border border-sepulveda-silver/10';
                     } else if (esSelec) {
-                      clases += 'bg-purple-500 text-white font-bold border-2 border-purple-700';
+                      clases += 'bg-sepulveda-blue text-white font-bold border-2 border-sepulveda-blue-light';
                     } else if (esCerrado) {
-                      clases += 'bg-red-100 hover:bg-red-200 border-2 border-red-400 text-red-700';
+                      clases += 'bg-sepulveda-graphite hover:bg-sepulveda-graphite/80 border-2 border-sepulveda-silver text-sepulveda-silver';
                     } else if (esHoy) {
-                      clases += 'bg-blue-500 text-white font-bold border-2 border-blue-700';
+                      clases += 'bg-sepulveda-blue-light text-white font-bold border-2 border-sepulveda-blue';
                     } else if (tieneCitas) {
-                      clases += 'bg-green-100 hover:bg-green-200 border-2 border-green-500';
+                      clases += 'bg-sepulveda-blue/20 hover:bg-sepulveda-blue/30 border-2 border-sepulveda-blue text-sepulveda-silver-light';
                     } else {
-                      clases += 'bg-white hover:bg-gray-100 border border-gray-300';
+                      clases += 'bg-sepulveda-graphite/60 hover:bg-sepulveda-graphite border border-sepulveda-silver/20 text-sepulveda-silver-light';
                     }
 
                     return (
@@ -266,12 +270,12 @@ const Calendario = () => {
                           {esCerrado && <span title="Día cerrado">🔒</span>}
                         </div>
                         {esCerrado && (
-                          <div className="text-xs mt-1 font-semibold text-red-600 truncate">
+                          <div className="text-xs mt-1 font-semibold text-sepulveda-silver truncate">
                             {diasCerrados[isoFecha]?.tipo || 'Cerrado'}
                           </div>
                         )}
                         {!esCerrado && tieneCitas && (
-                          <div className="text-xs mt-1 font-semibold text-green-700">
+                          <div className="text-xs mt-1 font-semibold text-sepulveda-blue-light">
                             {cantCitas} {cantCitas === 1 ? 'cita' : 'citas'}
                           </div>
                         )}
@@ -282,21 +286,31 @@ const Calendario = () => {
               </div>
 
               {/* Leyenda */}
-              <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-600">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-500 inline-block" /><span>Hoy</span></span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-200 border border-green-500 inline-block" /><span>Con citas</span></span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 border border-red-400 inline-block" /><span>🔒 Cerrado</span></span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-500 inline-block" /><span>Seleccionado</span></span>
+              <div className="flex flex-wrap gap-4 mt-4 text-xs text-sepulveda-silver">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-sepulveda-blue-light inline-block border border-sepulveda-blue" />
+                  <span>Hoy</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-sepulveda-blue/20 border border-sepulveda-blue inline-block" />
+                  <span>Con citas</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-sepulveda-graphite border border-sepulveda-silver inline-block" />
+                  <span>🔒 Cerrado</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-sepulveda-blue inline-block" />
+                  <span>Seleccionado</span>
+                </span>
               </div>
             </div>
           </div>
 
-          {/* ── Panel lateral ──────────────────────────────────────────── */}
+          {/* ── Panel lateral ── */}
           <div className="lg:col-span-1 space-y-4">
-
-            {/* Información del día seleccionado */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-lg font-bold mb-4">
+            <div className="bg-sepulveda-carbon rounded-lg p-4 border border-sepulveda-silver/20">
+              <h4 className="text-lg font-bold mb-4 text-sepulveda-silver-light">
                 {diaSeleccionado
                   ? `${diaSeleccionado}/${fecha.getMonth() + 1}/${fecha.getFullYear()}`
                   : 'Citas del día'}
@@ -307,47 +321,46 @@ const Calendario = () => {
                 <div className="mb-4">
                   {infoCierre ? (
                     /* Día CERRADO */
-                    <div className="bg-red-50 border border-red-300 rounded-lg p-3">
+                    <div className="bg-sepulveda-graphite border border-sepulveda-silver rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-lg">🔒</span>
-                        <span className="font-bold text-red-700">Día cerrado</span>
+                        <span className="font-bold text-sepulveda-silver-light">Día cerrado</span>
                       </div>
-                      <div className="text-sm text-red-600">
+                      <div className="text-sm text-sepulveda-silver">
                         <span className="font-semibold">Tipo: </span>{infoCierre.tipo}
                       </div>
                       {infoCierre.motivo && (
-                        <div className="text-sm text-red-600 mt-1">
+                        <div className="text-sm text-sepulveda-silver mt-1">
                           <span className="font-semibold">Motivo: </span>{infoCierre.motivo}
                         </div>
                       )}
                       <button
                         onClick={handleReabrirDia}
                         disabled={guardandoCierre}
-                        className="mt-3 w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm py-1.5 rounded font-semibold"
+                        className="mt-3 w-full bg-sepulveda-blue hover:bg-sepulveda-blue-dark disabled:opacity-50 text-white text-sm py-1.5 rounded font-semibold transition-colors"
                       >
                         {guardandoCierre ? 'Procesando...' : '✅ Reabrir día'}
                       </button>
                     </div>
                   ) : (
-                    /* Día ABIERTO — botón para cerrar */
                     !mostrarFormCierre ? (
                       <button
                         onClick={() => setMostrarFormCierre(true)}
-                        className="w-full bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 text-sm py-2 rounded-lg font-semibold flex items-center justify-center gap-2"
+                        className="w-full bg-sepulveda-graphite hover:bg-sepulveda-graphite/80 border border-sepulveda-silver text-sepulveda-silver text-sm py-2 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                       >
                         🔒 Marcar como día cerrado
                       </button>
                     ) : (
                       /* Formulario de cierre */
-                      <div className="bg-red-50 border border-red-300 rounded-lg p-3 space-y-3">
-                        <p className="text-sm font-bold text-red-700">Marcar como cerrado</p>
+                      <div className="bg-sepulveda-graphite border border-sepulveda-silver/50 rounded-lg p-3 space-y-3">
+                        <p className="text-sm font-bold text-sepulveda-silver-light">Marcar como cerrado</p>
 
                         <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">Tipo</label>
+                          <label className="text-xs font-semibold text-sepulveda-silver block mb-1">Tipo</label>
                           <select
                             value={formCierre.tipo}
                             onChange={e => setFormCierre(f => ({ ...f, tipo: e.target.value }))}
-                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                            className="w-full bg-sepulveda-carbon border border-sepulveda-silver/40 text-sepulveda-silver-light rounded px-2 py-1.5 text-sm focus:outline-none focus:border-sepulveda-blue"
                           >
                             {TIPOS_CIERRE.map(t => (
                               <option key={t.value} value={t.value}>{t.label}</option>
@@ -356,13 +369,13 @@ const Calendario = () => {
                         </div>
 
                         <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">Motivo (opcional)</label>
+                          <label className="text-xs font-semibold text-sepulveda-silver block mb-1">Motivo (opcional)</label>
                           <input
                             type="text"
                             placeholder="Ej: Día de la Constitución"
                             value={formCierre.motivo}
                             onChange={e => setFormCierre(f => ({ ...f, motivo: e.target.value }))}
-                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                            className="w-full bg-sepulveda-carbon border border-sepulveda-silver/40 text-sepulveda-silver-light placeholder-sepulveda-silver/40 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-sepulveda-blue"
                           />
                         </div>
 
@@ -370,13 +383,13 @@ const Calendario = () => {
                           <button
                             onClick={handleMarcarCerrado}
                             disabled={guardandoCierre}
-                            className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm py-1.5 rounded font-semibold"
+                            className="flex-1 bg-sepulveda-blue hover:bg-sepulveda-blue-dark disabled:opacity-50 text-white text-sm py-1.5 rounded font-semibold transition-colors"
                           >
                             {guardandoCierre ? 'Guardando...' : '🔒 Confirmar cierre'}
                           </button>
                           <button
                             onClick={() => { setMostrarFormCierre(false); setFormCierre({ tipo: 'FESTIVO', motivo: '' }); }}
-                            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1.5 rounded"
+                            className="flex-1 bg-sepulveda-graphite/60 hover:bg-sepulveda-graphite border border-sepulveda-silver/30 text-sepulveda-silver text-sm py-1.5 rounded transition-colors"
                           >
                             Cancelar
                           </button>
@@ -389,9 +402,9 @@ const Calendario = () => {
 
               {/* ── Lista de citas ── */}
               {!diaSeleccionado ? (
-                <p className="text-gray-500 text-center py-8">Selecciona un día para ver sus citas</p>
+                <p className="text-sepulveda-silver/60 text-center py-8">Selecciona un día para ver sus citas</p>
               ) : citasSeleccionadas.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No hay citas programadas para este día</p>
+                <p className="text-sepulveda-silver/60 text-center py-4">No hay citas para este día</p>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {[...citasSeleccionadas]
@@ -401,25 +414,26 @@ const Calendario = () => {
                       return ha.localeCompare(hb);
                     })
                     .map((cita, idx) => (
-                      <div key={idx} className="bg-white rounded p-3 border-l-4 border-blue-500 shadow-sm">
+                      <div key={idx} className="bg-sepulveda-graphite rounded p-3 border-l-4 border-sepulveda-blue shadow-sm">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="font-bold text-blue-600">
+                          <div className="font-bold text-sepulveda-blue-light">
                             {cita.hora ? cita.hora.substring(0, 5) : '—'}
                           </div>
-                          <span className="text-xs font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                          <span className="text-xs font-mono text-sepulveda-silver/60 bg-sepulveda-carbon px-1.5 py-0.5 rounded">
                             #{cita.id}
                           </span>
                         </div>
-                        <div className="text-sm font-semibold">{cita.nombre}</div>
-                        <div className="text-xs text-gray-600">{cita.modeloVehiculo}</div>
-                        <div className="text-xs text-gray-500 mt-1">{cita.tipoLavado}</div>
+                        <div className="text-sm font-semibold text-sepulveda-silver-light">{cita.nombre}</div>
+                        <div className="text-xs text-sepulveda-silver">{cita.modeloVehiculo}</div>
+                        <div className="text-xs text-sepulveda-silver/70 mt-1">{cita.tipoLavado}</div>
                         <div className="text-xs mt-2">
-                          <span className={`px-2 py-1 rounded font-semibold ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
-                              cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800' :
-                                cita.estado === 'COMPLETADA' ? 'bg-blue-100 text-blue-800' :
-                                  cita.estado === 'EN_PROCESO' ? 'bg-orange-100 text-orange-800' :
-                                    'bg-yellow-100 text-yellow-800'
-                            }`}>
+                          <span className={`px-2 py-1 rounded font-semibold ${
+                            cita.estado === 'CONFIRMADA'  ? 'bg-green-900/60 text-green-300' :
+                            cita.estado === 'CANCELADA'   ? 'bg-red-900/60 text-red-300' :
+                            cita.estado === 'COMPLETADA'  ? 'bg-sepulveda-blue/30 text-sepulveda-blue-light' :
+                            cita.estado === 'EN_PROCESO'  ? 'bg-orange-900/60 text-orange-300' :
+                                                            'bg-yellow-900/60 text-yellow-300'
+                          }`}>
                             {cita.estado}
                           </span>
                         </div>
