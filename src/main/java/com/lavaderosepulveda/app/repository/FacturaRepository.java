@@ -2,6 +2,8 @@ package com.lavaderosepulveda.app.repository;
 
 import com.lavaderosepulveda.app.model.enums.EstadoFactura;
 import com.lavaderosepulveda.app.model.Factura;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,15 +40,25 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     @Query("SELECT f FROM Factura f WHERE f.estado = 'PENDIENTE' ORDER BY f.fecha")
     List<Factura> findFacturasPendientes();
 
+    // ── Listado paginado con líneas cargadas en la misma query ──────────────────
+    // Evita LazyInitializationException al serializar fuera de sesión JPA.
+    // La countQuery separada es obligatoria cuando hay JOIN FETCH + Pageable.
+    @Query(
+        value       = "SELECT DISTINCT f FROM Factura f LEFT JOIN FETCH f.lineas ORDER BY f.numero DESC",
+        countQuery  = "SELECT COUNT(DISTINCT f) FROM Factura f"
+    )
+    Page<Factura> findAllWithLineas(Pageable pageable);
+
     // Total facturado en un período
     @Query("SELECT COALESCE(SUM(f.total), 0) FROM Factura f WHERE f.fecha BETWEEN :fechaInicio AND :fechaFin")
-    BigDecimal sumTotalByFechaBetween(@Param("fechaInicio") LocalDate fechaInicio, @Param("fechaFin") LocalDate fechaFin);
+    BigDecimal sumTotalByFechaBetween(@Param("fechaInicio") LocalDate fechaInicio,
+                                     @Param("fechaFin") LocalDate fechaFin);
 
     // Total facturado por estado en un período
     @Query("SELECT COALESCE(SUM(f.total), 0) FROM Factura f WHERE f.estado = :estado AND f.fecha BETWEEN :fechaInicio AND :fechaFin")
-    BigDecimal sumTotalByEstadoAndFechaBetween(@Param("estado") EstadoFactura estado, 
-                                                @Param("fechaInicio") LocalDate fechaInicio, 
-                                                @Param("fechaFin") LocalDate fechaFin);
+    BigDecimal sumTotalByEstadoAndFechaBetween(@Param("estado") EstadoFactura estado,
+                                               @Param("fechaInicio") LocalDate fechaInicio,
+                                               @Param("fechaFin") LocalDate fechaFin);
 
     // Contar facturas por estado
     long countByEstado(EstadoFactura estado);

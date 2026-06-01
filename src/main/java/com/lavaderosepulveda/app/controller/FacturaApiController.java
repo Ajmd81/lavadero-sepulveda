@@ -64,7 +64,7 @@ public class FacturaApiController {
         }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, orderByField));
-        Page<Factura> pageFacturas = facturaRepository.findAll(pageable);
+        Page<Factura> pageFacturas = facturaRepository.findAllWithLineas(pageable);
 
         // Convertir a DTO
         List<FacturaDTO> facturasDTO = pageFacturas.getContent().stream()
