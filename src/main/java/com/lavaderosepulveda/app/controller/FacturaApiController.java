@@ -103,7 +103,7 @@ public class FacturaApiController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<FacturaDTO> obtenerPorId(@PathVariable Long id) {
-        return facturaService.obtenerPorId(id)
+        return facturaRepository.findByIdWithLineas(id)
                 .map(factura -> ResponseEntity.ok(convertirADTO(factura)))
                 .orElse(ResponseEntity.notFound().build());
     }

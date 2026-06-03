@@ -59,7 +59,7 @@ public class FacturaService {
      * Obtener factura por ID
      */
     public Optional<Factura> obtenerPorId(Long id) {
-        return facturaRepository.findById(id);
+        return facturaRepository.findByIdWithLineas(id);
     }
 
     /**

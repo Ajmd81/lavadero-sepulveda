@@ -77,4 +77,7 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     // Búsqueda por texto (número o nombre cliente)
     @Query("SELECT f FROM Factura f WHERE f.numero LIKE %:texto% OR f.clienteNombre LIKE %:texto% ORDER BY f.fecha DESC")
     List<Factura> buscarPorTexto(@Param("texto") String texto);
+
+    @Query("SELECT f FROM Factura f LEFT JOIN FETCH f.lineas WHERE f.id = :id")
+    Optional<Factura> findByIdWithLineas(@Param("id") Long id);
 }
