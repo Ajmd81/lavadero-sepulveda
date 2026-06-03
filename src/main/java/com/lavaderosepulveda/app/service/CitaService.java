@@ -36,6 +36,9 @@ public class CitaService {
     public Cita crearCita(Cita cita) {
         if (cita == null) throw new IllegalArgumentException("La cita no puede ser nula");
 
+        // Normalizar duración según tipo antes de validar y guardar
+        normalizarDuracion(cita);
+
         validarDiaCerrado(cita.getFecha());
         validarDisponibilidadHorario(cita);
         validarFechaFutura(cita.getFecha());
@@ -81,6 +84,9 @@ public class CitaService {
         if (id == null || citaActualizada == null)
             throw new IllegalArgumentException("El ID y la cita no pueden ser nulos");
 
+        // Normalizar duración según tipo antes de validar
+        normalizarDuracion(citaActualizada);
+
         return citaRepository.findById(id)
                 .map(citaExistente -> {
                     citaExistente.setNombre(citaActualizada.getNombre());
@@ -88,11 +94,7 @@ public class CitaService {
                     citaExistente.setTelefono(citaActualizada.getTelefono());
                     citaExistente.setModeloVehiculo(citaActualizada.getModeloVehiculo());
                     citaExistente.setTipoLavado(citaActualizada.getTipoLavado());
-
-                    // Actualizar duración si se especifica
-                    if (citaActualizada.getDuracionEstimada() != null) {
-                        citaExistente.setDuracionEstimada(citaActualizada.getDuracionEstimada());
-                    }
+                    citaExistente.setDuracionEstimada(citaActualizada.getDuracionEstimada());
 
                     boolean cambioFechaHora = !citaExistente.getFecha().equals(citaActualizada.getFecha()) ||
                             !citaExistente.getHora().equals(citaActualizada.getHora());
@@ -183,10 +185,10 @@ public class CitaService {
         return citaRepository.findByEstadoOrderByFechaDescHoraDesc(estado);
     }
 
-    public List<Cita> obtenerCitasPendientes() { return citaRepository.findCitasPendientes(); }
-    public List<Cita> obtenerCitasCompletadasSinFacturar() { return citaRepository.findCitasCompletadasSinFacturar(); }
-    public List<Cita> obtenerCitasDeHoy() { return citaRepository.findCitasDeHoy(LocalDate.now()); }
-    public List<Cita> obtenerCitasEnProceso() { return citaRepository.findCitasEnProceso(); }
+    public List<Cita> obtenerCitasPendientes()                  { return citaRepository.findCitasPendientes(); }
+    public List<Cita> obtenerCitasCompletadasSinFacturar()      { return citaRepository.findCitasCompletadasSinFacturar(); }
+    public List<Cita> obtenerCitasDeHoy()                       { return citaRepository.findCitasDeHoy(LocalDate.now()); }
+    public List<Cita> obtenerCitasEnProceso()                   { return citaRepository.findCitasEnProceso(); }
 
     public List<Cita> obtenerCitasPorClienteId(Long clienteId) {
         if (clienteId == null) throw new IllegalArgumentException("El ID del cliente no puede ser nulo");
@@ -257,9 +259,9 @@ public class CitaService {
     }
 
     public Cita marcarNoPresentado(Long id) { return cambiarEstado(id, EstadoCita.NO_PRESENTADO); }
-    public Cita confirmarCita(Long id) { return cambiarEstado(id, EstadoCita.CONFIRMADA); }
-    public Cita iniciarServicio(Long id) { return cambiarEstado(id, EstadoCita.EN_PROCESO); }
-    public Cita completarCita(Long id) { return cambiarEstado(id, EstadoCita.COMPLETADA); }
+    public Cita confirmarCita(Long id)      { return cambiarEstado(id, EstadoCita.CONFIRMADA); }
+    public Cita iniciarServicio(Long id)    { return cambiarEstado(id, EstadoCita.EN_PROCESO); }
+    public Cita completarCita(Long id)      { return cambiarEstado(id, EstadoCita.COMPLETADA); }
 
     @Transactional
     public Cita marcarComoFacturada(Long citaId, Long facturaId) {
@@ -284,8 +286,8 @@ public class CitaService {
                 .orElseThrow(() -> new RuntimeException("Cita no encontrada con ID: " + id));
     }
 
-    public long contarCitasHoy() { return citaRepository.countByFecha(LocalDate.now()); }
-    public long contarCitasPorEstado(EstadoCita estado) { return citaRepository.countByEstado(estado); }
+    public long contarCitasHoy()                                     { return citaRepository.countByFecha(LocalDate.now()); }
+    public long contarCitasPorEstado(EstadoCita estado)              { return citaRepository.countByEstado(estado); }
     public long contarCitasHoyPorEstado(EstadoCita estado) {
         return citaRepository.countByEstadoAndFecha(estado, LocalDate.now());
     }
@@ -293,13 +295,13 @@ public class CitaService {
     public Map<String, Object> obtenerResumenCitasHoy() {
         LocalDate hoy = LocalDate.now();
         Map<String, Object> resumen = new HashMap<>();
-        resumen.put("total",        citaRepository.countByFecha(hoy));
-        resumen.put("pendientes",   citaRepository.countByEstadoAndFecha(EstadoCita.PENDIENTE, hoy));
-        resumen.put("confirmadas",  citaRepository.countByEstadoAndFecha(EstadoCita.CONFIRMADA, hoy));
-        resumen.put("enProceso",    citaRepository.countByEstadoAndFecha(EstadoCita.EN_PROCESO, hoy));
-        resumen.put("completadas",  citaRepository.countByEstadoAndFecha(EstadoCita.COMPLETADA, hoy));
-        resumen.put("canceladas",   citaRepository.countByEstadoAndFecha(EstadoCita.CANCELADA, hoy));
-        resumen.put("noPresentados",citaRepository.countByEstadoAndFecha(EstadoCita.NO_PRESENTADO, hoy));
+        resumen.put("total",         citaRepository.countByFecha(hoy));
+        resumen.put("pendientes",    citaRepository.countByEstadoAndFecha(EstadoCita.PENDIENTE, hoy));
+        resumen.put("confirmadas",   citaRepository.countByEstadoAndFecha(EstadoCita.CONFIRMADA, hoy));
+        resumen.put("enProceso",     citaRepository.countByEstadoAndFecha(EstadoCita.EN_PROCESO, hoy));
+        resumen.put("completadas",   citaRepository.countByEstadoAndFecha(EstadoCita.COMPLETADA, hoy));
+        resumen.put("canceladas",    citaRepository.countByEstadoAndFecha(EstadoCita.CANCELADA, hoy));
+        resumen.put("noPresentados", citaRepository.countByEstadoAndFecha(EstadoCita.NO_PRESENTADO, hoy));
         return resumen;
     }
 
@@ -379,28 +381,28 @@ public class CitaService {
             return TipoLavado.valueOf(tipoLavado).getDescripcion();
         } catch (IllegalArgumentException e) {
             return switch (tipoLavado) {
-                case "LAVADO_COMPLETO_TURISMO"        -> "Lavado Completo Turismo";
-                case "LAVADO_INTERIOR_TURISMO"        -> "Lavado Interior Turismo";
-                case "LAVADO_EXTERIOR_TURISMO"        -> "Lavado Exterior Turismo";
-                case "LAVADO_COMPLETO_RANCHERA"       -> "Lavado Completo Turismo Ranchera";
-                case "LAVADO_INTERIOR_RANCHERA"       -> "Lavado Interior Turismo Ranchera";
-                case "LAVADO_EXTERIOR_RANCHERA"       -> "Lavado Exterior Turismo Ranchera";
-                case "LAVADO_COMPLETO_MONOVOLUMEN"    -> "Lavado Completo Monovolumen/Todoterreno Pequeño";
-                case "LAVADO_INTERIOR_MONOVOLUMEN"    -> "Lavado Interior Monovolumen/Todoterreno Pequeño";
-                case "LAVADO_EXTERIOR_MONOVOLUMEN"    -> "Lavado Exterior Monovolumen/Todoterreno Pequeño";
-                case "LAVADO_COMPLETO_TODOTERRENO"    -> "Lavado Completo Todoterreno Grande";
-                case "LAVADO_INTERIOR_TODOTERRENO"    -> "Lavado Interior Todoterreno Grande";
-                case "LAVADO_EXTERIOR_TODOTERRENO"    -> "Lavado Exterior Todoterreno Grande";
+                case "LAVADO_COMPLETO_TURISMO"            -> "Lavado Completo Turismo";
+                case "LAVADO_INTERIOR_TURISMO"            -> "Lavado Interior Turismo";
+                case "LAVADO_EXTERIOR_TURISMO"            -> "Lavado Exterior Turismo";
+                case "LAVADO_COMPLETO_RANCHERA"           -> "Lavado Completo Turismo Ranchera";
+                case "LAVADO_INTERIOR_RANCHERA"           -> "Lavado Interior Turismo Ranchera";
+                case "LAVADO_EXTERIOR_RANCHERA"           -> "Lavado Exterior Turismo Ranchera";
+                case "LAVADO_COMPLETO_MONOVOLUMEN"        -> "Lavado Completo Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_INTERIOR_MONOVOLUMEN"        -> "Lavado Interior Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_EXTERIOR_MONOVOLUMEN"        -> "Lavado Exterior Monovolumen/Todoterreno Pequeño";
+                case "LAVADO_COMPLETO_TODOTERRENO"        -> "Lavado Completo Todoterreno Grande";
+                case "LAVADO_INTERIOR_TODOTERRENO"        -> "Lavado Interior Todoterreno Grande";
+                case "LAVADO_EXTERIOR_TODOTERRENO"        -> "Lavado Exterior Todoterreno Grande";
                 case "LAVADO_COMPLETO_FURGONETA_PEQUEÑA"  -> "Lavado Completo Furgoneta Pequeña";
                 case "LAVADO_INTERIOR_FURGONETA_PEQUEÑA"  -> "Lavado Interior Furgoneta Pequeña";
                 case "LAVADO_EXTERIOR_FURGONETA_PEQUEÑA"  -> "Lavado Exterior Furgoneta Pequeña";
                 case "LAVADO_COMPLETO_FURGONETA_GRANDE"   -> "Lavado Completo Furgoneta Grande";
                 case "LAVADO_INTERIOR_FURGONETA_GRANDE"   -> "Lavado Interior Furgoneta Grande";
                 case "LAVADO_EXTERIOR_FURGONETA_GRANDE"   -> "Lavado Exterior Furgoneta Grande";
-                case "TRATAMIENTO_OZONO"              -> "Tratamiento de Ozono";
-                case "ENCERADO"                       -> "Encerado de Vehículo a Mano";
-                case "TAPICERIA_SIN_DESMONTAR"        -> "Limpieza de tapicería sin desmontar asientos";
-                case "TAPICERIA_DESMONTANDO"          -> "Limpieza de tapicería desmontando asientos";
+                case "TRATAMIENTO_OZONO"                  -> "Tratamiento de Ozono";
+                case "ENCERADO"                           -> "Encerado de Vehículo a Mano";
+                case "TAPICERIA_SIN_DESMONTAR"            -> "Limpieza de tapicería sin desmontar asientos";
+                case "TAPICERIA_DESMONTANDO"              -> "Limpieza de tapicería desmontando asientos";
                 default -> tipoLavado.replace("_", " ");
             };
         }
@@ -408,23 +410,38 @@ public class CitaService {
 
     // ── Validaciones privadas ─────────────────────────────────────────────────
 
-    private void validarDisponibilidadHorario(Cita cita) {
-        LocalDate fecha    = cita.getFecha();
-        LocalTime hora     = cita.getHora();
-        TipoLavado tipo    = cita.getTipoLavado();
-        Integer duracion   = cita.getDuracionEstimada();
+    /**
+     * Normaliza la duración estimada según el tipo de lavado.
+     * Tapicería siempre requiere 180 minutos independientemente de lo que
+     * envíe el cliente, garantizando que HorarioService bloquee los 3 slots.
+     */
+    private void normalizarDuracion(Cita cita) {
+        if (cita.getTipoLavado() == TipoLavado.TAPICERIA_SIN_DESMONTAR
+                || cita.getTipoLavado() == TipoLavado.TAPICERIA_DESMONTANDO) {
+            cita.setDuracionEstimada(180);
+        }
+    }
 
-        // Tapicería — reglas específicas sin cambios
+    private void validarDisponibilidadHorario(Cita cita) {
+        LocalDate fecha  = cita.getFecha();
+        LocalTime hora   = cita.getHora();
+        TipoLavado tipo  = cita.getTipoLavado();
+        Integer duracion = cita.getDuracionEstimada();
+
+        // Tapicería — reglas específicas
         if (tipo == TipoLavado.TAPICERIA_SIN_DESMONTAR || tipo == TipoLavado.TAPICERIA_DESMONTANDO) {
             DayOfWeek dia = fecha.getDayOfWeek();
             if (dia == DayOfWeek.FRIDAY || dia == DayOfWeek.SATURDAY || dia == DayOfWeek.SUNDAY)
                 throw new RuntimeException("Las citas de Limpieza de Tapicería solo están disponibles de Lunes a Jueves.");
             if (!hora.equals(LocalTime.of(8, 0)))
                 throw new RuntimeException("Las citas de Limpieza de Tapicería solo se pueden reservar a las 08:00 (duración de 3 horas).");
+            if (!horarioService.esHorarioDisponible(fecha, hora))
+                throw new RuntimeException("El horario de las 08:00 no está disponible para tapicería.");
             if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(1)))
                 throw new RuntimeException("No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 09:00 está ocupado.");
             if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(2)))
                 throw new RuntimeException("No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 10:00 está ocupado.");
+            return; // validación completa para tapicería
         }
 
         // Validar slot principal
