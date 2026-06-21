@@ -212,10 +212,10 @@
 
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function () {
@@ -276,6 +276,9 @@
                     minDate: "today",
                     dateFormat: "Y-m-d",
                     disable: [],
+                    onReady: function (selectedDates, dateStr, instance) {
+                        asegurarAccesibilidadInputVisible(instance);
+                    },
                     onChange: function (selectedDates, dateStr, instance) {
                         cargarHorarios(dateStr);
                     },
@@ -286,6 +289,24 @@
                         actualizarDisponibilidadMensual(instance.currentMonth, instance.currentYear);
                     }
                 });
+            }
+
+            function asegurarAccesibilidadInputVisible(instance) {
+                // En modo mobile, flatpickr genera un input nativo (.flatpickr-mobile)
+                // sin id/name/autocomplete, dejando el original ("fecha") como hidden.
+                // Lo parcheamos para que el <label> y el autofill apunten al campo
+                // que el usuario realmente ve y toca.
+                const inputVisible = instance.mobileInput || instance.altInput;
+                if (inputVisible && !inputVisible.id) {
+                    inputVisible.id = 'fecha-visible';
+                    inputVisible.setAttribute('name', 'fecha-visible');
+                    inputVisible.setAttribute('autocomplete', 'off');
+
+                    const label = document.querySelector('label[for="fecha"]');
+                    if (label) {
+                        label.setAttribute('for', 'fecha-visible');
+                    }
+                }
             }
 
             fetch('/api/vehicle/brands-models')
