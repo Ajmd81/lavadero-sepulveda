@@ -39,7 +39,26 @@ public class CitaController {
     // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────
 
     @GetMapping("/")
-    public String index() {
+    public String index(Model model) {
+        // Construye el array JSON de specialOpeningHoursSpecification para el
+        // JSON-LD de la home: cada DiaCerrado de los próximos 365 días se convierte
+        // en una entrada con opens/closes "00:00" (convención schema.org para cerrado).
+        LocalDate hoy = LocalDate.now();
+        List<LocalDate> diasCerrados = diasCerradoRepository
+                .findFechasByRango(hoy, hoy.plusDays(365));
+
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < diasCerrados.size(); i++) {
+            String fecha = diasCerrados.get(i).toString(); // ISO yyyy-MM-dd
+            if (i > 0) sb.append(",");
+            sb.append("{\"@type\":\"OpeningHoursSpecification\",")
+              .append("\"validFrom\":\"").append(fecha).append("\",")
+              .append("\"validThrough\":\"").append(fecha).append("\",")
+              .append("\"opens\":\"00:00\",")
+              .append("\"closes\":\"00:00\"}");
+        }
+        sb.append("]");
+        model.addAttribute("specialHoursJson", sb.toString());
         return "index";
     }
 

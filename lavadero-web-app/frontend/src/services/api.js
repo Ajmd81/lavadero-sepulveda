@@ -22,17 +22,16 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── RESPONSE: manejar 401/403 ────────────────────────────────────────────────
+// ─── RESPONSE: manejar 401 ────────────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
     const url = error.config?.url ?? '';
 
-    // Redirigir al login si el JWT expiró, es inválido o falta (401),
-    // o si el backend rechazó la petición por falta de autenticación (403),
+    // Redirigir al login si el JWT expiró o es inválido,
     // pero nunca en el propio endpoint de login (evita bucle)
-    if ((status === 401 || status === 403) && !url.includes('/auth/login')) {
+    if (status === 401 && !url.includes('/auth/login')) {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       window.location.href = '/login';

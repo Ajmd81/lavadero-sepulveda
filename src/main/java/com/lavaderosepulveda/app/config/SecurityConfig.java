@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
@@ -59,19 +58,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // Para rutas /api/** sin autenticación válida, devolver 401 (no 403),
-        // que es lo que el interceptor de axios del CRM espera para redirigir a login.
-        AuthenticationEntryPoint apiEntryPoint = (request, response, authException) ->
-                response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "No autenticado");
-
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptions -> exceptions
-                        .defaultAuthenticationEntryPointFor(
-                                apiEntryPoint,
-                                request -> request.getServletPath().startsWith("/api/")))
 
                 // ── Headers de seguridad HTTP ─────────────────────────────────
                 .headers(headers -> headers
@@ -105,60 +95,15 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(authz -> authz
-
-                        // ════════════════════════════════════════════════════════════
-                        // RUTAS PÚBLICAS — lista blanca explícita
-                        // Cualquier endpoint nuevo que se cree quedará protegido por
-                        // defecto a menos que se añada aquí explícitamente.
-                        // ════════════════════════════════════════════════════════════
-
-                        // Autenticación
                         .requestMatchers("/api/auth/login").permitAll()
-
-                        // Vistas públicas Thymeleaf
+                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/chatbot").permitAll()
                         .requestMatchers("/", "/nueva-cita", "/guardar-cita", "/confirmacion",
-                                "/horario", "/galeria", "/productos", "/tarifas", "/policy",
-                                "/chatbot", "/google33709fbb5cab4955.html").permitAll()
-
-                        // Recursos estáticos
+                                "/horarios-disponibles", "/horario", "/galeria",
+                                "/productos", "/tarifas", "/policy").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-
-                        // Formulario público de reserva — disponibilidad y clasificación de vehículo
-                        .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/horarios-disponibles",
-                                "/api/modelos",
-                                "/api/citas/horarios-disponibles",
-                                "/api/citas/disponibilidad-mensual",
-                                "/api/citas/verificar-disponibilidad",
-                                "/api/dias-cerrados/fechas-cerradas",
-                                "/api/vehicle/brands-models",
-                                "/api/vehicle/classify-by-id",
-                                "/api/vehicle/classify",
-                                "/api/models/all",
-                                "/api/models/search",
-                                "/api/tipos-lavado"
-                        ).permitAll()
-
-                        // Crear cita desde el formulario público (el propio CitaApiController
-                        // ya aplica honeypot + rate limiting internamente)
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/citas").permitAll()
-
-                        // Chatbot público
-                        .requestMatchers("/api/chatbot/**").permitAll()
-
-                        // ════════════════════════════════════════════════════════════
-                        // ADMIN clásico (login por formulario, no JWT)
-                        // ════════════════════════════════════════════════════════════
-                        .requestMatchers("/admin/login").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-
-                        // ════════════════════════════════════════════════════════════
-                        // TODO LO DEMÁS — incluye el resto de /api/** (CRM):
-                        // citas (listado/edición/borrado), clientes, facturas, gastos,
-                        // proveedores, albaranes, días cerrados (admin), configuración,
-                        // migración, etc. — requiere JWT válido.
-                        // ════════════════════════════════════════════════════════════
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .formLogin(form -> form
                         .loginPage("/admin/login")

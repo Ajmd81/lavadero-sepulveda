@@ -4,7 +4,6 @@ import com.lavaderosepulveda.app.config.HorariosConfig;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.repository.CitaRepository;
-import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,19 +27,11 @@ public class HorarioService {
     @Autowired
     private CitaRepository citaRepository;
 
-    @Autowired
-    private DiaCerradoRepository diaCerradoRepository;
-
     // ─── HORARIOS DISPONIBLES ─────────────────────────────────────────────────
 
     public List<LocalTime> obtenerHorariosDisponibles(LocalDate fecha) {
         if (fecha == null) throw new IllegalArgumentException("La fecha no puede ser nula");
         if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY) return Collections.emptyList();
-
-        if (diaCerradoRepository.existsByFecha(fecha)) {
-            logger.info("El día {} está marcado como cerrado. No hay horarios disponibles.", fecha);
-            return Collections.emptyList();
-        }
 
         List<LocalTime> todosLosHorarios = generarHorariosPorDia(fecha);
         Set<LocalTime> horariosOcupados = obtenerHorariosOcupados(fecha);
@@ -121,7 +112,6 @@ public class HorarioService {
     public boolean esHorarioDisponible(LocalDate fecha, LocalTime hora) {
         if (fecha == null || hora == null) return false;
         if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY) return false;
-        if (diaCerradoRepository.existsByFecha(fecha)) return false;
         if (!generarHorariosPorDia(fecha).contains(hora)) return false;
         return !citaRepository.existsByFechaAndHora(fecha, hora);
     }
@@ -160,10 +150,6 @@ public class HorarioService {
             fechaInicio = hoy;
         }
 
-        // Días cerrados del rango — una sola consulta para todo el mes
-        Set<LocalDate> diasCerrados = new HashSet<>(
-                diaCerradoRepository.findFechasByRango(fechaInicio, fechaFin));
-
         List<Cita> citasDelMes = citaRepository.findCitasBetweenDates(fechaInicio, fechaFin);
         Map<LocalDate, List<Cita>> citasPorFecha = citasDelMes.stream()
                 .collect(Collectors.groupingBy(Cita::getFecha));
@@ -173,10 +159,6 @@ public class HorarioService {
 
         for (LocalDate fecha = fechaInicio; !fecha.isAfter(fechaFin); fecha = fecha.plusDays(1)) {
             if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                diasNoDisponibles.add(fecha.toString());
-                continue;
-            }
-            if (diasCerrados.contains(fecha)) {
                 diasNoDisponibles.add(fecha.toString());
                 continue;
             }

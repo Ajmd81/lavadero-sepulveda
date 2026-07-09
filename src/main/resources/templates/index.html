@@ -5,13 +5,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Lavadero Sepúlveda - Córdoba - Centro de lavado de coches a mano</title>
+    <title>Lavadero Sepúlveda – Lavado de Coches a Mano en Córdoba</title>
     <meta name="description"
-        content="Lavadero de coches a mano en Córdoba. Realizamos limpieza interior, exterior y limpieza de tapicería. Limpiamos todo tipo de vehículos tanto particulares como de empresa.">
+        content="Lavadero de coches a mano en Córdoba con sistema de ozono, sin químicos. Más de 25 años de experiencia. Reserva tu cita online.">
+    <link rel="canonical" href="https://www.lavaderosepulveda.es/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:site_name" content="Lavadero Sepúlveda">
+    <meta property="og:title" content="Lavadero Sepúlveda – Lavado de Coches a Mano en Córdoba">
+    <meta property="og:description"
+        content="Lavadero de coches a mano en Córdoba con sistema de ozono, sin químicos. Más de 25 años de experiencia. Reserva tu cita online.">
+    <meta property="og:url" content="https://www.lavaderosepulveda.es/">
+    <meta property="og:image" content="https://www.lavaderosepulveda.es/images/Logo.jpg">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="icon" type="image/png" th:href="@{/images/favicon.png?v=2}">
+    <script type="application/ld+json" th:inline="text">
+    {
+      "@context": "https://schema.org",
+      "@type": "AutoWash",
+      "name": "Lavadero Sepúlveda",
+      "description": "Lavadero de coches a mano en Córdoba con más de 25 años de experiencia. Lavado con sistema de ozono sin productos químicos. Reserva tu cita online.",
+      "url": "https://www.lavaderosepulveda.es/",
+      "telephone": "+34658527186",
+      "image": "https://www.lavaderosepulveda.es/images/Logo.jpg",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "C/Ingeniero Ruiz de Azua s/n Local 8",
+        "addressLocality": "Córdoba",
+        "postalCode": "14006",
+        "addressCountry": "ES"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 37.902037,
+        "longitude": -4.776292
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday"],
+          "opens": "08:00",
+          "closes": "15:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "08:00",
+          "closes": "14:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Saturday",
+          "opens": "09:00",
+          "closes": "13:30"
+        }
+      ],
+      "hasMap": "https://maps.google.com/?q=Lavadero+Sepúlveda,+C/Ingeniero+Ruiz+de+Azua,+Córdoba",
+      "priceRange": "€€",
+      "currenciesAccepted": "EUR",
+      "paymentAccepted": "Cash, Credit Card",
+      "areaServed": {
+        "@type": "City",
+        "name": "Córdoba"
+      },
+      "sameAs": [
+        "https://www.facebook.com/lavadero.sepulveda.96/",
+        "https://www.instagram.com/lavaderosepulveda/",
+        "https://twitter.com/LavaSepulveda"
+      ],
+      "specialOpeningHoursSpecification": [(${specialHoursJson})]
+    }
+    </script>
 </head>
 
 <body>
@@ -37,7 +103,7 @@
 
     <section class="hero">
         <div class="container">
-            <h1>Reserva tu cita para lavado de vehículo</h1>
+            <h1>Lavado de Coches a Mano en Córdoba — Tu hora exacta, sin esperas</h1>
             <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
         </div>
     </section>
@@ -54,10 +120,11 @@
                 prolongando la conservación y aspecto original de su vehículo.</p>
             <p>Además, nuestro sistema de lavado con Ozono es más rápido que el lavado con productos químicos, ya que no
                 necesitamos esperar a que se seque el vehículo.</p>
-            <p>Para evitar colas innecesarias, reservamos citas con un mínimo de 24 horas de antelación.</p>
+            <p>Reservamos tu hora con 24 horas de antelación: llegas, te atendemos y listo. Sin colas, sin esperar turno.</p>
             <p>Siempre estamos dispuestos a atender a nuestros clientes con la mayor calidad y profesionalismo posible.
             </p>
             <p>Si necesita más información, no dude en contactarnos.</p>
+            <p>Más de 25 años cuidando vehículos en Córdoba, frente al campo del Deportivo y el Parque de la Asomadilla.</p>
         </div>
         <br>
         <h2>Nuestros Servicios</h2>
@@ -116,7 +183,7 @@
                         class="fab fa-facebook-f"></i> Facebook</a>
                 <a href="https://www.twitter.com/LavaSepulveda" target="_blank"><i class="fab fa-twitter"></i>
                     Twitter</a>
-                <a href="http://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i>
+                <a href="https://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i>
                     Instagram</a>
             </div>
             <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
@@ -235,7 +302,7 @@
                         mainNav.style.flexDirection = 'row';
                     } else {
                         mainNav.style.display = 'none';
-                    }
+                    }       
                 });
             }
         });
