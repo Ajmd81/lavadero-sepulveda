@@ -167,9 +167,18 @@ public class GastoService {
     private void actualizarDesdeDTO(Gasto gasto, GastoDTO dto) {
         gasto.setConcepto(dto.getConcepto());
         
+        
         if (dto.getFecha() != null && !dto.getFecha().isEmpty()) {
-            gasto.setFecha(LocalDate.parse(dto.getFecha(), FORMATO_FECHA));
+            try {
+            // Intentar primero dd/MM/yyyy (JavaFX/backend)
+                gasto.setFecha(LocalDate.parse(dto.getFecha(), FORMATO_FECHA));
+            } catch (java.time.format.DateTimeParseException e) {
+            // Fallback: yyyy-MM-dd (input type="date" del CRM React)
+                gasto.setFecha(LocalDate.parse(dto.getFecha(),
+                    java.time.format.DateTimeFormatter.ISO_LOCAL_DATE));
+            }
         }
+
         
         if (dto.getCategoria() != null && !dto.getCategoria().isEmpty()) {
             gasto.setCategoria(CategoriaGasto.valueOf(dto.getCategoria()));
