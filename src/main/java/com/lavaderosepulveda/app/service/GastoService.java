@@ -181,9 +181,13 @@ public class GastoService {
 
         
         if (dto.getCategoria() != null && !dto.getCategoria().isEmpty()) {
-            gasto.setCategoria(CategoriaGasto.valueOf(dto.getCategoria()));
+            try {
+                gasto.setCategoria(CategoriaGasto.valueOf(dto.getCategoria()));
+            } catch (IllegalArgumentException e) {
+                // Categoría inválida — no bloquear el guardado
+            }
         }
-        
+
         gasto.setImporte(dto.getImporte());
         
         if (dto.getIvaIncluido() != null) {
