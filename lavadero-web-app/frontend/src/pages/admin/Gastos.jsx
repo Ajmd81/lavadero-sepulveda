@@ -160,6 +160,12 @@ const Gastos = () => {
       return;
     }
 
+    if (!formData.categoria) {
+      alert('Por favor selecciona una categoría');
+      return;
+    }
+
+
     try {
       // Convertir fecha de yyyy-MM-dd → dd/MM/yyyy
       const convertirFecha = (fechaISO) => {
