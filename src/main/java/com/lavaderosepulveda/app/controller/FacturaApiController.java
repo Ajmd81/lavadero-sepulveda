@@ -90,7 +90,7 @@ public class FacturaApiController {
      */
     @GetMapping("/todas")
     public ResponseEntity<List<FacturaDTO>> obtenerTodasLasFacturas() {
-        List<Factura> facturas = facturaRepository.findAll();
+        List<Factura> facturas = facturaRepository.findAllWithLineas();
         List<FacturaDTO> facturasDTO = facturas.stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());

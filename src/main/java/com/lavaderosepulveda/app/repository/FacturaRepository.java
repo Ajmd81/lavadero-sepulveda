@@ -49,6 +49,9 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     )
     Page<Factura> findAllWithLineas(Pageable pageable);
 
+    @Query("SELECT DISTINCT f FROM Factura f LEFT JOIN FETCH f.lineas ORDER BY f.numero DESC")
+    List<Factura> findAllWithLineas();
+
     // Total facturado en un período
     @Query("SELECT COALESCE(SUM(f.total), 0) FROM Factura f WHERE f.fecha BETWEEN :fechaInicio AND :fechaFin")
     BigDecimal sumTotalByFechaBetween(@Param("fechaInicio") LocalDate fechaInicio,

@@ -52,7 +52,7 @@ public class FacturaService {
      * Obtener todas las facturas
      */
     public List<Factura> obtenerTodas() {
-        return facturaRepository.findAll();
+        return facturaRepository.findAllWithLineas();
     }
 
     /**
