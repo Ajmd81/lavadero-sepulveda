@@ -108,6 +108,17 @@ async function sendIntent(intent, message) {
             })
         });
 
+        // Manejar rate limit explícitamente
+        if (response.status === 429) {
+            const data = await response.json();
+            const espera = data.segundosEspera
+                ? `Espera ${Math.ceil(data.segundosEspera / 60)} minuto(s) antes de volver a escribir.`
+                : 'Espera unos minutos antes de volver a escribir.';
+            hideTypingIndicator();
+            addBotMessage({ message: `⏳ Has enviado demasiados mensajes. ${espera}` });
+            return;
+        }
+
         const data = await response.json();
 
         setTimeout(() => {
