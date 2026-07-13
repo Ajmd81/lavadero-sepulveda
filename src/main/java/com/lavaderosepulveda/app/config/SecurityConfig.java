@@ -88,6 +88,8 @@ public class SecurityConfig {
                                 "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://npmcdn.com https://cdnjs.cloudflare.com; " +
                                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://npmcdn.com https://cdnjs.cloudflare.com; " +
                                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
+                                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://npmcdn.com https://unpkg.com https://cdnjs.cloudflare.com; " +
+                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://npmcdn.com https://unpkg.com https://cdnjs.cloudflare.com; " +
                                 "img-src 'self' data:; " +
                                 "frame-src https://www.google.com https://maps.google.com; " +
                                 "connect-src 'self' https://lavadero-sepulveda-production.up.railway.app; " +
