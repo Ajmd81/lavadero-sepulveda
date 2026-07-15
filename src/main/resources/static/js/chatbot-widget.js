@@ -1,7 +1,3 @@
-/**
- * CHATBOT WIDGET – FINAL DEFINITIVO
- */
-
 // ============================================================================
 // CONFIG
 // ============================================================================
@@ -292,9 +288,20 @@ function generateSessionId() {
 }
 
 // ============================================================================
+// TECLADO
+// ============================================================================
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
 window.sendMessage = sendMessage;
 window.sendQuickOption = sendQuickOption;
-window.toggleChat = toggleChat; 
+window.toggleChat = toggleChat;
+window.handleKeyPress = handleKeyPress;

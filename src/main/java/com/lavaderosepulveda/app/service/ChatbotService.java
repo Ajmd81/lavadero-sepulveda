@@ -135,7 +135,6 @@ public class ChatbotService {
             return "CITA_WHATSAPP";
         }
 
-
         return "DESCONOCIDO";
     }
 
@@ -149,12 +148,9 @@ public class ChatbotService {
     // ======================
 
     private ChatbotResponse menuPrincipal() {
+        // Sin mensaje de texto — el saludo ya lo gestiona el frontend
+        // tras capturar el nombre del usuario
         return ChatbotResponse.builder()
-                .message("""
-                👋 ¡Hola! Soy tu asistente virtual de **Lavadero Sepúlveda**.
-        
-                ¿Qué te apetece hacer hoy?
-                """)
                 .options(menuOpciones())
                 .build();
     }
@@ -167,6 +163,7 @@ public class ChatbotService {
                 new ChatbotOption("📍 Ubicación", "UBICACION")
         );
     }
+
     private ChatbotResponse horario() {
         return ChatbotResponse.builder()
                 .message("""
@@ -217,5 +214,4 @@ public class ChatbotService {
                 .redirectUrl("https://wa.me/" + TELEFONO)
                 .build();
     }
-
 }
