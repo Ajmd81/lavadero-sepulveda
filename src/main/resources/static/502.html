@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitio en mantenimiento – Lavadero Sepúlveda</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #0099ff;
+            --color-primary-dark: #0d47a1;
+            --color-primary-light: #64b5f6;
+            --color-background: #f5f7fa;
+            --color-text: #333;
+            --color-text-light: #666;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        header {
+            background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
+            color: white;
+            padding: 15px 0;
+        }
+        header .container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 20%;
+            object-fit: cover;
+        }
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: white;
+        }
+        .error-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 65vh;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .error-icon {
+            font-size: 4rem;
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .error-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: 12px;
+        }
+        .error-message {
+            font-size: 1rem;
+            color: var(--color-text-light);
+            max-width: 500px;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+        .contact-box {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 24px 32px;
+            margin-bottom: 30px;
+        }
+        .contact-box p {
+            margin: 6px 0;
+            font-size: 1rem;
+        }
+        .contact-box strong { color: var(--color-primary-dark); }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--color-primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            margin: 6px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover { background-color: var(--color-primary-dark); }
+        .btn-whatsapp {
+            background-color: #25D366;
+        }
+        .btn-whatsapp:hover { background-color: #1da851; }
+        footer {
+            background-color: var(--color-primary-dark);
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <img src="/images/Logo.jpg" alt="Logo Lavadero Sepúlveda" class="logo-img">
+            <div class="logo-text">Lavadero Sepúlveda</div>
+        </div>
+    </header>
+
+    <section class="container">
+        <div class="error-page">
+            <div class="error-icon"><i class="fas fa-wrench"></i></div>
+            <h1 class="error-title">Sitio en mantenimiento</h1>
+            <p class="error-message">
+                Nuestra web está temporalmente fuera de servicio por tareas de mantenimiento.<br>
+                Estaremos de vuelta en breve. Disculpa las molestias.
+            </p>
+
+            <div class="contact-box">
+                <p>Mientras tanto, puedes reservar tu cita directamente:</p>
+                <p><strong><i class="fas fa-phone"></i> Teléfono:</strong> 658 527 186</p>
+                <p><strong><i class="fab fa-whatsapp"></i> WhatsApp:</strong> 658 527 186</p>
+                <p><strong><i class="fas fa-envelope"></i> Email:</strong> contacto@lavaderosepulveda.es</p>
+            </div>
+
+            <div>
+                <a href="tel:34658527186" class="btn">
+                    <i class="fas fa-phone"></i> Llamar ahora
+                </a>
+                <a href="https://api.whatsapp.com/send?phone=34658527186&text=Hola,%20quiero%20reservar%20una%20cita"
+                   target="_blank" class="btn btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba &nbsp;|&nbsp; contacto@lavaderosepulveda.es</p>
+        <p style="margin-top:8px">&copy; 2025 Lavadero Sepúlveda</p>
+    </footer>
+</body>
+</html>
