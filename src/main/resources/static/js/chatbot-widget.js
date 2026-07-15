@@ -251,7 +251,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         chatWindow.style.display = 'flex';
         setTimeout(() => chatWindow.classList.add('active'), 10);
 
-        if (getUserName()) {
+        const nombre = getUserName();
+        if (nombre) {
+            addBotMessage({
+                message: `😊 ¡Hola de nuevo, <strong>${nombre}</strong>!<br>¿En qué más puedo ayudarte?`
+            });
             showTypingIndicator();
             await sendIntent('MENU', null);
         }
