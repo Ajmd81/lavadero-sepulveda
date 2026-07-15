@@ -808,7 +808,7 @@ footer {
     z-index: 1;
 }
 
-.input-icon-wrapper input[type="date"] {
+.input-icon-wrapper input {
     padding-left: 36px;
 }
 
