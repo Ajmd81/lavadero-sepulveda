@@ -792,6 +792,26 @@ footer {
     }
 }
 
+/* ── Icono superpuesto en inputs de fecha ─────────────────────────────────── */
+.input-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon-wrapper .input-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--color-primary);
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.input-icon-wrapper input[type="date"] {
+    padding-left: 36px;
+}
+
 /* Impresión */
 @media print {
 
