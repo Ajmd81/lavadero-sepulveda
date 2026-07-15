@@ -161,9 +161,12 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="fecha">Fecha:</label>
-                        <input type="date" id="fecha" th:field="*{fecha}"
-                            th:class="${#fields.hasErrors('fecha')} ? 'field-error' : ''" required
-                            min="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-alt input-icon"></i>
+                            <input type="date" id="fecha" th:field="*{fecha}"
+                                th:class="${#fields.hasErrors('fecha')} ? 'field-error' : ''" required
+                                min="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
+                        </div>
                         <div class="error-message" th:if="${#fields.hasErrors('fecha')}" th:errors="*{fecha}"></div>
                     </div>
 
