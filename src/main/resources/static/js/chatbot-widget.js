@@ -69,15 +69,11 @@ async function sendMessage() {
 
         setTimeout(async () => {
             hideTypingIndicator();
-
             addBotMessage({
-                message: `😊 ¡Encantado de conocerte, <strong>${message}</strong>!<br>
-                          ¿En qué puedo ayudarte hoy?`
+                message: `😊 ¡Encantado de conocerte, <strong>${message}</strong>!`
             });
-
             showTypingIndicator();
             await sendIntent('MENU', null);
-
         }, 600);
 
         return;
@@ -228,8 +224,20 @@ function toggleChat() {
         setTimeout(() => chatWindow.classList.add('active'), 10);
         playSound('chat-open-sound');
 
-        if (!getUserName() && !waitingForUserName) {
-            askUserName();
+        // Solo inicializar si el chat está vacío (primera apertura)
+        const messages = document.getElementById('chatbot-messages');
+        if (messages.children.length === 0) {
+            if (!getUserName()) {
+                // Primera vez: saludo + pedir nombre en un solo mensaje
+                addBotMessage({
+                    message: '👋 <strong>¡Hola! Bienvenido/a a Lavadero Sepúlveda</strong><br>Antes de empezar, <strong>¿cómo te llamas?</strong>'
+                });
+                waitingForUserName = true;
+            } else {
+                // Ya tiene nombre guardado: ir directo al menú
+                showTypingIndicator();
+                sendIntent('MENU', null);
+            }
         }
 
         setTimeout(() => document.getElementById('user-input')?.focus(), 200);
@@ -237,26 +245,7 @@ function toggleChat() {
 }
 
 // ============================================================================
-// PEDIR NOMBRE
-// ============================================================================
-
-function askUserName() {
-    waitingForUserName = true;
-    const messages = document.getElementById('chatbot-messages');
-    messages.insertAdjacentHTML('beforeend', `
-        <div class="message bot-message">
-            <div class="message-content">
-                👋 ¡Hola! Antes de empezar,<br>
-                <strong>¿cómo te llamas?</strong>
-            </div>
-            <span class="message-time">${getCurrentTime()}</span>
-        </div>
-    `);
-    scrollToBottom();
-}
-
-// ============================================================================
-// REAPERTURA
+// REAPERTURA (volver desde formulario/redirect)
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -308,4 +297,4 @@ function generateSessionId() {
 
 window.sendMessage = sendMessage;
 window.sendQuickOption = sendQuickOption;
-window.toggleChat = toggleChat;
+window.toggleChat = toggleChat; 
