@@ -66,7 +66,7 @@ async function sendMessage() {
         setTimeout(async () => {
             hideTypingIndicator();
             addBotMessage({
-                message: `😊 ¡Encantado de conocerte, <strong>${message}</strong>!`
+                message: `😊 ¡Encantado de conocerte, <strong>${message}</strong>!<br>¿En qué puedo ayudarte hoy?`
             });
             showTypingIndicator();
             await sendIntent('MENU', null);
