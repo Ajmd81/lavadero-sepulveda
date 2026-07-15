@@ -5,7 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Reserva tu cita - Lavadero Sepúlveda</title>
+    <title>Reserva tu Cita Online – Lavadero Sepúlveda Córdoba</title>
+    <meta name="description"
+        content="Reserva tu cita de lavado de coche en Córdoba en menos de 1 minuto. Confirmación inmediata, sin esperas ni colas.">
+    <link rel="canonical" href="https://www.lavaderosepulveda.es/nueva-cita">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:site_name" content="Lavadero Sepúlveda">
+    <meta property="og:title" content="Reserva tu Cita Online – Lavadero Sepúlveda Córdoba">
+    <meta property="og:description"
+        content="Reserva tu cita de lavado de coche en Córdoba en menos de 1 minuto. Confirmación inmediata, sin esperas ni colas.">
+    <meta property="og:url" content="https://www.lavaderosepulveda.es/nueva-cita">
+    <meta property="og:image" content="https://www.lavaderosepulveda.es/images/Logo.jpg">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
@@ -202,7 +213,7 @@
                         class="fab fa-facebook-f"></i> Facebook</a>
                 <a href="https://www.twitter.com/LavaSepulveda" target="_blank"><i class="fab fa-twitter"></i>
                     Twitter</a>
-                <a href="http://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i>
+                <a href="https://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i>
                     Instagram</a>
             </div>
             <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
@@ -270,22 +281,66 @@
 
             initFlatpickr();
 
+            // ── Inicializa Flatpickr bloqueando domingos y días cerrados desde el inicio ──
             function initFlatpickr() {
                 fp = flatpickr(fechaInput, {
                     locale: "es",
                     minDate: "today",
                     dateFormat: "Y-m-d",
-                    disable: [],
+                    disable: [
+                        function (date) {
+                            // Bloquear domingos siempre
+                            if (date.getDay() === 0) return true;
+                            // Bloquear días cerrados ya cargados
+                            const y = date.getFullYear();
+                            const m = String(date.getMonth() + 1).padStart(2, '0');
+                            const d = String(date.getDate()).padStart(2, '0');
+                            return fechasCerradasCargadas.has(`${y}-${m}-${d}`);
+                        }
+                    ],
                     onChange: function (selectedDates, dateStr, instance) {
                         cargarHorarios(dateStr);
                     },
                     onMonthChange: function (selectedDates, dateStr, instance) {
+                        cargarFechasCerradasMes(instance.currentMonth, instance.currentYear);
                         actualizarDisponibilidadMensual(instance.currentMonth, instance.currentYear);
                     },
                     onYearChange: function (selectedDates, dateStr, instance) {
+                        cargarFechasCerradasMes(instance.currentMonth, instance.currentYear);
                         actualizarDisponibilidadMensual(instance.currentMonth, instance.currentYear);
+                    },
+                    onReady: function (selectedDates, dateStr, instance) {
+                        // Cargar días cerrados del mes actual al inicializar el calendario
+                        cargarFechasCerradasMes(instance.currentMonth, instance.currentYear);
                     }
                 });
+            }
+
+            // ── Carga días cerrados del mes sin necesitar tipoLavado seleccionado ──
+            function cargarFechasCerradasMes(mes, anio) {
+                const mesApi = mes + 1;
+                const primerDia = `${anio}-${String(mesApi).padStart(2, '0')}-01`;
+                const ultimoDia = new Date(anio, mesApi, 0).getDate();
+                const ultimoDiaMes = `${anio}-${String(mesApi).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+
+                fetch(`/api/dias-cerrados/fechas-cerradas?inicio=${primerDia}&fin=${ultimoDiaMes}`)
+                    .then(r => r.json())
+                    .then(diasCerrados => {
+                        diasCerrados.forEach(f => fechasCerradasCargadas.add(f));
+                        // Refrescar Flatpickr para que pinte los días bloqueados
+                        if (fp) {
+                            fp.set('disable', [
+                                function (date) {
+                                    if (date.getDay() === 0) return true;
+                                    const y = date.getFullYear();
+                                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                                    const d = String(date.getDate()).padStart(2, '0');
+                                    return fechasCerradasCargadas.has(`${y}-${m}-${d}`);
+                                }
+                            ]);
+                        }
+                    })
+                    .catch(() => {});
             }
 
             fetch('/api/vehicle/brands-models')
@@ -540,8 +595,8 @@
                         .catch(() => [])
                 ])
                     .then(([diasNoDisponibles, diasCerrados]) => {
-                        fechasCerradasCargadas = new Set(diasCerrados);
-                        const bloqueados = new Set([...diasNoDisponibles, ...diasCerrados]);
+                        diasCerrados.forEach(f => fechasCerradasCargadas.add(f));
+                        const bloqueados = new Set([...diasNoDisponibles, ...fechasCerradasCargadas]);
 
                         if (fp) {
                             fp.set('disable', [
