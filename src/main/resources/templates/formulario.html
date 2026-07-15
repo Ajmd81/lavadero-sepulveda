@@ -290,6 +290,8 @@
                     locale: "es",
                     minDate: "today",
                     dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d-m-Y",
                     disable: [
                         function (date) {
                             // Bloquear domingos siempre
@@ -313,6 +315,15 @@
                         actualizarDisponibilidadMensual(instance.currentMonth, instance.currentYear);
                     },
                     onReady: function (selectedDates, dateStr, instance) {
+                        // Con altInput, el input visible es instance.altInput
+                        const inputVisible = instance.altInput;
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'input-icon-wrapper';
+                        inputVisible.parentNode.insertBefore(wrapper, inputVisible);
+                        wrapper.appendChild(inputVisible);
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-calendar-alt input-icon';
+                        wrapper.insertBefore(icon, inputVisible);
                         // Cargar días cerrados del mes actual al inicializar el calendario
                         cargarFechasCerradasMes(instance.currentMonth, instance.currentYear);
                     }
