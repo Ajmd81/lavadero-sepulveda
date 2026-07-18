@@ -105,7 +105,7 @@ public class Modelo130BoeGenerator {
 
     /** Devuelve el contenido completo del fichero como String (codificación ISO-8859-1). */
     public String generarContenido() {
-        return generarRegistro1() + "\r\n" + generarRegistro2() + "\r\n";
+        return generarRegistro1() + generarRegistro2();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
