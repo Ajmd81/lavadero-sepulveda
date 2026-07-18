@@ -117,7 +117,7 @@ public class Modelo303BoeGenerator {
         r.append("303");                                            // Pos 2-4 Modelo
         r.append(padLeft(String.valueOf(ejercicio), 4, '0'));       // Pos 5-8 Ejercicio
         r.append(padRight(periodo.getCodigo(), 2));                 // Pos 9-10 Período
-        r.append("T");                                              // Pos 11  Soporte telemático
+        r.append(" ");                                              // Pos 11  Soporte telemático
         r.append(padRight(nif, 9));                                 // Pos 12-20 NIF presentador
         r.append(padRight(limpiarTexto(nombre), 39));               // Pos 21-59 Nombre presentador
         r.append(padRight(nif, 9));                                 // Pos 60-68 NIF declarante

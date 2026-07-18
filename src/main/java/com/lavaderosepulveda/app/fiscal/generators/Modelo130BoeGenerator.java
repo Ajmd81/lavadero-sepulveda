@@ -118,7 +118,7 @@ public class Modelo130BoeGenerator {
         r.append("130");                                        // Modelo
         r.append(padLeft(String.valueOf(ejercicio), 4, '0'));   // Ejercicio
         r.append(padRight(periodo.getCodigo(), 2));             // Período
-        r.append("T");                                          // Soporte telemático
+        r.append(" ");                                          // Soporte telemático
         r.append(padRight(nif, 9));                             // NIF presentador
         r.append(padRight(limpiarTexto(nombre), 39));           // Nombre presentador
         r.append(padRight(nif, 9));                             // NIF declarante
