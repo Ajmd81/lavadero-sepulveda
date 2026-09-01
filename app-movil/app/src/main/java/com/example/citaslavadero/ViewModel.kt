@@ -31,6 +31,9 @@ class CitaViewModel : ViewModel() {
     private val _configuracion = MutableLiveData<Triple<Int, Int, Int>>()
     val configuracion: LiveData<Triple<Int, Int, Int>> = _configuracion
 
+    private val _diasCerrados = MutableLiveData<Set<String>>()
+    val diasCerrados: LiveData<Set<String>> = _diasCerrados
+
     // Propiedad para las citas
     private var _todasLasCitas: LiveData<List<Cita>>? = null
     val todasLasCitas: LiveData<List<Cita>>
@@ -126,6 +129,22 @@ class CitaViewModel : ViewModel() {
             Log.e(TAG, "Error al verificar disponibilidad", e)
             _errorMessage.postValue("Error al verificar disponibilidad: ${e.message}")
             false
+        }
+    }
+
+    /**
+     * Obtiene los días cerrados en un rango de fechas
+     * @param fechaInicio formato ISO (yyyy-MM-dd)
+     * @param fechaFin formato ISO (yyyy-MM-dd)
+     * @return Set<String> con las fechas cerradas
+     */
+    suspend fun obtenerDiasCerrados(fechaInicio: String, fechaFin: String): Set<String> {
+        return try {
+            repository.obtenerDiasCerrados(fechaInicio, fechaFin)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error obteniendo días cerrados", e)
+            _errorMessage.postValue("Error al cargar días cerrados: ${e.message}")
+            emptySet()
         }
     }
 

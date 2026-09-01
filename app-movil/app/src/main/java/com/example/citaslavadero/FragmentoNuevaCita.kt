@@ -30,6 +30,10 @@ class FragmentoNuevaCita : Fragment() {
     private var tipoLavadoSeleccionado: String = ""
     private val TAG = "FragmentoNuevaCita"
 
+    // ── NUEVA SECCIÓN: Manejo de días cerrados ──
+    private var diasCerrados: Set<String> = emptySet()
+    private var diasCerradosDelMesCargados = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -73,6 +77,12 @@ class FragmentoNuevaCita : Fragment() {
         viewModel.tiposLavado.observe(viewLifecycleOwner, Observer { tipos ->
             // Pasamos la lista completa de pares al método
             configurarSpinnerTipoLavado(tipos)
+        })
+
+        // ── NUEVA SECCIÓN: Observar días cerrados ──
+        viewModel.diasCerrados.observe(viewLifecycleOwner, Observer { dias ->
+            diasCerrados = dias
+            Log.d(TAG, "Días cerrados observados: $dias")
         })
 
         // Inicializar fecha y hora después de que la configuración se haya cargado
@@ -138,6 +148,45 @@ class FragmentoNuevaCita : Fragment() {
             calendario.get(Calendar.HOUR_OF_DAY),
             calendario.get(Calendar.MINUTE)
         )
+
+        // ── NUEVA SECCIÓN: Cargar días cerrados ──
+        cargarDiasCerradosDelMes()
+    }
+
+    /**
+     * Carga los días cerrados para el mes actual, siguiente y anterior
+     */
+    private fun cargarDiasCerradosDelMes() {
+        if (diasCerradosDelMesCargados) return
+
+        lifecycleScope.launch {
+            try {
+                val hoy = Calendar.getInstance()
+                val hace3Meses = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }
+                val en3Meses = Calendar.getInstance().apply { add(Calendar.MONTH, 3) }
+
+                val fechaInicio = formatoISO(hace3Meses)
+                val fechaFin = formatoISO(en3Meses)
+
+                Log.d(TAG, "Cargando días cerrados desde $fechaInicio hasta $fechaFin")
+                diasCerrados = viewModel.obtenerDiasCerrados(fechaInicio, fechaFin)
+                diasCerradosDelMesCargados = true
+                Log.d(TAG, "Días cerrados cargados: $diasCerrados")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error al cargar días cerrados", e)
+                // No interrumpir el flujo, simplemente no validar días cerrados
+            }
+        }
+    }
+
+    /**
+     * Convierte un Calendar a formato ISO (yyyy-MM-dd)
+     */
+    private fun formatoISO(calendar: Calendar): String {
+        val yyyy = calendar.get(Calendar.YEAR)
+        val mm = (calendar.get(Calendar.MONTH) + 1).toString().padStart(2, '0')
+        val dd = calendar.get(Calendar.DAY_OF_MONTH).toString().padStart(2, '0')
+        return "$yyyy-$mm-$dd"
     }
 
     private fun mostrarSelectorFecha() {
@@ -168,6 +217,16 @@ class FragmentoNuevaCita : Fragment() {
 
                 if (fechaSeleccionada.before(fechaMinima)) {
                     mostrarMensaje("Fecha no válida", "No se pueden programar citas en fechas pasadas")
+                    return@DatePickerDialog
+                }
+
+                // ── NUEVA SECCIÓN: Validación de días cerrados ──
+                val fechaISO = formatoISO(fechaSeleccionada)
+                if (diasCerrados.contains(fechaISO)) {
+                    mostrarMensaje(
+                        "Día no disponible",
+                        "Lo sentimos, el lavadero está cerrado este día. Por favor selecciona otro."
+                    )
                     return@DatePickerDialog
                 }
 

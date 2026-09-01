@@ -70,4 +70,17 @@ interface LavaderoApiService {
      */
     @GET("api/tipos-lavado")
     suspend fun obtenerTiposLavado(): Response<List<TipoLavadoRemoto>>
+
+    /**
+     * Obtiene los días cerrados en un rango de fechas
+     * Retorna una lista de strings con fechas en formato ISO (yyyy-MM-dd)
+     * @param inicio Fecha inicial en formato ISO (yyyy-MM-dd)
+     * @param fin Fecha final en formato ISO (yyyy-MM-dd)
+     * @return Lista de fechas cerradas en formato ISO
+     */
+    @GET("api/dias-cerrados/fechas-cerradas")
+    suspend fun obtenerDiasCerrados(
+        @Query("inicio") inicio: String,
+        @Query("fin") fin: String
+    ): Response<List<String>>
 }

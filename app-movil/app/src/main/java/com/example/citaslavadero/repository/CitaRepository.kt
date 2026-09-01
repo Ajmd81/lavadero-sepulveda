@@ -309,6 +309,50 @@ class CitaRepository(private val context: Context) {
     }
 
     /**
+     * Obtiene los días cerrados en un rango de fechas desde el servidor
+     * @param fechaInicio formato ISO (yyyy-MM-dd)
+     * @param fechaFin formato ISO (yyyy-MM-dd)
+     * @return Set<String> con las fechas cerradas (formato ISO)
+     */
+    suspend fun obtenerDiasCerrados(fechaInicio: String, fechaFin: String): Set<String> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            Log.d(TAG, "Obteniendo días cerrados desde $fechaInicio hasta $fechaFin")
+            
+            if (modoOffline || !NetworkUtils.isNetworkAvailable(context)) {
+                Log.d(TAG, "Modo offline: no se pueden obtener días cerrados del servidor")
+                return@withContext emptySet()
+            }
+            
+            val response = apiService.obtenerDiasCerrados(fechaInicio, fechaFin)
+
+            if (response.isSuccessful && response.body() != null) {
+                val diasCerrados = response.body()!!.toSet()
+                Log.d(TAG, "Días cerrados obtenidos: $diasCerrados")
+                diasCerrados
+            } else {
+                Log.w(TAG, "Error al obtener días cerrados: ${response.code()}")
+                response.errorBody()?.string()?.let { error ->
+                    Log.e(TAG, "Detalle del error: $error")
+                }
+                emptySet()
+            }
+        } catch (e: SocketTimeoutException) {
+            Log.e(TAG, "Timeout al obtener días cerrados", e)
+            emptySet()
+        } catch (e: IOException) {
+            Log.e(TAG, "Error de conexión al obtener días cerrados", e)
+            modoOffline = true
+            emptySet()
+        } catch (e: HttpException) {
+            Log.e(TAG, "Error HTTP al obtener días cerrados: ${e.code()}", e)
+            emptySet()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error inesperado al obtener días cerrados", e)
+            emptySet()
+        }
+    }
+
+    /**
      * MODIFICADO: Intenta conectar con el servidor pero NO sincroniza citas
      */
     suspend fun intentarSincronizacion(): Boolean = withContext(Dispatchers.IO) {
