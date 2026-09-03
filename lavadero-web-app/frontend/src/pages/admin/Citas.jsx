@@ -187,7 +187,7 @@ const Citas = () => {
     setValidandoDisponibilidad(true);
     try {
       const response = await citaService.checkDisponibilidad(fecha, hora);
-      return response?.data?.disponible === true;
+      return !response?.data;  // ← Cambio aquí
     } catch (err) {
       console.error('Error validando disponibilidad:', err);
       return false;
