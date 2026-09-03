@@ -1,9 +1,11 @@
 package com.lavaderosepulveda.app.controller;
 
 import com.lavaderosepulveda.app.model.Cita;
+import com.lavaderosepulveda.app.model.HorarioDiaSemana;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.model.VehicleModel;
 import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
+import com.lavaderosepulveda.app.repository.HorarioDiaSemanaRepository;
 import com.lavaderosepulveda.app.repository.VehicleModelRepository;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
 import com.lavaderosepulveda.app.service.CitaService;
@@ -15,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -35,6 +39,7 @@ public class CitaController {
     @Autowired private VehicleModelRepository modelRepository;
     @Autowired private DiaCerradoRepository diasCerradoRepository;
     @Autowired private CitaRateLimiter citaRateLimiter;
+    @Autowired private HorarioDiaSemanaRepository horarioDiaSemanaRepository;
 
     // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────
 
@@ -173,6 +178,18 @@ public class CitaController {
         } catch (Exception e) {
             logger.error("Error obteniendo horarios disponibles para {}: {}", fecha, e.getMessage());
             return List.of();
+        }
+    }
+
+    @GetMapping("/api/horarios-dia-semana")
+    @ResponseBody
+    public ResponseEntity<List<HorarioDiaSemana>> obtenerHorariosDiaSemana() {
+        try {
+            List<HorarioDiaSemana> horarios = horarioDiaSemanaRepository.findAllByOrderByDiaSemanaAsc();
+            return ResponseEntity.ok(horarios);
+        } catch (Exception e) {
+            logger.error("Error obteniendo horarios por día: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
