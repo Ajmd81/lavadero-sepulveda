@@ -15,7 +15,7 @@ const Citas = () => {
   const [pageSize, setPageSize] = useState(10);
 
   const [horariosDisponibles, setHorariosDisponibles] = useState([]);
-  const [todosLosHorarios, setTodosLosHorarios] = useState([]);
+  const [horariosPortDia, setHorariosPortDia] = useState({});
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [validandoDisponibilidad, setValidandoDisponibilidad] = useState(false);
 
@@ -33,37 +33,35 @@ const Citas = () => {
   useEffect(() => {
     cargarCitas();
     cargarTiposLavado();
-    cargarHorariosConfigurados();
+    cargarHorariosConfiguracion();
   }, [currentPage, pageSize]);
 
+  // Cuando cambia la fecha, recalcular horarios disponibles
   useEffect(() => {
     if (formData.fecha) {
       cargarHorariosDisponibles(formData.fecha);
     } else {
-      const horariosAMostrar = todosLosHorarios && todosLosHorarios.length > 0 ? todosLosHorarios : horariosPorDefecto;
-      setHorariosDisponibles(horariosAMostrar);
+      setHorariosDisponibles([]);
     }
-  }, [formData.fecha, todosLosHorarios]);
+  }, [formData.fecha, horariosPortDia]);
 
-  const horariosPorDefecto = [
-    '08:00', '09:00', '10:00', '11:00', '12:00',
-    '13:00', '14:00', '15:00', '16:00', '17:00',
-    '18:00', '19:00', '20:00'
-  ];
-
-  const cargarHorariosConfigurados = async () => {
+  /**
+   * Carga la configuración de horarios de la BD (todos los días)
+   */
+  const cargarHorariosConfiguracion = async () => {
     try {
-      const response = await citaService.getHorariosConfigurados();
-      if (response?.data && Array.isArray(response.data) && response.data.length > 0) {
-        setTodosLosHorarios(response.data);
-        setHorariosDisponibles(response.data);
-      } else {
-        setTodosLosHorarios(horariosPorDefecto);
-        setHorariosDisponibles(horariosPorDefecto);
+      const response = await citaService.getHorariosDiaSemana();
+      if (response?.data && Array.isArray(response.data)) {
+        // Convertir lista de HorarioDiaSemana a un mapa por día
+        const mapa = {};
+        response.data.forEach(horario => {
+          mapa[horario.diaSemana] = horario;
+        });
+        setHorariosPortDia(mapa);
       }
     } catch (err) {
-      setTodosLosHorarios(horariosPorDefecto);
-      setHorariosDisponibles(horariosPorDefecto);
+      console.error('Error cargando horarios por día:', err);
+      setHorariosPortDia({});
     }
   };
 
@@ -104,27 +102,81 @@ const Citas = () => {
     }
   };
 
+  /**
+   * Calcula los horarios disponibles para una fecha específica.
+   * Usa los horarios de HorarioDiaSemana de la BD.
+   */
   const cargarHorariosDisponibles = async (fecha) => {
-    if (!fecha) { setHorariosDisponibles(todosLosHorarios); return; }
+    if (!fecha) {
+      setHorariosDisponibles([]);
+      return;
+    }
+
     setLoadingHorarios(true);
     try {
       const [year, month, day] = fecha.split('-');
-      const fechaFormato = `${day}/${month}/${year}`;
       const fechaObj = new Date(year, parseInt(month) - 1, parseInt(day));
-      const esSabado = fechaObj.getDay() === 6;
-      const response = await citaService.getHorariosDisponibles(fechaFormato);
-      let horarios = (response.data || []).map(h => typeof h === 'string' ? h.substring(0, 5) : h).filter(Boolean);
-      if (esSabado) horarios = horarios.filter(h => { const hora = parseInt(h.split(':')[0]); return hora >= 9 && hora <= 12; });
-      if (!horarios || horarios.length === 0) {
+      
+      // Obtener el día de la semana (0=domingo, 1=lunes, ..., 6=sábado)
+      const dayOfWeek = fechaObj.getDay();
+      const diasMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+      const diaSemana = diasMap[dayOfWeek];
+
+      // Obtener horarios del día desde la BD
+      const horarioDia = horariosPortDia[diaSemana];
+
+      if (!horarioDia || !horarioDia.activo) {
         setHorariosDisponibles([]);
-      } else {
-        if (editingCita?.hora) {
-          const horaActual = editingCita.hora.substring(0, 5);
-          if (!horarios.includes(horaActual)) { horarios.push(horaActual); horarios.sort(); }
-        }
-        setHorariosDisponibles(horarios);
+        return;
       }
+
+      // Construir lista de horarios del día combinando mañana y tarde
+      let horariosDelDia = [];
+
+      // Franja mañana
+      if (horarioDia.aperturaMañana && horarioDia.cierreMañana) {
+        const [hM, minM] = horarioDia.aperturaMañana.split(':');
+        const [hCM, minCM] = horarioDia.cierreMañana.split(':');
+        for (let h = parseInt(hM); h < parseInt(hCM); h++) {
+          horariosDelDia.push(`${String(h).padStart(2, '0')}:00`);
+        }
+      }
+
+      // Franja tarde
+      if (horarioDia.aperturaTarde && horarioDia.cierreTarde) {
+        const [hT, minT] = horarioDia.aperturaTarde.split(':');
+        const [hCT, minCT] = horarioDia.cierreTarde.split(':');
+        for (let h = parseInt(hT); h < parseInt(hCT); h++) {
+          horariosDelDia.push(`${String(h).padStart(2, '0')}:00`);
+        }
+      }
+
+      // Ahora obtener horarios ocupados del backend
+      const fechaFormato = `${day}/${month}/${year}`;
+      const response = await citaService.getHorariosDisponibles(fechaFormato);
+      
+      let horariosOcupados = response?.data || [];
+      if (Array.isArray(horariosOcupados)) {
+        horariosOcupados = horariosOcupados.map(h => 
+          typeof h === 'string' ? h.substring(0, 5) : h
+        );
+      }
+
+      // Filtrar: mostrar solo los horarios del día que no están ocupados
+      const horariosFinales = horariosDelDia.filter(h => !horariosOcupados.includes(h));
+
+      // Si editamos una cita, agregar su hora actual aunque esté ocupada
+      if (editingCita?.hora) {
+        const horaActual = editingCita.hora.substring(0, 5);
+        if (!horariosFinales.includes(horaActual)) {
+          horariosFinales.push(horaActual);
+          horariosFinales.sort();
+        }
+      }
+
+      setHorariosDisponibles(horariosFinales);
     } catch (err) {
+      console.error('Error cargando horarios disponibles:', err);
       setHorariosDisponibles([]);
     } finally {
       setLoadingHorarios(false);
@@ -132,333 +184,216 @@ const Citas = () => {
   };
 
   const validarDisponibilidad = async (fecha, hora) => {
+    setValidandoDisponibilidad(true);
     try {
       const response = await citaService.checkDisponibilidad(fecha, hora);
-      return !response.data;
-    } catch { return true; }
-  };
-
-  const abrirModalNuevo = () => {
-    setEditingCita(null);
-    setFormData({ nombre: '', telefono: '', email: '', fecha: '', hora: '', tipoLavado: '', modeloVehiculo: '', observaciones: '' });
-    setHorariosDisponibles(todosLosHorarios?.length > 0 ? todosLosHorarios : horariosPorDefecto);
-    setShowModal(true);
-  };
-
-  const abrirModalEditar = (cita) => {
-    setEditingCita(cita);
-    let fechaFormato = '';
-    if (cita.fecha) {
-      if (typeof cita.fecha === 'string') fechaFormato = cita.fecha.split('T')[0];
-      else if (cita.fecha instanceof Date) {
-        fechaFormato = `${cita.fecha.getFullYear()}-${String(cita.fecha.getMonth() + 1).padStart(2, '0')}-${String(cita.fecha.getDate()).padStart(2, '0')}`;
-      }
+      return response?.data?.disponible === true;
+    } catch (err) {
+      console.error('Error validando disponibilidad:', err);
+      return false;
+    } finally {
+      setValidandoDisponibilidad(false);
     }
-    let horaFormato = '';
-    if (cita.hora) {
-      if (typeof cita.hora === 'string') horaFormato = `${cita.hora.substring(0, 5).split(':')[0]}:00`;
-      else if (cita.hora instanceof Date) horaFormato = `${String(cita.hora.getHours()).padStart(2, '0')}:00`;
-    }
-    setFormData({ nombre: cita.nombre || '', telefono: cita.telefono || '', email: cita.email || '', fecha: fechaFormato, hora: horaFormato, tipoLavado: cita.tipoLavado || '', modeloVehiculo: cita.modeloVehiculo || '', observaciones: cita.observaciones || '' });
-    setShowModal(true);
   };
-
-  const cerrarModal = () => { setShowModal(false); setEditingCita(null); setError(null); };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'fecha') setFormData(prev => ({ ...prev, fecha: value, hora: '' }));
-    else setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const guardarCita = async (e) => {
     e.preventDefault();
+    const disponible = await validarDisponibilidad(formData.fecha, formData.hora);
+    if (!disponible) {
+      setError('El horario no está disponible. Por favor, selecciona otro.');
+      return;
+    }
+
     try {
-      if (!formData.fecha || !formData.hora) { setError('Por favor, selecciona fecha y hora'); return; }
-      setValidandoDisponibilidad(true);
-      let debeValidar = true;
       if (editingCita) {
-        if (editingCita.fecha.split('T')[0] === formData.fecha && editingCita.hora.substring(0, 5) === formData.hora) debeValidar = false;
+        await citaService.update(editingCita.id, formData);
+      } else {
+        await citaService.create(formData);
       }
-      if (debeValidar) {
-        const disponible = await validarDisponibilidad(formData.fecha, formData.hora);
-        if (!disponible) { setError(`El horario ${formData.hora} del día ${formatearFecha(formData.fecha)} ya está ocupado.`); setValidandoDisponibilidad(false); return; }
-      }
-      setValidandoDisponibilidad(false);
-      if (editingCita) await citaService.update(editingCita.id, formData);
-      else await citaService.create(formData);
-      await cargarCitas();
+      cargarCitas();
       cerrarModal();
-      setError(null);
+      setFormData({ nombre: '', telefono: '', email: '', fecha: '', hora: '', tipoLavado: '', modeloVehiculo: '', observaciones: '' });
     } catch (err) {
       setError('Error al guardar la cita: ' + err.message);
-      setValidandoDisponibilidad(false);
     }
   };
 
-  const formatearFecha = (fecha) => {
-    if (!fecha) return '—';
-    try {
-      let day, month, year;
-      if (typeof fecha === 'string') {
-        if (fecha.includes('/')) { [day, month, year] = fecha.split('/'); }
-        else if (fecha.includes('-')) { const p = fecha.split('T')[0].split('-'); year = p[0]; month = p[1]; day = p[2]; }
-        else return fecha;
-      } else if (fecha instanceof Date) {
-        day = String(fecha.getDate()).padStart(2, '0'); month = String(fecha.getMonth() + 1).padStart(2, '0'); year = fecha.getFullYear();
-      } else return '—';
-      return `${day}/${month}/${year}`;
-    } catch { return '—'; }
+  const abrirModalEditar = (cita) => {
+    setEditingCita(cita);
+    setFormData(cita);
+    setShowModal(true);
+  };
+
+  const cerrarModal = () => {
+    setShowModal(false);
+    setEditingCita(null);
+    setFormData({ nombre: '', telefono: '', email: '', fecha: '', hora: '', tipoLavado: '', modeloVehiculo: '', observaciones: '' });
   };
 
   const eliminarCita = async (id) => {
-    if (window.confirm('¿Está seguro de que desea eliminar esta cita?')) {
-      try { await citaService.delete(id); await cargarCitas(); setError(null); }
-      catch (err) { setError('Error al eliminar la cita: ' + err.message); }
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta cita?')) return;
+    try {
+      await citaService.delete(id);
+      cargarCitas();
+    } catch (err) {
+      setError('Error al eliminar la cita: ' + err.message);
     }
   };
 
   const cambiarEstado = async (id, nuevoEstado) => {
-    try { await citaService.cambiarEstado(id, nuevoEstado); await cargarCitas(); setError(null); }
-    catch (err) { setError('Error al cambiar el estado: ' + err.message); }
+    try {
+      await citaService.cambiarEstado(id, nuevoEstado);
+      cargarCitas();
+    } catch (err) {
+      setError('Error al cambiar el estado: ' + err.message);
+    }
   };
 
-  const esCitaDeHoy = (fecha) => {
-    const hoy = new Date();
-    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-    let f = fecha;
-    if (f?.includes('/')) { const [d, m, y] = f.split('/'); f = `${y}-${m}-${d}`; }
-    if (f) f = f.split('T')[0];
-    return f === hoyStr;
-  };
-
-  const citasHoy = () => {
-    const hoy = new Date();
-    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-    return citas.filter(c => {
-      let f = c.fecha;
-      if (f?.includes('/')) { const [d, m, y] = f.split('/'); f = `${y}-${m}-${d}`; }
-      if (f) f = f.split('T')[0];
-      return f === hoyStr && c.estado !== 'CANCELADA';
-    }).length;
-  };
-
-  const irAPagina = (p) => { if (p >= 0 && p < totalPages) setCurrentPage(p); };
-  const cambiarTamanoPagina = (n) => { setPageSize(n); setCurrentPage(0); };
   const getPaginaInicio = () => currentPage * pageSize + 1;
   const getPaginaFin = () => Math.min((currentPage + 1) * pageSize, totalElements);
+  const irAPagina = (pagina) => setCurrentPage(pagina);
+  const cambiarTamanoPagina = (size) => {
+    setPageSize(size);
+    setCurrentPage(0);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="/assets/icons/citas.png" alt="Citas" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestión de Citas</h1>
-              <p className="text-base text-gray-600">Pendientes hoy: <span className="font-semibold text-blue-600">{citasHoy()}</span> | Total: {totalElements} citas</p>
-            </div>
-          </div>
-          <button onClick={abrirModalNuevo} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-base font-medium">
-            + Nueva Cita
-          </button>
-        </div>
+    <div className="p-6 bg-white rounded-lg shadow-lg">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Gestión de Citas</h1>
+        <button onClick={() => { setShowModal(true); setEditingCita(null); }} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+          + Nueva Cita
+        </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <span className="text-red-800 text-base">{error}</span>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-red-800">
+          {error}
+          <button onClick={() => setError(null)} className="float-right text-red-600 hover:text-red-900">✕</button>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
-          <div className="text-center py-8 flex items-center justify-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="text-gray-500 text-base">Cargando citas...</span>
-          </div>
-        ) : citas.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 text-base">No hay citas registradas</div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-100">
-                  <tr>
-                    {/* ── COLUMNA ID NUEVA ── */}
-                    <th className="border border-gray-300 px-3 py-3 text-left text-sm font-semibold text-gray-500 w-16">#ID</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Cliente</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Teléfono</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Fecha</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Hora</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Tipo Lavado</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Modelo Vehículo</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">Estado</th>
-                    <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">Acciones</th>
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+        </div>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Fecha</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Hora</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Cliente</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Teléfono</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Vehículo</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Estado</th>
+                  <th className="border border-gray-300 px-4 py-2 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {citas.map((cita, idx) => (
+                  <tr key={cita.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="border border-gray-300 px-4 py-2">{cita.fecha}</td>
+                    <td className="border border-gray-300 px-4 py-2">{cita.hora}</td>
+                    <td className="border border-gray-300 px-4 py-2">{cita.nombre}</td>
+                    <td className="border border-gray-300 px-4 py-2">{cita.telefono}</td>
+                    <td className="border border-gray-300 px-4 py-2">{cita.modeloVehiculo}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <select
+                        value={cita.estado}
+                        onChange={(e) => cambiarEstado(cita.id, e.target.value)}
+                        className="border border-gray-300 rounded px-2 py-1"
+                      >
+                        <option value="PENDIENTE">PENDIENTE</option>
+                        <option value="CONFIRMADA">CONFIRMADA</option>
+                        <option value="COMPLETADA">COMPLETADA</option>
+                        <option value="CANCELADA">CANCELADA</option>
+                      </select>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      <button onClick={() => abrirModalEditar(cita)} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm mr-2">Editar</button>
+                      <button onClick={() => eliminarCita(cita.id)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm">Eliminar</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {citas.map((cita) => (
-                    <tr key={cita.id} className={esCitaDeHoy(cita.fecha) ? 'bg-blue-100 hover:bg-blue-200' : 'hover:bg-gray-50'}>
-                      {/* ── ID ── */}
-                      <td className="border border-gray-300 px-3 py-3 text-sm font-mono text-gray-400">
-                        #{cita.id}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-3 text-base font-medium">{cita.nombre}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.telefono}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-base">{formatearFecha(cita.fecha)}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.hora?.substring(0, 5)}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.tipoLavado}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-base">{cita.modeloVehiculo}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-base">
-                        <span className={`px-3 py-1 rounded text-sm font-medium ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800' :
-                            cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800' :
-                              cita.estado === 'COMPLETADA' ? 'bg-blue-100 text-blue-800' :
-                                'bg-yellow-100 text-yellow-800'
-                          }`}>
-                          {cita.estado}
-                        </span>
-                      </td>
-                      <td className="border border-gray-300 px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-2 flex-wrap">
-                          <select
-                            value={cita.estado}
-                            onChange={(e) => cambiarEstado(cita.id, e.target.value)}
-                            className={`px-3 py-2 rounded text-base font-medium border cursor-pointer ${cita.estado === 'CONFIRMADA' ? 'bg-green-100 text-green-800 border-green-300' :
-                                cita.estado === 'CANCELADA' ? 'bg-red-100 text-red-800 border-red-300' :
-                                  cita.estado === 'COMPLETADA' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                                    'bg-yellow-100 text-yellow-800 border-yellow-300'
-                              }`}
-                          >
-                            <option value="PENDIENTE">PENDIENTE</option>
-                            <option value="CONFIRMADA">CONFIRMADA</option>
-                            <option value="COMPLETADA">COMPLETADA</option>
-                            <option value="CANCELADA">CANCELADA</option>
-                          </select>
-                          <button onClick={() => abrirModalEditar(cita)} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-base font-medium">Editar</button>
-                          <button onClick={() => eliminarCita(cita.id)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-base font-medium">Eliminar</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-4">
-                  <p className="text-base text-gray-700">
-                    Mostrando <span className="font-medium">{getPaginaInicio()}</span> a <span className="font-medium">{getPaginaFin()}</span> de <span className="font-medium">{totalElements}</span> resultados
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <label className="text-base text-gray-700">Por página:</label>
-                    <select value={pageSize} onChange={(e) => cambiarTamanoPagina(Number(e.target.value))} className="border border-gray-300 rounded px-3 py-2 text-base">
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => irAPagina(0)} disabled={currentPage === 0} className={`px-4 py-2 rounded text-base ${currentPage === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}>Primera</button>
-                  <button onClick={() => irAPagina(currentPage - 1)} disabled={currentPage === 0} className={`px-4 py-2 rounded text-base ${currentPage === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}>Anterior</button>
-                  <div className="flex gap-1">
-                    {[...Array(totalPages)].map((_, index) => {
-                      if (index === 0 || index === totalPages - 1 || (index >= currentPage - 2 && index <= currentPage + 2)) {
-                        return <button key={index} onClick={() => irAPagina(index)} className={`px-3 py-2 rounded text-base ${currentPage === index ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}>{index + 1}</button>;
-                      } else if (index === currentPage - 3 || index === currentPage + 3) {
-                        return <span key={index} className="px-2">...</span>;
-                      }
-                      return null;
-                    })}
-                  </div>
-                  <button onClick={() => irAPagina(currentPage + 1)} disabled={currentPage === totalPages - 1} className={`px-4 py-2 rounded text-base ${currentPage === totalPages - 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}>Siguiente</button>
-                  <button onClick={() => irAPagina(totalPages - 1)} disabled={currentPage === totalPages - 1} className={`px-4 py-2 rounded text-base ${currentPage === totalPages - 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}>Última</button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
-              <div className="px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
-                <h3 className="text-3xl font-bold text-gray-900">{editingCita ? 'Editar Cita' : 'Nueva Cita'}</h3>
-              </div>
-              <form onSubmit={guardarCita} className="px-10 py-8 overflow-y-auto flex-1 space-y-6">
-                <div>
-                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">Datos del Cliente</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div>
-                      <label className="block text-base font-semibold text-gray-700 mb-2">Nombre *</label>
-                      <input type="text" name="nombre" placeholder="Nombre del cliente" value={formData.nombre} onChange={handleInputChange} className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
-                    </div>
-                    <div>
-                      <label className="block text-base font-semibold text-gray-700 mb-2">Teléfono *</label>
-                      <input type="tel" name="telefono" placeholder="Teléfono" value={formData.telefono} onChange={handleInputChange} className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
-                    </div>
-                    <div>
-                      <label className="block text-base font-semibold text-gray-700 mb-2">Email</label>
-                      <input type="email" name="email" placeholder="Email (opcional)" value={formData.email} onChange={handleInputChange} className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">Fecha y Hora</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-base font-semibold text-gray-700 mb-2">Fecha *</label>
-                      <input type="date" name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
-                      <p className="text-sm text-gray-500 mt-2">Selecciona la fecha para ver horarios disponibles</p>
-                    </div>
-                    <div>
-                      <label className="block text-base font-semibold text-gray-700 mb-2">Hora *</label>
-                      <select name="hora" value={formData.hora} onChange={handleInputChange} className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required disabled={!formData.fecha || loadingHorarios}>
-                        <option value="">{!formData.fecha ? 'Primero selecciona una fecha' : loadingHorarios ? 'Cargando horarios...' : 'Seleccionar hora'}</option>
-                        {horariosDisponibles.map(hora => <option key={hora} value={hora}>{hora}</option>)}
-                      </select>
-                      {formData.fecha && horariosDisponibles.length === 0 && !loadingHorarios && <p className="text-sm text-red-600 mt-2">⚠️ No hay horarios disponibles para esta fecha</p>}
-                      {formData.fecha && horariosDisponibles.length > 0 && <p className="text-sm text-green-600 mt-2">✅ {horariosDisponibles.length} horario(s) disponible(s)</p>}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">Detalles del Vehículo</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-base font-semibold text-gray-700 mb-2">Tipo de Lavado *</label>
-                      <select name="tipoLavado" value={formData.tipoLavado} onChange={handleInputChange} className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
-                        <option value="">Seleccionar tipo de lavado</option>
-                        {tiposLavado.map(tipo => <option key={tipo.id} value={tipo.id}>{tipo.descripcion} - €{tipo.precio.toFixed(2)}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-base font-semibold text-gray-700 mb-2">Modelo del Vehículo *</label>
-                      <input type="text" name="modeloVehiculo" placeholder="Modelo del vehículo" value={formData.modeloVehiculo} onChange={handleInputChange} className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">Observaciones</h4>
-                  <label className="block text-base font-semibold text-gray-700 mb-2">Notas Adicionales</label>
-                  <textarea name="observaciones" placeholder="Observaciones sobre la cita" value={formData.observaciones} onChange={handleInputChange} className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" />
-                </div>
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                  <button type="button" onClick={cerrarModal} disabled={validandoDisponibilidad} className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors">Cancelar</button>
-                  <button type="submit" disabled={validandoDisponibilidad || loadingHorarios} className={`px-6 py-3 rounded-lg font-semibold text-base text-white transition-colors ${validandoDisponibilidad || loadingHorarios ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                    {validandoDisponibilidad ? '🔍 Validando...' : editingCita ? 'Actualizar' : 'Crear'}
-                  </button>
-                </div>
-              </form>
+          <div className="mt-4 flex justify-between items-center">
+            <p className="text-gray-700">Mostrando {getPaginaInicio()} a {getPaginaFin()} de {totalElements}</p>
+            <div className="flex gap-2">
+              <button onClick={() => irAPagina(0)} disabled={currentPage === 0} className="px-4 py-2 border rounded disabled:opacity-50">Primera</button>
+              <button onClick={() => irAPagina(currentPage - 1)} disabled={currentPage === 0} className="px-4 py-2 border rounded disabled:opacity-50">Anterior</button>
+              <button onClick={() => irAPagina(currentPage + 1)} disabled={currentPage === totalPages - 1} className="px-4 py-2 border rounded disabled:opacity-50">Siguiente</button>
+              <button onClick={() => irAPagina(totalPages - 1)} disabled={currentPage === totalPages - 1} className="px-4 py-2 border rounded disabled:opacity-50">Última</button>
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
+            <h2 className="text-2xl font-bold mb-4">{editingCita ? 'Editar Cita' : 'Nueva Cita'}</h2>
+            <form onSubmit={guardarCita} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Nombre *</label>
+                  <input type="text" name="nombre" value={formData.nombre} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Teléfono *</label>
+                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Email</label>
+                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full border rounded px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Modelo Vehículo *</label>
+                  <input type="text" name="modeloVehiculo" value={formData.modeloVehiculo} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Fecha *</label>
+                  <input type="date" name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Hora *</label>
+                  <select name="hora" value={formData.hora} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required disabled={!formData.fecha || loadingHorarios}>
+                    <option value="">{loadingHorarios ? 'Cargando...' : 'Seleccionar hora'}</option>
+                    {horariosDisponibles.map(hora => <option key={hora} value={hora}>{hora}</option>)}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold mb-1">Tipo Lavado *</label>
+                  <select name="tipoLavado" value={formData.tipoLavado} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required>
+                    <option value="">Seleccionar tipo</option>
+                    {tiposLavado.map(tipo => <option key={tipo.id} value={tipo.id}>{tipo.descripcion}</option>)}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold mb-1">Observaciones</label>
+                  <textarea name="observaciones" value={formData.observaciones} onChange={handleInputChange} className="w-full border rounded px-3 py-2" rows="3" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={cerrarModal} className="px-6 py-2 border rounded hover:bg-gray-100">Cancelar</button>
+                <button type="submit" disabled={validandoDisponibilidad} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                  {validandoDisponibilidad ? 'Validando...' : editingCita ? 'Actualizar' : 'Crear'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

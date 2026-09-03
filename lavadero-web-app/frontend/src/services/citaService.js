@@ -36,8 +36,11 @@ const citaService = {
     api.get('/citas/verificar-disponibilidad', { params: { fecha, hora } }),
   getHorariosDisponibles: (fecha) =>
     api.get('/citas/horarios-disponibles', { params: { fecha } }),
-  getHorariosConfigurados: () =>
-    api.get('/horarios-configurados'),
+  
+  // ✅ NUEVO: Obtener todos los horarios de la semana desde HorarioDiaSemana
+  getHorariosDiaSemana: () =>
+    api.get('/horarios'),
+  
   getDisponibilidadMensual: (mes, anio, tipoLavado) =>
     api.get('/citas/disponibilidad-mensual', { params: { mes, anio, tipoLavado } }),
 
