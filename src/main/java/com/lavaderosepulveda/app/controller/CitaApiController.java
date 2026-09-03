@@ -109,14 +109,25 @@ public class CitaApiController {
     public ResponseEntity<List<String>> obtenerDisponibilidadMensual(
             @RequestParam("mes") int mes,
             @RequestParam("anio") int anio,
-            @RequestParam("tipoLavado") String tipoLavadoStr) {
+            @RequestParam(value = "tipoLavado", required = false) String tipoLavadoStr) {
         try {
             YearMonth yearMonth = YearMonth.of(anio, mes);
-            TipoLavado tipoLavado = TipoLavado.valueOf(tipoLavadoStr);
-            return ResponseEntity.ok(horarioService.obtenerDiasNoDisponibles(yearMonth, tipoLavado));
+            
+            // Si tipoLavado no viene, pasar null
+            TipoLavado tipoLavado = null;
+            if (tipoLavadoStr != null && !tipoLavadoStr.isEmpty()) {
+                try {
+                    tipoLavado = TipoLavado.valueOf(tipoLavadoStr);
+                } catch (IllegalArgumentException e) {
+                    tipoLavado = null;
+                }
+            }
+            
+            List<String> diasNoDisponibles = horarioService.obtenerDiasNoDisponibles(yearMonth, tipoLavado);
+            return ResponseEntity.ok(diasNoDisponibles);
         } catch (Exception e) {
-            logger.error("Error disponibilidad mensual: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            logger.error("Error disponibilidad mensual: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(List.of());
         }
     }
 
