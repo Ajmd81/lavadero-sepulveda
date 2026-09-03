@@ -5,6 +5,7 @@ import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.DiaCerrado;
 import com.lavaderosepulveda.app.model.HorarioDiaSemana;
 import com.lavaderosepulveda.app.model.enums.DiaSemana;
+import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.repository.CitaRepository;
 import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
@@ -114,6 +115,98 @@ public class HorarioService {
         return obtenerHorariosDisponibles(fecha).contains(hora);
     }
 
+    /**
+     * Obtiene los horarios disponibles para una fecha específica.
+     * 
+     * Lógica:
+     * 1. Obtiene configuración de horarios del día
+     * 2. Obtiene citas agendadas para esa fecha
+     * 3. Retorna horarios no ocupados
+     */
+    public List<String> obtenerHorariosDisponiblesFormato(LocalDate fecha) {
+        try {
+            // Obtener día de la semana
+            String diaSemana = obtenerDiaSemana(fecha);
+            
+            // Obtener configuración
+            HorarioDiaSemana horarioDia = horarioDiaSemanaRepository.findByDiaSemana(DiaSemana.valueOf(diaSemana))
+                .orElse(null);
+            
+            if (horarioDia == null || !horarioDia.getActivo()) {
+                return List.of();
+            }
+            
+            // Construir lista de horarios del día
+            List<String> horariosDelDia = new ArrayList<>();
+            
+            // Mañana
+            if (horarioDia.getAperturaMañana() != null && horarioDia.getCierreMañana() != null) {
+                horariosDelDia.addAll(generarHorarios(
+                    horarioDia.getAperturaMañana().toString(),
+                    horarioDia.getCierreMañana().toString()
+                ));
+            }
+            
+            // Tarde
+            if (horarioDia.getAperturaTarde() != null && horarioDia.getCierreTarde() != null) {
+                horariosDelDia.addAll(generarHorarios(
+                    horarioDia.getAperturaTarde().toString(),
+                    horarioDia.getCierreTarde().toString()
+                ));
+            }
+            
+            // Obtener citas del día
+            List<Cita> citasDelDia = citaRepository.findByFechaAndEstadoNot(fecha, EstadoCita.CANCELADA);
+            
+            Set<String> horariosOcupados = citasDelDia.stream()
+                .map(cita -> String.format("%02d:%02d", cita.getHora().getHour(), cita.getHora().getMinute()))
+                .collect(Collectors.toSet());
+            
+            // Retornar solo disponibles
+            return horariosDelDia.stream()
+                .filter(hora -> !horariosOcupados.contains(hora))
+                .sorted()
+                .collect(Collectors.toList());
+                
+        } catch (Exception e) {
+            logger.error("Error obteniendo horarios disponibles: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Genera lista de horarios entre dos horas
+     */
+    private List<String> generarHorarios(String horaInicio, String horaFin) {
+        List<String> horarios = new ArrayList<>();
+        
+        int hInicio = Integer.parseInt(horaInicio.split(":")[0]);
+        int hFin = Integer.parseInt(horaFin.split(":")[0]);
+        
+        for (int h = hInicio; h < hFin; h++) {
+            horarios.add(String.format("%02d:00", h));
+        }
+        
+        return horarios;
+    }
+
+    /**
+     * Obtiene el día de la semana en español
+     */
+    private String obtenerDiaSemana(LocalDate fecha) {
+        DayOfWeek dayOfWeek = fecha.getDayOfWeek();
+        
+        switch (dayOfWeek) {
+            case MONDAY:    return "LUNES";
+            case TUESDAY:   return "MARTES";
+            case WEDNESDAY: return "MIERCOLES";
+            case THURSDAY:  return "JUEVES";
+            case FRIDAY:    return "VIERNES";
+            case SATURDAY:  return "SABADO";
+            case SUNDAY:    return "DOMINGO";
+            default:        throw new IllegalArgumentException("Día inválido");
+        }
+    }
     /**
      * Verifica si hay disponibilidad para una cita de duración específica.
      * Para citas de 2 horas comprueba que el slot siguiente también esté libre.
@@ -260,15 +353,6 @@ public class HorarioService {
         List<LocalTime> horariosDelDia = generarHorariosPorDia(fecha);
         long citasDelDia = citaRepository.countByFecha(fecha);
         return citasDelDia <= horariosDelDia.size();
-    }
-
-    /**
-     * Obtiene las horas disponibles como strings para respuestas API.
-     */
-    public List<String> obtenerHorariosDisponiblesFormato(LocalDate fecha) {
-        return obtenerHorariosDisponibles(fecha).stream()
-                .map(hora -> String.format("%02d:%02d", hora.getHour(), hora.getMinute()))
-                .collect(Collectors.toList());
     }
 
     /**

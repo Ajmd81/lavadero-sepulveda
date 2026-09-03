@@ -164,4 +164,10 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
             LIMIT 1
             """, nativeQuery = true)
     String findServicioMasPopular(@Param("fechaInicio") LocalDate fechaInicio);
+
+    @Query("SELECT c FROM Cita c WHERE c.fecha = :fecha AND c.estado != :estado")
+    List<Cita> findByFechaAndEstadoNot(
+            @Param("fecha") LocalDate fecha,
+            @Param("estado") EstadoCita estado
+    );
 }
