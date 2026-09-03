@@ -92,6 +92,7 @@ public class HorarioService {
 
         return horariosDelDia.stream()
                 .filter(h -> !horariosOcupados.contains(h))
+                .sorted()
                 .collect(Collectors.toList());
     }
 
