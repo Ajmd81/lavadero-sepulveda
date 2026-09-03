@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import {
   Building2, FileText, Settings as SettingsIcon, Clock,
-  Save, Upload, X, AlertCircle, CheckCircle, Edit2, Check
+  Save, Upload, X, AlertCircle, CheckCircle, Edit2, Check,
+  Calendar, Plus, Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -42,6 +43,29 @@ const Configuracion = () => {
     }
   });
 
+  // ✅ Query para obtener días cerrados en los próximos 3 meses
+  const { data: diasCerradosData = [] } = useQuery({
+    queryKey: ['dias-cerrados'],
+    queryFn: async () => {
+      const inicio = new Date();
+      const fin = new Date();
+      fin.setMonth(fin.getMonth() + 3); // 3 meses adelante
+      
+      const inicioStr = inicio.toISOString().split('T')[0];
+      const finStr = fin.toISOString().split('T')[0];
+      
+      try {
+        const { data } = await api.get('/dias-cerrados/rango', {
+          params: { inicio: inicioStr, fin: finStr }
+        });
+        return data || [];
+      } catch (error) {
+        console.error('Error obteniendo días cerrados:', error);
+        return [];
+      }
+    }
+  });
+
   // ── Estado local para formulario empresa ────────────────────────────────────
   const [configEnEdicion, setConfigEnEdicion] = useState(null);
 
@@ -49,11 +73,17 @@ const Configuracion = () => {
   const [horariosEnEdicion, setHorariosEnEdicion] = useState({});
   const [editandoDia, setEditandoDia] = useState(null);
 
+  // ✅ Estado para gestionar días cerrados
+  const [diasCerrados, setDiasCerrados] = useState([]);
+  const [fechaCerrada, setFechaCerrada] = useState('');
+  const [tipoCierre, setTipoCierre] = useState('FESTIVO');
+  const [motivoCierre, setMotivoCierre] = useState('');
+  const [mostrarFormularioDiasCerrados, setMostrarFormularioDiasCerrados] = useState(false);
+
   // ── Handlers para Empresa ──────────────────────────────────────────────────
   const handleChangeEmpresa = (e) => {
     const { name, value, type, checked } = e.target;
-    setConfigEnEdicion(prev => ({
-      ...prev,
+    setConfigEnEdicion(prev => ({      ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
   };
@@ -87,8 +117,7 @@ const Configuracion = () => {
   };
 
   const handleChangeHorario = (diaSemana, field, value) => {
-    setHorariosEnEdicion(prev => ({
-      ...prev,
+    setHorariosEnEdicion(prev => ({      ...prev,
       [diaSemana]: {
         ...prev[diaSemana],
         [field]: value === '' ? null : value
@@ -100,6 +129,13 @@ const Configuracion = () => {
     setEditandoDia(null);
     setHorariosEnEdicion({});
   };
+
+  // ✅ Sincronizar datos de días cerrados cuando cambian
+  useEffect(() => {
+    if (diasCerradosData) {
+      setDiasCerrados(diasCerradosData);
+    }
+  }, [diasCerradosData]);
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const guardarEmpresaMutation = useMutation({
@@ -170,8 +206,54 @@ const Configuracion = () => {
     }
   });
 
+  // ✅ Mutation para agregar un día cerrado
+  const agregarDiaCerradoMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await api.post('/dias-cerrados', {
+        fecha: data.fecha,
+        tipo: data.tipo,
+        motivo: data.motivo || null
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
+      setFechaCerrada('');
+      setMotivoCierre('');
+      setTipoCierre('FESTIVO');
+      setMostrarFormularioDiasCerrados(false);
+      setMensaje({ tipo: 'exito', texto: 'Día marcado como cerrado' });
+      setTimeout(() => setMensaje(null), 3000);
+    },
+    onError: (error) => {
+      setMensaje({
+        tipo: 'error',
+        texto: error.response?.data?.error || 'Error al marcar el día'
+      });
+    }
+  });
+
+  // ✅ Mutation para eliminar un día cerrado
+  const eliminarDiaCerradoMutation = useMutation({
+    mutationFn: async (id) => {
+      const response = await api.delete(`/dias-cerrados/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
+      setMensaje({ tipo: 'exito', texto: 'Día reabierto correctamente' });
+      setTimeout(() => setMensaje(null), 3000);
+    },
+    onError: (error) => {
+      setMensaje({
+        tipo: 'error',
+        texto: error.response?.data?.error || 'Error al reabrir el día'
+      });
+    }
+  });
+
   // ── Inicializar edición cuando cambia de tab ───────────────────────────────
-  useState(() => {
+  useEffect(() => {
     if (tabActiva === 'empresa' && configuracion && !configEnEdicion) {
       setConfigEnEdicion({
         emisorNombre: configuracion.emisorNombre || '',
@@ -192,13 +274,14 @@ const Configuracion = () => {
         cuentaBancaria: configuracion.cuentaBancaria || ''
       });
     }
-  });
+  }, [tabActiva, configuracion, configEnEdicion]);
 
   // ── Tabs ───────────────────────────────────────────────────────────────────
   const tabs = [
     { id: 'empresa', label: 'Datos Empresa', icon: Building2 },
-    { id: 'factura', label: 'Plantilla Facturas', icon: FileText },
     { id: 'horarios', label: 'Horarios Semana', icon: Clock },
+    { id: 'dias-cerrados', label: '📅 Días Cerrados', icon: Calendar },
+    { id: 'factura', label: 'Plantilla Facturas', icon: FileText },
     { id: 'sistema', label: 'Sistema', icon: SettingsIcon }
   ];
 
@@ -425,6 +508,180 @@ const Configuracion = () => {
                   <li>• Deja en blanco para cerrar ese horario (ej: viernes sin tarde)</li>
                   <li>• Debe haber separación entre cierre de mañana y apertura de tarde</li>
                   <li>• Los cambios se aplican a nuevas citas automáticamente</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* ── Tab Días Cerrados ────────────────────────────────────────────────── */}
+          {tabActiva === 'dias-cerrados' && (
+            <div className="space-y-6">
+              {/* Botón para agregar */}
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-bold text-gray-900">Gestionar Días Cerrados</h3>
+                <button
+                  onClick={() => setMostrarFormularioDiasCerrados(!mostrarFormularioDiasCerrados)}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  <Plus size={20} className="mr-2" />
+                  Nuevo
+                </button>
+              </div>
+
+              {/* Formulario para agregar día cerrado */}
+              {mostrarFormularioDiasCerrados && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                  <h4 className="font-semibold text-gray-900 mb-4">Marcar día como cerrado</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
+                      <input
+                        type="date"
+                        value={fechaCerrada}
+                        onChange={(e) => setFechaCerrada(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                      <select
+                        value={tipoCierre}
+                        onChange={(e) => setTipoCierre(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="FESTIVO">Festivo</option>
+                        <option value="VACACIONES">Vacaciones</option>
+                        <option value="MANTENIMIENTO">Mantenimiento</option>
+                        <option value="OTRO">Otro</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Motivo (opcional)</label>
+                      <input
+                        type="text"
+                        value={motivoCierre}
+                        onChange={(e) => setMotivoCierre(e.target.value)}
+                        placeholder="ej: Día festivo, Vacaciones..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (!fechaCerrada) {
+                          setMensaje({ tipo: 'error', texto: 'Selecciona una fecha' });
+                          return;
+                        }
+                        agregarDiaCerradoMutation.mutate({
+                          fecha: fechaCerrada,
+                          tipo: tipoCierre,
+                          motivo: motivoCierre
+                        });
+                      }}
+                      disabled={agregarDiaCerradoMutation.isPending}
+                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Save size={18} className="mr-2" />
+                      {agregarDiaCerradoMutation.isPending ? 'Guardando...' : 'Guardar'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMostrarFormularioDiasCerrados(false);
+                        setFechaCerrada('');
+                        setMotivoCierre('');
+                        setTipoCierre('FESTIVO');
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de días cerrados */}
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Fecha</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Día</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tipo</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Motivo</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {diasCerrados && diasCerrados.length > 0 ? (
+                        diasCerrados
+                          .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+                          .map((dia) => {
+                            const fecha = new Date(dia.fecha + 'T00:00:00');
+                            const nombreDia = fecha.toLocaleDateString('es-ES', { weekday: 'long' });
+                            const fechaFormato = fecha.toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            });
+                            
+                            const tipoColors = {
+                              FESTIVO: 'bg-red-100 text-red-800',
+                              VACACIONES: 'bg-purple-100 text-purple-800',
+                              MANTENIMIENTO: 'bg-yellow-100 text-yellow-800',
+                              OTRO: 'bg-gray-100 text-gray-800'
+                            };
+
+                            return (
+                              <tr key={dia.id} className="hover:bg-gray-50 transition">
+                                <td className="px-6 py-4 text-sm font-medium text-gray-900">{fechaFormato}</td>
+                                <td className="px-6 py-4 text-sm text-gray-600 capitalize">{nombreDia}</td>
+                                <td className="px-6 py-4 text-sm">
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${tipoColors[dia.tipo] || tipoColors.OTRO}`}>
+                                    {dia.tipo}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-600">{dia.motivo || '-'}</td>
+                                <td className="px-6 py-4 text-sm">
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`¿Reabrir ${fechaFormato}?`)) {
+                                        eliminarDiaCerradoMutation.mutate(dia.id);
+                                      }
+                                    }}
+                                    disabled={eliminarDiaCerradoMutation.isPending}
+                                    className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:bg-red-50 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Reabrir día"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                            <Calendar size={40} className="mx-auto mb-2 text-gray-300" />
+                            <p>No hay días cerrados programados</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-900 mb-2">💡 Información</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Marca los días festivos, vacaciones o cierre para mantenimiento</li>
+                  <li>• Los clientes no podrán reservar en estos días desde la app móvil</li>
+                  <li>• Puedes agregar múltiples días cerrados (ej: vacaciones del 1-22 de agosto)</li>
+                  <li>• Los cambios se aplican inmediatamente</li>
+                  <li>• Usa "Reabrir" para permitir reservas nuevamente</li>
                 </ul>
               </div>
             </div>

@@ -4,6 +4,7 @@ import com.lavaderosepulveda.app.dto.CitaDTO;
 import com.lavaderosepulveda.app.mapper.CitaMapper;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.HorarioDiaSemana;
+import com.lavaderosepulveda.app.model.enums.DiaSemana;
 import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
@@ -11,6 +12,7 @@ import com.lavaderosepulveda.app.repository.HorarioDiaSemanaRepository;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
 import com.lavaderosepulveda.app.service.HorarioService;
+import com.lavaderosepulveda.app.service.HorarioDiaSemanaService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.DayOfWeek;
@@ -43,9 +46,10 @@ public class CitaApiController {
     @Autowired private HorarioService horarioService;
     @Autowired private EmailService emailService;
     @Autowired private CitaMapper citaMapper;
-    @Autowired private CitaRateLimiter citaRateLimiter;    // ← NUEVO
+    @Autowired private CitaRateLimiter citaRateLimiter;
     @Autowired private javax.sql.DataSource dataSource;
     @Autowired private HorarioDiaSemanaRepository horarioDiaSemanaRepository;
+    @Autowired private HorarioDiaSemanaService horarioDiaSemanaService;
 
     // ─── LISTAR CITAS ─────────────────────────────────────────────────────────
 
@@ -122,7 +126,68 @@ public class CitaApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(citaMapper.toDTO(nuevaCita));
     }
 
-    // ─── HORARIOS ─────────────────────────────────────────────────────────────
+    // ─── HORARIOS ────────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/horarios
+     * Obtiene todos los horarios de la semana
+     */
+    @GetMapping("/horarios")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<List<HorarioDiaSemana>> obtenerHorariosDiaSemana() {
+        try {
+            logger.info("GET /api/horarios - Obteniendo todos los horarios");
+            List<HorarioDiaSemana> horarios = horarioDiaSemanaRepository.findAllByOrderByDiaSemanaAsc();
+            return ResponseEntity.ok(horarios);
+        } catch (Exception e) {
+            logger.error("Error obteniendo horarios por día: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * GET /api/horarios/{diaSemana}
+     * Obtiene el horario de un día específico
+     * Ejemplo: /api/horarios/LUNES
+     */
+    @GetMapping("/horarios/{diaSemana}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<HorarioDiaSemana> obtenerHorarioPorDia(
+            @PathVariable DiaSemana diaSemana) {
+        try {
+            logger.info("GET /api/horarios/{} - Obteniendo horario", diaSemana);
+            HorarioDiaSemana horario = horarioDiaSemanaRepository.findByDiaSemana(diaSemana)
+                    .orElse(null);
+            return horario != null ? ResponseEntity.ok(horario) : ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Error obteniendo horario: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * PUT /api/horarios/{diaSemana}
+     * Actualiza el horario de un día específico
+     * Acceso: Solo ADMIN
+     */
+    @PutMapping("/horarios/{diaSemana}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<HorarioDiaSemana> actualizarHorarioDia(
+            @PathVariable DiaSemana diaSemana,
+            @Valid @RequestBody HorarioDiaSemana horario) {
+        try {
+            logger.info("PUT /api/horarios/{} - Actualizando horario", diaSemana);
+            HorarioDiaSemana actualizado = horarioDiaSemanaService.actualizarHorarioDia(diaSemana, horario);
+            logger.info("Horario actualizado para {}", diaSemana);
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error de validación: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Error al actualizar horario: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @GetMapping("/citas/horarios-disponibles")
     public ResponseEntity<List<String>> obtenerHorariosDisponibles(@RequestParam("fecha") String fechaStr) {
@@ -132,17 +197,6 @@ public class CitaApiController {
                 .map(DateTimeFormatUtils::formatearHoraCorta)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(horariosFormateados);
-    }
-
-    @GetMapping("/horarios")
-    public ResponseEntity<List<HorarioDiaSemana>> obtenerHorariosDiaSemana() {
-        try {
-            List<HorarioDiaSemana> horarios = horarioDiaSemanaRepository.findAllByOrderByDiaSemanaAsc();
-            return ResponseEntity.ok(horarios);
-        } catch (Exception e) {
-            logger.error("Error obteniendo horarios por día: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
     @GetMapping("/citas/disponibilidad-mensual")
@@ -175,90 +229,54 @@ public class CitaApiController {
     public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
         List<Map<String, Object>> tipos = Arrays.stream(TipoLavado.values())
                 .map(tipo -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("id", tipo.name());
-                    m.put("nombre", tipo.name());
-                    m.put("descripcion", tipo.getDescripcion());
-                    m.put("precio", tipo.getPrecio());
-                    return m;
+                    Map<String, Object> tipoMap = new HashMap<>();
+                    tipoMap.put("id", tipo.ordinal());
+                    tipoMap.put("nombre", tipo.getName());
+                    tipoMap.put("label", tipo.getLabel());
+                    tipoMap.put("descripcion", tipo.getDescripcion());
+                    tipoMap.put("precio", tipo.getPrecio());
+                    tipoMap.put("duracion", tipo.getDuracion());  // en minutos
+                    return tipoMap;
                 })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(tipos);
     }
 
-    // ─── CRUD ─────────────────────────────────────────────────────────────────
-
-    @DeleteMapping("/citas/{id}")
-    public ResponseEntity<Void> eliminarCita(@PathVariable Long id) {
-        citaService.eliminarCita(id);
-        return ResponseEntity.noContent().build();
-    }
+    // ─── MODIFICAR CITAS ───────────────────────────────────────────────────────
 
     @PutMapping("/citas/{id}")
-    public ResponseEntity<CitaDTO> actualizarCita(@PathVariable Long id, @RequestBody CitaDTO citaDTO) {
-        Cita cita = citaService.actualizarCita(id, citaMapper.toEntity(citaDTO));
-        return ResponseEntity.ok(citaMapper.toDTO(cita));
-    }
-
-    // ─── CONSULTAS ADICIONALES ────────────────────────────────────────────────
-
-    @GetMapping("/citas/por-fecha")
-    public ResponseEntity<Map<String, List<CitaDTO>>> obtenerCitasPorFechaAgrupadas() {
-        Map<String, List<CitaDTO>> result = new LinkedHashMap<>();
-        citaService.obtenerCitasAgrupadasPorFechaFormateada().forEach((fecha, citas) ->
-                result.put(fecha, citas.stream().map(citaMapper::toDTO).collect(Collectors.toList())));
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/citas/cliente/{telefono}")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasPorTelefono(@PathVariable String telefono) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CitaDTO> modificarCita(@PathVariable Long id, @Valid @RequestBody CitaDTO citaDTO) {
         try {
-            List<Cita> citas = citaService.obtenerCitasPorTelefono(telefono);
-            if (citas == null || citas.isEmpty()) return ResponseEntity.ok(Collections.emptyList());
-            return ResponseEntity.ok(citas.stream().map(citaMapper::toDTO).collect(Collectors.toList()));
-        } catch (Exception e) {
-            logger.error("Error citas por teléfono {}: {}", telefono, e.getMessage(), e);
-            return ResponseEntity.ok(Collections.emptyList());
+            Cita citaExistente = citaService.obtenerCitaPorId(id)
+                    .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
+
+            citaExistente.setTipoLavado(citaDTO.getTipoLavado());
+            citaExistente.setFecha(citaDTO.getFecha());
+            citaExistente.setHora(citaDTO.getHora());
+            citaExistente.setDuracionEstimada(citaDTO.getDuracionEstimada());
+
+            // ✅ CORREGIDO: Usar crearCita() que actualiza si existe
+            Cita actualizada = citaService.crearCita(citaExistente);
+            return ResponseEntity.ok(citaMapper.toDTO(actualizada));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
-    @GetMapping("/citas/fecha/{fecha}")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasPorFecha(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        return ResponseEntity.ok(citaService.obtenerCitasPorFecha(fecha).stream()
-                .map(citaMapper::toDTO).collect(Collectors.toList()));
-    }
-
-    @GetMapping("/citas/rango")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasPorRango(
-            @RequestParam("inicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
-            @RequestParam("fin") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
-        return ResponseEntity.ok(citaService.obtenerCitasEnRango(inicio, fin).stream()
-                .map(citaMapper::toDTO).collect(Collectors.toList()));
-    }
-
-    @GetMapping("/citas/estado/{estado}")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasPorEstado(@PathVariable String estado) {
+    @DeleteMapping("/citas/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> eliminarCita(@PathVariable Long id) {
         try {
-            EstadoCita e = EstadoCita.valueOf(estado.toUpperCase());
-            return ResponseEntity.ok(citaService.obtenerCitasPorEstado(e).stream()
-                    .map(citaMapper::toDTO).collect(Collectors.toList()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            citaService.obtenerCitaPorId(id).orElseThrow(() -> new RuntimeException("Cita no encontrada"));
+            citaService.eliminarCita(id);
+            return ResponseEntity.ok(Map.of("mensaje", "Cita eliminada correctamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
-    @GetMapping("/citas/pendientes")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasPendientes() {
-        return ResponseEntity.ok(citaService.obtenerCitasPendientes().stream()
-                .map(citaMapper::toDTO).collect(Collectors.toList()));
-    }
-
-    @GetMapping("/citas/no-facturadas")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasNoFacturadas() {
-        return ResponseEntity.ok(citaService.obtenerCitasCompletadasSinFacturar().stream()
-                .map(citaMapper::toDTO).collect(Collectors.toList()));
-    }
+    // ─── BÚSQUEDAS ESPECÍFICAS ─────────────────────────────────────────────────
 
     @GetMapping("/citas/hoy")
     public ResponseEntity<List<CitaDTO>> obtenerCitasHoy() {
