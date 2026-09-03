@@ -3,9 +3,11 @@ package com.lavaderosepulveda.app.controller;
 import com.lavaderosepulveda.app.dto.CitaDTO;
 import com.lavaderosepulveda.app.mapper.CitaMapper;
 import com.lavaderosepulveda.app.model.Cita;
+import com.lavaderosepulveda.app.model.HorarioDiaSemana;
 import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
+import com.lavaderosepulveda.app.repository.HorarioDiaSemanaRepository;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
 import com.lavaderosepulveda.app.service.HorarioService;
@@ -43,6 +45,7 @@ public class CitaApiController {
     @Autowired private CitaMapper citaMapper;
     @Autowired private CitaRateLimiter citaRateLimiter;    // ← NUEVO
     @Autowired private javax.sql.DataSource dataSource;
+    @Autowired private HorarioDiaSemanaRepository horarioDiaSemanaRepository;
 
     // ─── LISTAR CITAS ─────────────────────────────────────────────────────────
 
@@ -129,6 +132,17 @@ public class CitaApiController {
                 .map(DateTimeFormatUtils::formatearHoraCorta)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(horariosFormateados);
+    }
+
+    @GetMapping("/horarios")
+    public ResponseEntity<List<HorarioDiaSemana>> obtenerHorariosDiaSemana() {
+        try {
+            List<HorarioDiaSemana> horarios = horarioDiaSemanaRepository.findAllByOrderByDiaSemanaAsc();
+            return ResponseEntity.ok(horarios);
+        } catch (Exception e) {
+            logger.error("Error obteniendo horarios por día: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/citas/disponibilidad-mensual")
