@@ -257,7 +257,7 @@ public class CitaApiController {
         }
     }
 
-    @GetMapping("/citas/disponibilidad-mes")
+    @GetMapping("/citas/disponibilidad-mensual")
     public ResponseEntity<List<String>> obtenerDisponibilidadMensual(
             @RequestParam("mes") int mes,
             @RequestParam("anio") int anio,
