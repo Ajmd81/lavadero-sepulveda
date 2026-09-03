@@ -25,13 +25,39 @@ const Configuracion = () => {
     }
   });
 
+  // Estado para fecha seleccionada (con formato ISO YYYY-MM-DD)
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(
+    new Date().toISOString().split('T')[0]
+  );
+
   // Query para obtener todos los horarios
   const { data: horarios = [], isLoading: isLoadingHorarios } = useQuery({
     queryKey: ['horarios'],
     queryFn: async () => {
-      const { data } = await api.get('/horarios');
+      const { data } = await api.get('/citas/horarios');
       return data;
     }
+  });
+
+  // Query para horarios disponibles - CON FECHA EN FORMATO ISO
+  const { data: horariosDisponibles = [] } = useQuery({
+    queryKey: ['horarios-disponibles', fechaSeleccionada],
+    queryFn: async () => {
+      if (!fechaSeleccionada) {
+        return [];
+      }
+      
+      try {
+        const { data } = await api.get('/citas/horarios-disponibles', {
+          params: { fecha: fechaSeleccionada }
+        });
+        return data || [];
+      } catch (error) {
+        console.error('Error obteniendo horarios disponibles:', error);
+        return [];
+      }
+    },
+    enabled: !!fechaSeleccionada
   });
 
   // Query para configuración global (duración citas, citas por hora)
@@ -189,7 +215,7 @@ const Configuracion = () => {
         aperturaTarde: horario.aperturaTarde ? horario.aperturaTarde + ':00' : null,
         cierreTarde: horario.cierreTarde ? horario.cierreTarde + ':00' : null,
       };
-      const response = await api.put(`/horarios/${horario.diaSemana}`, payload);
+      const response = await api.put(`/citas/horarios/${horario.diaSemana}`, payload);
       return response.data;
     },
     onSuccess: (data) => {
@@ -371,6 +397,39 @@ const Configuracion = () => {
                   </p>
                 </div>
               )}
+
+              {/* Selector de fecha para ver horarios disponibles */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Ver horarios disponibles</h4>
+                <div className="flex gap-4 items-end">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                    <input
+                      type="date"
+                      value={fechaSeleccionada}
+                      onChange={(e) => setFechaSeleccionada(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                {horariosDisponibles.length > 0 ? (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-700 mb-2">Horarios disponibles:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {horariosDisponibles.map((horario) => (
+                        <span key={horario} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                          {horario}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 text-sm text-gray-600">
+                    No hay horarios disponibles para esta fecha
+                  </div>
+                )}
+              </div>
 
               {/* Tabla de horarios */}
               <div className="overflow-x-auto">
