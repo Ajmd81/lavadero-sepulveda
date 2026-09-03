@@ -152,7 +152,7 @@ const Citas = () => {
       }
 
       // Ahora obtener horarios ocupados del backend con formato ano/mes/dia
-      const fechaFormato = `${year}/${month}/${day}`;
+      const fechaFormato = `${year}-${month}-${day}`;
       const response = await citaService.getHorariosDisponibles(fechaFormato);
       
       let horariosOcupados = response?.data || [];
