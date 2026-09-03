@@ -80,7 +80,7 @@ public class CitaApiController {
         }
     }
 
-    @GetMapping("/horarios-disponibles")
+    @GetMapping("/citas/horarios-disponibles")
     public ResponseEntity<List<String>> obtenerHorariosDisponibles(
             @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         
