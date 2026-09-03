@@ -461,4 +461,45 @@ public class CitaService {
         if (fecha.isBefore(LocalDate.now()))
             throw new RuntimeException("No se pueden crear citas en fechas pasadas");
     }
+
+    /**
+     * Actualiza una cita existente
+     */
+    public Cita actualizarCita(Cita cita) {
+        if (cita.getId() == null) {
+            throw new RuntimeException("ID de cita es requerido para actualizar");
+        }
+        
+        // Verificar que la cita existe
+        Cita citaExistente = citaRepository.findById(cita.getId())
+            .orElseThrow(() -> new RuntimeException("Cita no encontrada con ID: " + cita.getId()));
+        
+        // Actualizar solo los campos permitidos
+        if (cita.getNombre() != null) {
+            citaExistente.setNombre(cita.getNombre());
+        }
+        if (cita.getTelefono() != null) {
+            citaExistente.setTelefono(cita.getTelefono());
+        }
+        if (cita.getEmail() != null) {
+            citaExistente.setEmail(cita.getEmail());
+        }
+        if (cita.getModeloVehiculo() != null) {
+            citaExistente.setModeloVehiculo(cita.getModeloVehiculo());
+        }
+        if (cita.getFecha() != null) {
+            citaExistente.setFecha(cita.getFecha());
+        }
+        if (cita.getHora() != null) {
+            citaExistente.setHora(cita.getHora());
+        }
+        if (cita.getTipoLavado() != null) {
+            citaExistente.setTipoLavado(cita.getTipoLavado());
+        }
+        if (cita.getObservaciones() != null) {
+            citaExistente.setObservaciones(cita.getObservaciones());
+        }
+        
+        return citaRepository.save(citaExistente);
+    }
 }
