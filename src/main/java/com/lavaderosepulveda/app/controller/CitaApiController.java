@@ -189,14 +189,72 @@ public class CitaApiController {
         }
     }
 
-    @GetMapping("/citas/horarios-disponibles")
-    public ResponseEntity<List<String>> obtenerHorariosDisponibles(@RequestParam("fecha") String fechaStr) {
-        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
-        List<String> horariosFormateados = horarioService.obtenerHorariosDisponibles(fecha).stream()
-                .filter(hora -> hora.getHour() != 15)
-                .map(DateTimeFormatUtils::formatearHoraCorta)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(horariosFormateados);
+    @GetMapping("/horarios-disponibles")
+    public ResponseEntity<List<String>> obtenerHorariosDisponibles(
+            @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        
+        try {
+            // Validar que la fecha no sea pasada
+            if (fecha.isBefore(LocalDate.now())) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Obtener horarios disponibles desde HorarioService
+            List<String> horariosDisponibles = horarioService.obtenerHorariosDisponiblesFormato(fecha);
+            
+            if (horariosDisponibles.isEmpty()) {
+                logger.info("No hay horarios disponibles para la fecha: {}", fecha);
+                return ResponseEntity.ok(new ArrayList<>()); // Retornar lista vacía
+            }
+            
+            return ResponseEntity.ok(horariosDisponibles);
+        } catch (Exception e) {
+            logger.error("Error obteniendo horarios disponibles para fecha: {}", fecha, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Obtiene los horarios generados para un día (sin validar disponibilidad).
+     * Usado para el panel administrativo.
+     */
+    @GetMapping("/horarios-del-dia")
+    public ResponseEntity<List<String>> obtenerHorariosPorDia(
+            @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        
+        try {
+            List<LocalTime> horarios = horarioService.generarHorariosPorDia(fecha);
+            List<String> horariosFormato = horarios.stream()
+                    .map(h -> String.format("%02d:%02d", h.getHour(), h.getMinute()))
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(horariosFormato);
+        } catch (Exception e) {
+            logger.error("Error obteniendo horarios para fecha: {}", fecha, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Obtiene los días no disponibles (ocupados al 50%) de un mes.
+     */
+    @GetMapping("/dias-no-disponibles")
+    public ResponseEntity<List<String>> obtenerDiasNoDisponibles(
+            @RequestParam("anio") int anio,
+            @RequestParam("mes") int mes,
+            @RequestParam(value = "tipo", required = false) String tipoLavado) {
+        
+        try {
+            YearMonth yearMonth = YearMonth.of(anio, mes);
+            TipoLavado tipo = tipoLavado != null ? TipoLavado.valueOf(tipoLavado) : null;
+            
+            List<String> diasNoDisponibles = horarioService.obtenerDiasNoDisponibles(yearMonth, tipo);
+            
+            return ResponseEntity.ok(diasNoDisponibles);
+        } catch (Exception e) {
+            logger.error("Error obteniendo días no disponibles", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/citas/disponibilidad-mensual")
