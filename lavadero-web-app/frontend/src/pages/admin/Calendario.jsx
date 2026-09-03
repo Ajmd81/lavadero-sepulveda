@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import citaService from '../../services/citaService';
+import api from '../../services/api';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ const Calendario = () => {
   const [fecha, setFecha] = useState(new Date());
   const [citasDelMes, setCitasDelMes] = useState({});
   const [diasCerrados, setDiasCerrados] = useState({});
+  const [disponibilidadMes, setDisponibilidadMes] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [citasSeleccionadas, setCitasSeleccionadas] = useState([]);
@@ -62,10 +64,14 @@ const Calendario = () => {
   const [guardandoCierre, setGuardandoCierre] = useState(false);
   const [formCierre, setFormCierre] = useState({ tipo: 'FESTIVO', motivo: '' });
 
-  useEffect(() => { cargarCitas(); }, []);
+  useEffect(() => { 
+    cargarCitas(); 
+  }, []);
+
   useEffect(() => {
     agruparCitasPorMes();
     cargarDiasCerradosDelMes();
+    cargarDisponibilidadDelMes();
   }, [fecha, todasLasCitas]);
 
   const cargarCitas = async () => {
@@ -93,6 +99,21 @@ const Calendario = () => {
       setDiasCerrados(mapa);
     } catch {
       // endpoint aún no desplegado — ignorar silenciosamente
+    }
+  };
+
+  // ✅ NUEVO: Cargar disponibilidad del mes
+  const cargarDisponibilidadDelMes = async () => {
+    try {
+      const year = fecha.getFullYear();
+      const month = fecha.getMonth() + 1;
+      const response = await api.get('/citas/disponibilidad-mes', {
+        params: { anio: year, mes: month }
+      });
+      setDisponibilidadMes(response.data || {});
+    } catch (err) {
+      console.warn('No se pudo cargar disponibilidad:', err.message);
+      // No es crítico si falla este endpoint
     }
   };
 
@@ -162,6 +183,27 @@ const Calendario = () => {
     }
   };
 
+  // ✅ NUEVO: Obtener datos de disponibilidad para un día
+  const obtenerDisponibilidadDia = (diaNum) => {
+    const isoFecha = toISODate(new Date(fecha.getFullYear(), fecha.getMonth(), diaNum));
+    return disponibilidadMes[isoFecha];
+  };
+
+  // ✅ NUEVO: Determinar color según disponibilidad
+  const obtenerColorPorDisponibilidad = (diaNum) => {
+    const disponibilidad = obtenerDisponibilidadDia(diaNum);
+    if (!disponibilidad) return null;
+
+    const ocupacion = disponibilidad.porcentajeOcupacion || 0;
+
+    if (disponibilidad.esDiaCerrado) return 'text-red-400';
+    if (ocupacion === 0) return 'text-green-400';      // Verde: sin ocupación
+    if (ocupacion <= 25) return 'text-emerald-400';    // Esmeralda: 0-25%
+    if (ocupacion <= 50) return 'text-yellow-400';     // Amarillo: 25-50%
+    if (ocupacion <= 75) return 'text-orange-400';     // Naranja: 50-75%
+    return 'text-red-400';                             // Rojo: 75-100%
+  };
+
   const diasDelMes = getDiasDelMes(fecha);
   const semanas = [];
   for (let i = 0; i < diasDelMes.length; i += 7) semanas.push(diasDelMes.slice(i, i + 7));
@@ -176,7 +218,10 @@ const Calendario = () => {
         <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src="/assets/icons/calendario.png" alt="Calendario" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
-        <h1 className="text-3xl font-bold text-sepulveda-silver-light">Calendario de Citas</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-sepulveda-silver-light">Calendario de Citas</h1>
+          <p className="text-sm text-sepulveda-silver/70">Disponibilidad y gestión de días cerrados</p>
+        </div>
       </div>
 
       {/* ── Error ── */}
@@ -189,7 +234,7 @@ const Calendario = () => {
 
       {loading && (
         <div className="text-center py-8">
-          <p className="text-sepulveda-silver">Cargando citas...</p>
+          <p className="text-sepulveda-silver">Cargando citas y disponibilidad...</p>
         </div>
       )}
 
@@ -219,6 +264,33 @@ const Calendario = () => {
                 </button>
               </div>
 
+              {/* ✅ NUEVO: Leyenda de disponibilidad */}
+              <div className="mb-4 p-3 bg-sepulveda-graphite/50 rounded-lg border border-sepulveda-silver/20">
+                <p className="text-xs font-semibold text-sepulveda-silver mb-2">Ocupación por color:</p>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-400" />
+                    <span className="text-sepulveda-silver">0% (Libre)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span className="text-sepulveda-silver">0-25%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                    <span className="text-sepulveda-silver">25-50%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-orange-400" />
+                    <span className="text-sepulveda-silver">50-75%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-400" />
+                    <span className="text-sepulveda-silver">75%+ (Lleno)</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Cabecera días semana */}
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {DIAS_SEMANA.map(d => (
@@ -243,16 +315,20 @@ const Calendario = () => {
                       hoy.getFullYear()    === fecha.getFullYear();
                     const esSelec = diaSeleccionado === diaNum && dia.esDelMesActual;
 
-                    let clases = 'p-2 rounded text-sm h-20 relative transition-all ';
+                    // ✅ NUEVO: Datos de disponibilidad
+                    const disponibilidad = obtenerDisponibilidadDia(diaNum);
+                    const colorDisponibilidad = obtenerColorPorDisponibilidad(diaNum);
+
+                    let clases = 'p-2 rounded text-sm h-24 relative transition-all ';
                     if (!dia.esDelMesActual) {
                       clases += 'bg-sepulveda-carbon/50 text-sepulveda-silver/30 cursor-not-allowed border border-sepulveda-silver/10';
                     } else if (esSelec) {
                       clases += 'bg-sepulveda-blue text-white font-bold border-2 border-sepulveda-blue-light';
                     } else if (esCerrado) {
-                      clases += 'bg-sepulveda-graphite hover:bg-sepulveda-graphite/80 border-2 border-sepulveda-silver text-sepulveda-silver';
+                      clases += 'bg-sepulveda-graphite hover:bg-sepulveda-graphite/80 border-2 border-red-500 text-sepulveda-silver';
                     } else if (esHoy) {
                       clases += 'bg-sepulveda-blue-light text-white font-bold border-2 border-sepulveda-blue';
-                    } else if (tieneCitas) {
+                    } else if (tieneCitas || disponibilidad) {
                       clases += 'bg-sepulveda-blue/20 hover:bg-sepulveda-blue/30 border-2 border-sepulveda-blue text-sepulveda-silver-light';
                     } else {
                       clases += 'bg-sepulveda-graphite/60 hover:bg-sepulveda-graphite border border-sepulveda-silver/20 text-sepulveda-silver-light';
@@ -264,17 +340,45 @@ const Calendario = () => {
                         onClick={() => dia.esDelMesActual && seleccionarDia(diaNum)}
                         disabled={!dia.esDelMesActual}
                         className={clases}
+                        title={disponibilidad ? `Disponibles: ${disponibilidad.disponibles}/${disponibilidad.total}` : ''}
                       >
-                        <div className="font-bold flex items-center justify-between">
+                        <div className="font-bold flex items-center justify-between mb-1">
                           <span>{diaNum}</span>
                           {esCerrado && <span title="Día cerrado">🔒</span>}
                         </div>
+
                         {esCerrado && (
-                          <div className="text-xs mt-1 font-semibold text-sepulveda-silver truncate">
+                          <div className="text-xs mt-1 font-semibold text-red-400 truncate">
                             {diasCerrados[isoFecha]?.tipo || 'Cerrado'}
                           </div>
                         )}
-                        {!esCerrado && tieneCitas && (
+
+                        {/* ✅ NUEVO: Mostrar disponibilidad */}
+                        {!esCerrado && disponibilidad && (
+                          <div className="text-xs space-y-0.5">
+                            <div className={`font-bold ${colorDisponibilidad}`}>
+                              {disponibilidad.disponibles}/{disponibilidad.total}
+                            </div>
+                            <div className="w-full h-1 bg-sepulveda-graphite rounded overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${
+                                  disponibilidad.porcentajeOcupacion === 0 ? 'bg-green-500' :
+                                  disponibilidad.porcentajeOcupacion <= 25 ? 'bg-emerald-500' :
+                                  disponibilidad.porcentajeOcupacion <= 50 ? 'bg-yellow-500' :
+                                  disponibilidad.porcentajeOcupacion <= 75 ? 'bg-orange-500' :
+                                  'bg-red-500'
+                                }`}
+                                style={{ width: `${disponibilidad.porcentajeOcupacion}%` }}
+                              />
+                            </div>
+                            <div className="text-xs text-sepulveda-silver/70">
+                              {disponibilidad.porcentajeOcupacion}% lleno
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mostrar cantidad de citas si no hay disponibilidad cargada */}
+                        {!esCerrado && !disponibilidad && tieneCitas && (
                           <div className="text-xs mt-1 font-semibold text-sepulveda-blue-light">
                             {cantCitas} {cantCitas === 1 ? 'cita' : 'citas'}
                           </div>
@@ -296,7 +400,7 @@ const Calendario = () => {
                   <span>Con citas</span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded bg-sepulveda-graphite border border-sepulveda-silver inline-block" />
+                  <span className="w-3 h-3 rounded bg-sepulveda-graphite border border-red-500 inline-block" />
                   <span>🔒 Cerrado</span>
                 </span>
                 <span className="flex items-center gap-1">
@@ -315,6 +419,45 @@ const Calendario = () => {
                   ? `${diaSeleccionado}/${fecha.getMonth() + 1}/${fecha.getFullYear()}`
                   : 'Citas del día'}
               </h4>
+
+              {/* ✅ NUEVO: Panel de disponibilidad */}
+              {diaSeleccionado && obtenerDisponibilidadDia(diaSeleccionado) && (
+                <div className="mb-4 p-3 bg-sepulveda-graphite rounded-lg border border-sepulveda-silver/30">
+                  <div className="font-bold text-sepulveda-silver-light mb-2">Disponibilidad</div>
+                  <div className="space-y-2 text-sm text-sepulveda-silver">
+                    <div className="flex justify-between">
+                      <span>Disponibles:</span>
+                      <span className="font-bold text-green-400">
+                        {obtenerDisponibilidadDia(diaSeleccionado)?.disponibles || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Agendadas:</span>
+                      <span className="font-bold text-orange-400">
+                        {obtenerDisponibilidadDia(diaSeleccionado)?.ocupadas || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total:</span>
+                      <span className="font-bold text-sepulveda-silver-light">
+                        {obtenerDisponibilidadDia(diaSeleccionado)?.total || 0}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-sepulveda-carbon rounded overflow-hidden mt-2">
+                      <div
+                        className={`h-full ${
+                          (obtenerDisponibilidadDia(diaSeleccionado)?.porcentajeOcupacion || 0) === 0 ? 'bg-green-500' :
+                          (obtenerDisponibilidadDia(diaSeleccionado)?.porcentajeOcupacion || 0) <= 25 ? 'bg-emerald-500' :
+                          (obtenerDisponibilidadDia(diaSeleccionado)?.porcentajeOcupacion || 0) <= 50 ? 'bg-yellow-500' :
+                          (obtenerDisponibilidadDia(diaSeleccionado)?.porcentajeOcupacion || 0) <= 75 ? 'bg-orange-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${obtenerDisponibilidadDia(diaSeleccionado)?.porcentajeOcupacion || 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* ── Bloque días cerrados ── */}
               {diaSeleccionado && (
