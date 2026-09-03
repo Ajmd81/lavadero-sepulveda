@@ -80,6 +80,31 @@ public class CitaApiController {
         }
     }
 
+    @GetMapping("/horarios-disponibles")
+    public ResponseEntity<List<String>> obtenerHorariosDisponibles(
+            @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        
+        try {
+            // Validar que la fecha no sea pasada
+            if (fecha.isBefore(LocalDate.now())) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Obtener horarios disponibles desde HorarioService
+            List<String> horariosDisponibles = horarioService.obtenerHorariosDisponiblesFormato(fecha);
+            
+            if (horariosDisponibles.isEmpty()) {
+                logger.info("No hay horarios disponibles para la fecha: {}", fecha);
+                return ResponseEntity.ok(new ArrayList<>()); // Retornar lista vacía
+            }
+            
+            return ResponseEntity.ok(horariosDisponibles);
+        } catch (Exception e) {
+            logger.error("Error obteniendo horarios disponibles para fecha: {}", fecha, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/citas/{id}")
     public ResponseEntity<CitaDTO> obtenerCitaPorId(@PathVariable Long id) {
         return citaService.obtenerCitaPorId(id)
@@ -185,31 +210,6 @@ public class CitaApiController {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             logger.error("Error al actualizar horario: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @GetMapping("/horarios-disponibles")
-    public ResponseEntity<List<String>> obtenerHorariosDisponibles(
-            @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        
-        try {
-            // Validar que la fecha no sea pasada
-            if (fecha.isBefore(LocalDate.now())) {
-                return ResponseEntity.badRequest().build();
-            }
-            
-            // Obtener horarios disponibles desde HorarioService
-            List<String> horariosDisponibles = horarioService.obtenerHorariosDisponiblesFormato(fecha);
-            
-            if (horariosDisponibles.isEmpty()) {
-                logger.info("No hay horarios disponibles para la fecha: {}", fecha);
-                return ResponseEntity.ok(new ArrayList<>()); // Retornar lista vacía
-            }
-            
-            return ResponseEntity.ok(horariosDisponibles);
-        } catch (Exception e) {
-            logger.error("Error obteniendo horarios disponibles para fecha: {}", fecha, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
