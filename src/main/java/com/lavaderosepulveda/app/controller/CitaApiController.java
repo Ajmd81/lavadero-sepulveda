@@ -51,7 +51,9 @@ public class CitaApiController {
     @Autowired private HorarioDiaSemanaRepository horarioDiaSemanaRepository;
     @Autowired private HorarioDiaSemanaService horarioDiaSemanaService;
 
-    // ─── LISTAR CITAS ─────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // ✅ ENDPOINTS ESPECÍFICOS - PRIMERO (Todos menos {id})
+    // ═══════════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/citas")
     public ResponseEntity<List<CitaDTO>> listarCitas() {
@@ -85,17 +87,15 @@ public class CitaApiController {
             @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         
         try {
-            // Validar que la fecha no sea pasada
             if (fecha.isBefore(LocalDate.now())) {
                 return ResponseEntity.badRequest().build();
             }
             
-            // Obtener horarios disponibles desde HorarioService
             List<String> horariosDisponibles = horarioService.obtenerHorariosDisponiblesFormato(fecha);
             
             if (horariosDisponibles.isEmpty()) {
                 logger.info("No hay horarios disponibles para la fecha: {}", fecha);
-                return ResponseEntity.ok(new ArrayList<>()); // Retornar lista vacía
+                return ResponseEntity.ok(new ArrayList<>());
             }
             
             return ResponseEntity.ok(horariosDisponibles);
@@ -105,11 +105,90 @@ public class CitaApiController {
         }
     }
 
-    @GetMapping("/citas/{id}")
-    public ResponseEntity<CitaDTO> obtenerCitaPorId(@PathVariable Long id) {
-        return citaService.obtenerCitaPorId(id)
-                .map(cita -> ResponseEntity.ok(citaMapper.toDTO(cita)))
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/citas/disponibilidad-mensual")
+    public ResponseEntity<List<String>> obtenerDisponibilidadMensual(
+            @RequestParam("mes") int mes,
+            @RequestParam("anio") int anio,
+            @RequestParam("tipoLavado") String tipoLavadoStr) {
+        try {
+            YearMonth yearMonth = YearMonth.of(anio, mes);
+            TipoLavado tipoLavado = TipoLavado.valueOf(tipoLavadoStr);
+            return ResponseEntity.ok(horarioService.obtenerDiasNoDisponibles(yearMonth, tipoLavado));
+        } catch (Exception e) {
+            logger.error("Error disponibilidad mensual: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/citas/verificar-disponibilidad")
+    public ResponseEntity<Boolean> verificarDisponibilidad(
+            @RequestParam("fecha") String fechaStr,
+            @RequestParam("hora") String horaStr) {
+        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
+        LocalTime hora = DateTimeFormatUtils.parsearHoraCorta(horaStr);
+        return ResponseEntity.ok(!horarioService.esHorarioDisponible(fecha, hora));
+    }
+
+    @GetMapping("/citas/hoy")
+    public ResponseEntity<List<CitaDTO>> obtenerCitasHoy() {
+        return ResponseEntity.ok(citaService.obtenerCitasDeHoy().stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/citas/en-proceso")
+    public ResponseEntity<List<CitaDTO>> obtenerCitasEnProceso() {
+        return ResponseEntity.ok(citaService.obtenerCitasEnProceso().stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/citas/cliente-id/{clienteId}")
+    public ResponseEntity<List<CitaDTO>> obtenerCitasPorClienteId(@PathVariable Long clienteId) {
+        return ResponseEntity.ok(citaService.obtenerCitasPorClienteId(clienteId).stream()
+                .map(citaMapper::toDTO).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/citas/count/hoy")
+    public ResponseEntity<Map<String, Long>> contarCitasHoy() {
+        return ResponseEntity.ok(Map.of("total", citaService.contarCitasHoy()));
+    }
+
+    @GetMapping("/citas/count/estado/{estado}")
+    public ResponseEntity<Map<String, Long>> contarCitasPorEstado(@PathVariable String estado) {
+        try {
+            EstadoCita e = EstadoCita.valueOf(estado.toUpperCase());
+            return ResponseEntity.ok(Map.of("count", citaService.contarCitasPorEstado(e),
+                    "estado", (long) e.ordinal()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/citas/resumen/hoy")
+    public ResponseEntity<Map<String, Object>> obtenerResumenHoy() {
+        return ResponseEntity.ok(citaService.obtenerResumenCitasHoy());
+    }
+
+    @GetMapping("/citas/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas(@RequestParam("fecha") String fechaStr) {
+        return ResponseEntity.ok(horarioService.obtenerEstadisticasOcupacion(
+                DateTimeFormatUtils.parsearFechaCorta(fechaStr)));
+    }
+
+    @GetMapping("/tipos-lavado")
+    public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
+        List<Map<String, Object>> tipos = Arrays.stream(TipoLavado.values())
+                .map(tipo -> {
+                    Map<String, Object> tipoMap = new HashMap<>();
+                    tipoMap.put("id", tipo.ordinal());
+                    tipoMap.put("nombre", tipo.getName());
+                    tipoMap.put("label", tipo.getLabel());
+                    tipoMap.put("descripcion", tipo.getDescripcion());
+                    tipoMap.put("precio", tipo.getPrecio());
+                    tipoMap.put("duracion", tipo.getDuracion());
+                    return tipoMap;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(tipos);
     }
 
     // ─── CREAR CITA (API pública — usada por la app móvil) ───────────────────
@@ -153,10 +232,6 @@ public class CitaApiController {
 
     // ─── HORARIOS ────────────────────────────────────────────────────────────
 
-    /**
-     * GET /api/horarios
-     * Obtiene todos los horarios de la semana
-     */
     @GetMapping("/horarios")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<List<HorarioDiaSemana>> obtenerHorariosDiaSemana() {
@@ -170,11 +245,6 @@ public class CitaApiController {
         }
     }
 
-    /**
-     * GET /api/horarios/{diaSemana}
-     * Obtiene el horario de un día específico
-     * Ejemplo: /api/horarios/LUNES
-     */
     @GetMapping("/horarios/{diaSemana}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<HorarioDiaSemana> obtenerHorarioPorDia(
@@ -190,11 +260,6 @@ public class CitaApiController {
         }
     }
 
-    /**
-     * PUT /api/horarios/{diaSemana}
-     * Actualiza el horario de un día específico
-     * Acceso: Solo ADMIN
-     */
     @PutMapping("/horarios/{diaSemana}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<HorarioDiaSemana> actualizarHorarioDia(
@@ -203,119 +268,79 @@ public class CitaApiController {
         try {
             logger.info("PUT /api/horarios/{} - Actualizando horario", diaSemana);
             HorarioDiaSemana actualizado = horarioDiaSemanaService.actualizarHorarioDia(diaSemana, horario);
-            logger.info("Horario actualizado para {}", diaSemana);
             return ResponseEntity.ok(actualizado);
-        } catch (IllegalArgumentException e) {
-            logger.error("Error de validación: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            logger.error("Error al actualizar horario: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("Error actualizando horario: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * Obtiene los horarios generados para un día (sin validar disponibilidad).
-     * Usado para el panel administrativo.
-     */
     @GetMapping("/horarios-del-dia")
-    public ResponseEntity<List<String>> obtenerHorariosPorDia(
+    public ResponseEntity<?> obtenerHorariosDelDia(
             @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        
         try {
             List<LocalTime> horarios = horarioService.generarHorariosPorDia(fecha);
-            List<String> horariosFormato = horarios.stream()
-                    .map(h -> String.format("%02d:%02d", h.getHour(), h.getMinute()))
-                    .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(horariosFormato);
+            return ResponseEntity.ok(horarios);
         } catch (Exception e) {
-            logger.error("Error obteniendo horarios para fecha: {}", fecha, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("Error horarios del día: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
-    
-    /**
-     * Obtiene los días no disponibles (ocupados al 50%) de un mes.
-     */
+
     @GetMapping("/dias-no-disponibles")
-    public ResponseEntity<List<String>> obtenerDiasNoDisponibles(
+    public ResponseEntity<?> obtenerDiasNoDisponibles(
             @RequestParam("anio") int anio,
-            @RequestParam("mes") int mes,
-            @RequestParam(value = "tipo", required = false) String tipoLavado) {
-        
+            @RequestParam("mes") int mes) {
         try {
             YearMonth yearMonth = YearMonth.of(anio, mes);
-            TipoLavado tipo = tipoLavado != null ? TipoLavado.valueOf(tipoLavado) : null;
-            
-            List<String> diasNoDisponibles = horarioService.obtenerDiasNoDisponibles(yearMonth, tipo);
-            
+            List<String> diasNoDisponibles = horarioService.obtenerDiasNoDisponibles(yearMonth, null);
             return ResponseEntity.ok(diasNoDisponibles);
         } catch (Exception e) {
-            logger.error("Error obteniendo días no disponibles", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("Error días no disponibles: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
-    @GetMapping("/citas/disponibilidad-mensual")
-    public ResponseEntity<List<String>> obtenerDisponibilidadMensual(
-            @RequestParam("mes") int mes,
-            @RequestParam("anio") int anio,
-            @RequestParam("tipoLavado") String tipoLavadoStr) {
+    @GetMapping("/horarios-configurados")
+    public ResponseEntity<?> obtenerHorariosConfigurados() {
         try {
-            YearMonth yearMonth = YearMonth.of(anio, mes);
-            TipoLavado tipoLavado = TipoLavado.valueOf(tipoLavadoStr);
-            return ResponseEntity.ok(horarioService.obtenerDiasNoDisponibles(yearMonth, tipoLavado));
+            LocalDate fecha = LocalDate.now();
+            while (fecha.getDayOfWeek() == DayOfWeek.SATURDAY || fecha.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                fecha = fecha.plusDays(1);
+            }
+            List<String> horarios = horarioService.generarHorariosPorDia(fecha).stream()
+                    .map(DateTimeFormatUtils::formatearHoraCorta)
+                    .sorted()
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(horarios);
         } catch (Exception e) {
-            logger.error("Error disponibilidad mensual: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            logger.error("Error horarios configurados: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
-    @GetMapping("/citas/verificar-disponibilidad")
-    public ResponseEntity<Boolean> verificarDisponibilidad(
-            @RequestParam("fecha") String fechaStr,
-            @RequestParam("hora") String horaStr) {
-        LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
-        LocalTime hora = DateTimeFormatUtils.parsearHoraCorta(horaStr);
-        return ResponseEntity.ok(!horarioService.esHorarioDisponible(fecha, hora));
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // ✅ ENDPOINTS GENÉRICOS - DESPUÉS (Con {id})
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/citas/{id}")
+    public ResponseEntity<CitaDTO> obtenerCitaPorId(@PathVariable Long id) {
+        return citaService.obtenerCitaPorId(id)
+                .map(cita -> ResponseEntity.ok(citaMapper.toDTO(cita)))
+                .orElse(ResponseEntity.notFound().build());
     }
-
-    // ─── TIPOS DE LAVADO ──────────────────────────────────────────────────────
-
-    @GetMapping("/tipos-lavado")
-    public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
-        List<Map<String, Object>> tipos = Arrays.stream(TipoLavado.values())
-                .map(tipo -> {
-                    Map<String, Object> tipoMap = new HashMap<>();
-                    tipoMap.put("id", tipo.ordinal());
-                    tipoMap.put("nombre", tipo.getName());
-                    tipoMap.put("label", tipo.getLabel());
-                    tipoMap.put("descripcion", tipo.getDescripcion());
-                    tipoMap.put("precio", tipo.getPrecio());
-                    tipoMap.put("duracion", tipo.getDuracion());  // en minutos
-                    return tipoMap;
-                })
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(tipos);
-    }
-
-    // ─── MODIFICAR CITAS ───────────────────────────────────────────────────────
 
     @PutMapping("/citas/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CitaDTO> modificarCita(@PathVariable Long id, @Valid @RequestBody CitaDTO citaDTO) {
+    public ResponseEntity<CitaDTO> actualizarCita(
+            @PathVariable Long id,
+            @Valid @RequestBody CitaDTO citaDTO) {
         try {
-            Cita citaExistente = citaService.obtenerCitaPorId(id)
-                    .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
-
-            citaExistente.setTipoLavado(citaDTO.getTipoLavado());
-            citaExistente.setFecha(citaDTO.getFecha());
-            citaExistente.setHora(citaDTO.getHora());
-            citaExistente.setDuracionEstimada(citaDTO.getDuracionEstimada());
-
-            // ✅ CORREGIDO: Usar crearCita() que actualiza si existe
-            Cita actualizada = citaService.crearCita(citaExistente);
+            Cita cita = citaMapper.toEntity(citaDTO);
+            cita.setId(id);
+            Cita actualizada = citaService.actualizarCita(cita);
             return ResponseEntity.ok(citaMapper.toDTO(actualizada));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -323,10 +348,8 @@ public class CitaApiController {
     }
 
     @DeleteMapping("/citas/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> eliminarCita(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> eliminarCita(@PathVariable Long id) {
         try {
-            citaService.obtenerCitaPorId(id).orElseThrow(() -> new RuntimeException("Cita no encontrada"));
             citaService.eliminarCita(id);
             return ResponseEntity.ok(Map.of("mensaje", "Cita eliminada correctamente"));
         } catch (RuntimeException e) {
@@ -334,27 +357,7 @@ public class CitaApiController {
         }
     }
 
-    // ─── BÚSQUEDAS ESPECÍFICAS ─────────────────────────────────────────────────
-
-    @GetMapping("/citas/hoy")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasHoy() {
-        return ResponseEntity.ok(citaService.obtenerCitasDeHoy().stream()
-                .map(citaMapper::toDTO).collect(Collectors.toList()));
-    }
-
-    @GetMapping("/citas/en-proceso")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasEnProceso() {
-        return ResponseEntity.ok(citaService.obtenerCitasEnProceso().stream()
-                .map(citaMapper::toDTO).collect(Collectors.toList()));
-    }
-
-    @GetMapping("/citas/cliente-id/{clienteId}")
-    public ResponseEntity<List<CitaDTO>> obtenerCitasPorClienteId(@PathVariable Long clienteId) {
-        return ResponseEntity.ok(citaService.obtenerCitasPorClienteId(clienteId).stream()
-                .map(citaMapper::toDTO).collect(Collectors.toList()));
-    }
-
-    // ─── CAMBIOS DE ESTADO ────────────────────────────────────────────────────
+    // ─── CAMBIOS DE ESTADO ────────────────────────────────────────────────
 
     @PutMapping("/citas/{id}/estado/{estado}")
     public ResponseEntity<CitaDTO> cambiarEstadoCita(@PathVariable Long id, @PathVariable String estado) {
@@ -417,54 +420,6 @@ public class CitaApiController {
             return ResponseEntity.ok(citaMapper.toDTO(cita));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
-        }
-    }
-
-    // ─── DASHBOARD / CONTEO ───────────────────────────────────────────────────
-
-    @GetMapping("/citas/count/hoy")
-    public ResponseEntity<Map<String, Long>> contarCitasHoy() {
-        return ResponseEntity.ok(Map.of("total", citaService.contarCitasHoy()));
-    }
-
-    @GetMapping("/citas/count/estado/{estado}")
-    public ResponseEntity<Map<String, Long>> contarCitasPorEstado(@PathVariable String estado) {
-        try {
-            EstadoCita e = EstadoCita.valueOf(estado.toUpperCase());
-            return ResponseEntity.ok(Map.of("count", citaService.contarCitasPorEstado(e),
-                    "estado", (long) e.ordinal()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @GetMapping("/citas/resumen/hoy")
-    public ResponseEntity<Map<String, Object>> obtenerResumenHoy() {
-        return ResponseEntity.ok(citaService.obtenerResumenCitasHoy());
-    }
-
-    @GetMapping("/citas/estadisticas")
-    public ResponseEntity<Map<String, Object>> obtenerEstadisticas(@RequestParam("fecha") String fechaStr) {
-        return ResponseEntity.ok(horarioService.obtenerEstadisticasOcupacion(
-                DateTimeFormatUtils.parsearFechaCorta(fechaStr)));
-    }
-
-    @GetMapping("/horarios-configurados")
-    public ResponseEntity<?> obtenerHorariosConfigurados() {
-        try {
-            LocalDate fecha = LocalDate.now();
-            while (fecha.getDayOfWeek() == DayOfWeek.SATURDAY || fecha.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                fecha = fecha.plusDays(1);
-            }
-            List<String> horarios = horarioService.generarHorariosPorDia(fecha).stream()
-                    .map(DateTimeFormatUtils::formatearHoraCorta)
-                    .sorted()
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(horarios);
-        } catch (Exception e) {
-            logger.error("Error horarios configurados: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
         }
     }
 
