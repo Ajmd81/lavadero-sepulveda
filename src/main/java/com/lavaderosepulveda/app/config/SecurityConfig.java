@@ -95,17 +95,46 @@ public class SecurityConfig {
                         ))
                 )
 
+                // ✅ CORREGIDO: Autorización correcta
                 .authorizeHttpRequests(authz -> authz
+                        // 1. Rutas PÚBLICAS (sin autenticación)
+                        // ───────────────────────────────────
+                        
+                        // Login/Logout de la API
                         .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/**").permitAll()
-                        .requestMatchers("/chatbot").permitAll()
-                        .requestMatchers("/", "/nueva-cita", "/guardar-cita", "/confirmacion",
-                                "/horarios-disponibles", "/horario", "/galeria",
-                                "/productos", "/tarifas", "/policy").permitAll()
+                        .requestMatchers("/api/auth/logout").permitAll()
+                        
+                        // Rutas públicas de Thymeleaf (sitio público)
+                        .requestMatchers(
+                                "/",
+                                "/nueva-cita",
+                                "/guardar-cita",
+                                "/confirmacion",
+                                "/horarios-disponibles",
+                                "/horario",
+                                "/galeria",
+                                "/productos",
+                                "/tarifas",
+                                "/policy",
+                                "/chatbot"
+                        ).permitAll()
+                        
+                        // Recursos estáticos
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                        
+                        // 2. Rutas PROTEGIDAS con JWT
+                        // ──────────────────────────
+                        // Todas las demás rutas /api/** requieren autenticación JWT
+                        .requestMatchers("/api/**").authenticated()
+                        
+                        // 3. Rutas ADMIN (requieren sesión + rol ADMIN)
+                        // ─────────────────────────────────────────────
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        
+                        // 4. Cualquier otra petición es permitida
                         .anyRequest().permitAll()
                 )
+                
                 .formLogin(form -> form
                         .loginPage("/admin/login")
                         .loginProcessingUrl("/admin/login")
@@ -113,6 +142,7 @@ public class SecurityConfig {
                         .failureUrl("/admin/login?error=true")
                         .permitAll()
                 )
+                
                 .logout(logout -> logout
                         .logoutUrl("/admin/logout")
                         .logoutSuccessUrl("/admin/login?logout=true")
@@ -120,7 +150,10 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .permitAll()
                 )
+                
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                
+                // ✅ CRÍTICO: Agregar JWT filter ANTES de la autenticación por usuario/contraseña
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
