@@ -4,6 +4,7 @@ import com.lavaderosepulveda.app.security.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,6 +16,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 
 import java.util.Arrays;
 import java.util.List;
@@ -104,6 +106,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/logout").permitAll()
                         .requestMatchers("/api/vehicle/**").permitAll()
+                        .requestMatchers("/api/dias-cerrados/**").permitAll()  // ← AGREGAR ESTA LÍNEA
+                        .requestMatchers("/api/citas").permitAll()  // GET citas públicas
+                        .requestMatchers(HttpMethod.POST, "/api/citas").permitAll()  // POST crear cita pública
+                        .requestMatchers("/api/**").authenticated()  // Todo lo demás requiere JWT
                         
                         // Rutas públicas de Thymeleaf (sitio público)
                         .requestMatchers(
