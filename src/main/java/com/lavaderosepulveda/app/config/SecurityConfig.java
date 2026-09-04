@@ -103,6 +103,7 @@ public class SecurityConfig {
                         // Login/Logout de la API
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/logout").permitAll()
+                        .requestMatchers("/api/vehicle/**").permitAll()
                         
                         // Rutas públicas de Thymeleaf (sitio público)
                         .requestMatchers(
