@@ -17,17 +17,24 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Configuración de seguridad centralizada para la aplicación.
+ * 
+ * Estructura de acceso:
+ * 1. PÚBLICOS: /api/auth/**, /api/vehicle/**, /api/dias-cerrados/**, /api/enums/**, /api/citas (GET/POST)
+ * 2. PROTEGIDOS: Todo /api/** excepto los públicos (requiere JWT)
+ * 3. ADMIN: /admin/** (requiere sesión + rol ADMIN)
+ * 4. ESTÁTICOS: /css/**, /js/**, etc.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
-    // Leído de application.properties / variable de entorno Railway
     @Value("${app.cors.allowed-origins}")
     private String allowedOriginsStr;
 
@@ -44,7 +51,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Leer orígenes desde variable de entorno en lugar de hardcodearlos
         List<String> origins = Arrays.asList(allowedOriginsStr.split(","));
         configuration.setAllowedOrigins(origins);
 
@@ -65,27 +71,16 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // ── Headers de seguridad HTTP ─────────────────────────────────
+                // ─── Headers de seguridad HTTP ──────────────────────────────────────
                 .headers(headers -> headers
-
-                        // Evita que la página se cargue en un iframe (clickjacking)
                         .frameOptions(frame -> frame.deny())
-
-                        // Fuerza HTTPS durante 1 año, incluyendo subdominios
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31536000))
-
-                        // Evita que el navegador "adivine" el tipo de contenido
                         .contentTypeOptions(ct -> {})
-
-                        // No enviar el referrer completo a sitios externos
                         .referrerPolicy(referrer -> referrer
                                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-
-                        // Content Security Policy — restringe de dónde se pueden cargar recursos
-                        // 'unsafe-inline' necesario para los estilos inline de Thymeleaf/Flatpickr
-                       .contentSecurityPolicy(csp -> csp.policyDirectives(
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
                                 "default-src 'self'; " +
                                 "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://npmcdn.com https://unpkg.com https://cdnjs.cloudflare.com; " +
                                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://npmcdn.com https://unpkg.com https://cdnjs.cloudflare.com; " +
@@ -97,21 +92,24 @@ public class SecurityConfig {
                         ))
                 )
 
-                // ✅ CORREGIDO: Autorización correcta
+                // ─── AUTORIZACIÓN (CONSOLIDADA - Sin duplicación) ──────────────────
                 .authorizeHttpRequests(authz -> authz
-                        // 1. Rutas PÚBLICAS (sin autenticación)
+                        // 1️⃣ PÚBLICOS - API sin autenticación
                         // ───────────────────────────────────
-                        
-                        // Login/Logout de la API
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/logout").permitAll()
                         .requestMatchers("/api/vehicle/**").permitAll()
-                        .requestMatchers("/api/dias-cerrados/**").permitAll()  // ← AGREGAR ESTA LÍNEA
+                        .requestMatchers("/api/dias-cerrados/**").permitAll()
+                        .requestMatchers("/api/enums/**").permitAll()  // ✅ TIPOS DE PAGO Y LAVADO
                         .requestMatchers("/api/citas").permitAll()  // GET citas públicas
                         .requestMatchers(HttpMethod.POST, "/api/citas").permitAll()  // POST crear cita pública
-                        .requestMatchers("/api/**").authenticated()  // Todo lo demás requiere JWT
                         
-                        // Rutas públicas de Thymeleaf (sitio público)
+                        // 2️⃣ PROTEGIDOS - Todo /api/** restante requiere JWT
+                        // ─────────────────────────────────────────────────
+                        .requestMatchers("/api/**").authenticated()  // ✅ UNA SOLA VEZ
+                        
+                        // 3️⃣ PÚBLICOS - Páginas Thymeleaf
+                        // ─────────────────────────────────
                         .requestMatchers(
                                 "/",
                                 "/nueva-cita",
@@ -126,22 +124,20 @@ public class SecurityConfig {
                                 "/chatbot"
                         ).permitAll()
                         
-                        // Recursos estáticos
+                        // 4️⃣ ESTÁTICOS
+                        // ──────────────
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                         
-                        // 2. Rutas PROTEGIDAS con JWT
-                        // ──────────────────────────
-                        // Todas las demás rutas /api/** requieren autenticación JWT
-                        .requestMatchers("/api/**").authenticated()
-                        
-                        // 3. Rutas ADMIN (requieren sesión + rol ADMIN)
-                        // ─────────────────────────────────────────────
+                        // 5️⃣ ADMIN - Requiere sesión + rol ADMIN
+                        // ───────────────────────────────────────
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         
-                        // 4. Cualquier otra petición es permitida
+                        // 6️⃣ LO DEMÁS
+                        // ───────────
                         .anyRequest().permitAll()
                 )
                 
+                // ─── Form Login (para /admin/**) ───────────────────────────────────
                 .formLogin(form -> form
                         .loginPage("/admin/login")
                         .loginProcessingUrl("/admin/login")
@@ -150,6 +146,7 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 
+                // ─── Logout ───────────────────────────────────────────────────────
                 .logout(logout -> logout
                         .logoutUrl("/admin/logout")
                         .logoutSuccessUrl("/admin/login?logout=true")
@@ -158,9 +155,10 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 
+                // ─── CSRF (Deshabilitado para API, habilitado para form login) ─────
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 
-                // ✅ CRÍTICO: Agregar JWT filter ANTES de la autenticación por usuario/contraseña
+                // ─── JWT Filter (ANTES de UsernamePasswordAuthenticationFilter) ─────
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
