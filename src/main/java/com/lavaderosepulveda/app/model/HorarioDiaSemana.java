@@ -65,6 +65,16 @@ public class HorarioDiaSemana {
     private LocalTime cierreTarde;
 
     /**
+     * Cantidad de citas permitidas por hora en la franja de mañana.
+     * Configuración flexible para cada día de la semana.
+     * - Mañana general: 2 citas/hora (default)
+     * - Sábados: 1 cita/hora
+     * - Con tapicería: 1 cita (máximo, validado en CitaService independientemente)
+     */
+    @Column(name = "citas_hora_manana", nullable = false)
+    private Integer citasHoraMañana = 2;
+
+    /**
      * Indica si este día está activo
      * false = Cierre total (como si fuera festivo)
      */
@@ -205,6 +215,16 @@ public class HorarioDiaSemana {
 
     public void setCierreTarde(LocalTime cierreTarde) {
         this.cierreTarde = cierreTarde;
+    }
+
+    public Integer getCitasHoraMañana() {
+        return citasHoraMañana;
+    }
+
+    public void setCitasHoraMañana(Integer citasHoraMañana) {
+        if (citasHoraMañana != null && citasHoraMañana > 0) {
+            this.citasHoraMañana = citasHoraMañana;
+        }
     }
 
     public Boolean getActivo() {

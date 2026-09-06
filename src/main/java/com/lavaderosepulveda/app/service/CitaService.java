@@ -412,13 +412,13 @@ public class CitaService {
 
     /**
      * Normaliza la duración estimada según el tipo de lavado.
-     * Tapicería siempre requiere 180 minutos independientemente de lo que
-     * envíe el cliente, garantizando que HorarioService bloquee los 3 slots.
+     * Tapicería siempre requiere 120 minutos (2 horas) independientemente de lo que
+     * envíe el cliente, garantizando que HorarioService bloquee los 2 slots.
      */
     private void normalizarDuracion(Cita cita) {
         if (cita.getTipoLavado() == TipoLavado.TAPICERIA_SIN_DESMONTAR
                 || cita.getTipoLavado() == TipoLavado.TAPICERIA_DESMONTANDO) {
-            cita.setDuracionEstimada(180);
+            cita.setDuracionEstimada(120);
         }
     }
 
@@ -428,23 +428,30 @@ public class CitaService {
         TipoLavado tipo  = cita.getTipoLavado();
         Integer duracion = cita.getDuracionEstimada();
 
-        // Tapicería — reglas específicas
+        // Tapicería — validación especial: máximo 1 cita POR HORA
+        // (con duración de 120 min = 2 horas, bloquea 09:00-10:00)
         if (tipo == TipoLavado.TAPICERIA_SIN_DESMONTAR || tipo == TipoLavado.TAPICERIA_DESMONTANDO) {
             DayOfWeek dia = fecha.getDayOfWeek();
             if (dia == DayOfWeek.FRIDAY || dia == DayOfWeek.SATURDAY || dia == DayOfWeek.SUNDAY)
                 throw new RuntimeException("Las citas de Limpieza de Tapicería solo están disponibles de Lunes a Jueves.");
-            if (!hora.equals(LocalTime.of(8, 0)))
-                throw new RuntimeException("Las citas de Limpieza de Tapicería solo se pueden reservar a las 08:00 (duración de 3 horas).");
-            if (!horarioService.esHorarioDisponible(fecha, hora))
-                throw new RuntimeException("El horario de las 08:00 no está disponible para tapicería.");
-            if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(1)))
-                throw new RuntimeException("No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 09:00 está ocupado.");
-            if (!horarioService.esHorarioDisponible(fecha, hora.plusHours(2)))
-                throw new RuntimeException("No hay disponibilidad suficiente para las 3 horas requeridas. El horario de las 10:00 está ocupado.");
+            if (!hora.equals(LocalTime.of(9, 0)))
+                throw new RuntimeException("Las citas de Limpieza de Tapicería solo se pueden reservar a las 09:00 (duración de 2 horas).");
+            
+            // Validar que NO hay otra cita de tapicería en los 2 slots de 09:00, 10:00
+            List<Cita> citasEnBloque = citaRepository.findByFecha(fecha).stream()
+                    .filter(c -> (c.getTipoLavado() == TipoLavado.TAPICERIA_SIN_DESMONTAR 
+                            || c.getTipoLavado() == TipoLavado.TAPICERIA_DESMONTANDO)
+                            && (c.getHora().equals(LocalTime.of(9, 0)) 
+                                || c.getHora().equals(LocalTime.of(10, 0))))
+                    .collect(Collectors.toList());
+            
+            if (!citasEnBloque.isEmpty()) {
+                throw new RuntimeException("No hay disponibilidad para Limpieza de Tapicería. El bloque de 09:00-11:00 ya está ocupado.");
+            }
             return; // validación completa para tapicería
         }
 
-        // Validar slot principal
+        // Lavados normales — validar disponibilidad según citasHoraMañana configurado
         if (!horarioService.esHorarioDisponible(fecha, hora))
             throw new RuntimeException("El horario seleccionado no está disponible. Por favor, elija otro horario.");
 

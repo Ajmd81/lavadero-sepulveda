@@ -655,8 +655,8 @@ const FacturasEmitidas = () => {
   const generarPdf = async (facturaId) => {
     try {
       // 1. Obtener configuración del sistema
-      const configResponse = await axios.get(
-        `${API_URL}/config/plantilla-factura`,
+      const configResponse = await api.get(
+        `/config/plantilla-factura`,
       );
       const plantilla = configResponse.data;
 

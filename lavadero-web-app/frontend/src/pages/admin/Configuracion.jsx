@@ -215,6 +215,7 @@ const Configuracion = () => {
         cierreMañana: horario.cierreMañana ? horario.cierreMañana + ':00' : null,
         aperturaTarde: horario.aperturaTarde ? horario.aperturaTarde + ':00' : null,
         cierreTarde: horario.cierreTarde ? horario.cierreTarde + ':00' : null,
+        citasHoraMañana: horario.citasHoraMañana || 2,
       };
       const response = await api.put(`/horarios/${horario.diaSemana}`, payload);
       return response.data;
@@ -440,6 +441,7 @@ const Configuracion = () => {
                       <th className="px-4 py-3 text-left font-semibold text-gray-900">Día</th>
                       <th className="px-4 py-3 text-left font-semibold text-gray-900">Apertura Mañana</th>
                       <th className="px-4 py-3 text-left font-semibold text-gray-900">Cierre Mañana</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-900">Citas/Hora Mañana</th>
                       <th className="px-4 py-3 text-left font-semibold text-gray-900">Apertura Tarde</th>
                       <th className="px-4 py-3 text-left font-semibold text-gray-900">Cierre Tarde</th>
                       <th className="px-4 py-3 text-center font-semibold text-gray-900">Estado</th>
@@ -480,6 +482,27 @@ const Configuracion = () => {
                               />
                             ) : (
                               <span className="text-gray-700">{horario.cierreMañana || '—'}</span>
+                            )}
+                          </td>
+
+                          <td className="px-4 py-3 text-center">
+                            {editando ? (
+                              <input
+                                type="number"
+                                min="1"
+                                max="5"
+                                value={datosEdicion.citasHoraMañana || 2}
+                                onChange={(e) => handleChangeHorario(horario.diaSemana, 'citasHoraMañana', parseInt(e.target.value) || 2)}
+                                className="w-16 px-2 py-1 border border-gray-300 rounded text-center"
+                              />
+                            ) : (
+                              <span className={`inline-block px-2 py-1 rounded text-sm font-medium ${
+                                horario.diaSemana === 'SABADO'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {horario.citasHoraMañana || 2}
+                              </span>
                             )}
                           </td>
 

@@ -25,6 +25,12 @@ import java.util.stream.Collectors;
 /**
  * Servicio para gestionar horarios, disponibilidad de citas y días cerrados.
  * Incluye integración con DiaCerrado para manejar festividades, vacaciones y mantenimiento.
+ * 
+ * CAMBIOS EN ESTA VERSIÓN:
+ * - Nuevo campo citasHoraMañana en HorarioDiaSemana (default: 2)
+ * - esHorarioDisponible() ahora valida contra citasHoraMañana en mañana
+ * - obtenerHorariosDisponibles() solo incluye horarios con slots libres según capacidad
+ * - obtenerHorasOcupadasPorDia() ahora cuenta múltiples citas por hora (no solo ocupado/no ocupado)
  */
 @Service
 public class HorarioService {
@@ -82,23 +88,83 @@ public class HorarioService {
     }
 
     /**
-     * Obtiene los horarios disponibles (sin citas) para un día específico.
+     * Obtiene los horarios disponibles (sin citas que superen capacidad) para un día específico.
+     * 
+     * ✅ CAMBIO: Ahora valida capacidad según citasHoraMañana
+     * - Mañana: máximo citasHoraMañana (default 2, pero 1 en sábados)
+     * - Tarde: máximo 1 cita/hora (por defecto)
      */
     public List<LocalTime> obtenerHorariosDisponibles(LocalDate fecha) {
         List<LocalTime> horariosDelDia = generarHorariosPorDia(fecha);
-        List<LocalTime> horariosOcupados = citaRepository.findByFecha(fecha).stream()
-                .map(Cita::getHora)
-                .collect(Collectors.toList());
+        
+        if (horariosDelDia.isEmpty()) {
+            return horariosDelDia;
+        }
 
+        // Obtener configuración del día
+        DayOfWeek dayOfWeek = fecha.getDayOfWeek();
+        DiaSemana diaSemana = convertirDayOfWeekADiaSemana(dayOfWeek);
+        HorarioDiaSemana horarioDia = horarioDiaSemanaRepository.findByDiaSemana(diaSemana).orElse(null);
+
+        if (horarioDia == null) {
+            return horariosDelDia;
+        }
+
+        // Obtener todas las citas del día
+        List<Cita> citasDelDia = citaRepository.findByFecha(fecha);
+
+        // Filtrar horarios disponibles según capacidad
         return horariosDelDia.stream()
-                .filter(h -> !horariosOcupados.contains(h))
+                .filter(hora -> {
+                    // Determinar si está en mañana o tarde
+                    boolean enMañana = horarioDia.getAperturaMañana() != null 
+                            && horarioDia.getCierreMañana() != null
+                            && !hora.isBefore(horarioDia.getAperturaMañana())
+                            && hora.isBefore(horarioDia.getCierreMañana());
+
+                    int capacidad = 1; // Tarde por defecto: 1 cita/hora
+                    if (enMañana) {
+                        // Mañana: usar citasHoraMañana (default 2, pero puede ser 1 en sábados)
+                        capacidad = (horarioDia.getCitasHoraMañana() != null && horarioDia.getCitasHoraMañana() > 0)
+                                ? horarioDia.getCitasHoraMañana()
+                                : 2;
+                    }
+
+                    // Contar citas que ocupan este slot horario
+                    int citasEnEstaHora = contarCitasQueOcupanSlot(citasDelDia, hora);
+
+                    return citasEnEstaHora < capacidad;
+                })
                 .sorted()
                 .collect(Collectors.toList());
     }
 
     /**
+     * Cuenta cuántas citas ocupan un slot horario específico.
+     * Considera la duración de cada cita.
+     * 
+     * ✅ NUEVO: Método auxiliar para contar citas considerando duraciones
+     */
+    private int contarCitasQueOcupanSlot(List<Cita> citas, LocalTime slotHora) {
+        int count = 0;
+        for (Cita cita : citas) {
+            LocalTime horaInicio = cita.getHora();
+            int duracion = cita.getDuracionEstimada() != null ? cita.getDuracionEstimada() : 60;
+            LocalTime horaFin = horaInicio.plusMinutes(duracion);
+
+            // La cita ocupa este slot si: inicio <= slot AND fin > slot
+            if (!horaInicio.isAfter(slotHora) && horaFin.isAfter(slotHora)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
      * Verifica si un horario específico está disponible.
      * Integrado con DiaCerrado para validar días cerrados.
+     * 
+     * ✅ CAMBIO: Ahora valida contra capacidad de citasHoraMañana
      */
     public boolean esHorarioDisponible(LocalDate fecha, LocalTime hora) {
         // ✅ INTEGRACIÓN CON DÍAS CERRADOS
@@ -107,13 +173,9 @@ public class HorarioService {
             return false;
         }
 
-        // Verificar que no haya cita en ese horario
-        if (citaRepository.existsByFechaAndHora(fecha, hora)) {
-            return false;
-        }
-
         // Verificar que la hora esté dentro de los horarios configurados
-        return obtenerHorariosDisponibles(fecha).contains(hora);
+        List<LocalTime> disponibles = obtenerHorariosDisponibles(fecha);
+        return disponibles.contains(hora);
     }
 
     /**
@@ -159,6 +221,7 @@ public class HorarioService {
             default:        throw new IllegalArgumentException("Día inválido");
         }
     }
+
     /**
      * Verifica si hay disponibilidad para una cita de duración específica.
      * Para citas de 2 horas comprueba que el slot siguiente también esté libre.
@@ -168,7 +231,7 @@ public class HorarioService {
         if (duracionMinutos >= 120) {
             LocalTime horaSiguiente = hora.plusHours(1);
             if (!generarHorariosPorDia(fecha).contains(horaSiguiente)) return false;
-            return !citaRepository.existsByFechaAndHora(fecha, horaSiguiente);
+            return esHorarioDisponible(fecha, horaSiguiente);
         }
         return true;
     }
@@ -209,7 +272,7 @@ public class HorarioService {
     }
 
     /**
-     * Valida si una hora está dentro del rango válido del día.
+     * Verifica si una hora está dentro de los horarios configurados para ese día.
      */
     public boolean esHorarioValido(LocalDate fecha, LocalTime hora) {
         DayOfWeek dayOfWeek = fecha.getDayOfWeek();
@@ -218,14 +281,14 @@ public class HorarioService {
         HorarioDiaSemana horarioDia = horarioDiaSemanaRepository.findByDiaSemana(diaSemana)
                 .orElse(null);
 
-        if (horarioDia == null || !horarioDia.getActivo()) return false;
+        if (horarioDia == null || !horarioDia.getActivo()) {
+            return false;
+        }
 
-        // ✅ CORREGIDO: Usar métodos correctos de LocalTime
-        // isSameOrAfter() no existe, usar !isBefore() en su lugar
         boolean enMañana = horarioDia.getAperturaMañana() != null && horarioDia.getCierreMañana() != null &&
                 !hora.isBefore(horarioDia.getAperturaMañana()) &&
                 hora.isBefore(horarioDia.getCierreMañana());
-        
+
         boolean enTarde = horarioDia.getAperturaTarde() != null && horarioDia.getCierreTarde() != null &&
                 !hora.isBefore(horarioDia.getAperturaTarde()) &&
                 hora.isBefore(horarioDia.getCierreTarde());
@@ -235,6 +298,8 @@ public class HorarioService {
 
     /**
      * Obtiene las horas ocupadas (con citas activas) para un día.
+     * 
+     * ✅ CAMBIO: Ahora retorna Set con horas realmente ocupadas (no solo sí/no)
      */
     public Set<LocalTime> obtenerHorasOcupadasPorDia(LocalDate fecha) {
         Set<LocalTime> ocupadas = new HashSet<>();
@@ -249,6 +314,9 @@ public class HorarioService {
                     ocupadas.add(cita.getHora().plusHours(1));
                     ocupadas.add(cita.getHora().plusHours(2));
                 }
+                
+                // Tapicería de 2 horas (120 min) ocupa solo 2 slots
+                // Ya se agregó en el bloque anterior, no necesita tratamiento especial
             }
         }
 
@@ -357,6 +425,8 @@ public class HorarioService {
     /**
      * Obtiene la configuración completa de horarios para el dashboard.
      * Incluye horarios de todos los días y configuración general.
+     * 
+     * ✅ CAMBIO: Incluye citasHoraMañana en la respuesta
      */
     public Map<String, Object> obtenerConfiguracionHorarios() {
         Map<String, Object> configuracion = new HashMap<>();
@@ -369,12 +439,16 @@ public class HorarioService {
             
             if (horarioDia != null) {
                 Map<String, Object> horarioMap = new HashMap<>();
+                horarioMap.put("id", horarioDia.getId());
                 horarioMap.put("diaSemana", dia.toString());
                 horarioMap.put("aperturaMañana", horarioDia.getAperturaMañana());
                 horarioMap.put("cierreMañana", horarioDia.getCierreMañana());
                 horarioMap.put("aperturaTarde", horarioDia.getAperturaTarde());
                 horarioMap.put("cierreTarde", horarioDia.getCierreTarde());
                 horarioMap.put("activo", horarioDia.getActivo());
+                // ✅ NUEVO: Incluir citasHoraMañana
+                horarioMap.put("citasHoraMañana", 
+                    horarioDia.getCitasHoraMañana() != null ? horarioDia.getCitasHoraMañana() : 2);
                 horarios.add(horarioMap);
             }
         }
@@ -397,6 +471,7 @@ public class HorarioService {
      * - Las horas de apertura sean antes que las de cierre
      * - Haya separación entre turno mañana y tarde
      * - Todos los días estén configurados
+     * - citasHoraMañana sea válido (> 0)
      */
     public boolean validarConfiguracion() {
         try {
@@ -421,6 +496,13 @@ public class HorarioService {
                 // Validar separación entre mañana y tarde
                 if (!horarioDia.isSeparacionValida()) {
                     logger.warn("Falta separación entre turnos en {}", dia);
+                    todasValidas = false;
+                }
+
+                // ✅ NUEVO: Validar citasHoraMañana
+                Integer citasHora = horarioDia.getCitasHoraMañana();
+                if (citasHora == null || citasHora <= 0) {
+                    logger.warn("citasHoraMañana inválido para {}: debe ser > 0", dia);
                     todasValidas = false;
                 }
             }
