@@ -280,7 +280,7 @@ const ModelosFiscales = () => {
 
     const eliminarDeclaracion = async (id) => {
         try {
-            await axios.delete(`${API_URL}/fiscal/declaraciones/${id}`);
+            await api.delete(`/fiscal/declaraciones/${id}`);
             setHistorial(h => h.filter(d => d.id !== id));
             setConfirmEliminar(null);
             mostrarMensaje('exito', 'Registro eliminado del historial.');
