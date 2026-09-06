@@ -5,6 +5,7 @@ import enumsService from "../../services/enumsService";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import axios from "axios";
+import api from "../../services/api";
 import * as XLSX from "xlsx";
 
 const FacturasEmitidas = () => {
