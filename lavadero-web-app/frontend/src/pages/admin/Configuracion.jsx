@@ -34,7 +34,7 @@ const Configuracion = () => {
   const { data: horarios = [], isLoading: isLoadingHorarios } = useQuery({
     queryKey: ['horarios'],
     queryFn: async () => {
-      const { data } = await api.get('/citas/horarios');
+      const { data } = await api.get('/horarios');
       return data;
     }
   });
@@ -215,7 +215,7 @@ const Configuracion = () => {
         aperturaTarde: horario.aperturaTarde ? horario.aperturaTarde + ':00' : null,
         cierreTarde: horario.cierreTarde ? horario.cierreTarde + ':00' : null,
       };
-      const response = await api.put(`/citas/horarios/${horario.diaSemana}`, payload);
+      const response = await api.put(`/horarios/${horario.diaSemana}`, payload);
       return response.data;
     },
     onSuccess: (data) => {
