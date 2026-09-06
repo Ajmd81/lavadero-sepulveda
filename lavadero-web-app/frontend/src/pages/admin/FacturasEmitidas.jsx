@@ -179,7 +179,7 @@ const FacturasEmitidas = () => {
     // Obtener siguiente número disponible del backend
     let siguienteNumero = "";
     try {
-      const response = await axios.get(`${API_URL}/facturas/siguiente-numero`);
+      const response = await api.get("/facturas/siguiente-numero");
       siguienteNumero = response.data.numero;
     } catch (err) {
       console.error("Error al obtener siguiente número:", err);
