@@ -130,7 +130,7 @@ public class SecurityConfig {
                         
                         // 5️⃣ ADMIN - Requiere sesión + rol ADMIN
                         // ───────────────────────────────────────
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").authenticated()
                         
                         // 6️⃣ LO DEMÁS
                         // ───────────
