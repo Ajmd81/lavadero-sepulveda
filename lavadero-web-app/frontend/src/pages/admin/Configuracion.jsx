@@ -20,7 +20,7 @@ const Configuracion = () => {
   const { data: configuracion, isLoading } = useQuery({
     queryKey: ['plantilla-factura'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/config/plantilla-factura`);
+      const { data } = await api.get(`/config/plantilla-factura`);
       return data;
     }
   });
