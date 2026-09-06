@@ -22,7 +22,8 @@ const Configuracion = () => {
     queryFn: async () => {
       const { data } = await api.get(`/config/plantilla-factura`);
       return data;
-    }
+    },
+    enabled: true
   });
 
   // Estado para fecha seleccionada (con formato ISO YYYY-MM-DD)
