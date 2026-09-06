@@ -252,6 +252,10 @@ public class FacturaService {
         factura.marcarComoPagada(metodoPago);
         factura = facturaRepository.save(factura);
 
+        if (factura.getLineas() != null) {
+            factura.getLineas().size();
+        }
+
         log.info("Factura {} marcada como pagada con {}", factura.getNumero(), metodoPago);
         return factura;
     }
