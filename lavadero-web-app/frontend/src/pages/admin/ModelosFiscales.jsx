@@ -5,6 +5,7 @@ import {
     BadgeCheck, Clock, Trash2, RotateCcw
 } from 'lucide-react';
 import axios from 'axios';
+import api from '../../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
