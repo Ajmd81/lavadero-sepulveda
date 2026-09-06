@@ -121,11 +121,11 @@ const ModelosFiscales = () => {
         setCargando(true);
         try {
             const [respEmisor, respF, respFR, respG, respH] = await Promise.allSettled([
-                axios.get(`${API_URL}/facturas/emisor`),
-                axios.get(`${API_URL}/facturas/todas`),
-                axios.get(`${API_URL}/facturas-recibidas`),
-                axios.get(`${API_URL}/gastos`),
-                axios.get(`${API_URL}/fiscal/declaraciones`),
+                api.get(`/facturas/emisor`),
+                api.get(`/facturas/todas`),
+                api.get(`/facturas-recibidas`),
+                api.get(`/gastos`),
+                api.get(`/fiscal/declaraciones`),
             ]);
 
             if (respEmisor.status === 'fulfilled') setEmisor(respEmisor.value.data);
@@ -247,7 +247,7 @@ const ModelosFiscales = () => {
 
             mostrarMensaje('exito', `Fichero ${nombreFichero} descargado y registrado en el historial.`);
             // Recargar historial para mostrar el nuevo registro
-            const respH = await axios.get(`${API_URL}/fiscal/declaraciones`);
+            const respH = await api.get(`/fiscal/declaraciones`);
             if (Array.isArray(respH.data)) setHistorial(respH.data);
 
         } catch (err) {
@@ -260,7 +260,7 @@ const ModelosFiscales = () => {
     // ── Acciones del historial ───────────────────────────────────────────────
     const marcarPresentado = async (id) => {
         try {
-            await axios.put(`${API_URL}/fiscal/declaraciones/${id}/presentado`);
+            await api.put(`/fiscal/declaraciones/${id}/presentado`);
             setHistorial(h => h.map(d => d.id === id ? { ...d, estado: 'PRESENTADO', fechaPresentacion: new Date().toLocaleDateString('es-ES') } : d));
             mostrarMensaje('exito', 'Declaración marcada como presentada ante la AEAT.');
         } catch {
@@ -270,7 +270,7 @@ const ModelosFiscales = () => {
 
     const revertirPresentacion = async (id) => {
         try {
-            await axios.put(`${API_URL}/fiscal/declaraciones/${id}/revertir`);
+            await api.put(`/fiscal/declaraciones/${id}/revertir`);
             setHistorial(h => h.map(d => d.id === id ? { ...d, estado: 'GENERADO', fechaPresentacion: null } : d));
             mostrarMensaje('exito', 'Estado revertido a "Generado".');
         } catch {
