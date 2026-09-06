@@ -189,7 +189,7 @@ const Configuracion = () => {
         mostrarMarcaAgua: false,
         usarFilasAlternas: true
       };
-      const response = await axios.post(`${API_URL}/config/plantilla-factura`, backendData);
+      const response = await api.post(`/config/plantilla-factura`, backendData);
       return response.data;
     },
     onSuccess: () => {
@@ -885,10 +885,56 @@ const Configuracion = () => {
           )}
 
           {/* ── Tab Factura y Sistema ─ (reducido para brevedad) ──────────────── */}
-          {tabActiva === 'factura' && configEnEdicion && (
-            <div>
+          {tabActiva === 'factura' && (
+            <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Plantilla de Facturas</h3>
-              <p className="text-gray-600">Configuración de colores y textos para facturas...</p>
+              
+              {isLoading ? (
+                <p>Cargando...</p>
+              ) : configuracion ? (
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Color Primario</label>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-12 h-12 rounded border"
+                        style={{backgroundColor: configuracion.colorPrimario}}
+                      />
+                      <span>{configuracion.colorPrimario}</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Color Secundario</label>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-12 h-12 rounded border"
+                        style={{backgroundColor: configuracion.colorSecundario}}
+                      />
+                      <span>{configuracion.colorSecundario}</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Título Factura</label>
+                    <p className="text-gray-900">{configuracion.tituloFactura}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Titulo Simplificada</label>
+                    <p className="text-gray-900">{configuracion.tituloFacturaSimplificada}</p>
+                  </div>
+                  
+                  {configuracion.logoBase64 && (
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Logo</label>
+                      <img src={configuracion.logoBase64} alt="Logo" className="h-24 object-contain" />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-600">No hay datos disponibles</p>
+              )}
             </div>
           )}
 
