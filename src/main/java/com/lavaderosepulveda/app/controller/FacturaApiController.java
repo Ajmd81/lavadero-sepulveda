@@ -445,7 +445,20 @@ public class FacturaApiController {
                 facturaExistente.setImporteIva(iva);
                 facturaExistente.setTotal(baseImponible.add(iva));
             } else {
+                // Si no hay IVA, el total es igual a la base imponible
                 facturaExistente.setTotal(baseImponible);
+            }
+            
+            if (facturaDTO.getEstado() != null) {
+                facturaExistente.setEstado(EstadoFactura.valueOf(facturaDTO.getEstado()));
+            }
+
+            if (facturaDTO.getMetodoPago() != null) {
+                facturaExistente.setMetodoPago(MetodoPago.valueOf(facturaDTO.getMetodoPago()));
+            }
+
+            if (facturaDTO.getFechaPago() != null) {
+                facturaExistente.setFechaPago(facturaDTO.getFechaPago());
             }
 
             facturaExistente = facturaRepository.save(facturaExistente);
