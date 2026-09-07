@@ -394,7 +394,7 @@ public class FacturaApiController {
             @PathVariable Long id,
             @RequestBody FacturaDTO facturaDTO) {
         try {
-            Factura facturaExistente = facturaRepository.findById(id)
+            Factura facturaExistente = facturaRepository.findByIdWithLineas(id)
                     .orElseThrow(() -> new Exception("Factura no encontrada"));
 
             // Actualizar datos básicos
