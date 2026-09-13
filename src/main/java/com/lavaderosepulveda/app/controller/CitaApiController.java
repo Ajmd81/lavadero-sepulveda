@@ -273,7 +273,7 @@ public class CitaApiController {
                 logger.debug("Hora {} - Capacidad: {}", hora.getHour(), capacidadMax);
             }
             
-            logger.info("Horarios obtenidos para {}: {} slots", fecha, resultado.size());
+            logger.info("[UPDATED] Horarios disponibles para {}: {} slots", fecha, resultado.size());
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             logger.error("ERROR /api/horarios {}: {}", fecha, e.getMessage(), e);
