@@ -50,6 +50,15 @@ const citaService = {
   // Servicios
   getTiposLavado: () => api.get('/tipos-lavado'),
 
+  /**
+   * Obtiene los tipos de lavado disponibles para un modelo específico
+   * Filtra según la categoría del vehículo
+   * @param {number} modeloId - ID del modelo de vehículo
+   * @returns {Promise} Lista de tipos de lavado disponibles
+   */
+  getTiposLavadoPorModelo: (modeloId) => 
+    api.get(`/tipos-lavado/por-modelo/${modeloId}`),
+
   // 🚗 Vehículos: Marcas y Modelos
   /**
    * Obtiene todas las marcas con sus modelos en estructura de cascada

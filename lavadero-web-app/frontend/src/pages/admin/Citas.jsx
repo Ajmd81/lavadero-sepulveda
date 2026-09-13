@@ -201,11 +201,37 @@ const Citas = () => {
 
   /**
    * Maneja el cambio de modelo seleccionado
+   * Carga dinámicamente los tipos de lavado disponibles para ese modelo
    */
-  const handleModeloChange = (e) => {
+  const handleModeloChange = async (e) => {
     const modeloNombre = e.target.value;
     setModeloSeleccionado(modeloNombre);
     setFormData(prev => ({ ...prev, modeloVehiculo: modeloNombre }));
+    
+    // 🆕 Obtener tipos de lavado para este modelo
+    try {
+      const modeloObj = modelosDeMarca.find(m => m.name === modeloNombre);
+      if (!modeloObj) {
+        console.warn('Modelo no encontrado:', modeloNombre);
+        return;
+      }
+      
+      const response = await citaService.getTiposLavadoPorModelo(modeloObj.id);
+      if (response?.data && Array.isArray(response.data)) {
+        // Convertir respuesta del API a formato compatible con el select
+        const tiposFormateados = response.data.map(tipo => ({
+          id: tipo.id,
+          descripcion: tipo.descripcion.charAt(0).toUpperCase() + tipo.descripcion.slice(1).toLowerCase()
+        }));
+        setTiposLavado(tiposFormateados);
+        // Reset tipo lavado cuando cambias de modelo
+        setFormData(prev => ({ ...prev, tipoLavado: '' }));
+      }
+    } catch (err) {
+      console.error('Error cargando tipos de lavado por modelo:', err);
+      // Si falla, cargar todos los tipos de lavado como fallback
+      cargarTiposLavado();
+    }
   };
 
   const guardarCita = async (e) => {

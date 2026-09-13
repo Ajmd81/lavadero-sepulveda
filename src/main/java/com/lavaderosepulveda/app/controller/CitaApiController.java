@@ -4,15 +4,18 @@ import com.lavaderosepulveda.app.dto.CitaDTO;
 import com.lavaderosepulveda.app.mapper.CitaMapper;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.HorarioDiaSemana;
+import com.lavaderosepulveda.app.model.VehicleModel;
 import com.lavaderosepulveda.app.model.enums.DiaSemana;
 import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
-import com.lavaderosepulveda.app.security.CitaRateLimiter;
 import com.lavaderosepulveda.app.repository.HorarioDiaSemanaRepository;
+import com.lavaderosepulveda.app.repository.VehicleModelRepository;
+import com.lavaderosepulveda.app.security.CitaRateLimiter;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
 import com.lavaderosepulveda.app.service.HorarioService;
 import com.lavaderosepulveda.app.service.HorarioDiaSemanaService;
+import com.lavaderosepulveda.app.service.VehicleClassificationService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -50,6 +53,8 @@ public class CitaApiController {
     @Autowired private javax.sql.DataSource dataSource;
     @Autowired private HorarioDiaSemanaRepository horarioDiaSemanaRepository;
     @Autowired private HorarioDiaSemanaService horarioDiaSemanaService;
+    @Autowired private VehicleModelRepository vehicleModelRepository;
+    @Autowired private VehicleClassificationService vehicleClassificationService;
 
     // ═══════════════════════════════════════════════════════════════════════════════
     // ✅ ENDPOINTS ESPECÍFICOS - PRIMERO (Todos menos {id})
@@ -176,137 +181,123 @@ public class CitaApiController {
 
     @GetMapping("/citas/resumen/hoy")
     public ResponseEntity<Map<String, Object>> obtenerResumenHoy() {
-        return ResponseEntity.ok(citaService.obtenerResumenCitasHoy());
+        Map<String, Object> resumen = new HashMap<>();
+        resumen.put("citasHoy", citaService.contarCitasHoy());
+        resumen.put("citasConfirmadas", citaService.contarCitasPorEstado(EstadoCita.CONFIRMADA));
+        resumen.put("citasPendientes", citaService.contarCitasPorEstado(EstadoCita.PENDIENTE));
+        resumen.put("citasEnProceso", citaService.contarCitasPorEstado(EstadoCita.EN_PROCESO));
+        return ResponseEntity.ok(resumen);
     }
 
-    @GetMapping("/citas/estadisticas")
-    public ResponseEntity<Map<String, Object>> obtenerEstadisticas(@RequestParam("fecha") String fechaStr) {
-        return ResponseEntity.ok(horarioService.obtenerEstadisticasOcupacion(
-                DateTimeFormatUtils.parsearFechaCorta(fechaStr)));
-    }
+    // ─── TIPOS DE LAVADO ──────────────────────────────────────────────────────────
 
     @GetMapping("/tipos-lavado")
-    public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavado() {
-        List<Map<String, Object>> tipos = Arrays.stream(TipoLavado.values())
-                .map(tipo -> {
-                    Map<String, Object> tipoMap = new HashMap<>();
-                    tipoMap.put("id", tipo.ordinal());
-                    tipoMap.put("nombre", tipo.getName());
-                    tipoMap.put("label", tipo.getLabel());
-                    tipoMap.put("descripcion", tipo.getDescripcion());
-                    tipoMap.put("precio", tipo.getPrecio());
-                    tipoMap.put("duracion", tipo.getDuracion());
-                    return tipoMap;
-                })
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(tipos);
-    }
-
-    // ─── CREAR CITA (API pública — usada por la app móvil) ───────────────────
-
-    @PostMapping("/citas")
-    public ResponseEntity<?> crearCita(
-            @Valid @RequestBody CitaDTO citaDTO,
-            HttpServletRequest httpRequest) {
-
-        // ① Rate limiting por IP
-        String ip = obtenerIpReal(httpRequest);
-        if (!citaRateLimiter.intentoPermitido(ip)) {
-            long espera = citaRateLimiter.segundosHastaReset(ip);
-            logger.warn("Rate limit superado en POST /api/citas desde IP: {}", ip);
-            return ResponseEntity.status(429).body(Map.of(
-                    "error", "Demasiadas solicitudes. Espera " + Math.max(1, espera / 60) + " minuto(s).",
-                    "retryAfter", espera
-            ));
-        }
-
-        // ② Validación de rango de fecha
-        LocalDate hoy = LocalDate.now();
-        if (citaDTO.getFecha() != null) {
-            if (citaDTO.getFecha().isBefore(hoy)) {
-                return ResponseEntity.badRequest().body(Map.of("error", "La fecha no puede ser pasada."));
-            }
-            if (citaDTO.getFecha().isAfter(hoy.plusDays(60))) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Máximo 60 días de antelación."));
-            }
-        }
-
-        logger.info("Recibida solicitud para crear cita: {}", citaDTO);
-        Cita cita = citaMapper.toEntity(citaDTO);
-        Cita nuevaCita = citaService.crearCita(cita);
-        logger.info("Cita creada exitosamente con ID: {}", nuevaCita.getId());
-
-        enviarEmailConfirmacionSiEsPosible(nuevaCita);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(citaMapper.toDTO(nuevaCita));
-    }
-
-    // ─── HORARIOS ────────────────────────────────────────────────────────────
-
-    @GetMapping("/horarios")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<List<HorarioDiaSemana>> obtenerHorariosDiaSemana() {
+    public ResponseEntity<List<Map<String, Object>>> listarTiposLavado() {
         try {
-            logger.info("GET /api/horarios - Obteniendo todos los horarios");
-            List<HorarioDiaSemana> horarios = horarioDiaSemanaRepository.findAllByOrderByDiaSemanaAsc();
-            return ResponseEntity.ok(horarios);
+            List<Map<String, Object>> tiposLavado = Arrays.stream(TipoLavado.values())
+                    .map(tipo -> Map.of(
+                        "id", (Object) tipo.ordinal(),
+                        "name", tipo.name(),
+                        "descripcion", tipo.name().replace("_", " ")
+                    ))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(tiposLavado);
         } catch (Exception e) {
-            logger.error("Error obteniendo horarios por día: {}", e.getMessage());
+            logger.error("Error obteniendo tipos de lavado: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @GetMapping("/horarios/{diaSemana}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<HorarioDiaSemana> obtenerHorarioPorDia(
-            @PathVariable DiaSemana diaSemana) {
+    /**
+     * ✅ NUEVO: Obtiene los tipos de lavado disponibles para un modelo específico
+     * Filtra según la categoría del vehículo usando VehicleClassificationService
+     */
+    @GetMapping("/tipos-lavado/por-modelo/{modeloId}")
+    public ResponseEntity<List<Map<String, Object>>> obtenerTiposLavadoPorModelo(@PathVariable Long modeloId) {
         try {
-            logger.info("GET /api/horarios/{} - Obteniendo horario", diaSemana);
-            HorarioDiaSemana horario = horarioDiaSemanaRepository.findByDiaSemana(diaSemana)
-                    .orElse(null);
-            return horario != null ? ResponseEntity.ok(horario) : ResponseEntity.notFound().build();
+            // ① Obtener modelo desde BD
+            VehicleModel modelo = vehicleModelRepository.findById(modeloId)
+                    .orElseThrow(() -> new RuntimeException("Modelo de vehículo no encontrado con ID: " + modeloId));
+            
+            // ② Obtener categoría del modelo
+            String categoria = modelo.getCategory().getName();
+            logger.debug("Obteniendo tipos de lavado para modelo: {} (categoría: {})", modelo.getName(), categoria);
+            
+            // ③ Obtener tipos de lavado disponibles para esa categoría
+            List<TipoLavado> servicios = vehicleClassificationService.getAvailableServices(categoria);
+            
+            // ④ Convertir a DTO con id, name y descripción
+            List<Map<String, Object>> resultado = servicios.stream()
+                    .map(tipo -> Map.of(
+                        "id", (Object) tipo.ordinal(),
+                        "name", tipo.name(),
+                        "descripcion", tipo.name().replace("_", " ").toUpperCase()
+                    ))
+                    .collect(Collectors.toList());
+            
+            logger.info("Se encontraron {} tipos de lavado para modelo: {}", resultado.size(), modelo.getName());
+            return ResponseEntity.ok(resultado);
+            
+        } catch (RuntimeException e) {
+            logger.error("Error: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Error obteniendo horario: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PutMapping("/horarios/{diaSemana}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<HorarioDiaSemana> actualizarHorarioDia(
-            @PathVariable DiaSemana diaSemana,
-            @Valid @RequestBody HorarioDiaSemana horario) {
-        try {
-            logger.info("PUT /api/horarios/{} - Actualizando horario", diaSemana);
-            HorarioDiaSemana actualizado = horarioDiaSemanaService.actualizarHorarioDia(diaSemana, horario);
-            return ResponseEntity.ok(actualizado);
-        } catch (Exception e) {
-            logger.error("Error actualizando horario: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @GetMapping("/horarios-del-dia")
-    public ResponseEntity<?> obtenerHorariosDelDia(
-            @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        try {
-            List<LocalTime> horarios = horarioService.generarHorariosPorDia(fecha);
-            return ResponseEntity.ok(horarios);
-        } catch (Exception e) {
-            logger.error("Error horarios del día: {}", e.getMessage(), e);
+            logger.error("Error obteniendo tipos de lavado para modelo {}: {}", modeloId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(List.of(Map.of("error", (Object) e.getMessage())));
         }
     }
 
-    @GetMapping("/dias-no-disponibles")
-    public ResponseEntity<?> obtenerDiasNoDisponibles(
+    // ─── BÚSQUEDAS ────────────────────────────────────────────────────────────────
+
+    @PostMapping("/citas")
+    public ResponseEntity<CitaDTO> crearCita(@Valid @RequestBody CitaDTO citaDTO) {
+        try {
+            Cita cita = citaMapper.toEntity(citaDTO);
+            Cita citaGuardada = citaService.crearCita(cita);
+            enviarEmailConfirmacionSiEsPosible(citaGuardada);
+            return ResponseEntity.status(HttpStatus.CREATED).body(citaMapper.toDTO(citaGuardada));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/citas/buscar")
+    public ResponseEntity<List<CitaDTO>> buscarCitasPorTelefono(@RequestParam String telefono) {
+        try {
+            return ResponseEntity.ok(citaService.obtenerCitasPorTelefono(telefono).stream()
+                    .map(citaMapper::toDTO).collect(Collectors.toList()));
+        } catch (Exception e) {
+            logger.error("Error buscando citas: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/citas/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas(
+            @RequestParam(value = "fecha", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        try {
+            LocalDate fechaBusqueda = fecha != null ? fecha : LocalDate.now();
+            Map<String, Object> estadisticas = horarioService.obtenerEstadisticasOcupacion(fechaBusqueda);
+            return ResponseEntity.ok(estadisticas);
+        } catch (Exception e) {
+            logger.error("Error obteniendo estadísticas: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/citas/dias-no-disponibles")
+    public ResponseEntity<Map<String, Object>> obtenerDiasNoDisponibles(
             @RequestParam("anio") int anio,
             @RequestParam("mes") int mes) {
         try {
             YearMonth yearMonth = YearMonth.of(anio, mes);
             List<String> diasNoDisponibles = horarioService.obtenerDiasNoDisponibles(yearMonth, null);
-            return ResponseEntity.ok(diasNoDisponibles);
+            return ResponseEntity.ok(Map.of(
+                "anio", anio,
+                "mes", mes,
+                "diasNoDisponibles", diasNoDisponibles
+            ));
         } catch (Exception e) {
             logger.error("Error días no disponibles: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -395,32 +386,52 @@ public class CitaApiController {
 
     @PostMapping("/citas/{id}/confirmar")
     public ResponseEntity<CitaDTO> confirmarCita(@PathVariable Long id) {
-        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.confirmarCita(id))); }
-        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
+        try { 
+            return ResponseEntity.ok(citaMapper.toDTO(citaService.confirmarCita(id))); 
+        }
+        catch (RuntimeException e) { 
+            return ResponseEntity.notFound().build(); 
+        }
     }
 
     @PostMapping("/citas/{id}/iniciar")
     public ResponseEntity<CitaDTO> iniciarServicio(@PathVariable Long id) {
-        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.iniciarServicio(id))); }
-        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
+        try { 
+            return ResponseEntity.ok(citaMapper.toDTO(citaService.iniciarServicio(id))); 
+        }
+        catch (RuntimeException e) { 
+            return ResponseEntity.notFound().build(); 
+        }
     }
 
     @PostMapping("/citas/{id}/completar")
     public ResponseEntity<CitaDTO> completarCita(@PathVariable Long id) {
-        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.completarCita(id))); }
-        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
+        try { 
+            return ResponseEntity.ok(citaMapper.toDTO(citaService.completarCita(id))); 
+        }
+        catch (RuntimeException e) { 
+            return ResponseEntity.notFound().build(); 
+        }
     }
 
     @PostMapping("/citas/{id}/no-presentado")
     public ResponseEntity<CitaDTO> marcarNoPresentado(@PathVariable Long id) {
-        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.marcarNoPresentado(id))); }
-        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
+        try { 
+            return ResponseEntity.ok(citaMapper.toDTO(citaService.marcarNoPresentado(id))); 
+        }
+        catch (RuntimeException e) { 
+            return ResponseEntity.notFound().build(); 
+        }
     }
 
     @PostMapping("/citas/{id}/llegada")
     public ResponseEntity<CitaDTO> registrarLlegada(@PathVariable Long id) {
-        try { return ResponseEntity.ok(citaMapper.toDTO(citaService.registrarLlegada(id))); }
-        catch (RuntimeException e) { return ResponseEntity.notFound().build(); }
+        try { 
+            return ResponseEntity.ok(citaMapper.toDTO(citaService.registrarLlegada(id))); 
+        }
+        catch (RuntimeException e) { 
+            return ResponseEntity.notFound().build(); 
+        }
     }
 
     @PostMapping("/citas/{id}/facturar")
