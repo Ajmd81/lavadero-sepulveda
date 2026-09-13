@@ -95,54 +95,70 @@ public class HorarioService {
      * - Tarde: máximo 1 cita/hora (por defecto)
      */
     public List<LocalTime> obtenerHorariosDisponibles(LocalDate fecha) {
-        List<LocalTime> horariosDelDia = generarHorariosPorDia(fecha);
-        
-        if (horariosDelDia.isEmpty()) {
-            return horariosDelDia;
-        }
+        try {
+            // ① Generar horarios del día
+            List<LocalTime> horariosDelDia = generarHorariosPorDia(fecha);
+            if (horariosDelDia == null) {
+                horariosDelDia = new ArrayList<>();
+            }
+            
+            if (horariosDelDia.isEmpty()) {
+                logger.info("No hay horarios para la fecha: {}", fecha);
+                return new ArrayList<>();
+            }
 
-        // Obtener configuración del día
-        DayOfWeek dayOfWeek = fecha.getDayOfWeek();
-        DiaSemana diaSemana = convertirDayOfWeekADiaSemana(dayOfWeek);
-        HorarioDiaSemana horarioDia = horarioDiaSemanaRepository.findByDiaSemana(diaSemana).orElse(null);
+            // ② Obtener configuración
+            DayOfWeek dayOfWeek = fecha.getDayOfWeek();
+            DiaSemana diaSemana = convertirDayOfWeekADiaSemana(dayOfWeek);
+            HorarioDiaSemana horarioDia = horarioDiaSemanaRepository.findByDiaSemana(diaSemana).orElse(null);
 
-        if (horarioDia == null) {
-            return horariosDelDia;
-        }
+            if (horarioDia == null) {
+                logger.warn("Sin configuración para: {}", diaSemana);
+                return new ArrayList<>();
+            }
 
-        // Obtener todas las citas del día
-        List<Cita> citasDelDia = citaRepository.findByFecha(fecha);
+            // ③ Obtener citas
+            List<Cita> citasDelDia = citaRepository.findByFecha(fecha);
+            if (citasDelDia == null) {
+                citasDelDia = new ArrayList<>();
+            }
 
-        // Filtrar horarios disponibles según capacidad
-        return horariosDelDia.stream()
-                .filter(hora -> {
-                    // ✅ NUEVA RESTRICCIÓN: 8:00 y 14:00 siempre tienen capacidad 1
-                    if (hora.getHour() == 8 || hora.getHour() == 14) {
-                        int citasEnEstaHora = contarCitasQueOcupanSlot(citasDelDia, hora);
-                        return citasEnEstaHora < 1;  // Máximo 1 cita en estas franjas
+            // ④ Filtrar disponibles
+            List<LocalTime> resultado = new ArrayList<>();
+            
+            for (LocalTime hora : horariosDelDia) {
+                if (hora == null) continue;
+                
+                // Franjas 8:00 y 14:00: máximo 1 cita
+                if (hora.getHour() == 8 || hora.getHour() == 14) {
+                    if (contarCitasQueOcupanSlot(citasDelDia, hora) < 1) {
+                        resultado.add(hora);
                     }
-                    
-                    // Determinar si está en mañana o tarde
-                    boolean enMañana = horarioDia.getAperturaMañana() != null 
-                            && horarioDia.getCierreMañana() != null
-                            && !hora.isBefore(horarioDia.getAperturaMañana())
-                            && hora.isBefore(horarioDia.getCierreMañana());
+                    continue;
+                }
 
-                    int capacidad = 1; // Tarde por defecto: 1 cita/hora
-                    if (enMañana) {
-                        // Mañana: usar citasHoraMañana (default 2, pero puede ser 1 en sábados)
-                        capacidad = (horarioDia.getCitasHoraMañana() != null && horarioDia.getCitasHoraMañana() > 0)
-                                ? horarioDia.getCitasHoraMañana()
-                                : 2;
-                    }
+                // Otras franjas
+                boolean enMañana = horarioDia.getAperturaMañana() != null 
+                        && !hora.isBefore(horarioDia.getAperturaMañana())
+                        && hora.isBefore(horarioDia.getCierreMañana());
 
-                    // Contar citas que ocupan este slot horario
-                    int citasEnEstaHora = contarCitasQueOcupanSlot(citasDelDia, hora);
+                int capacidad = 1; // Tarde
+                if (enMañana) {
+                    Integer citasHora = horarioDia.getCitasHoraMañana();
+                    capacidad = (citasHora != null && citasHora > 0) ? citasHora : 2;
+                }
 
-                    return citasEnEstaHora < capacidad;
-                })
-                .sorted()
-                .collect(Collectors.toList());
+                if (contarCitasQueOcupanSlot(citasDelDia, hora) < capacidad) {
+                    resultado.add(hora);
+                }
+            }
+
+            return resultado;
+            
+        } catch (Exception e) {
+            logger.error("ERROR en obtenerHorariosDisponibles para {}: {}", fecha, e.getMessage(), e);
+            return new ArrayList<>();
+        }
     }
 
     /**
