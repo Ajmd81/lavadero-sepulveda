@@ -244,7 +244,7 @@ public class CitaApiController {
     // ─── HORARIOS ────────────────────────────────────────────────────────────
 
     @GetMapping("/horarios")
-    public ResponseEntity<List<String>> obtenerHorariosDisponibles(
+    public ResponseEntity<List<String>> obtenerHorariosConCapacidad(
             @RequestParam(value = "fecha", required = false) 
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         try {
