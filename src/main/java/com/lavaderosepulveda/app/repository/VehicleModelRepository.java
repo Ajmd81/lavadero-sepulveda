@@ -21,6 +21,22 @@ public interface VehicleModelRepository extends JpaRepository<VehicleModel, Long
     Optional<VehicleModel> findFirstByNameContainingNormalized(@Param("name") String name);
 
     /**
+     * Buscar un modelo por brand y nombre normalizado (para validar duplicados)
+     * Normalización: elimina -hybrid, -phev, espacios, y convierte a minúsculas
+     */
+    @Query(value = 
+        "SELECT * FROM vehicle_models " +
+        "WHERE LOWER(brand) = :brand " +
+        "AND LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(name, '-hybrid', ''), '-phev', ''), ' ', '-')) = :normalizedName " +
+        "LIMIT 1",
+        nativeQuery = true
+    )
+    VehicleModel findByBrandAndNormalizedName(
+        @Param("brand") String brand, 
+        @Param("normalizedName") String normalizedName
+    );
+
+    /**
      * Devuelve todas las marcas distintas almacenadas, ordenadas alfabéticamente.
      * Excluye nulos para retrocompatibilidad.
      */

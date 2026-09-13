@@ -46,6 +46,41 @@ public class VehicleClassificationService {
     }
 
     /**
+     * Valida que no exista un modelo duplicado antes de guardarlo
+     */
+    public void validateNoDuplicate(String brand, String modelName) {
+        String normalizedBrand = brand.trim().toLowerCase();
+        String normalizedName = normalizeModelName(modelName);
+        
+        VehicleModel existing = modelRepository.findByBrandAndNormalizedName(normalizedBrand, normalizedName);
+        
+        if (existing != null) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Modelo duplicado: %s %s ya existe (ID: %d). " +
+                    "Las variantes (ej: -Hybrid) deben unificarse en un solo registro.",
+                    normalizedBrand, normalizedName, existing.getId()
+                )
+            );
+        }
+    }
+
+    /**
+     * Normaliza el nombre del modelo eliminando variantes (hybrid, phev, etc)
+     */
+    private String normalizeModelName(String name) {
+        return name
+            .trim()
+            .toLowerCase()
+            .replaceAll("-?\\s*hybrid", "")
+            .replaceAll("-?\\s*phev", "")
+            .replaceAll("-?\\s*hev", "")
+            .replaceAll("\\s+", "-")
+            .replaceAll("-+", "-")
+            .replaceAll("^-|-$", "");
+    }
+
+    /**
      * Normaliza el modelo del vehículo para la búsqueda.
      * Conserva los espacios para que coincida con los nombres en BBDD
      * (ej: "Serie 3" → "serie 3", no "serie3").
