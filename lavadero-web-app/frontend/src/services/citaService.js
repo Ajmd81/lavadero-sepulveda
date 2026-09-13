@@ -37,7 +37,7 @@ const citaService = {
   getHorariosDisponibles: (fecha) =>
     api.get('/citas/horarios-disponibles', { params: { fecha } }),
   
-  // ✅ NUEVO: Obtener todos los horarios de la semana desde HorarioDiaSemana
+  // ✅ Obtener todos los horarios de la semana desde HorarioDiaSemana
   getHorariosDiaSemana: () =>
     api.get('/horarios'),
   
@@ -49,6 +49,14 @@ const citaService = {
 
   // Servicios
   getTiposLavado: () => api.get('/tipos-lavado'),
+
+  // 🚗 Vehículos: Marcas y Modelos
+  /**
+   * Obtiene todas las marcas con sus modelos en estructura de cascada
+   * Respuesta: {Marca: [{id, name}, ...], ...}
+   * Usado para selectores dinámicos en formularios de citas
+   */
+  getBrandsWithModels: () => api.get('/vehicle/brands-models'),
 
   // Estadísticas
   getEstadisticas: (fecha) =>
