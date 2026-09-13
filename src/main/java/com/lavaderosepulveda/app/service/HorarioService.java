@@ -116,6 +116,12 @@ public class HorarioService {
         // Filtrar horarios disponibles según capacidad
         return horariosDelDia.stream()
                 .filter(hora -> {
+                    // ✅ NUEVA RESTRICCIÓN: 8:00 y 14:00 siempre tienen capacidad 1
+                    if (hora.getHour() == 8 || hora.getHour() == 14) {
+                        int citasEnEstaHora = contarCitasQueOcupanSlot(citasDelDia, hora);
+                        return citasEnEstaHora < 1;  // Máximo 1 cita en estas franjas
+                    }
+                    
                     // Determinar si está en mañana o tarde
                     boolean enMañana = horarioDia.getAperturaMañana() != null 
                             && horarioDia.getCierreMañana() != null
