@@ -244,24 +244,85 @@ public class CitaApiController {
     // ─── HORARIOS ────────────────────────────────────────────────────────────
 
     @GetMapping("/horarios")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<List<HorarioDiaSemana>> obtenerHorariosDiaSemana() {
+    public ResponseEntity<List<String>> obtenerHorariosDisponibles(
+            @RequestParam(value = "fecha", required = false) 
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         try {
-            logger.info("GET /api/horarios - Obteniendo todos los horarios");
+            if (fecha == null) {
+                fecha = LocalDate.now();
+            }
+            
+            List<String> resultado = new ArrayList<>();
+            
+            // Obtener horarios base del día (sin duplicar)
+            List<LocalTime> horariosDelDia = horarioService.obtenerHorariosDisponibles(fecha);
+            if (horariosDelDia == null || horariosDelDia.isEmpty()) {
+                logger.info("No hay horarios para la fecha: {}", fecha);
+                return ResponseEntity.ok(List.of());
+            }
+            
+            // Repetir cada horario según su capacidad y disponibilidad
+            for (LocalTime hora : horariosDelDia) {
+                if (hora == null) continue;
+                
+                int capacidadMax = calcularCapacidad(fecha, hora.getHour());
+                for (int i = 0; i < capacidadMax; i++) {
+                    resultado.add(String.format("%d:00", hora.getHour()));
+                }
+                
+                logger.debug("Hora {} - Capacidad: {}", hora.getHour(), capacidadMax);
+            }
+            
+            logger.info("Horarios obtenidos para {}: {} slots", fecha, resultado.size());
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            logger.error("ERROR /api/horarios {}: {}", fecha, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(List.of());
+        }
+    }
+    
+    /**
+     * Calcula la capacidad máxima según la hora y día de la semana
+     * L-V: 8 (1), 9-13 (2), 14 (1)
+     * Sábado: 9-13 (1)
+     * Domingo: Cerrado (no aplica)
+     */
+    private int calcularCapacidad(LocalDate fecha, int hora) {
+        DayOfWeek dayOfWeek = fecha.getDayOfWeek();
+        
+        // Sábado: 1 cita/hora (9-13)
+        if (dayOfWeek == DayOfWeek.SATURDAY) {
+            return 1;
+        }
+        
+        // L-V: 8 (1), 9-13 (2), 14 (1)
+        if (hora == 8 || hora == 14) {
+            return 1;
+        } else if (hora >= 9 && hora <= 13) {
+            return 2;
+        }
+        return 1; // Por defecto
+    }
+
+    @GetMapping("/horarios-admin")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<List<HorarioDiaSemana>> obtenerHorariosDiaSemanaAdmin() {
+        try {
+            logger.info("GET /api/horarios-admin - Obteniendo todos los horarios");
             List<HorarioDiaSemana> horarios = horarioDiaSemanaRepository.findAllByOrderByDiaSemanaAsc();
             return ResponseEntity.ok(horarios);
         } catch (Exception e) {
-            logger.error("Error obteniendo horarios por día: {}", e.getMessage());
+            logger.error("Error obteniendo horarios: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @GetMapping("/horarios/{diaSemana}")
+    @GetMapping("/horarios-admin/{diaSemana}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<HorarioDiaSemana> obtenerHorarioPorDia(
             @PathVariable DiaSemana diaSemana) {
         try {
-            logger.info("GET /api/horarios/{} - Obteniendo horario", diaSemana);
+            logger.info("GET /api/horarios-admin/{} - Obteniendo horario", diaSemana);
             HorarioDiaSemana horario = horarioDiaSemanaRepository.findByDiaSemana(diaSemana)
                     .orElse(null);
             return horario != null ? ResponseEntity.ok(horario) : ResponseEntity.notFound().build();
@@ -271,13 +332,13 @@ public class CitaApiController {
         }
     }
 
-    @PutMapping("/horarios/{diaSemana}")
+    @PutMapping("/horarios-admin/{diaSemana}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<HorarioDiaSemana> actualizarHorarioDia(
             @PathVariable DiaSemana diaSemana,
             @Valid @RequestBody HorarioDiaSemana horario) {
         try {
-            logger.info("PUT /api/horarios/{} - Actualizando horario", diaSemana);
+            logger.info("PUT /api/horarios-admin/{} - Actualizando horario", diaSemana);
             HorarioDiaSemana actualizado = horarioDiaSemanaService.actualizarHorarioDia(diaSemana, horario);
             return ResponseEntity.ok(actualizado);
         } catch (Exception e) {
