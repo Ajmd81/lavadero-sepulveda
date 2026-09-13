@@ -110,6 +110,44 @@ public class CitaApiController {
         }
     }
 
+    @GetMapping("/horarios")
+    public ResponseEntity<List<String>> obtenerHorariosConCapacidad(
+            @RequestParam(value = "fecha", required = false) 
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        try {
+            if (fecha == null) {
+                fecha = LocalDate.now();
+            }
+            
+            List<String> resultado = new ArrayList<>();
+            
+            // Obtener horarios base del día (sin duplicar)
+            List<LocalTime> horariosDelDia = horarioService.obtenerHorariosDisponibles(fecha);
+            if (horariosDelDia == null || horariosDelDia.isEmpty()) {
+                logger.info("No hay horarios para la fecha: {}", fecha);
+                return ResponseEntity.ok(List.of());
+            }
+            
+            // Repetir cada horario según su capacidad y disponibilidad
+            for (LocalTime hora : horariosDelDia) {
+                if (hora == null) continue;
+                
+                int capacidadMax = calcularCapacidad(fecha, hora.getHour());
+                for (int i = 0; i < capacidadMax; i++) {
+                    resultado.add(String.format("%d:00", hora.getHour()));
+                }
+                
+                logger.debug("Hora {} - Capacidad: {}", hora.getHour(), capacidadMax);
+            }
+            
+            logger.info("Horarios obtenidos para {}: {} slots", fecha, resultado.size());
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            logger.error("ERROR /api/horarios {}: {}", fecha, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(List.of());
+        }
+    }
+
     @GetMapping("/citas/disponibilidad-mes")
     public ResponseEntity<List<String>> obtenerDisponibilidadMensual(
             @RequestParam("mes") int mes,
@@ -474,6 +512,23 @@ public class CitaApiController {
     }
 
     // ─── HELPERS PRIVADOS ─────────────────────────────────────────────────────
+
+    private int calcularCapacidad(LocalDate fecha, int hora) {
+        DayOfWeek dayOfWeek = fecha.getDayOfWeek();
+        
+        // Sábado: 1 cita/hora en todas las franjas (9-13)
+        if (dayOfWeek == DayOfWeek.SATURDAY) {
+            return 1;
+        }
+        
+        // L-J y Viernes: 8 (1), 9-13 (2), 14 (1)
+        if (hora == 8 || hora == 14) {
+            return 1;
+        } else if (hora >= 9 && hora <= 13) {
+            return 2;
+        }
+        return 1; // Por defecto
+    }
 
     private void enviarEmailConfirmacionSiEsPosible(Cita cita) {
         if (emailService != null && cita.getEmail() != null && !cita.getEmail().trim().isEmpty()) {

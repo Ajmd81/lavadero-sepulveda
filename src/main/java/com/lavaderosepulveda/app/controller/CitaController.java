@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -180,71 +179,6 @@ public class CitaController {
             logger.error("Error obteniendo horarios disponibles para {}: {}", fecha, e.getMessage());
             return List.of();
         }
-    }
-
-    @GetMapping("/api/horarios")
-    @ResponseBody
-    public ResponseEntity<List<String>> obtenerHorariosApi(
-            @RequestParam(value = "fecha", required = false) 
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        try {
-            // Si no se proporciona fecha, usar hoy
-            if (fecha == null) {
-                fecha = LocalDate.now();
-            }
-            
-            // Verificar si el día está cerrado
-            if (diasCerradoRepository.existsByFecha(fecha)) {
-                logger.info("Día cerrado solicitado: {}", fecha);
-                return ResponseEntity.ok(List.of());
-            }
-            
-            List<String> resultado = new ArrayList<>();
-            
-            // Obtener horarios disponibles (solo sin duplicar)
-            List<java.time.LocalTime> horariosDisponibles = horarioService.obtenerHorariosDisponibles(fecha);
-            if (horariosDisponibles == null || horariosDisponibles.isEmpty()) {
-                return ResponseEntity.ok(List.of());
-            }
-            
-            // Repetir cada horario según su capacidad
-            for (java.time.LocalTime hora : horariosDisponibles) {
-                int capacidad = calcularCapacidad(fecha, hora.getHour());
-                for (int i = 0; i < capacidad; i++) {
-                    resultado.add(String.format("%d:00", hora.getHour()));
-                }
-            }
-            
-            logger.info("Horarios obtenidos para {}: {} slots disponibles", fecha, resultado.size());
-            return ResponseEntity.ok(resultado);
-        } catch (Exception e) {
-            logger.error("ERROR en /api/horarios para {}: {}", fecha, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(List.of());
-        }
-    }
-    
-    /**
-     * Calcula la capacidad máxima según la hora y día de la semana
-     * L-J: 8 (1), 9-13 (2), 14 (1)
-     * Viernes: 8 (1), 9-13 (2), 14 (1)
-     * Sábado: 9-13 (1)
-     */
-    private int calcularCapacidad(LocalDate fecha, int hora) {
-        java.time.DayOfWeek dayOfWeek = fecha.getDayOfWeek();
-        boolean esSabado = dayOfWeek == java.time.DayOfWeek.SATURDAY;
-        
-        // Sábado: máximo 1 cita por hora
-        if (esSabado) {
-            return 1;
-        }
-        
-        // L-J y Viernes
-        if (hora == 8 || hora == 14) {
-            return 1;
-        } else if (hora >= 9 && hora <= 13) {
-            return 2;
-        }
-        return 1; // Por defecto
     }
 
     @GetMapping("/api/horarios-dia-semana")
