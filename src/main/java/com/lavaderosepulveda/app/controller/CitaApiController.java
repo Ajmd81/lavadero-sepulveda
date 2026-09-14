@@ -9,6 +9,7 @@ import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
 import com.lavaderosepulveda.app.repository.HorarioDiaSemanaRepository;
+import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
 import com.lavaderosepulveda.app.service.CitaService;
 import com.lavaderosepulveda.app.service.EmailService;
 import com.lavaderosepulveda.app.service.HorarioService;
@@ -50,6 +51,7 @@ public class CitaApiController {
     @Autowired private javax.sql.DataSource dataSource;
     @Autowired private HorarioDiaSemanaRepository horarioDiaSemanaRepository;
     @Autowired private HorarioDiaSemanaService horarioDiaSemanaService;
+    @Autowired private DiaCerradoRepository diasCerradoRepository;
 
     // ═══════════════════════════════════════════════════════════════════════════════
     // ✅ ENDPOINTS ESPECÍFICOS - PRIMERO (Todos menos {id})
