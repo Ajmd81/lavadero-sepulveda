@@ -144,7 +144,18 @@ const Citas = () => {
 
       const horarioDia = horariosPortDia[diaSemana];
 
-      if (!horarioDia || !horarioDia.activo) {
+      // Validar que el día está configurado y activo
+      // (activo puede venir como boolean, número 1/0, o Buffer JSON)
+      if (!horarioDia) {
+        setHorariosDisponibles([]);
+        return;
+      }
+
+      const esActivo = horarioDia.activo === true || 
+                       horarioDia.activo === 1 || 
+                       (horarioDia.activo?.data?.[0] === 1);
+
+      if (!esActivo) {
         setHorariosDisponibles([]);
         return;
       }
