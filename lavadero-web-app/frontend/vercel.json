@@ -8,6 +8,9 @@
       "source": "/api/(.*)",
       "destination": "https://lavadero-sepulveda-production.up.railway.app/api/$1"
     },
+   {
+     "source": "/citas/(.*)",
+     "destination": "https://lavadero-sepulveda-production.up.railway.app/citas/$1"
     {
       "source": "/(.*)",
       "destination": "/index.html"
