@@ -35,7 +35,7 @@ const citaService = {
   checkDisponibilidad: (fecha, hora) =>
     api.get('/citas/verificar-disponibilidad', { params: { fecha, hora } }),
   getHorariosDisponibles: (fecha) =>
-    api.get('/citas/horarios-disponibles', { params: { fecha } }),
+    api.get('/api/citas/horarios-disponibles', { params: { fecha } }),
   
   // ✅ Obtener todos los horarios de la semana desde HorarioDiaSemana
   getHorariosDiaSemana: () =>
