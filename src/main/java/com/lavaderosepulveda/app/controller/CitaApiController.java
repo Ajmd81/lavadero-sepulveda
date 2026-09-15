@@ -93,7 +93,9 @@ public class CitaApiController {
                 return ResponseEntity.badRequest().build();
             }
             
-            List<String> horariosDisponibles = horarioService.obtenerHorariosDisponiblesFormato(fecha);
+            List<String> horariosDisponibles = horarioService.obtenerHorariosDisponibles(fecha).stream()
+        .map(DateTimeFormatUtils::formatearHoraCorta)
+        .collect(Collectors.toList());
             
             if (horariosDisponibles.isEmpty()) {
                 logger.info("No hay horarios disponibles para la fecha: {}", fecha);
