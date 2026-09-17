@@ -35,9 +35,9 @@ const citaService = {
   checkDisponibilidad: (fecha, hora) =>
     api.get('/citas/verificar-disponibilidad', { params: { fecha, hora } }),
   getHorariosDisponibles: (fecha) =>
-    api.get('/api/citas/horarios-disponibles', { params: { fecha } }),
+    api.get('/citas/horarios-disponibles', { params: { fecha } }),
   
-  // ✅ Obtener todos los horarios de la semana desde HorarioDiaSemana
+  // ✅ NUEVO: Obtener todos los horarios de la semana desde HorarioDiaSemana
   getHorariosDiaSemana: () =>
     api.get('/horarios'),
   
@@ -49,23 +49,6 @@ const citaService = {
 
   // Servicios
   getTiposLavado: () => api.get('/tipos-lavado'),
-
-  /**
-   * Obtiene los tipos de lavado disponibles para un modelo específico
-   * Filtra según la categoría del vehículo
-   * @param {number} modeloId - ID del modelo de vehículo
-   * @returns {Promise} Lista de tipos de lavado disponibles
-   */
-  getTiposLavadoPorModelo: (modeloId) => 
-    api.get(`/tipos-lavado/por-modelo/${modeloId}`),
-
-  // 🚗 Vehículos: Marcas y Modelos
-  /**
-   * Obtiene todas las marcas con sus modelos en estructura de cascada
-   * Respuesta: {Marca: [{id, name}, ...], ...}
-   * Usado para selectores dinámicos en formularios de citas
-   */
-  getBrandsWithModels: () => api.get('/vehicle/brands-models'),
 
   // Estadísticas
   getEstadisticas: (fecha) =>

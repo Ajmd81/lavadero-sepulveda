@@ -19,12 +19,6 @@ const Citas = () => {
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [validandoDisponibilidad, setValidandoDisponibilidad] = useState(false);
 
-  // Estados para marcas y modelos en cascada
-  const [marcasModelos, setMarcasModelos] = useState({}); // {marca: [{id, name}, ...]}
-  const [loadingMarcas, setLoadingMarcas] = useState(false);
-  const [marcaSeleccionada, setMarcaSeleccionada] = useState('');
-  const [modeloSeleccionado, setModeloSeleccionado] = useState('');
-
   const [formData, setFormData] = useState({
     nombre: '',
     telefono: '',
@@ -40,7 +34,6 @@ const Citas = () => {
     cargarCitas();
     cargarTiposLavado();
     cargarHorariosConfiguracion();
-    cargarMarcasModelos(); // Cargar marcas y modelos
   }, [currentPage, pageSize]);
 
   // Cuando cambia la fecha, recalcular horarios disponibles
@@ -53,29 +46,13 @@ const Citas = () => {
   }, [formData.fecha, horariosPortDia]);
 
   /**
-   * Carga todas las marcas y modelos desde el backend
-   */
-  const cargarMarcasModelos = async () => {
-    setLoadingMarcas(true);
-    try {
-      const response = await citaService.getBrandsWithModels();
-      if (response?.data) {
-        setMarcasModelos(response.data);
-      }
-    } catch (err) {
-      console.error('Error cargando marcas y modelos:', err);
-    } finally {
-      setLoadingMarcas(false);
-    }
-  };
-
-  /**
    * Carga la configuración de horarios de la BD (todos los días)
    */
   const cargarHorariosConfiguracion = async () => {
     try {
       const response = await citaService.getHorariosDiaSemana();
       if (response?.data && Array.isArray(response.data)) {
+        // Convertir lista de HorarioDiaSemana a un mapa por día
         const mapa = {};
         response.data.forEach(horario => {
           mapa[horario.diaSemana] = horario;
@@ -127,6 +104,7 @@ const Citas = () => {
 
   /**
    * Calcula los horarios disponibles para una fecha específica.
+   * Usa los horarios de HorarioDiaSemana de la BD.
    */
   const cargarHorariosDisponibles = async (fecha) => {
     if (!fecha) {
@@ -138,33 +116,56 @@ const Citas = () => {
     try {
       const [year, month, day] = fecha.split('-');
       const fechaObj = new Date(year, parseInt(month) - 1, parseInt(day));
+      
+      // Obtener el día de la semana (0=domingo, 1=lunes, ..., 6=sábado)
       const dayOfWeek = fechaObj.getDay();
       const diasMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
       const diaSemana = diasMap[dayOfWeek];
 
+      // Obtener horarios del día desde la BD
       const horarioDia = horariosPortDia[diaSemana];
 
-      // Validar que el día está configurado y activo
-      // (activo puede venir como boolean, número 1/0, o Buffer JSON)
-      if (!horarioDia) {
+      if (!horarioDia || !horarioDia.activo) {
         setHorariosDisponibles([]);
         return;
       }
 
-      const esActivo = horarioDia.activo === true || 
-                       horarioDia.activo === 1 || 
-                       (horarioDia.activo?.data?.[0] === 1);
+      // Construir lista de horarios del día combinando mañana y tarde
+      let horariosDelDia = [];
 
-      if (!esActivo) {
-        setHorariosDisponibles([]);
-        return;
+      // Franja mañana
+      if (horarioDia.aperturaMañana && horarioDia.cierreMañana) {
+        const [hM, minM] = horarioDia.aperturaMañana.split(':');
+        const [hCM, minCM] = horarioDia.cierreMañana.split(':');
+        for (let h = parseInt(hM); h < parseInt(hCM); h++) {
+          horariosDelDia.push(`${String(h).padStart(2, '0')}:00`);
+        }
       }
 
-      const fechaFormato = `${year}-${month}-${day}`;
+      // Franja tarde
+      if (horarioDia.aperturaTarde && horarioDia.cierreTarde) {
+        const [hT, minT] = horarioDia.aperturaTarde.split(':');
+        const [hCT, minCT] = horarioDia.cierreTarde.split(':');
+        for (let h = parseInt(hT); h < parseInt(hCT); h++) {
+          horariosDelDia.push(`${String(h).padStart(2, '0')}:00`);
+        }
+      }
+
+      // Ahora obtener horarios ocupados del backend
+      const fechaFormato = `${day}/${month}/${year}`;
       const response = await citaService.getHorariosDisponibles(fechaFormato);
+      
+      let horariosOcupados = response?.data || [];
+      if (Array.isArray(horariosOcupados)) {
+        horariosOcupados = horariosOcupados.map(h => 
+          typeof h === 'string' ? h.substring(0, 5) : h
+        );
+      }
 
-      let horariosFinales = response?.data || [];
+      // Filtrar: mostrar solo los horarios del día que no están ocupados
+      const horariosFinales = horariosDelDia.filter(h => !horariosOcupados.includes(h));
 
+      // Si editamos una cita, agregar su hora actual aunque esté ocupada
       if (editingCita?.hora) {
         const horaActual = editingCita.hora.substring(0, 5);
         if (!horariosFinales.includes(horaActual)) {
@@ -186,7 +187,7 @@ const Citas = () => {
     setValidandoDisponibilidad(true);
     try {
       const response = await citaService.checkDisponibilidad(fecha, hora);
-      return response?.data?.disponible || false;
+      return !response?.data;  // ← Cambio aquí
     } catch (err) {
       console.error('Error validando disponibilidad:', err);
       return false;
@@ -200,61 +201,11 @@ const Citas = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  /**
-   * Maneja el cambio de marca seleccionada
-   */
-  const handleMarcaChange = (e) => {
-    const marca = e.target.value;
-    setMarcaSeleccionada(marca);
-    setModeloSeleccionado('');
-    setFormData(prev => ({ ...prev, modeloVehiculo: '' }));
-  };
-
-  /**
-   * Maneja el cambio de modelo seleccionado
-   * Carga dinámicamente los tipos de lavado disponibles para ese modelo
-   */
-  const handleModeloChange = async (e) => {
-    const modeloNombre = e.target.value;
-    setModeloSeleccionado(modeloNombre);
-    setFormData(prev => ({ ...prev, modeloVehiculo: modeloNombre }));
-    
-    // 🆕 Obtener tipos de lavado para este modelo
-    try {
-      const modeloObj = modelosDeMarca.find(m => m.name === modeloNombre);
-      if (!modeloObj) {
-        console.warn('Modelo no encontrado:', modeloNombre);
-        return;
-      }
-      
-      const response = await citaService.getTiposLavadoPorModelo(modeloObj.id);
-      if (response?.data && Array.isArray(response.data)) {
-        // Convertir respuesta del API a formato compatible con el select
-        const tiposFormateados = response.data.map(tipo => ({
-          id: tipo.id,
-          descripcion: tipo.descripcion.charAt(0).toUpperCase() + tipo.descripcion.slice(1).toLowerCase()
-        }));
-        setTiposLavado(tiposFormateados);
-        // Reset tipo lavado cuando cambias de modelo
-        setFormData(prev => ({ ...prev, tipoLavado: '' }));
-      }
-    } catch (err) {
-      console.error('Error cargando tipos de lavado por modelo:', err);
-      // Si falla, cargar todos los tipos de lavado como fallback
-      cargarTiposLavado();
-    }
-  };
-
   const guardarCita = async (e) => {
     e.preventDefault();
-    if (!formData.modeloVehiculo) {
-      setError('Por favor selecciona un modelo de vehículo');
-      return;
-    }
-
     const disponible = await validarDisponibilidad(formData.fecha, formData.hora);
-    if (!disponible && !editingCita) {
-      setError('Este horario no está disponible');
+    if (!disponible) {
+      setError('El horario no está disponible. Por favor, selecciona otro.');
       return;
     }
 
@@ -266,6 +217,7 @@ const Citas = () => {
       }
       cargarCitas();
       cerrarModal();
+      setFormData({ nombre: '', telefono: '', email: '', fecha: '', hora: '', tipoLavado: '', modeloVehiculo: '', observaciones: '' });
     } catch (err) {
       setError('Error al guardar la cita: ' + err.message);
     }
@@ -274,22 +226,12 @@ const Citas = () => {
   const abrirModalEditar = (cita) => {
     setEditingCita(cita);
     setFormData(cita);
-    // Establecer marca y modelo si existen
-    const marca = Object.keys(marcasModelos).find(m => 
-      marcasModelos[m].some(mod => mod.name === cita.modeloVehiculo)
-    );
-    if (marca) {
-      setMarcaSeleccionada(marca);
-      setModeloSeleccionado(cita.modeloVehiculo);
-    }
     setShowModal(true);
   };
 
   const cerrarModal = () => {
     setShowModal(false);
     setEditingCita(null);
-    setMarcaSeleccionada('');
-    setModeloSeleccionado('');
     setFormData({ nombre: '', telefono: '', email: '', fecha: '', hora: '', tipoLavado: '', modeloVehiculo: '', observaciones: '' });
   };
 
@@ -319,11 +261,6 @@ const Citas = () => {
     setPageSize(size);
     setCurrentPage(0);
   };
-
-  // Obtener modelos de la marca seleccionada
-  const modelosDeMarca = marcaSeleccionada && marcasModelos[marcaSeleccionada] 
-    ? marcasModelos[marcaSeleccionada] 
-    : [];
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-lg">
@@ -420,40 +357,10 @@ const Citas = () => {
                   <label className="block text-sm font-semibold mb-1">Email</label>
                   <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full border rounded px-3 py-2" />
                 </div>
-
-                {/* SELECTORES EN CASCADA: Marca → Modelo */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Marca *</label>
-                  <select 
-                    value={marcaSeleccionada} 
-                    onChange={handleMarcaChange} 
-                    className="w-full border rounded px-3 py-2" 
-                    disabled={loadingMarcas}
-                    required
-                  >
-                    <option value="">{loadingMarcas ? 'Cargando marcas...' : 'Seleccionar marca'}</option>
-                    {Object.keys(marcasModelos).map(marca => (
-                      <option key={marca} value={marca}>{marca}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-semibold mb-1">Modelo Vehículo *</label>
+                  <input type="text" name="modeloVehiculo" value={formData.modeloVehiculo} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Modelo *</label>
-                  <select 
-                    value={modeloSeleccionado} 
-                    onChange={handleModeloChange} 
-                    className="w-full border rounded px-3 py-2" 
-                    disabled={!marcaSeleccionada}
-                    required
-                  >
-                    <option value="">{!marcaSeleccionada ? 'Selecciona una marca primero' : 'Seleccionar modelo'}</option>
-                    {modelosDeMarca.map(modelo => (
-                      <option key={modelo.id} value={modelo.name}>{modelo.name}</option>
-                    ))}
-                  </select>
-                </div>
-
                 <div>
                   <label className="block text-sm font-semibold mb-1">Fecha *</label>
                   <input type="date" name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
@@ -479,7 +386,7 @@ const Citas = () => {
               </div>
               <div className="flex justify-end gap-3">
                 <button type="button" onClick={cerrarModal} className="px-6 py-2 border rounded hover:bg-gray-100">Cancelar</button>
-                <button type="submit" disabled={validandoDisponibilidad || !marcaSeleccionada || !modeloSeleccionado} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                <button type="submit" disabled={validandoDisponibilidad} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
                   {validandoDisponibilidad ? 'Validando...' : editingCita ? 'Actualizar' : 'Crear'}
                 </button>
               </div>
