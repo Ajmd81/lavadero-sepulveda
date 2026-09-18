@@ -154,18 +154,18 @@ const Citas = () => {
       // Ahora obtener horarios ocupados del backend
       const fechaFormato = `${day}/${month}/${year}`;
       const response = await citaService.getHorariosDisponibles(fechaFormato);
-      
-      let horariosOcupados = response?.data || [];
-      if (Array.isArray(horariosOcupados)) {
-        horariosOcupados = horariosOcupados.map(h => 
+
+      // El backend devuelve horarios DISPONIBLES directamente
+      let horariosFinales = response?.data || [];
+
+      // Asegurar formato correcto (HH:mm)
+      if (Array.isArray(horariosFinales)) {
+        horariosFinales = horariosFinales.map(h =>
           typeof h === 'string' ? h.substring(0, 5) : h
         );
       }
 
-      // Filtrar: mostrar solo los horarios del día que no están ocupados
-      const horariosFinales = horariosDelDia.filter(h => !horariosOcupados.includes(h));
-
-      // Si editamos una cita, agregar su hora actual aunque esté ocupada
+      // Si editamos una cita, agregar su hora actual aunque no esté disponible
       if (editingCita?.hora) {
         const horaActual = editingCita.hora.substring(0, 5);
         if (!horariosFinales.includes(horaActual)) {
