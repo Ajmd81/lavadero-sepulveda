@@ -155,8 +155,8 @@ const Citas = () => {
       const fechaFormato = `${day}/${month}/${year}`;
       const response = await citaService.getHorariosDisponibles(fechaFormato);
 
-      // El backend devuelve horarios DISPONIBLES directamente
-      let horariosFinales = response?.data || [];
+      // Axios devuelve el array directamente o en response.data
+      let horariosFinales = Array.isArray(response) ? response : (response?.data || []);
 
       // Asegurar formato correcto (HH:mm)
       if (Array.isArray(horariosFinales)) {
