@@ -158,11 +158,15 @@ const Citas = () => {
       // Axios devuelve el array directamente o en response.data
       let horariosFinales = Array.isArray(response) ? response : (response?.data || []);
 
-      // Asegurar formato correcto (HH:mm)
+      // Asegurar formato correcto (HH:mm) con cero inicial
       if (Array.isArray(horariosFinales)) {
-        horariosFinales = horariosFinales.map(h =>
-          typeof h === 'string' ? h.substring(0, 5) : h
-        );
+        horariosFinales = horariosFinales.map(h => {
+          const str = String(h).substring(0, 5);
+          if (str.length === 4 && str[0] !== '0') { // "9:00" → "09:00"
+            return '0' + str;
+          }
+          return str;
+        });
       }
 
       // Si editamos una cita, agregar su hora actual aunque no esté disponible
