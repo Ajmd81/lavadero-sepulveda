@@ -102,6 +102,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/dias-cerrados/**").permitAll()
                         .requestMatchers("/api/enums/**").permitAll()  // ✅ TIPOS DE PAGO Y LAVADO
                         .requestMatchers("/api/citas").permitAll()  // GET citas públicas
+                        .requestMatchers("/api/citas/horarios-disponibles").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/citas").permitAll()  // POST crear cita pública
                         
                         // 2️⃣ PROTEGIDOS - Todo /api/** restante requiere JWT
