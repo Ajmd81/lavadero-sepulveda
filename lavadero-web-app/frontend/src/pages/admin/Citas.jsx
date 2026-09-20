@@ -19,20 +19,28 @@ const Citas = () => {
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [validandoDisponibilidad, setValidandoDisponibilidad] = useState(false);
 
+  // Estados para Marca y Modelo
+  const [marcas, setMarcas] = useState([]);
+  const [modelos, setModelos] = useState([]);
+  const [loadingMarcas, setLoadingMarcas] = useState(false);
+  const [loadingModelos, setLoadingModelos] = useState(false);
+
   const [formData, setFormData] = useState({
     nombre: '',
     telefono: '',
     email: '',
+    marca: '',
+    modeloVehiculo: '',
     fecha: '',
     hora: '',
     tipoLavado: '',
-    modeloVehiculo: '',
     observaciones: '',
   });
 
   useEffect(() => {
     cargarCitas();
     cargarTiposLavado();
+    cargarMarcas();
     cargarHorariosConfiguracion();
   }, [currentPage, pageSize]);
 
@@ -62,6 +70,47 @@ const Citas = () => {
     } catch (err) {
       console.error('Error cargando horarios por día:', err);
       setHorariosPortDia({});
+    }
+  };
+
+  /**
+   * Carga todas las marcas de vehículos
+   */
+  const cargarMarcas = async () => {
+    setLoadingMarcas(true);
+    try {
+      const response = await citaService.getBrandsWithModels();
+      if (response?.data && Array.isArray(response.data)) {
+        setMarcas(response.data);
+      }
+    } catch (err) {
+      console.error('Error cargando marcas:', err);
+      setMarcas([]);
+    } finally {
+      setLoadingMarcas(false);
+    }
+  };
+
+  /**
+   * Carga modelos para una marca específica
+   */
+  const cargarModelosPorMarca = async (marcaId) => {
+    if (!marcaId) {
+      setModelos([]);
+      return;
+    }
+
+    setLoadingModelos(true);
+    try {
+      const response = await citaService.getModelosPorMarca(marcaId);
+      if (response?.data && Array.isArray(response.data)) {
+        setModelos(response.data);
+      }
+    } catch (err) {
+      console.error('Error cargando modelos:', err);
+      setModelos([]);
+    } finally {
+      setLoadingModelos(false);
     }
   };
 
@@ -104,7 +153,7 @@ const Citas = () => {
 
   /**
    * Calcula los horarios disponibles para una fecha específica.
-   * Usa los horarios de HorarioDiaSemana de la BD.
+   * Usa el backend directamente.
    */
   const cargarHorariosDisponibles = async (fecha) => {
     if (!fecha) {
@@ -163,7 +212,7 @@ const Citas = () => {
     setValidandoDisponibilidad(true);
     try {
       const response = await citaService.checkDisponibilidad(fecha, hora);
-      return !response?.data;  // ← Cambio aquí
+      return !response?.data;
     } catch (err) {
       console.error('Error validando disponibilidad:', err);
       return false;
@@ -174,7 +223,14 @@ const Citas = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Si cambia la marca, resetea modelo
+    if (name === 'marca') {
+      cargarModelosPorMarca(value);
+      setFormData(prev => ({ ...prev, [name]: value, modeloVehiculo: '' }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const guardarCita = async (e) => {
@@ -193,7 +249,7 @@ const Citas = () => {
       }
       cargarCitas();
       cerrarModal();
-      setFormData({ nombre: '', telefono: '', email: '', fecha: '', hora: '', tipoLavado: '', modeloVehiculo: '', observaciones: '' });
+      setFormData({ nombre: '', telefono: '', email: '', marca: '', modeloVehiculo: '', fecha: '', hora: '', tipoLavado: '', observaciones: '' });
     } catch (err) {
       setError('Error al guardar la cita: ' + err.message);
     }
@@ -202,13 +258,18 @@ const Citas = () => {
   const abrirModalEditar = (cita) => {
     setEditingCita(cita);
     setFormData(cita);
+    // Cargar modelos si viene con marca
+    if (cita.marca) {
+      cargarModelosPorMarca(cita.marca);
+    }
     setShowModal(true);
   };
 
   const cerrarModal = () => {
     setShowModal(false);
     setEditingCita(null);
-    setFormData({ nombre: '', telefono: '', email: '', fecha: '', hora: '', tipoLavado: '', modeloVehiculo: '', observaciones: '' });
+    setFormData({ nombre: '', telefono: '', email: '', marca: '', modeloVehiculo: '', fecha: '', hora: '', tipoLavado: '', observaciones: '' });
+    setModelos([]);
   };
 
   const eliminarCita = async (id) => {
@@ -317,7 +378,7 @@ const Citas = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4">{editingCita ? 'Editar Cita' : 'Nueva Cita'}</h2>
             <form onSubmit={guardarCita} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -334,8 +395,18 @@ const Citas = () => {
                   <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full border rounded px-3 py-2" />
                 </div>
                 <div>
+                  <label className="block text-sm font-semibold mb-1">Marca Vehículo *</label>
+                  <select name="marca" value={formData.marca} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required disabled={loadingMarcas}>
+                    <option value="">{loadingMarcas ? 'Cargando marcas...' : 'Seleccionar marca'}</option>
+                    {marcas.map(marca => <option key={marca.id} value={marca.id}>{marca.nombre}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm font-semibold mb-1">Modelo Vehículo *</label>
-                  <input type="text" name="modeloVehiculo" value={formData.modeloVehiculo} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                  <select name="modeloVehiculo" value={formData.modeloVehiculo} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required disabled={!formData.marca || loadingModelos}>
+                    <option value="">{loadingModelos ? 'Cargando modelos...' : 'Seleccionar modelo'}</option>
+                    {modelos.map(modelo => <option key={modelo.id} value={modelo.id}>{modelo.nombre}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1">Fecha *</label>

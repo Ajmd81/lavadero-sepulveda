@@ -50,6 +50,10 @@ const citaService = {
   // Servicios
   getTiposLavado: () => api.get('/tipos-lavado'),
 
+  // ── Vehículos ────────────────────────────────────────────────────
+  getBrandsWithModels: () => api.get('/vehicle/brands-models'),
+  getModelosPorMarca: (marcaId) => api.get(`/vehicle/modelos/${marcaId}`),
+
   // Estadísticas
   getEstadisticas: (fecha) =>
     api.get('/citas/estadisticas', { params: { fecha } }),
