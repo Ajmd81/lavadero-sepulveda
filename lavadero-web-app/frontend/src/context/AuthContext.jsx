@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       authService.limpiarStorage();
       setUser(null);
-      window.location.href = '/login';
+      window.location.href = '/admin/login';
     }
   };
 

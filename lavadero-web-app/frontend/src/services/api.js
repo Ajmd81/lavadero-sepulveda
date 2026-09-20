@@ -34,7 +34,7 @@ api.interceptors.response.use(
     if (status === 401 && !url.includes('/auth/login')) {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      window.location.href = '/admin/login';
     }
 
     return Promise.reject(error);
