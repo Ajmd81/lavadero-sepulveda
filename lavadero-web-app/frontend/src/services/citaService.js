@@ -39,7 +39,7 @@ const citaService = {
   
   // ✅ NUEVO: Obtener todos los horarios de la semana desde HorarioDiaSemana
   getHorariosDiaSemana: () =>
-    api.get('/horarios'),
+    api.get('/citas/horarios-admin'),
   
   getDisponibilidadMensual: (mes, anio, tipoLavado) =>
     api.get('/citas/disponibilidad-mensual', { params: { mes, anio, tipoLavado } }),

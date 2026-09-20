@@ -88,20 +88,28 @@ public class CitaApiController {
     public ResponseEntity<List<String>> obtenerHorariosDisponibles(
             @RequestParam("fecha") String fechaStr) {
         try {
+            logger.info("📋 REQUEST horarios-disponibles: fechaStr={}", fechaStr);
+            
             LocalDate fecha = DateTimeFormatUtils.parsearFechaCorta(fechaStr);
+            logger.info("✅ Fecha parseada: {}", fecha);
             
             if (diasCerradoRepository.existsByFecha(fecha)) {
+                logger.warn("⛔ Día {} está cerrado", fecha);
                 return ResponseEntity.ok(List.of());
             }
             
-            List<String> horariosFormateados = horarioService.obtenerHorariosDisponibles(fecha).stream()
+            List<LocalTime> horariosDelDia = horarioService.obtenerHorariosDisponibles(fecha);
+            logger.info("📅 Horarios disponibles para {}: {}", fecha, horariosDelDia.size());
+            
+            List<String> horariosFormateados = horariosDelDia.stream()
                     .filter(hora -> hora.getHour() != 15)
                     .map(DateTimeFormatUtils::formatearHoraCorta)
                     .collect(Collectors.toList());
             
+            logger.info("✅ Retornando {} horarios formateados", horariosFormateados.size());
             return ResponseEntity.ok(horariosFormateados);
         } catch (Exception e) {
-            logger.error("Error obteniendo horarios disponibles para {}: {}", fechaStr, e.getMessage());
+            logger.error("❌ ERROR obteniendo horarios para {}: {}", fechaStr, e.getMessage(), e);
             return ResponseEntity.ok(List.of());
         }
     }

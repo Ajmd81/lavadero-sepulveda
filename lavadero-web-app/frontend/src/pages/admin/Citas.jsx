@@ -114,62 +114,34 @@ const Citas = () => {
 
     setLoadingHorarios(true);
     try {
+      // Convertir fecha de YYYY-MM-DD a DD/MM/YYYY
       const [year, month, day] = fecha.split('-');
-      const fechaObj = new Date(year, parseInt(month) - 1, parseInt(day));
-      
-      // Obtener el día de la semana (0=domingo, 1=lunes, ..., 6=sábado)
-      const dayOfWeek = fechaObj.getDay();
-      const diasMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
-      const diaSemana = diasMap[dayOfWeek];
-
-      // Obtener horarios del día desde la BD
-      const horarioDia = horariosPortDia[diaSemana];
-
-      if (!horarioDia || !horarioDia.activo) {
-        setHorariosDisponibles([]);
-        return;
-      }
-
-      // Construir lista de horarios del día combinando mañana y tarde
-      let horariosDelDia = [];
-
-      // Franja mañana
-      if (horarioDia.aperturaMañana && horarioDia.cierreMañana) {
-        const [hM, minM] = horarioDia.aperturaMañana.split(':');
-        const [hCM, minCM] = horarioDia.cierreMañana.split(':');
-        for (let h = parseInt(hM); h < parseInt(hCM); h++) {
-          horariosDelDia.push(`${String(h).padStart(2, '0')}:00`);
-        }
-      }
-
-      // Franja tarde
-      if (horarioDia.aperturaTarde && horarioDia.cierreTarde) {
-        const [hT, minT] = horarioDia.aperturaTarde.split(':');
-        const [hCT, minCT] = horarioDia.cierreTarde.split(':');
-        for (let h = parseInt(hT); h < parseInt(hCT); h++) {
-          horariosDelDia.push(`${String(h).padStart(2, '0')}:00`);
-        }
-      }
-
-      // Ahora obtener horarios ocupados del backend
       const fechaFormato = `${day}/${month}/${year}`;
+
+      console.log("📋 Pidiendo horarios para:", fechaFormato);
+
+      // Llamar directamente al backend
       const response = await citaService.getHorariosDisponibles(fechaFormato);
 
-      // Axios devuelve el array directamente o en response.data
+      console.log("📋 Response del backend:", response);
+
+      // Axios devuelve directamente el array o en response.data
       let horariosFinales = Array.isArray(response) ? response : (response?.data || []);
+
+      console.log("✅ Horarios finales:", horariosFinales);
 
       // Asegurar formato correcto (HH:mm) con cero inicial
       if (Array.isArray(horariosFinales)) {
         horariosFinales = horariosFinales.map(h => {
           const str = String(h).substring(0, 5);
-          if (str.length === 4 && str[0] !== '0') { // "9:00" → "09:00"
+          if (str.length === 4 && str[0] !== '0') {
             return '0' + str;
           }
           return str;
         });
       }
 
-      // Si editamos una cita, agregar su hora actual aunque no esté disponible
+      // Si estamos editando, agregar la hora actual aunque no esté disponible
       if (editingCita?.hora) {
         const horaActual = editingCita.hora.substring(0, 5);
         if (!horariosFinales.includes(horaActual)) {
@@ -180,7 +152,7 @@ const Citas = () => {
 
       setHorariosDisponibles(horariosFinales);
     } catch (err) {
-      console.error('Error cargando horarios disponibles:', err);
+      console.error('❌ Error cargando horarios disponibles:', err);
       setHorariosDisponibles([]);
     } finally {
       setLoadingHorarios(false);
