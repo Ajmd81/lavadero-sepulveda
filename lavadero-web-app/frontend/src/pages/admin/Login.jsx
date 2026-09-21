@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LogIn, Eye, EyeOff, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import '../../login.css';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
-  const [errorType, setErrorType] = useState(null); // 'rate_limit' | 'credentials' | 'network'
+  const [errorType, setErrorType] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
-  const [bloqueadoHasta, setBloqueadoHasta] = useState(null); // timestamp ms
+  const [bloqueadoHasta, setBloqueadoHasta] = useState(null);
   const [countdown, setCountdown] = useState(0);
+  const passwordInputRef = useRef(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Cuenta atrás cuando hay rate limit activo
   useEffect(() => {
     if (!bloqueadoHasta) return;
-
     const intervalo = setInterval(() => {
       const restante = Math.ceil((bloqueadoHasta - Date.now()) / 1000);
       if (restante <= 0) {
@@ -31,7 +31,6 @@ const Login = () => {
         setCountdown(restante);
       }
     }, 1000);
-
     return () => clearInterval(intervalo);
   }, [bloqueadoHasta]);
 
@@ -40,13 +39,10 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (estaBloqueado) return;
-
     setError('');
     setErrorType(null);
     setLoading(true);
-
     const result = await login(credentials);
-
     if (result.success) {
       navigate('/admin');
     } else {
@@ -62,7 +58,6 @@ const Login = () => {
       }
       setError(result.error);
     }
-
     setLoading(false);
   };
 
@@ -71,169 +66,166 @@ const Login = () => {
     return `${s}s`;
   };
 
+  const renderPasswordSponges = () => {
+    if (showPassword) {
+      return credentials.password;
+    }
+    return Array(credentials.password.length)
+      .fill('🧽')
+      .join('');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Elementos decorativos de fondo */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+    <div className="login-wrapper">
+      {/* IMAGEN DE FONDO DEL COCHE LAVADO */}
+      <div className="audi-background"></div>
 
-      <div className="relative w-full max-w-2xl">
-        <div className="bg-white rounded-2xl shadow-2xl p-12 border border-slate-100 backdrop-blur-xl bg-opacity-95 relative group">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-lg"></div>
+      {/* BURBUJAS FLOTANTES (30 BURBUJAS) */}
+      <div className="bubble-container">
+        <div className="bubble bubble-1"></div>
+        <div className="bubble bubble-2"></div>
+        <div className="bubble bubble-3"></div>
+        <div className="bubble bubble-4"></div>
+        <div className="bubble bubble-5"></div>
+        <div className="bubble bubble-6"></div>
+        <div className="bubble bubble-7"></div>
+        <div className="bubble bubble-8"></div>
+        <div className="bubble bubble-9"></div>
+        <div className="bubble bubble-10"></div>
+        <div className="bubble bubble-11"></div>
+        <div className="bubble bubble-12"></div>
+        <div className="bubble bubble-13"></div>
+        <div className="bubble bubble-14"></div>
+        <div className="bubble bubble-15"></div>
+        <div className="bubble bubble-16"></div>
+        <div className="bubble bubble-17"></div>
+        <div className="bubble bubble-18"></div>
+        <div className="bubble bubble-19"></div>
+        <div className="bubble bubble-20"></div>
+        <div className="bubble bubble-21"></div>
+        <div className="bubble bubble-22"></div>
+        <div className="bubble bubble-23"></div>
+        <div className="bubble bubble-24"></div>
+        <div className="bubble bubble-25"></div>
+        <div className="bubble bubble-26"></div>
+        <div className="bubble bubble-27"></div>
+        <div className="bubble bubble-28"></div>
+        <div className="bubble bubble-29"></div>
+        <div className="bubble bubble-30"></div>
+      </div>
 
-          <div className="relative">
-            {/* Header */}
-            <div className="text-center mb-12 animate-fadeInUp">
-              <div className="inline-flex items-center justify-center w-32 h-32 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl mb-8 shadow-lg shadow-blue-500/50 relative group/logo p-3">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl opacity-0 group-hover/logo:opacity-100 transition-opacity duration-300 blur-xl"></div>
-                <img src="/assets/icons/logo_crm.png" alt="Logo Lavadero" className="relative w-full h-full object-contain drop-shadow-lg" fetchPriority='high' loading='eager' />
+      {/* CONTENEDOR FORMULARIO TRANSPARENTE */}
+      <div className="login-container">
+        <div className="form-card">
+          <div className="text-center mb-6 animate-fadeInUp">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full mb-4 shadow-lg">
+              <img src="/assets/icons/logo_crm.png" alt="Logo Lavadero" className="w-full h-full object-contain drop-shadow-lg p-2" fetchPriority='high' loading='eager' />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-blue-700 bg-clip-text text-transparent mb-1">Lavadero Sepúlveda</h1>
+            <p className="text-slate-600 font-medium text-sm">CRM Administrativo</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 animate-shake">
+              {errorType === 'rate_limit' ? (
+                <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-l-4 border-orange-500 rounded p-3 flex items-start gap-2 shadow-sm">
+                  <Clock className="text-orange-500 flex-shrink-0 mt-0.5" size={18} />
+                  <div className="flex-1 text-xs">
+                    <p className="font-semibold text-orange-900">Acceso bloqueado</p>
+                    <p className="text-orange-700 mt-0.5">{error}</p>
+                    {countdown > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="h-1 bg-orange-200 rounded-full flex-1 overflow-hidden">
+                          <div className="h-full bg-orange-500 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, (countdown / 60) * 100)}%` }} />
+                        </div>
+                        <span className="text-orange-800 font-mono font-bold text-xs min-w-[2rem]">{formatCountdown(countdown)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 rounded p-3 flex items-start gap-2 shadow-sm">
+                  <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+                  <div className="text-xs">
+                    <p className="font-semibold text-red-900">Error de acceso</p>
+                    <p className="text-red-700 mt-0.5">{error}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Usuario
+              </label>
+              <div className={`relative transition-all duration-300 ${focusedField === 'username' ? 'scale-105' : 'scale-100'}`}>
+                <input type="text" value={credentials.username} onChange={(e) => setCredentials({ ...credentials, username: e.target.value })} onFocus={() => setFocusedField('username')} onBlur={() => setFocusedField(null)} disabled={!!estaBloqueado} className="w-full px-4 py-2.5 text-sm bg-white bg-opacity-90 border-2 border-slate-200 rounded-lg transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder="Usuario" required />
+                {credentials.username && !estaBloqueado && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />}
               </div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-slate-900 via-blue-600 to-blue-800 bg-clip-text text-transparent mb-3">
-                Lavadero Sepúlveda
-              </h1>
-              <p className="text-slate-600 font-medium text-lg">CRM Administrativo</p>
             </div>
 
-            {/* Error / Bloqueo */}
-            {error && (
-              <div className="mb-8 animate-shake">
-                {errorType === 'rate_limit' ? (
-                  // Bloqueo por fuerza bruta — alerta naranja con cuenta atrás
-                  <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-l-4 border-orange-500 rounded-lg p-5 flex items-start gap-3 shadow-md">
-                    <Clock className="text-orange-500 flex-shrink-0 mt-0.5" size={24} />
-                    <div className="flex-1">
-                      <p className="font-semibold text-orange-900 text-lg">Acceso temporalmente bloqueado</p>
-                      <p className="text-orange-700 text-base mt-1">{error}</p>
-                      {countdown > 0 && (
-                        <div className="mt-3 flex items-center gap-2">
-                          <div className="h-2 bg-orange-200 rounded-full flex-1 overflow-hidden">
-                            <div
-                              className="h-full bg-orange-500 rounded-full transition-all duration-1000"
-                              style={{ width: `${Math.min(100, (countdown / 60) * 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-orange-800 font-mono font-bold text-sm min-w-[3rem] text-right">
-                            {formatCountdown(countdown)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  // Error normal de credenciales o red
-                  <div className="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 rounded-lg p-5 flex items-start gap-3 shadow-md">
-                    <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={24} />
-                    <div>
-                      <p className="font-semibold text-red-900 text-lg">Error de acceso</p>
-                      <p className="text-red-700 text-base mt-1">{error}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Formulario */}
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Campo Usuario */}
-              <div className="group">
-                <label className="block text-xl font-bold text-slate-700 mb-5 flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></span>
-                  Usuario
-                </label>
-                <div className={`relative transition-all duration-300 ${focusedField === 'username' ? 'scale-105' : 'scale-100'}`}>
-                  <input
-                    type="text"
-                    value={credentials.username}
-                    onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
-                    onFocus={() => setFocusedField('username')}
-                    onBlur={() => setFocusedField(null)}
-                    disabled={!!estaBloqueado}
-                    className="w-full px-7 py-5 text-xl bg-slate-50 border-2 border-slate-200 rounded-xl transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="Ingresa tu usuario"
-                    required
-                  />
-                  {credentials.username && !estaBloqueado && (
-                    <CheckCircle className="absolute right-6 top-1/2 -translate-y-1/2 text-green-500" size={28} />
-                  )}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Contraseña
+              </label>
+              <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-105' : 'scale-100'}`}>
+                <input ref={passwordInputRef} type="password" value={credentials.password} onChange={(e) => setCredentials({ ...credentials, password: e.target.value })} disabled={!!estaBloqueado} className="sr-only" placeholder="Contraseña" required />
+                <div onClick={() => passwordInputRef.current?.focus()} onFocus={() => setFocusedField('password')} onBlur={() => setFocusedField(null)} className="w-full px-4 py-2.5 text-lg bg-white bg-opacity-90 border-2 border-slate-200 rounded-lg transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none pr-12 disabled:opacity-50 disabled:cursor-not-allowed cursor-text">
+                  <span className="tracking-wide">{credentials.password.length > 0 ? renderPasswordSponges() : ''}</span>
+                  {credentials.password.length === 0 && <span className="text-slate-400 text-sm">Contraseña</span>}
                 </div>
+                <button type="button" onClick={() => setShowPassword(!showPassword)} disabled={!!estaBloqueado} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600 transition-colors p-1 disabled:opacity-50 disabled:cursor-not-allowed" title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
-
-              {/* Campo Contraseña */}
-              <div className="group">
-                <label className="block text-xl font-bold text-slate-700 mb-5 flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></span>
-                  Contraseña
-                </label>
-                <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-105' : 'scale-100'}`}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={credentials.password}
-                    onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
-                    disabled={!!estaBloqueado}
-                    className="w-full px-7 py-5 text-xl bg-slate-50 border-2 border-slate-200 rounded-xl transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none pr-16 disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="Ingresa tu contraseña"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600 transition-colors p-1"
-                  >
-                    {showPassword ? <EyeOff size={28} /> : <Eye size={28} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Botón */}
-              <button
-                type="submit"
-                disabled={loading || !!estaBloqueado}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed text-white font-bold py-5 px-8 text-xl rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-600/50 disabled:shadow-none mt-8 relative group/btn overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
-                <span className="relative flex items-center justify-center gap-3">
-                  {loading ? (
-                    <>
-                      <div className="w-7 h-7 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Iniciando sesión...
-                    </>
-                  ) : estaBloqueado ? (
-                    <>
-                      <Clock size={28} />
-                      Bloqueado — {formatCountdown(countdown)}
-                    </>
-                  ) : (
-                    <>
-                      <LogIn size={28} />
-                      Iniciar Sesión
-                    </>
-                  )}
-                </span>
-              </button>
-            </form>
-
-            {/* Footer */}
-            <div className="mt-10 pt-8 border-t border-slate-200">
-              <p className="text-center text-sm text-slate-500 mt-3">
-                © 2025 Lavadero Sepúlveda - Todos los derechos reservados
+              <p className="text-xs text-slate-500 mt-1 ml-1">
+                {showPassword && credentials.password.length > 0 && '🔓 Visible'}
+                {!showPassword && credentials.password.length > 0 && `🧽 ${credentials.password.length} car.`}
               </p>
             </div>
+
+            <button type="submit" disabled={loading || !!estaBloqueado} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed text-white font-bold py-3 px-6 text-sm rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-blue-600/50 disabled:shadow-none mt-6 relative group/btn overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+              <span className="relative flex items-center justify-center gap-2">
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Iniciando...
+                  </>
+                ) : estaBloqueado ? (
+                  <>
+                    <Clock size={16} />
+                    {formatCountdown(countdown)}
+                  </>
+                ) : (
+                  <>
+                    <LogIn size={16} />
+                    Iniciar Sesión
+                  </>
+                )}
+              </span>
+            </button>
+          </form>
+
+          <div className="mt-4 pt-4 border-t border-slate-200">
+            <p className="text-center text-xs text-slate-500">© 2025 Lavadero Sepúlveda</p>
           </div>
         </div>
-
-        {/* Indicador de carga */}
-        {loading && (
-          <div className="mt-6 flex justify-center">
-            <div className="flex gap-1">
-              <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0s' }}></div>
-              <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-              <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {loading && (
+        <div className="mt-6 flex justify-center relative z-20">
+          <div className="flex gap-1">
+            <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0s' }}></div>
+            <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+            <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
