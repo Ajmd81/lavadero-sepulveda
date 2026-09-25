@@ -1,8 +1,89 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LogIn, Eye, EyeOff, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { LogIn, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import '../../login.css';
+
+// Componente Faro de Coche Realista (Headlight)
+const Faro = ({ encendido }) => (
+  <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="cristalGradient" cx="40%" cy="40%" r="60%">
+        <stop offset="0%" style={{
+          stopColor: encendido ? '#F5F5FF' : '#D0D0D0', 
+          stopOpacity: 1
+        }} />
+        <stop offset="40%" style={{
+          stopColor: encendido ? '#E8E8FF' : '#A8A8A8', 
+          stopOpacity: 1
+        }} />
+        <stop offset="100%" style={{
+          stopColor: encendido ? '#B8D8FF' : '#707070', 
+          stopOpacity: 1
+        }} />
+      </radialGradient>
+
+      <radialGradient id="brilloFaro" cx="25%" cy="25%" r="50%">
+        <stop offset="0%" style={{
+          stopColor: '#FFFFFF', 
+          stopOpacity: encendido ? 0.95 : 0.15
+        }} />
+        <stop offset="100%" style={{
+          stopColor: '#FFFFFF', 
+          stopOpacity: 0
+        }} />
+      </radialGradient>
+
+      <radialGradient id="sombraInterna" cx="50%" cy="50%" r="100%">
+        <stop offset="0%" style={{stopColor: '#000000', stopOpacity: 0}} />
+        <stop offset="100%" style={{stopColor: '#000000', stopOpacity: 0.4}} />
+      </radialGradient>
+
+      <radialGradient id="reflector" cx="50%" cy="50%">
+        <stop offset="0%" style={{
+          stopColor: encendido ? '#D0E8FF' : '#505050', 
+          stopOpacity: encendido ? 0.9 : 0.3
+        }} />
+        <stop offset="100%" style={{
+          stopColor: encendido ? '#8FA8D8' : '#303030', 
+          stopOpacity: encendido ? 0.7 : 0.15
+        }} />
+      </radialGradient>
+    </defs>
+    
+    <circle cx="60" cy="60" r="57" fill="#F0F0F0" />
+    <circle cx="60" cy="60" r="55" fill="#D8D8D8" stroke="#A0A0A0" strokeWidth="1" />
+    <ellipse cx="60" cy="58" rx="52" ry="8" fill="#FFFFFF" opacity="0.7" />
+    <circle cx="60" cy="60" r="50" fill="#1a1a1a" />
+    
+    <circle cx="60" cy="60" r="46" fill="url(#cristalGradient)" />
+    <circle cx="60" cy="60" r="44" fill="url(#reflector)" opacity="0.6" />
+    <circle cx="60" cy="60" r="46" fill="url(#sombraInterna)" />
+    <circle cx="60" cy="60" r="46" fill="url(#brilloFaro)" />
+    {encendido && (
+      <>
+        <ellipse cx="45" cy="38" rx="12" ry="8" fill="#FFFFFF" opacity="0.6" />
+        <circle cx="60" cy="60" r="48" fill="none" stroke="#C0D8FF" strokeWidth="0.8" opacity="0.4" />
+        <circle cx="60" cy="60" r="40" fill="none" stroke="#A0C0FF" strokeWidth="0.6" opacity="0.25" />
+        <ellipse cx="50" cy="48" rx="9" ry="12" fill="#FFFFFF" opacity="0.8" />
+        <ellipse cx="48" cy="46" rx="5" ry="6" fill="#F0F8FF" opacity="1" />
+      </>
+    )}
+    
+    {encendido && (
+      <>
+        <line x1="60" y1="20" x2="60" y2="100" stroke="#B8D8FF" strokeWidth="0.3" opacity="0.15" />
+        <line x1="20" y1="60" x2="100" y2="60" stroke="#B8D8FF" strokeWidth="0.3" opacity="0.15" />
+      </>
+    )}
+    
+    <circle cx="60" cy="60" r="46" fill="none" stroke="#000000" strokeWidth="2" opacity="0.8" />
+    <ellipse cx="60" cy="75" rx="45" ry="5" fill="#000000" opacity="0.2" />
+    <ellipse cx="60" cy="62" rx="48" ry="2" stroke="#FFFFFF" strokeWidth="0.5" fill="none" opacity="0.5" />
+    <ellipse cx="30" cy="60" rx="3" ry="45" fill="#000000" opacity="0.15" />
+  </svg>
+);
+
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -179,12 +260,12 @@ const Login = () => {
                   {credentials.password.length === 0 && <span className="text-slate-400 text-sm">Contraseña</span>}
                 </div>
                 <button type="button" onClick={() => setShowPassword(!showPassword)} disabled={!!estaBloqueado} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600 transition-colors p-1 disabled:opacity-50 disabled:cursor-not-allowed" title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <Faro encendido={showPassword} />
                 </button>
               </div>
               <p className="text-xs text-slate-500 mt-1 ml-1">
-                {showPassword && credentials.password.length > 0 && '🔓 Visible'}
-                {!showPassword && credentials.password.length > 0 && `🧽 ${credentials.password.length} car.`}
+                {showPassword && credentials.password.length > 0 && '💡 Faro encendido - Contraseña visible'}
+                {!showPassword && credentials.password.length > 0 && `🧽 ${credentials.password.length} car. (Faro apagado)`}
               </p>
             </div>
 
