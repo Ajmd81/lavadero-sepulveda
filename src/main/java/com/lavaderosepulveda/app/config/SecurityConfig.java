@@ -28,6 +28,7 @@ import java.util.List;
  * 2. PROTEGIDOS: Todo /api/** excepto los públicos (requiere JWT)
  * 3. ADMIN: /admin/** (requiere sesión + rol ADMIN)
  * 4. ESTÁTICOS: /css/**, /js/**, etc.
+ * 5. SEO: /robots.txt, /sitemap.xml y URLs antiguas (.html) que redirigen con 301
  */
 @Configuration
 @EnableWebSecurity
@@ -82,8 +83,8 @@ public class SecurityConfig {
                                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
                                 "default-src 'self'; " +
-                                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://npmcdn.com https://unpkg.com https://cdnjs.cloudflare.com; " +
-                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://npmcdn.com https://unpkg.com https://cdnjs.cloudflare.com; " +
+                                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; " +
+                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; " +
                                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
                                 "img-src 'self' data:; " +
                                 "frame-src https://www.google.com https://maps.google.com; " +
@@ -128,6 +129,24 @@ public class SecurityConfig {
                         // 4️⃣ ESTÁTICOS
                         // ──────────────
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+
+                        // 4️⃣.1 SEO - robots, sitemap y URLs antiguas (LegacyRedirectController)
+                        // ─────────────────────────────────────────────────────────────────────
+                        .requestMatchers(
+                                "/robots.txt",
+                                "/sitemap.xml",
+                                "/index.html",
+                                "/index.php",
+                                "/contacto.html",
+                                "/horario.html",
+                                "/horarios.html",
+                                "/galeria.html",
+                                "/productos.html",
+                                "/tarifas.html",
+                                "/precios.html",
+                                "/reservas.html",
+                                "/cita.html"
+                        ).permitAll()
                         
                         // 5️⃣ ADMIN - Requiere sesión + rol ADMIN
                         // ───────────────────────────────────────

@@ -21,20 +21,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="stylesheet" th:href="@{/css/vehiculos.css}">
-    <link rel="shortcut icon" th:href="@{/images/favicon.png?v=2}" type="image/png">
+    <link rel="icon" type="image/png" th:href="@{/images/favicon.png?v=2}">
 </head>
 
 <body>
     <header>
         <div class="container">
             <div class="logo-container">
-                <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
+                <img th:src="@{/images/Logo.jpg}" alt="Logo de Lavadero Sepúlveda, lavadero de coches en Córdoba" class="logo-img">
                 <div class="logo-text">Lavadero Sepúlveda</div>
             </div>
-            <button class="menu-toggle" id="menuToggle">
-                <i class="fa fa-bars"></i>
+            <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menú" aria-controls="mainNav" aria-expanded="false">
+                <i class="fa fa-bars" aria-hidden="true"></i>
             </button>
-            <nav id="mainNav">
+            <nav id="mainNav" aria-label="Menú principal">
                 <a href="/" class="btn btn-white">Inicio</a>
                 <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
                 <a href="/horario" class="btn btn-white">Horario</a>
@@ -47,7 +47,7 @@
 
     <section class="hero">
         <div class="container">
-            <h1>Reserva tu cita</h1>
+            <h1>Reserva tu Cita de Lavado en Córdoba</h1>
             <p>Selecciona el servicio que necesitas y elige la fecha y hora que mejor te convenga.</p>
         </div>
     </section>
@@ -165,7 +165,7 @@
                             <i class="fas fa-calendar-alt input-icon"></i>
                             <input type="date" id="fecha" th:field="*{fecha}"
                                 th:class="${#fields.hasErrors('fecha')} ? 'field-error' : ''" required
-                                min="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
+                                th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">
                         </div>
                         <div class="error-message" th:if="${#fields.hasErrors('fecha')}" th:errors="*{fecha}"></div>
                     </div>
@@ -207,29 +207,29 @@
     <footer>
         <div class="container">
             <div class="contact-info">
-                <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
-                <p>Teléfono: 658 527 186</p>
-                <p>Email: contacto@lavaderosepulveda.es</p>
+                <p>C/Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba</p>
+                <p>Teléfono: <a href="tel:+34658527186" style="color: white;">658 527 186</a></p>
+                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es" style="color: white;">contacto@lavaderosepulveda.es</a></p>
             </div>
             <div class="social-links">
-                <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank"><i
+                <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank" rel="noopener"><i
                         class="fab fa-facebook-f"></i> Facebook</a>
-                <a href="https://www.twitter.com/LavaSepulveda" target="_blank"><i class="fab fa-twitter"></i>
+                <a href="https://twitter.com/LavaSepulveda" target="_blank" rel="noopener"><i class="fab fa-twitter"></i>
                     Twitter</a>
-                <a href="https://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i>
+                <a href="https://www.instagram.com/lavaderosepulveda" target="_blank" rel="noopener"><i class="fab fa-instagram"></i>
                     Instagram</a>
             </div>
-            <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
+            <p>&copy; <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> Lavadero Sepúlveda - Todos los derechos reservados</p>
             <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
         </div>
     </footer>
 
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function () {
@@ -243,12 +243,14 @@
                 }
 
                 menuToggle.addEventListener('click', function () {
-                    if (mainNav.style.display === 'none' || mainNav.style.display === '') {
+                    const abierto = !(mainNav.style.display === 'none' || mainNav.style.display === '');
+                    if (!abierto) {
                         mainNav.style.display = 'flex';
                         mainNav.style.flexDirection = 'column';
                     } else {
                         mainNav.style.display = 'none';
                     }
+                    menuToggle.setAttribute('aria-expanded', String(!abierto));
                 });
 
                 window.addEventListener('resize', function () {

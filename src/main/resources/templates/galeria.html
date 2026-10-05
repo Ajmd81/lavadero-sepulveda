@@ -3,26 +3,39 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galería - Lavadero Sepúlveda - Córdoba</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Antes y Después: Lavado y Limpieza de Tapicería en Córdoba | Lavadero Sepúlveda</title>
+    <meta name="description" content="Fotos reales de antes y después de nuestros trabajos en Córdoba: limpieza de llantas y de tapicería de coche. Mira los resultados y reserva tu cita.">
+    <link rel="canonical" href="https://www.lavaderosepulveda.es/galeria">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:site_name" content="Lavadero Sepúlveda">
+    <meta property="og:title" content="Antes y Después: Lavado y Limpieza de Tapicería en Córdoba | Lavadero Sepúlveda">
+    <meta property="og:description" content="Fotos reales de antes y después de nuestros trabajos en Córdoba: limpieza de llantas y de tapicería de coche. Mira los resultados y reserva tu cita.">
+    <meta property="og:url" content="https://www.lavaderosepulveda.es/galeria">
+    <meta property="og:image" content="https://www.lavaderosepulveda.es/images/Logo.jpg">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@LavaSepulveda">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="stylesheet" th:href="@{/css/galeria.css}">
     <link rel="icon" type="image/png" th:href="@{/images/favicon.png?v=2}">
-
 </head>
 
 <body>
     <header>
         <div class="container">
             <div class="logo-container">
-                <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
+                <img th:src="@{/images/Logo.jpg}" alt="Logo de Lavadero Sepúlveda, lavadero de coches en Córdoba" class="logo-img">
                 <div class="logo-text">Lavadero Sepúlveda</div>
             </div>
-            <button class="menu-toggle" id="menuToggle">
-                <i class="fa fa-bars"></i> <!-- Necesitarás añadir Font Awesome -->
+            <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menú" aria-controls="mainNav" aria-expanded="false">
+                <i class="fa fa-bars" aria-hidden="true"></i>
             </button>
-            <nav id="mainNav">
+            <nav id="mainNav" aria-label="Menú principal">
                 <a href="/" class="btn btn-white">Inicio</a>
                 <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
                 <a href="/horario" class="btn btn-white">Horario</a>
@@ -35,45 +48,45 @@
 
     <section class="hero">
         <div class="container">
-            <h1>Galería de Imágenes</h1>
-            <p>Conoce nuestros resultados y la calidad de nuestro servicio a través de estas imágenes.</p>
+            <h1>Antes y Después de Nuestros Trabajos</h1>
+            <p>Resultados reales de lavado a mano y limpieza de tapicería en nuestro lavadero de Córdoba.</p>
             <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
         </div>
     </section>
 
     <section class="container galeria-container">
-        <h2 class="galeria-subtitle">Llantas</h2>
+        <h2 class="galeria-subtitle">Limpieza de Llantas</h2>
 
         <div class="comparison-container">
             <div class="comparison-pair">
                 <div class="comparison-label">Antes</div>
                 <div class="galeria-item">
-                    <img th:src="@{/images/Llanta_sucia.jpg}" alt="Llanta sucia">
+                    <img th:src="@{/images/Llanta_sucia.jpg}" alt="Llanta de coche sucia antes del lavado a mano en Lavadero Sepúlveda, Córdoba" loading="lazy" decoding="async">
                 </div>
             </div>
 
             <div class="comparison-pair">
                 <div class="comparison-label">Después</div>
                 <div class="galeria-item">
-                    <img th:src="@{/images/llanta_limpia.jpg}" alt="Llanta limpia">
+                    <img th:src="@{/images/llanta_limpia.jpg}" alt="Llanta de coche limpia después del lavado a mano en Lavadero Sepúlveda, Córdoba" loading="lazy" decoding="async">
                 </div>
             </div>
         </div>
 
-        <h2 class="galeria-subtitle">Limpieza de Tapicería</h2>
+        <h2 class="galeria-subtitle">Limpieza de Tapicería de Coche</h2>
 
         <div class="comparison-container">
             <div class="comparison-pair">
                 <div class="comparison-label">Antes</div>
                 <div class="galeria-item">
-                    <img th:src="@{/images/sucio.gif}" alt="Tapicería sucia">
+                    <img th:src="@{/images/sucio.gif}" alt="Asiento de coche con manchas antes de la limpieza de tapicería" loading="lazy" decoding="async">
                 </div>
             </div>
 
             <div class="comparison-pair">
                 <div class="comparison-label">Después</div>
                 <div class="galeria-item">
-                    <img th:src="@{/images/limpio.gif}" alt="Tapicería limpia">
+                    <img th:src="@{/images/limpio.gif}" alt="Asiento de coche limpio después de la limpieza de tapicería en Córdoba" loading="lazy" decoding="async">
                 </div>
             </div>
         </div>
@@ -82,67 +95,76 @@
             <div class="comparison-pair">
                 <div class="comparison-label">Antes</div>
                 <div class="galeria-item">
-                    <img th:src="@{/images/sucio2.gif}" alt="Tapicería sucia">
+                    <img th:src="@{/images/sucio2.gif}" alt="Tapicería de coche sucia antes de la limpieza profesional" loading="lazy" decoding="async">
                 </div>
             </div>
 
             <div class="comparison-pair">
                 <div class="comparison-label">Después</div>
                 <div class="galeria-item">
-                    <img th:src="@{/images/limpio2.gif}" alt="Tapicería limpia">
+                    <img th:src="@{/images/limpio2.gif}" alt="Tapicería de coche recuperada tras la limpieza profesional en Lavadero Sepúlveda" loading="lazy" decoding="async">
                 </div>
             </div>
+        </div>
+
+        <div class="cta-section">
+            <p>¿Quieres este resultado en tu coche? La limpieza de tapicería cuesta desde 100€.
+                <a href="/tarifas">Ver todas las tarifas</a></p>
+            <a href="/nueva-cita" class="btn">Reservar Cita</a>
         </div>
     </section>
 
     <footer>
         <div class="container">
             <div class="contact-info">
-                <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
-                <p>Teléfono: 658 527 186</p>
-                <p>Email: contacto@lavaderosepulveda.es</p>
+                <p>C/Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba</p>
+                <p>Teléfono: <a href="tel:+34658527186" style="color: white;">658 527 186</a></p>
+                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es" style="color: white;">contacto@lavaderosepulveda.es</a></p>
             </div>
             <div class="social-links">
-                <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank">Facebook</a>
-                <a href="https://www.twitter.com/LavaSepulveda" target="_blank">Twitter</a>
-                <a href="http://www.instagram.com/lavaderosepulveda" target="_blank">Instagram</a>
+                <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank" rel="noopener"><i class="fab fa-facebook-f" aria-hidden="true"></i> Facebook</a>
+                <a href="https://twitter.com/LavaSepulveda" target="_blank" rel="noopener"><i class="fab fa-twitter" aria-hidden="true"></i> Twitter</a>
+                <a href="https://www.instagram.com/lavaderosepulveda" target="_blank" rel="noopener"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</a>
             </div>
-            <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
+            <p>&copy; <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> Lavadero Sepúlveda - Todos los derechos reservados</p>
             <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
         </div>
     </footer>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const menuToggle = document.getElementById('menuToggle');
             const mainNav = document.getElementById('mainNav');
 
             if (menuToggle && mainNav) {
-                // Inicialmente, ocultar menú en móviles
                 if (window.innerWidth <= 768) {
                     mainNav.style.display = 'none';
                 }
 
                 menuToggle.addEventListener('click', function () {
-                    if (mainNav.style.display === 'none' || mainNav.style.display === '') {
+                    const abierto = !(mainNav.style.display === 'none' || mainNav.style.display === '');
+                    if (!abierto) {
                         mainNav.style.display = 'flex';
                         mainNav.style.flexDirection = 'column';
                     } else {
                         mainNav.style.display = 'none';
                     }
+                    menuToggle.setAttribute('aria-expanded', String(!abierto));
                 });
 
-                // Ajustar menú en cambio de tamaño de ventana
                 window.addEventListener('resize', function () {
                     if (window.innerWidth > 768) {
                         mainNav.style.display = 'flex';
                         mainNav.style.flexDirection = 'row';
                     } else {
                         mainNav.style.display = 'none';
+                        menuToggle.setAttribute('aria-expanded', 'false');
                     }
                 });
             }
         });
     </script>
+
 </body>
 
 </html>

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /guardar-cita
+Disallow: /horarios-disponibles
+Disallow: /admin
+
+Sitemap: https://www.lavaderosepulveda.es/sitemap.xml

@@ -4,19 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Lavadero Sepúlveda – Lavado de Coches a Mano en Córdoba</title>
-    <meta name="description"
-        content="Lavadero de coches a mano en Córdoba con sistema de ozono, sin químicos. Más de 25 años de experiencia. Reserva tu cita online.">
+    <title>Lavadero de Coches a Mano en Córdoba | Lavadero Sepúlveda</title>
+    <meta name="description" content="Lavadero de coches a mano en Córdoba, junto al Parque de la Asomadilla. Lavado con ozono sin químicos, tapicería y encerado. Desde 13€. Reserva tu hora online.">
     <link rel="canonical" href="https://www.lavaderosepulveda.es/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_ES">
     <meta property="og:site_name" content="Lavadero Sepúlveda">
-    <meta property="og:title" content="Lavadero Sepúlveda – Lavado de Coches a Mano en Córdoba">
-    <meta property="og:description"
-        content="Lavadero de coches a mano en Córdoba con sistema de ozono, sin químicos. Más de 25 años de experiencia. Reserva tu cita online.">
+    <meta property="og:title" content="Lavadero de Coches a Mano en Córdoba | Lavadero Sepúlveda">
+    <meta property="og:description" content="Lavadero de coches a mano en Córdoba, junto al Parque de la Asomadilla. Lavado con ozono sin químicos, tapicería y encerado. Desde 13€. Reserva tu hora online.">
     <meta property="og:url" content="https://www.lavaderosepulveda.es/">
     <meta property="og:image" content="https://www.lavaderosepulveda.es/images/Logo.jpg">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@LavaSepulveda">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
@@ -25,15 +26,19 @@
     {
       "@context": "https://schema.org",
       "@type": "AutoWash",
+      "@id": "https://www.lavaderosepulveda.es/#negocio",
       "name": "Lavadero Sepúlveda",
-      "description": "Lavadero de coches a mano en Córdoba con más de 25 años de experiencia. Lavado con sistema de ozono sin productos químicos. Reserva tu cita online.",
+      "description": "Lavadero de coches a mano en Córdoba con más de 25 años de experiencia. Lavado con sistema de ozono sin productos químicos, limpieza de tapicería y encerado. Reserva tu cita online.",
       "url": "https://www.lavaderosepulveda.es/",
       "telephone": "+34658527186",
+      "email": "contacto@lavaderosepulveda.es",
       "image": "https://www.lavaderosepulveda.es/images/Logo.jpg",
+      "logo": "https://www.lavaderosepulveda.es/images/Logo.jpg",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "C/Ingeniero Ruiz de Azua s/n Local 8",
         "addressLocality": "Córdoba",
+        "addressRegion": "Córdoba",
         "postalCode": "14006",
         "addressCountry": "ES"
       },
@@ -62,20 +67,20 @@
           "closes": "13:30"
         }
       ],
-      "hasMap": "https://maps.google.com/?q=Lavadero+Sepúlveda,+C/Ingeniero+Ruiz+de+Azua,+Córdoba",
-      "priceRange": "€€",
+      "hasMap": "https://maps.google.com/?q=Lavadero+Sep%C3%BAlveda+C%2FIngeniero+Ruiz+de+Azua+C%C3%B3rdoba",
+      "priceRange": "13€ - 150€",
       "currenciesAccepted": "EUR",
       "paymentAccepted": "Cash, Credit Card",
       "areaServed": {
         "@type": "City",
         "name": "Córdoba"
       },
+      "knowsAbout": ["Lavado de coches a mano", "Lavado con ozono", "Limpieza de tapicería", "Encerado a mano"],
       "sameAs": [
         "https://www.facebook.com/lavadero.sepulveda.96/",
         "https://www.instagram.com/lavaderosepulveda/",
         "https://twitter.com/LavaSepulveda"
       ],
-      "reservations": "https://www.lavaderosepulveda.es/nueva-cita",
       "potentialAction": {
         "@type": "ReserveAction",
         "target": {
@@ -83,8 +88,8 @@
           "urlTemplate": "https://www.lavaderosepulveda.es/nueva-cita",
           "inLanguage": "es",
           "actionPlatform": [
-            "http://schema.org/DesktopWebPlatform",
-            "http://schema.org/MobileWebPlatform"
+            "https://schema.org/DesktopWebPlatform",
+            "https://schema.org/MobileWebPlatform"
           ]
         },
         "result": {
@@ -101,13 +106,13 @@
     <header>
         <div class="container">
             <div class="logo-container">
-                <img th:src="@{/images/Logo.jpg}" alt="Logo Lavadero Sepúlveda" class="logo-img">
+                <img th:src="@{/images/Logo.jpg}" alt="Logo de Lavadero Sepúlveda, lavadero de coches en Córdoba" class="logo-img">
                 <div class="logo-text">Lavadero Sepúlveda</div>
             </div>
-            <button class="menu-toggle" id="menuToggle">
-                <i class="fa fa-bars"></i>
+            <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menú" aria-controls="mainNav" aria-expanded="false">
+                <i class="fa fa-bars" aria-hidden="true"></i>
             </button>
-            <nav id="mainNav">
+            <nav id="mainNav" aria-label="Menú principal">
                 <a href="/" class="btn btn-white">Inicio</a>
                 <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
                 <a href="/horario" class="btn btn-white">Horario</a>
@@ -120,7 +125,8 @@
 
     <section class="hero">
         <div class="container">
-            <h1>Lavado de Coches a Mano en Córdoba — Tu hora exacta, sin esperas</h1>
+            <h1>Lavadero de Coches a Mano en Córdoba</h1>
+            <p>Tu hora exacta, sin esperas. Lavado con ozono, sin químicos, y más de 25 años de experiencia.</p>
             <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
         </div>
     </section>
@@ -128,62 +134,95 @@
     <section class="container" id="servicios">
         <h2>Quiénes Somos</h2>
         <div class="about-us">
-            <p>Somos una empresa cordobesa con más de 25 años dedicados al lavado manual y al mantenimiento integral de
-                vehículos, utilizando las últimas tecnologías.</p>
+            <p>Somos una empresa cordobesa con más de 25 años dedicados al <strong>lavado de coches a mano</strong> y al
+                mantenimiento integral de vehículos, utilizando las últimas tecnologías.</p>
             <p>Desde Lavadero Sepúlveda sabemos la importancia que tiene su vehículo, por eso puede confiar plenamente
-                que se encontrará en las mejores manos hasta su entrega.</p>
-            <p>Con nuestro sistema de lavado con Ozono, no necesitamos utilizar ningún producto; así ayudamos a proteger
-                el medio ambiente y además no dañar ningún componente tanto interior como exterior de su vehículo,
-                prolongando la conservación y aspecto original de su vehículo.</p>
-            <p>Además, nuestro sistema de lavado con Ozono es más rápido que el lavado con productos químicos, ya que no
-                necesitamos esperar a que se seque el vehículo.</p>
-            <p>Reservamos tu hora con 24 horas de antelación: llegas, te atendemos y listo. Sin colas, sin esperar turno.</p>
-            <p>Siempre estamos dispuestos a atender a nuestros clientes con la mayor calidad y profesionalismo posible.
-            </p>
-            <p>Si necesita más información, no dude en contactarnos.</p>
-            <p>Más de 25 años cuidando vehículos en Córdoba, frente al campo del Deportivo y el Parque de la Asomadilla.</p>
+                en que estará en las mejores manos hasta su entrega.</p>
+            <p>Con nuestro <strong>sistema de lavado con ozono</strong> no necesitamos utilizar productos químicos: así
+                ayudamos a proteger el medio ambiente y no dañamos ningún componente interior ni exterior de su vehículo,
+                prolongando su conservación y su aspecto original.</p>
+            <p>Además, el lavado con ozono es más rápido que el lavado con productos químicos, ya que no hay que esperar
+                a que el vehículo se seque.</p>
+            <p>Trabajamos con <strong>cita previa</strong>: reservas tu hora, llegas, te atendemos y listo. Sin colas,
+                sin esperar turno.</p>
+            <p>Estamos en la zona Norte Sierra de Córdoba, frente al campo del Deportivo y el Parque de la Asomadilla,
+                muy cerca de Santa Rosa, Valdeolleros y El Brillante.</p>
         </div>
         <br>
-        <h2>Nuestros Servicios</h2>
+        <h2>Nuestros Servicios de Lavado en Córdoba</h2>
         <div class="card">
             <h3 class="card-title">Lavado Completo</h3>
-            <p>Incluye lavado exterior e interior completo, aspirado, limpieza de salpicadero, marcos y cristales.</p>
+            <p>Lavado exterior e interior completo: aspirado, limpieza de salpicadero, marcos y cristales.
+                Turismos desde 25€. <a href="/tarifas">Ver precios</a></p>
         </div>
 
         <div class="card">
             <h3 class="card-title">Lavado Interior</h3>
-            <p>Aspirado, limpieza de salpicadero, marcos y cristales interiores.</p>
+            <p>Aspirado, limpieza de salpicadero, marcos y cristales interiores. Turismos desde 17€.
+                <a href="/tarifas">Ver precios</a></p>
         </div>
 
         <div class="card">
             <h3 class="card-title">Lavado Exterior</h3>
-            <p>Limpieza de carrocería, llantas, marcos y cristales exteriores.</p>
+            <p>Limpieza de carrocería, llantas, marcos y cristales exteriores. Turismos desde 13€.
+                <a href="/tarifas">Ver precios</a></p>
         </div>
 
         <div class="card">
-            <h3 class="card-title">Tapicería</h3>
-            <p>Limpieza especializada de la tapicería de tu vehículo para eliminar manchas y malos olores.</p>
+            <h3 class="card-title">Limpieza de Tapicería</h3>
+            <p>Limpieza especializada de la tapicería de tu coche para eliminar manchas y malos olores, con o sin
+                desmontar asientos. Desde 100€. <a href="/galeria">Ver antes y después</a></p>
         </div>
 
         <div class="card">
-            <h3 class="card-title">Encerado</h3>
-            <p>Aplicación de cera de alta calidad para proteger la pintura y darle brillo a tu vehículo.</p>
+            <h3 class="card-title">Encerado a Mano</h3>
+            <p>Aplicación de cera de alta calidad para proteger la pintura y darle brillo a tu vehículo. 25€.</p>
         </div>
 
         <div class="card">
             <h3 class="card-title">Tratamiento de Ozono</h3>
-            <p>Desinfección completa del interior del vehículo eliminando bacterias, virus y malos olores.</p>
+            <p>Desinfección completa del interior del vehículo eliminando bacterias, virus y malos olores. 15€.</p>
         </div>
 
-        <h2>Dónde Encontrarnos</h2>
+        <h2>Preguntas Frecuentes</h2>
+        <div class="card">
+            <h3 class="card-title">¿Cuánto cuesta lavar el coche a mano en Córdoba?</h3>
+            <p>Un lavado exterior de turismo cuesta 13€ y un lavado completo 25€. Para SUV, monovolúmenes y furgonetas
+                consulta nuestras <a href="/tarifas">tarifas</a>. Puede haber un suplemento de 3€ a 5€ por exceso de
+                suciedad o pelos de animal.</p>
+        </div>
+        <div class="card">
+            <h3 class="card-title">¿Necesito cita previa?</h3>
+            <p>Sí. Trabajamos con cita previa para atenderte a tu hora exacta. Puedes <a href="/nueva-cita">reservar
+                online</a>, llamar al <a href="tel:+34658527186">658 527 186</a> o escribirnos por WhatsApp.</p>
+        </div>
+        <div class="card">
+            <h3 class="card-title">¿Cómo se confirma la reserva online?</h3>
+            <p>Al reservar recibirás un email con tu número de reserva. La cita se confirma con un pago anticipado del
+                50% por Bizum en las 24 horas siguientes.</p>
+        </div>
+        <div class="card">
+            <h3 class="card-title">¿Qué ventajas tiene el lavado con ozono?</h3>
+            <p>No usa productos químicos, no daña los materiales del coche, elimina bacterias y olores y es más rápido
+                porque no hay que esperar a que el vehículo se seque.</p>
+        </div>
+        <div class="card">
+            <h3 class="card-title">¿Cuándo se hace la limpieza de tapicería?</h3>
+            <p>La limpieza de tapicería se realiza de lunes a jueves a las 8:00 y tiene una duración aproximada de 24
+                horas.</p>
+        </div>
+
+        <h2 id="contacto">Dónde Encontrarnos</h2>
         <div class="location">
-            <p>Puede encontrarnos en C/Ingeniero Ruiz de Azua s/n Local 8, <br>Esquina con C/Sor Angela de la Cruz,
-                <br>Frente al campo de Fútbol del Deportivo Córdoba y el Parque de la Asomadillas.
-            </p>
+            <p>Puede encontrarnos en C/Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba, <br>esquina con C/Sor Ángela
+                de la Cruz, <br>frente al campo de fútbol del Deportivo Córdoba y el Parque de la Asomadilla.</p>
+            <p>Teléfono y WhatsApp: <a href="tel:+34658527186">658 527 186</a> ·
+                <a href="/horario">Consultar horario</a></p>
             <div class="map-container">
-                <iframe
+                <iframe title="Mapa de ubicación de Lavadero Sepúlveda en Córdoba"
                     src="https://maps.google.com/maps?q=Lavadero+Sepulveda+Cordoba&t=&z=15&ie=UTF8&iwloc=&output=embed"
-                    width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
         </div>
     </section>
@@ -191,19 +230,16 @@
     <footer>
         <div class="container">
             <div class="contact-info">
-                <p>C/Ingeniero Ruiz de Azua s/n Local 8, Córdoba</p>
-                <p>Teléfono: 658 527 186</p>
-                <p>Email: contacto@lavaderosepulveda.es</p>
+                <p>C/Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba</p>
+                <p>Teléfono: <a href="tel:+34658527186" style="color: white;">658 527 186</a></p>
+                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es" style="color: white;">contacto@lavaderosepulveda.es</a></p>
             </div>
             <div class="social-links">
-                <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank"><i
-                        class="fab fa-facebook-f"></i> Facebook</a>
-                <a href="https://www.twitter.com/LavaSepulveda" target="_blank"><i class="fab fa-twitter"></i>
-                    Twitter</a>
-                <a href="https://www.instagram.com/lavaderosepulveda" target="_blank"><i class="fab fa-instagram"></i>
-                    Instagram</a>
+                <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank" rel="noopener"><i class="fab fa-facebook-f" aria-hidden="true"></i> Facebook</a>
+                <a href="https://twitter.com/LavaSepulveda" target="_blank" rel="noopener"><i class="fab fa-twitter" aria-hidden="true"></i> Twitter</a>
+                <a href="https://www.instagram.com/lavaderosepulveda" target="_blank" rel="noopener"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</a>
             </div>
-            <p>&copy; 2025 Lavadero Sepúlveda - Todos los derechos reservados</p>
+            <p>&copy; <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> Lavadero Sepúlveda - Todos los derechos reservados</p>
             <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
         </div>
     </footer>
@@ -212,11 +248,9 @@
     <!-- CHATBOT WIDGET -->
     <!-- ============================================================ -->
 
-    <!-- CSS del chatbot -->
     <link rel="stylesheet" th:href="@{/css/chatbot.css}">
 
     <div id="chatbot-widget">
-        <!-- Botón flotante -->
         <div id="chatbot-button" onclick="toggleChat()">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -225,9 +259,7 @@
             <span id="notification-badge">1</span>
         </div>
 
-        <!-- Ventana del chat -->
         <div id="chatbot-window" style="display: none;">
-            <!-- Header -->
             <div id="chatbot-header">
                 <div class="header-info">
                     <div class="avatar">
@@ -246,7 +278,7 @@
                         </p>
                     </div>
                 </div>
-                <button onclick="toggleChat()" class="close-btn">
+                <button onclick="toggleChat()" class="close-btn" type="button" aria-label="Cerrar chat">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -255,16 +287,14 @@
                 </button>
             </div>
 
-            <!-- Mensajes -->
             <div id="chatbot-messages">
-                
+
             </div>
 
-            <!-- Input -->
             <div id="chatbot-input">
-                <input type="text" id="user-input" placeholder="Escribe tu mensaje..."
+                <input type="text" id="user-input" placeholder="Escribe tu mensaje..." aria-label="Mensaje para el asistente"
                     onkeypress="handleKeyPress(event)" />
-                <button onclick="sendMessage()" class="send-btn">
+                <button onclick="sendMessage()" class="send-btn" type="button" aria-label="Enviar mensaje">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -275,38 +305,37 @@
         </div>
     </div>
 
-    <!-- JavaScript del chatbot -->
     <script th:src="@{/js/chatbot-widget.js}"></script>
 
-    <!-- Script del menú responsive -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const menuToggle = document.getElementById('menuToggle');
             const mainNav = document.getElementById('mainNav');
 
             if (menuToggle && mainNav) {
-                // Inicialmente, ocultar menú en móviles
                 if (window.innerWidth <= 768) {
                     mainNav.style.display = 'none';
                 }
 
                 menuToggle.addEventListener('click', function () {
-                    if (mainNav.style.display === 'none' || mainNav.style.display === '') {
+                    const abierto = !(mainNav.style.display === 'none' || mainNav.style.display === '');
+                    if (!abierto) {
                         mainNav.style.display = 'flex';
                         mainNav.style.flexDirection = 'column';
                     } else {
                         mainNav.style.display = 'none';
                     }
+                    menuToggle.setAttribute('aria-expanded', String(!abierto));
                 });
 
-                // Ajustar menú en cambio de tamaño de ventana
                 window.addEventListener('resize', function () {
                     if (window.innerWidth > 768) {
                         mainNav.style.display = 'flex';
                         mainNav.style.flexDirection = 'row';
                     } else {
                         mainNav.style.display = 'none';
-                    }       
+                        menuToggle.setAttribute('aria-expanded', 'false');
+                    }
                 });
             }
         });
