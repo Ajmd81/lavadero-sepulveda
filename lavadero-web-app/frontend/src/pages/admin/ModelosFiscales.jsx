@@ -255,8 +255,18 @@ const ModelosFiscales = () => {
                 return;
             }
 
-            const resp = await fetch(url, { credentials: 'include' });
+            // Mismo token JWT que usa api.js: sin él, Spring Security redirige
+            // al login y se descargaba la página HTML con extensión .130/.303
+            const token = localStorage.getItem('authToken');
+            const resp = await fetch(url, {
+                credentials: 'include',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             if (!resp.ok) throw new Error(await resp.text() || `HTTP ${resp.status}`);
+            const tipo = resp.headers.get('content-type') || '';
+            if (tipo.includes('text/html')) {
+                throw new Error('La sesión ha caducado: vuelve a iniciar sesión y genera el fichero de nuevo.');
+            }
 
             const blob = await resp.blob();
             const link = document.createElement('a');
