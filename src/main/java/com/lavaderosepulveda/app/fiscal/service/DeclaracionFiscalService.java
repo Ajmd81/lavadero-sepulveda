@@ -55,6 +55,23 @@ public class DeclaracionFiscalService {
             BigDecimal baseRepercutida, BigDecimal cuotaRepercutida,
             BigDecimal baseSoportada, BigDecimal cuotaSoportada,
             String nombreFichero) {
+        return registrarGeneracion303(ejercicio, periodo,
+                baseRepercutida, cuotaRepercutida, baseSoportada, cuotaSoportada,
+                orCero(cuotaRepercutida).subtract(orCero(cuotaSoportada)),
+                nombreFichero);
+    }
+
+    /**
+     * Igual que la anterior, pero guardando el resultado real de la liquidación
+     * (casilla [71] del generador, ya descontadas las cuotas compensadas).
+     */
+    @Transactional
+    public DeclaracionFiscalDTO registrarGeneracion303(
+            int ejercicio, String periodo,
+            BigDecimal baseRepercutida, BigDecimal cuotaRepercutida,
+            BigDecimal baseSoportada, BigDecimal cuotaSoportada,
+            BigDecimal resultado,
+            String nombreFichero) {
 
         DeclaracionFiscal d = repo
                 .findByClaveNatural("303", ejercicio, periodo.toUpperCase())
@@ -67,7 +84,7 @@ public class DeclaracionFiscalService {
         d.setCuotaRepercutida(orCero(cuotaRepercutida));
         d.setBaseSoportada(orCero(baseSoportada));
         d.setCuotaSoportada(orCero(cuotaSoportada));
-        d.setResultadoIva(orCero(cuotaRepercutida).subtract(orCero(cuotaSoportada)));
+        d.setResultadoIva(orCero(resultado));
         d.setNombreFichero(nombreFichero);
         // Si ya estaba PRESENTADO, no retrocedemos el estado — solo actualizamos
         // importes
@@ -78,7 +95,24 @@ public class DeclaracionFiscalService {
     }
 
     /**
+     * Casilla [05] del Modelo 130: suma de los pagos fraccionados positivos
+     * de los trimestres anteriores del mismo ejercicio, según el historial.
+     * Excluye el propio trimestre, así que regenerarlo no lo cuenta dos veces.
+     */
+    public BigDecimal sumarPagosFraccionadosAnteriores(int ejercicio, String periodo) {
+        String actual = periodo == null ? "" : periodo.toUpperCase().trim();
+        return repo.findByModelo("130").stream()
+                .filter(d -> d.getEjercicio() != null && d.getEjercicio() == ejercicio)
+                .filter(d -> d.getPeriodo() != null && d.getPeriodo().compareTo(actual) < 0)
+                .map(DeclaracionFiscal::getPagoFraccionado)
+                .filter(v -> v != null && v.signum() > 0)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
      * Registra (o actualiza si ya existe) la generación de un fichero BOE 130.
+     *
+     * @param pagoFraccionado resultado de la declaración (casilla [19]), no el 20 % bruto
      */
     @Transactional
     public DeclaracionFiscalDTO registrarGeneracion130(

@@ -180,29 +180,44 @@ const ModelosFiscales = () => {
     const facturasRecAcum = facturasRec.filter(f => enHastaFinTrimestre(f.fechaFactura, trimestre, anio));
     const gastosAcum = gastos.filter(g => enHastaFinTrimestre(g.fecha, trimestre, anio));
 
-    const ingresosBrutos = facturasAcum.reduce((acc, f) => acc + parseFloat(f.total || 0), 0);
-    const gastosDeducibles = facturasRecAcum.reduce((acc, f) => acc + parseFloat(f.total || 0), 0)
-        + gastosAcum.reduce((acc, g) => acc + parseFloat(g.importe || 0), 0);
-    const rendimientoNeto = Math.max(0, ingresosBrutos - gastosDeducibles);
-    const pagoFraccionadoBruto130 = parseFloat((rendimientoNeto * 0.20).toFixed(2));
+    // Ingresos y gastos SIN IVA: el IVA repercutido no es ingreso y el soportado
+    // deducible no es gasto para el IRPF (se liquidan en el 303).
+    const ingresosHasta = (t) => facturas
+        .filter(f => enHastaFinTrimestre(f.fecha, t, anio))
+        .reduce((acc, f) => acc + parseFloat(f.baseImponible || 0), 0);
+    const gastosHasta = (t) => facturasRec
+        .filter(f => enHastaFinTrimestre(f.fechaFactura, t, anio))
+        .reduce((acc, f) => acc + parseFloat(f.baseImponible || 0), 0)
+        + gastos
+        .filter(g => enHastaFinTrimestre(g.fecha, t, anio))
+        .reduce((acc, g) => acc + parseFloat(g.importe || 0), 0);
+    // Cas. 04: 20 % del rendimiento neto positivo, truncado a céntimos (como la AEAT)
+    const veintePorCiento = (rend) => Math.floor(Math.max(0, Math.round(rend * 100)) * 0.2 + 1e-9) / 100;
 
-    // Cas. 13: pagos fraccionados ya ingresados en trimestres anteriores del año
+    const ingresosBrutos = parseFloat(ingresosHasta(trimestre).toFixed(2));
+    const gastosDeducibles = parseFloat(gastosHasta(trimestre).toFixed(2));
+    const pagoFraccionadoBruto130 = veintePorCiento(ingresosBrutos - gastosDeducibles);
+
+    // Cas. 05: suma de las casillas 07 POSITIVAS de los trimestres anteriores.
+    // Como el 20 % es sobre el acumulado, cada trimestre resta lo ya pagado.
     let pagosAnteriores130 = 0;
     for (let t = 1; t < trimestre; t++) {
-        const fAnt = facturas.filter(f => enHastaFinTrimestre(f.fecha, t, anio));
-        const frAnt = facturasRec.filter(f => enHastaFinTrimestre(f.fechaFactura, t, anio));
-        const gAnt = gastos.filter(g => enHastaFinTrimestre(g.fecha, t, anio));
-        const ingAnt = fAnt.reduce((acc, f) => acc + parseFloat(f.total || 0), 0);
-        const gasAnt = frAnt.reduce((acc, f) => acc + parseFloat(f.total || 0), 0)
-            + gAnt.reduce((acc, g) => acc + parseFloat(g.importe || 0), 0);
-        const rendAnt = Math.max(0, ingAnt - gasAnt);
-        pagosAnteriores130 = parseFloat((pagosAnteriores130 + rendAnt * 0.20).toFixed(2));
+        const c07Ant = veintePorCiento(ingresosHasta(t) - gastosHasta(t)) - pagosAnteriores130;
+        if (c07Ant > 0) pagosAnteriores130 = parseFloat((pagosAnteriores130 + c07Ant).toFixed(2));
     }
 
-    // Cas. 14: resultado a ingresar = pago bruto − pagos anteriores (mín. 0)
+    // Cas. 07 / 19: resultado a ingresar = 04 − 05 − 06 (mín. 0)
     const pagoFraccionado130 = parseFloat(
         Math.max(0, pagoFraccionadoBruto130 - pagosAnteriores130).toFixed(2)
     );
+
+    // La AEAT identifica a la persona física por NIF + primer apellido:
+    // el nombre del emisor ("NOMBRE APELLIDO1 APELLIDO2") se separa en apellidos y nombre.
+    const separarNombre = (completo = '') => {
+        const partes = completo.trim().split(/\s+/);
+        if (partes.length < 3) return { apellidos: completo.trim(), nombre: '' };
+        return { apellidos: partes.slice(-2).join(' '), nombre: partes.slice(0, -2).join(' ') };
+    };
 
     // ── Descarga BOE + registro automático ───────────────────────────────────
     const descargarBoe = async () => {
@@ -213,8 +228,9 @@ const ModelosFiscales = () => {
             let url, nombreFichero;
 
             if (modelo === '303') {
+                const { apellidos, nombre } = separarNombre(emisor.nombre);
                 const params = new URLSearchParams({
-                    nif: emisor.nif, nombre: emisor.nombre,
+                    nif: emisor.nif, nombre, apellidos,
                     baseRep21: repercutido.base.toFixed(2), cuotaRep21: repercutido.cuota.toFixed(2),
                     baseSop21: soportado.base.toFixed(2), cuotaSop21: soportado.cuota.toFixed(2),
                 });
@@ -222,8 +238,9 @@ const ModelosFiscales = () => {
                 nombreFichero = `${emisor.nif}${anio}${periodoStr}.303`;
 
             } else if (modelo === '130') {
+                const { apellidos, nombre } = separarNombre(emisor.nombre);
                 const params = new URLSearchParams({
-                    nif: emisor.nif, nombre: emisor.nombre,
+                    nif: emisor.nif, nombre, apellidos,
                     ingresosTrimestre: ingresosBrutos.toFixed(2),
                     gastosTrimestre: gastosDeducibles.toFixed(2),
                     retencionesComputadas: '0',
@@ -431,21 +448,20 @@ const ModelosFiscales = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <KpiCard titulo="Ingresos acumulados (Cas. 01)" valor={fmt(ingresosBrutos)} subtitulo={`${facturasAcum.length} facturas ene–${['mar', 'jun', 'sep', 'dic'][trimestre - 1]}`} color="blue" />
                                             <KpiCard titulo="Gastos acumulados (Cas. 02)" valor={fmt(gastosDeducibles)} subtitulo={`${facturasRecAcum.length} fact. + ${gastosAcum.length} gastos`} color="orange" />
-                                            <KpiCard titulo="A ingresar (Cas. 14)" valor={fmt(pagoFraccionado130)} subtitulo={`Bruto: ${fmt(pagoFraccionadoBruto130)} − ant: ${fmt(pagosAnteriores130)}`} color={pagoFraccionado130 > 0 ? 'red' : 'green'} />
+                                            <KpiCard titulo="A ingresar (Cas. 19)" valor={fmt(pagoFraccionado130)} subtitulo={`Bruto: ${fmt(pagoFraccionadoBruto130)} − ant: ${fmt(pagosAnteriores130)}`} color={pagoFraccionado130 > 0 ? 'red' : 'green'} />
                                         </div>
                                         <DetalleCasillas visible={detalleVisible} onToggle={() => setDetalleVisible(v => !v)}>
                                             <FilaCasilla c="01" desc={`Ingresos computables acumulados (ene–${['mar', 'jun', 'sep', 'dic'][trimestre - 1]} ${anio})`} val={fmt(ingresosBrutos)} />
                                             <FilaCasilla c="02" desc={`Gastos fiscalmente deducibles acumulados`} val={fmt(gastosDeducibles)} />
                                             <FilaCasilla c="03" desc="Rendimiento neto (01 − 02)" val={fmt(ingresosBrutos - gastosDeducibles)} />
-                                            <FilaCasilla c="05" desc="Base de cálculo (máx. 0)" val={fmt(rendimientoNeto)} bold />
-                                            <FilaCasilla c="07" desc="20% × casilla 05" val={fmt(pagoFraccionadoBruto130)} bold />
-                                            <FilaCasilla c="11" desc="Retenciones soportadas" val={fmt(0)} />
-                                            <FilaCasilla c="13" desc={`Pagos fraccionados anteriores del año (${trimestre > 1 ? trimestre - 1 : 0} trimestre${trimestre > 2 ? 's' : ''})`} val={fmt(pagosAnteriores130)} bold={pagosAnteriores130 > 0} />
-                                            <FilaCasilla c="14" desc="Resultado a ingresar (07 − 11 − 13)" val={fmt(pagoFraccionado130)} bold />
+                                            <FilaCasilla c="04" desc="20% del rendimiento neto positivo" val={fmt(pagoFraccionadoBruto130)} bold />
+                                            <FilaCasilla c="05" desc={`Pagos fraccionados anteriores del año (${trimestre > 1 ? trimestre - 1 : 0} trimestre${trimestre > 2 ? 's' : ''})`} val={fmt(pagosAnteriores130)} bold={pagosAnteriores130 > 0} />
+                                            <FilaCasilla c="06" desc="Retenciones soportadas" val={fmt(0)} />
+                                            <FilaCasilla c="07/19" desc="Resultado a ingresar (04 − 05 − 06)" val={fmt(pagoFraccionado130)} bold />
                                         </DetalleCasillas>
                                         <InfoBox texto={trimestre === 1
                                             ? "Primer trimestre: no hay pagos anteriores. Las casillas 01 y 02 recogen solo enero–marzo."
-                                            : `Casillas 01 y 02 acumulan desde enero hasta fin del ${trimestre}T. Casilla 13 descuenta ${fmt(pagosAnteriores130)} ya ingresados en trimestres anteriores.`
+                                            : `Casillas 01 y 02 acumulan desde enero hasta fin del ${trimestre}T. Casilla 05 descuenta ${fmt(pagosAnteriores130)} ya ingresados en trimestres anteriores.`
                                         } />
                                     </div>
                                 )}
