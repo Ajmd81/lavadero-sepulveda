@@ -1,42 +1,57 @@
 package com.lavaderosepulveda.app.fiscal.generators;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.Normalizer;
+import java.util.Locale;
 
 /**
- * Generador del fichero BOE para el Modelo 130 (IRPF — Pago fraccionado, actividades económicas).
+ * Generador del fichero de importación del Modelo 130
+ * (IRPF – Pago fraccionado. Empresarios y profesionales en estimación directa).
  *
- * Aplicable a autónomos en estimación directa (normal o simplificada).
- * Régimen general: ingreso el 20% del rendimiento neto positivo del trimestre
- * menos retenciones soportadas en el período, con mínimo de 0.
+ * Diseño de registro oficial AEAT: Orden HAP/258/2015 (DR130e15v12, ejercicios 2019 y siguientes).
  *
- * Formato: ISO-8859-1, texto posicional.
- * Nombre del fichero: {NIF}{EJERCICIO}{PERIODO}.130
+ * Estructura del fichero (una sola línea, ISO-8859-1, sin saltos de línea, 946 bytes):
+ *   <T1300{AAAA}{PP}0000>                    17  cabecera
+ *   <AUX> ... </AUX>                        311  datos auxiliares (versión programa, NIF desarrollador)
+ *   <T13001000> ... </T13001000>            600  página 01 con las casillas
+ *   </T1300{AAAA}{PP}0000>                   18  cierre
  *
- * Referencia normativa: Orden EHA/672/2007, Modelo 130 IRPF.
+ * Nombre del fichero: {NIF}{EJERCICIO}{PERIODO}.130   (p. ej. 12345678Z20263T.130)
  *
- * Ejemplo de uso:
- *   Modelo130BoeGenerator gen = new Modelo130BoeGenerator.Builder()
- *       .nif("12345678A")
- *       .nombre("SEPULVEDA GARCIA FRANCISCO")
- *       .ejercicio(2026)
- *       .periodo(Modelo130BoeGenerator.Periodo.PRIMER_TRIMESTRE)
- *       .ingresosTrimestre(new BigDecimal("5000.00"))
-*        .gastosTrimestre(new BigDecimal("1800.00"))
- *       .retencionesComputadas(BigDecimal.ZERO)
- *       .pagosAnteriorese(BigDecimal.ZERO)
- *       .build();
+ * Casillas (todas ACUMULADAS desde el 1 de enero hasta el final del trimestre):
+ *   [01] Ingresos computables
+ *   [02] Gastos fiscalmente deducibles (en simplificada incluye el 5% de difícil justificación, máx. 2.000 €/año)
+ *   [03] Rendimiento neto = 01 - 02
+ *   [04] 20% de [03] si es positivo (truncado a céntimos, como hace la AEAT)
+ *   [05] Pagos fraccionados de trimestres anteriores del ejercicio (suma de [07] positivas anteriores)
+ *   [06] Retenciones e ingresos a cuenta soportados
+ *   [07] = 04 - 05 - 06
+ *   [08]-[11] Actividades agrícolas/ganaderas/forestales/pesqueras (aquí siempre 0)
+ *   [12] = [07] si es positiva + [11]
+ *   [13] Minoración por deducción art. 110.3.c) Reglamento IRPF
+ *   [14] = 12 - 13
+ *   [15] Resultados negativos de trimestres anteriores pendientes de deducir
+ *   [16] Deducción por préstamos para vivienda habitual
+ *   [17] = 14 - 15 - 16
+ *   [18] Resultado de la declaración anterior (solo complementarias)
+ *   [19] Resultado de la declaración = 17 - 18
  */
 public class Modelo130BoeGenerator {
 
-    private static final Charset ISO = Charset.forName("ISO-8859-1");
-    private static final int LEN_REGISTRO = 500;
+    private static final int LEN_CABECERA = 17;
+    private static final int LEN_AUX      = 311;
+    private static final int LEN_PAGINA   = 600;
+    private static final int LEN_CIERRE   = 18;
+    public  static final int LEN_TOTAL    = LEN_CABECERA + LEN_AUX + LEN_PAGINA + LEN_CIERRE; // 946
+
+    private static final BigDecimal VEINTE_POR_CIENTO = new BigDecimal("0.20");
 
     // ─────────────────────────────────────────────────────────────────────────
     // Enum Período
@@ -52,212 +67,320 @@ public class Modelo130BoeGenerator {
         public String getCodigo() { return codigo; }
     }
 
+    /** Tipo de declaración según diseño de registro. */
+    public enum TipoDeclaracion {
+        INGRESO('I'),
+        DOMICILIACION('U'),
+        NEGATIVA('N'),
+        A_DEDUCIR('B');
+
+        private final char codigo;
+        TipoDeclaracion(char codigo) { this.codigo = codigo; }
+        public char getCodigo() { return codigo; }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
-    // Campos
+    // Datos de entrada
     // ─────────────────────────────────────────────────────────────────────────
-    private final String   nif;
-    private final String   nombre;
-    private final int      ejercicio;
-    private final Periodo  periodo;
+    private final String  nif;
+    private final String  apellidos;
+    private final String  nombre;
+    private final int     ejercicio;
+    private final Periodo periodo;
 
-    /** Casilla 01: Ingresos computables acumulados en el año hasta el trimestre. */
-    private final BigDecimal ingresosTrimestre;
+    private final BigDecimal ingresos;                       // [01]
+    private final BigDecimal gastos;                         // [02]
+    private final BigDecimal pagosFraccionadosAnteriores;    // [05]
+    private final BigDecimal retenciones;                    // [06]
+    private final BigDecimal minoracionArt110;               // [13]
+    private final BigDecimal resultadosNegativosAnteriores;  // [15]
+    private final BigDecimal deduccionVivienda;              // [16]
+    private final BigDecimal resultadoDeclaracionAnterior;   // [18]
 
-    /** Casilla 02: Gastos fiscalmente deducibles acumulados hasta el trimestre. */
-    private final BigDecimal gastosTrimestre;
+    private final boolean complementaria;
+    private final String  justificanteAnterior;
+    private final String  ibanDomiciliacion;
+    private final String  versionPrograma;
+    private final String  nifDesarrollador;
 
-    /**
-     * Casilla 11: Retenciones e ingresos a cuenta soportados acumulados.
-     * Para Lavadero Sepúlveda habitualmente = 0 (servicio final a consumidor).
-     */
-    private final BigDecimal retencionesComputadas;
-
-    /**
-     * Casilla 14: Suma de pagos fraccionados ingresados en trimestres anteriores del mismo año.
-     * Se rellena en 2T, 3T y 4T.
-     */
-    private final BigDecimal pagosAnteriores;
+    // ─────────────────────────────────────────────────────────────────────────
+    // Casillas calculadas
+    // ─────────────────────────────────────────────────────────────────────────
+    private final BigDecimal c01, c02, c03, c04, c05, c06, c07;
+    private final BigDecimal c08, c09, c10, c11;
+    private final BigDecimal c12, c13, c14, c15, c16, c17, c18, c19;
+    private final TipoDeclaracion tipoDeclaracion;
 
     private Modelo130BoeGenerator(Builder b) {
-        this.nif                   = b.nif;
-        this.nombre                = b.nombre;
-        this.ejercicio             = b.ejercicio;
-        this.periodo               = b.periodo;
-        this.ingresosTrimestre     = b.ingresosTrimestre;
-        this.gastosTrimestre       = b.gastosTrimestre;
-        this.retencionesComputadas = b.retencionesComputadas;
-        this.pagosAnteriores       = b.pagosAnteriores;
+        this.nif                           = b.nif;
+        this.apellidos                     = b.apellidos;
+        this.nombre                        = b.nombre;
+        this.ejercicio                     = b.ejercicio;
+        this.periodo                       = b.periodo;
+        this.ingresos                      = nz(b.ingresos);
+        this.gastos                        = nz(b.gastos);
+        this.pagosFraccionadosAnteriores   = nz(b.pagosFraccionadosAnteriores);
+        this.retenciones                   = nz(b.retenciones);
+        this.minoracionArt110              = nz(b.minoracionArt110);
+        this.resultadosNegativosAnteriores = nz(b.resultadosNegativosAnteriores);
+        this.deduccionVivienda             = nz(b.deduccionVivienda);
+        this.resultadoDeclaracionAnterior  = nz(b.resultadoDeclaracionAnterior);
+        this.complementaria                = b.complementaria;
+        this.justificanteAnterior          = b.justificanteAnterior;
+        this.ibanDomiciliacion             = b.ibanDomiciliacion;
+        this.versionPrograma               = b.versionPrograma;
+        this.nifDesarrollador              = b.nifDesarrollador;
+
+        // ── Sección I: actividades económicas (no agrícolas) ─────────────────
+        c01 = esc(ingresos);
+        c02 = esc(gastos);
+        c03 = c01.subtract(c02);
+        c04 = c03.signum() > 0
+                ? c03.multiply(VEINTE_POR_CIENTO).setScale(2, RoundingMode.DOWN)
+                : BigDecimal.ZERO.setScale(2);
+        c05 = esc(pagosFraccionadosAnteriores);
+        c06 = esc(retenciones);
+        c07 = c04.subtract(c05).subtract(c06);
+
+        // ── Sección II: agrícolas/ganaderas (no aplica) ──────────────────────
+        c08 = BigDecimal.ZERO.setScale(2);
+        c09 = BigDecimal.ZERO.setScale(2);
+        c10 = BigDecimal.ZERO.setScale(2);
+        c11 = BigDecimal.ZERO.setScale(2);
+
+        // ── Sección III: total liquidación ───────────────────────────────────
+        c12 = max0(c07).add(max0(c11));
+        c13 = min(esc(minoracionArt110), c12);
+        c14 = c12.subtract(c13);
+        c15 = min(esc(resultadosNegativosAnteriores), max0(c14));
+        c16 = min(esc(deduccionVivienda), max0(c14.subtract(c15)));
+        c17 = c14.subtract(c15).subtract(c16);
+        c18 = complementaria ? esc(resultadoDeclaracionAnterior) : BigDecimal.ZERO.setScale(2);
+        c19 = c17.subtract(c18);
+
+        if (c19.signum() > 0) {
+            tipoDeclaracion = (ibanDomiciliacion != null && !ibanDomiciliacion.isBlank())
+                    ? TipoDeclaracion.DOMICILIACION : TipoDeclaracion.INGRESO;
+        } else if (c19.signum() < 0 && periodo != Periodo.CUARTO_TRIMESTRE) {
+            tipoDeclaracion = TipoDeclaracion.A_DEDUCIR;
+        } else {
+            tipoDeclaracion = TipoDeclaracion.NEGATIVA;
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // API pública
     // ─────────────────────────────────────────────────────────────────────────
 
+    public String getNombreFichero() {
+        return nif + ejercicio + periodo.getCodigo() + ".130";
+    }
+
     public Path generarFichero(String directorioSalida) throws IOException {
-        String nombreFichero = nif + ejercicio + periodo.getCodigo() + ".130";
-        Path ruta = Paths.get(directorioSalida, nombreFichero);
-        try (OutputStreamWriter w = new OutputStreamWriter(
-                new FileOutputStream(ruta.toFile()), ISO)) {
-            w.write(generarContenido());
-        }
+        Path ruta = Paths.get(directorioSalida, getNombreFichero());
+        Files.write(ruta, generarBytes());
         return ruta;
     }
 
-    /** Devuelve el contenido completo del fichero como String (codificación ISO-8859-1). */
+    /** Bytes listos para descargar/subir (ISO-8859-1). Úsalo también en el endpoint de Spring. */
+    public byte[] generarBytes() {
+        String contenido = generarContenido();
+        CharsetEncoder enc = StandardCharsets.ISO_8859_1.newEncoder();
+        if (!enc.canEncode(contenido)) {
+            throw new IllegalStateException("El contenido tiene caracteres no representables en ISO-8859-1");
+        }
+        byte[] bytes = contenido.getBytes(StandardCharsets.ISO_8859_1);
+        if (bytes.length != LEN_TOTAL) {
+            throw new IllegalStateException("Longitud incorrecta: " + bytes.length + " (esperado " + LEN_TOTAL + ")");
+        }
+        return bytes;
+    }
+
     public String generarContenido() {
-        return generarRegistro1() + generarRegistro2();
+        return cabecera() + aux() + pagina01() + cierre();
     }
 
+    public BigDecimal getResultado()               { return c19; }
+    public TipoDeclaracion getTipoDeclaracion()    { return tipoDeclaracion; }
+
     // ─────────────────────────────────────────────────────────────────────────
-    // Registro 1 – Cabecera presentador
+    // Bloques del fichero
     // ─────────────────────────────────────────────────────────────────────────
-    private String generarRegistro1() {
+
+    private String cabecera() {
+        String s = "<T130" + "0" + ejercicio + periodo.getCodigo() + "0000>";
+        return comprobar(s, LEN_CABECERA, "cabecera");
+    }
+
+    private String aux() {
         StringBuilder r = new StringBuilder();
-
-        r.append("1");                                          // Tipo registro
-        r.append("130");                                        // Modelo
-        r.append(padLeft(String.valueOf(ejercicio), 4, '0'));   // Ejercicio
-        r.append(padRight(periodo.getCodigo(), 2));             // Período
-        r.append(" ");                                          // Soporte telemático
-        r.append(padRight(nif, 9));                             // NIF presentador
-        r.append(padRight(limpiarTexto(nombre), 39));           // Nombre presentador
-        r.append(padRight(nif, 9));                             // NIF declarante
-        r.append(padRight(limpiarTexto(nombre), 39));           // Nombre declarante
-        r.append(padRight("", 7));                              // Teléfono
-        r.append(padRight("", 13));                             // Fax
-        r.append(padRight("", 50));                             // Email
-        r.append("  ");                                         // Indicador sustitutiva
-        r.append(padRight("", 13));                             // Núm. justificante anterior
-
-        int restantes = LEN_REGISTRO - r.length();
-        if (restantes > 0) r.append(" ".repeat(restantes));
-        return r.toString();
+        r.append("<AUX>");                                // 5
+        r.append(blancos(70));                            // Reservado AEAT
+        r.append(alfa(versionPrograma, 4));               // Versión del programa
+        r.append(blancos(4));                             // Reservado AEAT
+        r.append(alfa(nifDesarrollador, 9));              // NIF empresa desarrollo
+        r.append(blancos(213));                           // Reservado AEAT
+        r.append("</AUX>");                               // 6
+        return comprobar(r.toString(), LEN_AUX, "AUX");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Registro 2 – Datos de la declaración
-    // ─────────────────────────────────────────────────────────────────────────
-    private String generarRegistro2() {
+    private String pagina01() {
         StringBuilder r = new StringBuilder();
+        r.append("<T13001000>");                          // Inicio página 01 (11)
+        r.append(" ");                                    // Indicador página complementaria
+        r.append(tipoDeclaracion.getCodigo());            // Tipo de declaración
+        r.append(alfa(nif, 9));                           // NIF
+        r.append(alfa(apellidos, 60));                    // Apellidos o razón social
+        r.append(alfa(nombre, 20));                       // Nombre
+        r.append(ejercicio);                              // Ejercicio (4)
+        r.append(periodo.getCodigo());                    // Período (2)
 
-        r.append("2");
-        r.append("130");
-        r.append(padLeft(String.valueOf(ejercicio), 4, '0'));
-        r.append(padRight(periodo.getCodigo(), 2));
-        r.append(padRight(nif, 9));
-        r.append(padRight(limpiarTexto(nombre), 39));
+        r.append(importe(c01)).append(importe(c02)).append(importe(c03))
+         .append(importe(c04)).append(importe(c05)).append(importe(c06))
+         .append(importe(c07)).append(importe(c08)).append(importe(c09))
+         .append(importe(c10)).append(importe(c11)).append(importe(c12))
+         .append(importe(c13)).append(importe(c14)).append(importe(c15))
+         .append(importe(c16)).append(importe(c17)).append(importe(c18))
+         .append(importe(c19));
 
-        // ── Cálculo rendimiento neto ─────────────────────────────────────────
-        // Casilla 01: Ingresos computables
-        r.append(casilla("001", ingresosTrimestre));
+        r.append(complementaria ? "X" : " ");             // Declaración complementaria
+        r.append(alfa(complementaria ? justificanteAnterior : "", 13)); // Nº justificante anterior
+        r.append(alfa(ibanDomiciliacion == null ? "" : ibanDomiciliacion.replace(" ", ""), 34)); // IBAN
+        r.append(blancos(96));                            // Reservado AEAT
+        r.append(blancos(13));                            // Sello electrónico
+        r.append("</T13001000>");                         // Fin página (12)
+        return comprobar(r.toString(), LEN_PAGINA, "página 01");
+    }
 
-        // Casilla 02: Gastos deducibles
-        r.append(casilla("002", gastosTrimestre));
-
-        // Casilla 03: Rendimiento neto (01 - 02)
-        BigDecimal rendimientoNeto = ingresosTrimestre.subtract(gastosTrimestre);
-        r.append(casilla("003", rendimientoNeto));
-
-        // Casilla 05: Base de cálculo (= 03 si positivo, si no = 0)
-        BigDecimal baseCalculo = rendimientoNeto.compareTo(BigDecimal.ZERO) > 0
-                ? rendimientoNeto : BigDecimal.ZERO;
-        r.append(casilla("005", baseCalculo));
-
-        // Casilla 07: 20% de la base de cálculo (pago fraccionado bruto)
-        BigDecimal pagoFraccionadoBruto = baseCalculo
-                .multiply(new BigDecimal("0.20"))
-                .setScale(2, RoundingMode.HALF_UP);
-        r.append(casilla("007", pagoFraccionadoBruto));
-
-        // Casilla 11: Retenciones e ingresos a cuenta acumulados
-        r.append(casilla("011", retencionesComputadas));
-
-        // Casilla 13: Pagos fraccionados anteriores del año
-        r.append(casilla("013", pagosAnteriores));
-
-        // Casilla 14: Resultado (07 - 11 - 13), mínimo 0
-        BigDecimal resultado = pagoFraccionadoBruto
-                .subtract(retencionesComputadas)
-                .subtract(pagosAnteriores);
-        if (resultado.compareTo(BigDecimal.ZERO) < 0) resultado = BigDecimal.ZERO;
-        r.append(casilla("014", resultado));
-
-        // Casilla 15: Tipo declaración  I=ingresar  N=negativa/cero
-        String tipoDeclaracion = resultado.compareTo(BigDecimal.ZERO) > 0 ? "I" : "N";
-        r.append("015");
-        r.append(" ");
-        r.append(padRight(tipoDeclaracion, 12));
-
-        // Casilla 16: Importe a ingresar
-        r.append(casilla("016", resultado));
-
-        // Relleno hasta 500 chars
-        int restantes = LEN_REGISTRO - r.length();
-        if (restantes > 0) r.append(" ".repeat(restantes));
-        return r.toString();
+    private String cierre() {
+        String s = "</T130" + "0" + ejercicio + periodo.getCodigo() + "0000>";
+        return comprobar(s, LEN_CIERRE, "cierre");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Helpers
+    // Formateo según normas AEAT
     // ─────────────────────────────────────────────────────────────────────────
 
-    private String casilla(String clave, BigDecimal valor) {
-        if (valor == null) valor = BigDecimal.ZERO;
-        valor = valor.setScale(2, RoundingMode.HALF_UP);
-        char signo = valor.compareTo(BigDecimal.ZERO) < 0 ? 'N' : ' ';
-        long centimos = valor.abs()
-                .multiply(new BigDecimal("100"))
-                .setScale(0, RoundingMode.HALF_UP)
-                .longValue();
-        return clave + signo + padLeft(String.valueOf(centimos), 12, '0');
+    /**
+     * Importe de 17 posiciones: 15 enteros + 2 decimales, sin coma, ceros a la izquierda.
+     * Si es negativo, "N" en la primera posición y 16 dígitos.
+     */
+    private static String importe(BigDecimal valor) {
+        BigDecimal v = esc(valor);
+        long centimos = v.abs().movePointRight(2).longValueExact();
+        if (v.signum() < 0) {
+            return "N" + String.format("%016d", centimos);
+        }
+        return String.format("%017d", centimos);
     }
 
-    private static String padLeft(String s, int length, char c) {
-        if (s == null) s = "";
-        if (s.length() >= length) return s.substring(0, length);
-        return String.valueOf(c).repeat(length - s.length()) + s;
-    }
-
-    private static String padRight(String s, int length) {
-        if (s == null) s = "";
-        if (s.length() >= length) return s.substring(0, length);
-        return s + " ".repeat(length - s.length());
+    /**
+     * Alfanumérico: mayúsculas, sin tildes, conserva Ñ y Ç, solo caracteres permitidos,
+     * alineado a la izquierda y relleno con blancos.
+     */
+    private static String alfa(String texto, int longitud) {
+        String t = limpiarTexto(texto);
+        if (t.length() >= longitud) return t.substring(0, longitud);
+        return t + " ".repeat(longitud - t.length());
     }
 
     private static String limpiarTexto(String texto) {
         if (texto == null) return "";
-        return texto.toUpperCase()
-                .replace("Á", "A").replace("É", "E").replace("Í", "I")
-                .replace("Ó", "O").replace("Ú", "U").replace("Ü", "U")
-                .replace("Ñ", "N");
+        String t = texto.trim().toUpperCase(Locale.ROOT)
+                .replace("Ñ", "\u0001")
+                .replace("Ç", "\u0002");
+        t = Normalizer.normalize(t, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        t = t.replace("\u0001", "Ñ").replace("\u0002", "Ç");
+        t = t.replaceAll("[^A-Z0-9ÑÇ .,\\-_&'/():;]", "");
+        return t.replaceAll("\\s+", " ");
     }
+
+    private static String blancos(int n) {
+        return " ".repeat(n);
+    }
+
+    private static String comprobar(String bloque, int esperado, String nombreBloque) {
+        if (bloque.length() != esperado) {
+            throw new IllegalStateException("Bloque " + nombreBloque + " con longitud "
+                    + bloque.length() + " (esperado " + esperado + ")");
+        }
+        return bloque;
+    }
+
+    private static BigDecimal nz(BigDecimal v)  { return v == null ? BigDecimal.ZERO : v; }
+    private static BigDecimal esc(BigDecimal v) { return nz(v).setScale(2, RoundingMode.HALF_UP); }
+    private static BigDecimal max0(BigDecimal v){ return v.signum() > 0 ? v : BigDecimal.ZERO.setScale(2); }
+    private static BigDecimal min(BigDecimal a, BigDecimal b) { return a.compareTo(b) <= 0 ? a : b; }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Builder
     // ─────────────────────────────────────────────────────────────────────────
     public static class Builder {
-        private String  nif       = "";
-        private String  nombre    = "";
-        private int     ejercicio = 2026;
-        private Periodo periodo   = Periodo.PRIMER_TRIMESTRE;
+        private String  nif        = "";
+        private String  apellidos  = "";
+        private String  nombre     = "";
+        private int     ejercicio  = java.time.Year.now().getValue();
+        private Periodo periodo    = Periodo.PRIMER_TRIMESTRE;
 
-        private BigDecimal ingresosTrimestre     = BigDecimal.ZERO;
-        private BigDecimal gastosTrimestre       = BigDecimal.ZERO;
-        private BigDecimal retencionesComputadas = BigDecimal.ZERO;
-        private BigDecimal pagosAnteriores       = BigDecimal.ZERO;
+        private BigDecimal ingresos                      = BigDecimal.ZERO;
+        private BigDecimal gastos                        = BigDecimal.ZERO;
+        private BigDecimal pagosFraccionadosAnteriores   = BigDecimal.ZERO;
+        private BigDecimal retenciones                   = BigDecimal.ZERO;
+        private BigDecimal minoracionArt110              = BigDecimal.ZERO;
+        private BigDecimal resultadosNegativosAnteriores = BigDecimal.ZERO;
+        private BigDecimal deduccionVivienda             = BigDecimal.ZERO;
+        private BigDecimal resultadoDeclaracionAnterior  = BigDecimal.ZERO;
 
-        public Builder nif(String nif)                              { this.nif     = nif.toUpperCase().trim(); return this; }
-        public Builder nombre(String nombre)                        { this.nombre  = nombre; return this; }
-        public Builder ejercicio(int e)                             { this.ejercicio = e; return this; }
-        public Builder periodo(Periodo p)                           { this.periodo = p; return this; }
-        public Builder ingresosTrimestre(BigDecimal v)              { this.ingresosTrimestre     = v; return this; }
-        public Builder gastosTrimestre(BigDecimal v)                { this.gastosTrimestre       = v; return this; }
-        public Builder retencionesComputadas(BigDecimal v)          { this.retencionesComputadas = v; return this; }
-        public Builder pagosAnteriores(BigDecimal v)                { this.pagosAnteriores       = v; return this; }
+        private boolean complementaria       = false;
+        private String  justificanteAnterior = "";
+        private String  ibanDomiciliacion    = "";
+        private String  versionPrograma      = "LS01";
+        private String  nifDesarrollador     = "";
+
+        public Builder nif(String v)                            { this.nif = v == null ? "" : v.toUpperCase(Locale.ROOT).replaceAll("[\\s-]", ""); return this; }
+        /** Apellidos (persona física) o razón social. */
+        public Builder apellidos(String v)                      { this.apellidos = v; return this; }
+        /** Nombre de pila (persona física). */
+        public Builder nombre(String v)                         { this.nombre = v; return this; }
+        public Builder ejercicio(int v)                         { this.ejercicio = v; return this; }
+        public Builder periodo(Periodo v)                       { this.periodo = v; return this; }
+        /** [01] Ingresos acumulados desde el 1 de enero. */
+        public Builder ingresos(BigDecimal v)                   { this.ingresos = v; return this; }
+        /** [02] Gastos deducibles acumulados desde el 1 de enero. */
+        public Builder gastos(BigDecimal v)                     { this.gastos = v; return this; }
+        /** [05] Suma de las casillas [07] positivas de los trimestres anteriores del ejercicio. */
+        public Builder pagosFraccionadosAnteriores(BigDecimal v){ this.pagosFraccionadosAnteriores = v; return this; }
+        /** [06] Retenciones e ingresos a cuenta acumulados. */
+        public Builder retenciones(BigDecimal v)                { this.retenciones = v; return this; }
+        /** [13] Minoración art. 110.3.c) RIRPF. */
+        public Builder minoracionArt110(BigDecimal v)           { this.minoracionArt110 = v; return this; }
+        /** [15] Resultados negativos de trimestres anteriores (en positivo). */
+        public Builder resultadosNegativosAnteriores(BigDecimal v){ this.resultadosNegativosAnteriores = v; return this; }
+        /** [16] Deducción por préstamo de vivienda habitual. */
+        public Builder deduccionVivienda(BigDecimal v)          { this.deduccionVivienda = v; return this; }
+        /** Declaración complementaria: [18] e indicador + justificante anterior. */
+        public Builder complementaria(String justificanteAnterior, BigDecimal resultadoAnterior) {
+            this.complementaria = true;
+            this.justificanteAnterior = justificanteAnterior;
+            this.resultadoDeclaracionAnterior = resultadoAnterior;
+            return this;
+        }
+        /** IBAN para domiciliar el pago (tipo de declaración "U"). */
+        public Builder ibanDomiciliacion(String v)              { this.ibanDomiciliacion = v; return this; }
+        public Builder versionPrograma(String v)                { this.versionPrograma = v; return this; }
+        public Builder nifDesarrollador(String v)               { this.nifDesarrollador = v; return this; }
 
         public Modelo130BoeGenerator build() {
-            if (nif.isEmpty())    throw new IllegalStateException("NIF es obligatorio");
-            if (nombre.isEmpty()) throw new IllegalStateException("Nombre es obligatorio");
+            if (nif.length() != 9)
+                throw new IllegalStateException("NIF obligatorio de 9 caracteres: '" + nif + "'");
+            if (apellidos == null || apellidos.isBlank())
+                throw new IllegalStateException("Apellidos o razón social obligatorios");
+            if (ejercicio < 2015 || ejercicio > 9999)
+                throw new IllegalStateException("Ejercicio no válido: " + ejercicio);
+            if (periodo == null)
+                throw new IllegalStateException("Período obligatorio");
+            if (complementaria && (justificanteAnterior == null || justificanteAnterior.length() != 13))
+                throw new IllegalStateException("La complementaria requiere el justificante anterior de 13 dígitos");
             return new Modelo130BoeGenerator(this);
         }
     }
