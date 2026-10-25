@@ -1,9 +1,9 @@
 package com.lavaderosepulveda.app.fiscal.service;
 
 import com.lavaderosepulveda.app.dto.DeclaracionFiscalDTO;
-import com.lavaderosepulveda.app.model.DeclaracionFiscal;
+import com.lavaderosepulveda.app.fiscal.model.DeclaracionFiscal;
 import com.lavaderosepulveda.app.model.enums.EstadoDeclaracion;
-import com.lavaderosepulveda.app.repository.DeclaracionFiscalRepository;
+import com.lavaderosepulveda.app.fiscal.repository.DeclaracionFiscalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
