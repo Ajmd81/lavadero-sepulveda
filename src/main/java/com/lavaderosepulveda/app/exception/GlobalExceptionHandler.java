@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
@@ -66,6 +67,23 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.badRequest().body(error);
+    }
+
+    /**
+     * Rutas o recursos estáticos inexistentes (bots buscando /.env, /.git, /wp-admin...).
+     * Devuelve 404 y NO registra stacktrace para no saturar los logs de Railway.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
+        logger.debug("Recurso no encontrado: {}", ex.getResourcePath());
+
+        ErrorResponse error = new ErrorResponse(
+                "NO_ENCONTRADO",
+                "Recurso no encontrado",
+                "La ruta solicitada no existe"
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     /**
