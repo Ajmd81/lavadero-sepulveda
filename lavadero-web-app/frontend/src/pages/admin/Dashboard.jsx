@@ -79,10 +79,11 @@ const Dashboard = () => {
       ? facturas.data.content
       : []);
 
-  // Lee totalElements de la respuesta paginada; si no existe, cae en length de content
+  // Total de clientes: acepta el formato del endpoint paginado y el de /count
   const totalClientes =
-    clientes?.data?.totalElements ??
-    clientes?.data?.total ??
+    clientes?.data?.totalItems ??     // GET /api/clientes (paginado del backend)
+    clientes?.data?.total ??          // GET /api/clientes/count
+    clientes?.data?.totalElements ??  // Page de Spring sin envolver
     (Array.isArray(clientes?.data?.content) ? clientes.data.content.length : 0);
 
   const totalFacturas = facturasArray.length || 0;
