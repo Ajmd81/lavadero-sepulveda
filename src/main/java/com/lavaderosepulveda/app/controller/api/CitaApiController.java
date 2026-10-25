@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.api;
 
 import com.lavaderosepulveda.app.dto.CitaDTO;
 import com.lavaderosepulveda.app.mapper.CitaMapper;

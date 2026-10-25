@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.api;
 
 import com.lavaderosepulveda.app.service.ReminderSchedulerService;
 import org.springframework.beans.factory.annotation.Autowired;

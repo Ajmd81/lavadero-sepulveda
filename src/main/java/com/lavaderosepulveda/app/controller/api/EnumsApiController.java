@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.api;
 
 import com.lavaderosepulveda.app.model.enums.CategoriaGasto;
 import com.lavaderosepulveda.app.model.enums.MetodoPago;

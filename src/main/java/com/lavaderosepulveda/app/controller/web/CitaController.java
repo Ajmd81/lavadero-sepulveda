@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.web;
 
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.HorarioDiaSemana;
