@@ -1,8 +1,8 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.admin;
 
-import com.lavaderosepulveda.app.dto.AlbaranDTO;
+import com.lavaderosepulveda.app.dto.facturacion.AlbaranDTO;
 import com.lavaderosepulveda.app.model.Albaran;
-import com.lavaderosepulveda.app.service.AlbaranService;
+import com.lavaderosepulveda.app.service.facturacion.AlbaranService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

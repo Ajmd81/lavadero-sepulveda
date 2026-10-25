@@ -1,11 +1,9 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.cita;
 
 import com.lavaderosepulveda.app.config.HorariosConfig;
 import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.model.DiaCerrado;
 import com.lavaderosepulveda.app.model.HorarioDiaSemana;
 import com.lavaderosepulveda.app.model.enums.DiaSemana;
-import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.repository.CitaRepository;
 import com.lavaderosepulveda.app.repository.DiaCerradoRepository;

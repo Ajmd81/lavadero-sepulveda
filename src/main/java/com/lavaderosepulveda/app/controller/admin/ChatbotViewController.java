@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.admin;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.facturacion;
 
 import com.lavaderosepulveda.app.model.Factura;
 import com.lavaderosepulveda.app.model.LineaFactura;

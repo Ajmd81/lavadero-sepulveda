@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.admin;
 
 import com.lavaderosepulveda.app.model.DiaCerrado;
 import com.lavaderosepulveda.app.repository.DiaCerradoRepository;

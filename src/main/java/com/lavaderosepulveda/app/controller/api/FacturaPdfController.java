@@ -1,8 +1,8 @@
 package com.lavaderosepulveda.app.controller.api;
 
 import com.lavaderosepulveda.app.model.Factura;
-import com.lavaderosepulveda.app.service.FacturaPdfService;
-import com.lavaderosepulveda.app.service.FacturaService;
+import com.lavaderosepulveda.app.service.facturacion.FacturaPdfService;
+import com.lavaderosepulveda.app.service.facturacion.FacturaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

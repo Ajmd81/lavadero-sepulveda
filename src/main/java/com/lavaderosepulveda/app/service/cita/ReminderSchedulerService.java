@@ -1,5 +1,7 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.cita;
 
+
+import com.lavaderosepulveda.app.service.notification.EmailService;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.repository.CitaRepository;
 import org.slf4j.Logger;

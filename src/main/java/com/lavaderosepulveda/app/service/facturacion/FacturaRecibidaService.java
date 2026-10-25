@@ -1,6 +1,6 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.facturacion;
 
-import com.lavaderosepulveda.app.dto.FacturaRecibidaDTO;
+import com.lavaderosepulveda.app.dto.facturacion.FacturaRecibidaDTO;
 import com.lavaderosepulveda.app.model.*;
 import com.lavaderosepulveda.app.model.enums.*;
 import com.lavaderosepulveda.app.repository.FacturaRecibidaRepository;

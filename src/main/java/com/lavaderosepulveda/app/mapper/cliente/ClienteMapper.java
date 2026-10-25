@@ -1,6 +1,6 @@
-package com.lavaderosepulveda.app.mapper;
+package com.lavaderosepulveda.app.mapper.cliente;
 
-import com.lavaderosepulveda.app.dto.ClienteDTO;
+import com.lavaderosepulveda.app.dto.cliente.ClienteDTO;
 import com.lavaderosepulveda.app.model.Cliente;
 import org.springframework.stereotype.Component;
 

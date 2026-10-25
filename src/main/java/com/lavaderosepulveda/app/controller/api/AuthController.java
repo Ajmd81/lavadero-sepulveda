@@ -1,8 +1,8 @@
 package com.lavaderosepulveda.app.controller.api;
 
-import com.lavaderosepulveda.app.dto.LoginRequest;
-import com.lavaderosepulveda.app.dto.LoginResponse;
-import com.lavaderosepulveda.app.dto.UserDTO;
+import com.lavaderosepulveda.app.dto.auth.LoginRequest;
+import com.lavaderosepulveda.app.dto.auth.LoginResponse;
+import com.lavaderosepulveda.app.dto.auth.UserDTO;
 import com.lavaderosepulveda.app.model.Usuario;
 import com.lavaderosepulveda.app.repository.UsuarioRepository;
 import com.lavaderosepulveda.app.security.JwtService;

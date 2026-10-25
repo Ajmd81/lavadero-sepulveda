@@ -1,7 +1,7 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.facturacion;
 
-import com.lavaderosepulveda.app.dto.AlbaranDTO;
-import com.lavaderosepulveda.app.dto.LineaAlbaranDTO;
+import com.lavaderosepulveda.app.dto.facturacion.AlbaranDTO;
+import com.lavaderosepulveda.app.dto.facturacion.LineaAlbaranDTO;
 import com.lavaderosepulveda.app.model.Albaran;
 import com.lavaderosepulveda.app.model.Cliente;
 import com.lavaderosepulveda.app.model.LineaAlbaran;

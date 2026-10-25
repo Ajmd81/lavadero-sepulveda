@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.facturacion;
 
 import com.lavaderosepulveda.app.model.*;
 import com.lavaderosepulveda.app.model.enums.*;
@@ -8,7 +8,6 @@ import com.lavaderosepulveda.app.repository.FacturaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

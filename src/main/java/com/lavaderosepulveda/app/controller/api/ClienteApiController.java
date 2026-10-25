@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.controller.api;
 
-import com.lavaderosepulveda.app.dto.ClienteDTO;
-import com.lavaderosepulveda.app.service.ClienteService;
+import com.lavaderosepulveda.app.dto.cliente.ClienteDTO;
+import com.lavaderosepulveda.app.service.cliente.ClienteService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

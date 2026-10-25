@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.cita;
 
 import com.lavaderosepulveda.app.model.HorarioDiaSemana;
 import com.lavaderosepulveda.app.model.enums.DiaSemana;

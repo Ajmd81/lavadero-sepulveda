@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.cita;
 
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.model.VehicleCategory;

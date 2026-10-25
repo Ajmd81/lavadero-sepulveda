@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.controller.api;
 
-import com.lavaderosepulveda.app.dto.ProveedorDTO;
-import com.lavaderosepulveda.app.service.ProveedorService;
+import com.lavaderosepulveda.app.dto.facturacion.ProveedorDTO;
+import com.lavaderosepulveda.app.service.facturacion.ProveedorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

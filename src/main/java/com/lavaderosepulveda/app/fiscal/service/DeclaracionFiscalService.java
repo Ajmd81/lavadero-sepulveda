@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.app.fiscal.service;
 
-import com.lavaderosepulveda.app.dto.DeclaracionFiscalDTO;
+import com.lavaderosepulveda.app.fiscal.dto.DeclaracionFiscalDTO;
 import com.lavaderosepulveda.app.fiscal.model.DeclaracionFiscal;
 import com.lavaderosepulveda.app.model.enums.EstadoDeclaracion;
 import com.lavaderosepulveda.app.fiscal.repository.DeclaracionFiscalRepository;

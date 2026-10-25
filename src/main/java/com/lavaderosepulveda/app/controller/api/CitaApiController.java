@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.controller.api;
 
-import com.lavaderosepulveda.app.dto.CitaDTO;
-import com.lavaderosepulveda.app.mapper.CitaMapper;
+import com.lavaderosepulveda.app.dto.cita.CitaDTO;
+import com.lavaderosepulveda.app.mapper.cita.CitaMapper;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.HorarioDiaSemana;
 import com.lavaderosepulveda.app.model.enums.DiaSemana;
@@ -10,10 +10,10 @@ import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
 import com.lavaderosepulveda.app.repository.HorarioDiaSemanaRepository;
 import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
-import com.lavaderosepulveda.app.service.CitaService;
-import com.lavaderosepulveda.app.service.EmailService;
-import com.lavaderosepulveda.app.service.HorarioService;
-import com.lavaderosepulveda.app.service.HorarioDiaSemanaService;
+import com.lavaderosepulveda.app.service.cita.CitaService;
+import com.lavaderosepulveda.app.service.notification.EmailService;
+import com.lavaderosepulveda.app.service.cita.HorarioService;
+import com.lavaderosepulveda.app.service.cita.HorarioDiaSemanaService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

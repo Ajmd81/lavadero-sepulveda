@@ -1,6 +1,6 @@
-package com.lavaderosepulveda.app.mapper;
+package com.lavaderosepulveda.app.mapper.facturacion;
 
-import com.lavaderosepulveda.app.dto.GastoDTO;
+import com.lavaderosepulveda.app.dto.facturacion.GastoDTO;
 import com.lavaderosepulveda.app.model.Gasto;
 import com.lavaderosepulveda.app.model.enums.CategoriaGasto;
 import com.lavaderosepulveda.app.model.enums.MetodoPago;

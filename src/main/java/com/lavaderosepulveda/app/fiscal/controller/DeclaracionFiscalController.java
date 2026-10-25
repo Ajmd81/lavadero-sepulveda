@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.app.fiscal.controller;
 
-import com.lavaderosepulveda.app.dto.DeclaracionFiscalDTO;
+import com.lavaderosepulveda.app.fiscal.dto.DeclaracionFiscalDTO;
 import com.lavaderosepulveda.app.fiscal.service.DeclaracionFiscalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

@@ -1,6 +1,8 @@
-package com.lavaderosepulveda.app.service;
+package com.lavaderosepulveda.app.service.cita;
 
-import com.lavaderosepulveda.app.dto.ClienteEstadisticaDTO;
+
+import com.lavaderosepulveda.app.service.notification.EmailService;
+import com.lavaderosepulveda.app.dto.cliente.ClienteEstadisticaDTO;
 import com.lavaderosepulveda.app.model.Cita;
 import com.lavaderosepulveda.app.model.enums.EstadoCita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;

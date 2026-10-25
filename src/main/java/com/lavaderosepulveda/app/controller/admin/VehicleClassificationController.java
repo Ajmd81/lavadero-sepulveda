@@ -1,11 +1,11 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.admin;
 
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 import com.lavaderosepulveda.app.model.VehicleCategory;
 import com.lavaderosepulveda.app.model.VehicleModel;
 import com.lavaderosepulveda.app.repository.VehicleCategoryRepository;
 import com.lavaderosepulveda.app.repository.VehicleModelRepository;
-import com.lavaderosepulveda.app.service.VehicleClassificationService;
+import com.lavaderosepulveda.app.service.cita.VehicleClassificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

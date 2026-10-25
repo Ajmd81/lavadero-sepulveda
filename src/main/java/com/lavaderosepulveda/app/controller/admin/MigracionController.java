@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.controller;
+package com.lavaderosepulveda.app.controller.admin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
