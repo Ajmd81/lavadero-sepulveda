@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.dto;
+package com.lavaderosepulveda.app.dto.chatbot;
 
 import java.util.List;
 

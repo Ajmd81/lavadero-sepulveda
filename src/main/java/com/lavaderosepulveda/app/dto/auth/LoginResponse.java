@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.dto;
+package com.lavaderosepulveda.app.dto.auth;
 
 public class LoginResponse {
     private String token;

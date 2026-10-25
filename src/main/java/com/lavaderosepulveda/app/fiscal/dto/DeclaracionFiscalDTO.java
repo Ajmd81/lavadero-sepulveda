@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.dto;
+package com.lavaderosepulveda.app.fiscal.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 

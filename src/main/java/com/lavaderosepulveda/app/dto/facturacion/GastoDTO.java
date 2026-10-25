@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.dto;
+package com.lavaderosepulveda.app.dto.facturacion;
 
 import java.math.BigDecimal;
 

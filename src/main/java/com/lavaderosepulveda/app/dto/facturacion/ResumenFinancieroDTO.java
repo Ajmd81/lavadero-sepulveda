@@ -1,8 +1,7 @@
-package com.lavaderosepulveda.app.dto;
+package com.lavaderosepulveda.app.dto.facturacion;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 public class ResumenFinancieroDTO {
     

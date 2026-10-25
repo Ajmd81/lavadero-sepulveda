@@ -1,4 +1,4 @@
-package com.lavaderosepulveda.app.dto;
+package com.lavaderosepulveda.app.dto.cliente;
 
 public class ClienteDTO {
     private Long id;

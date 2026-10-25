@@ -1,10 +1,7 @@
-package com.lavaderosepulveda.app.dto;
+package com.lavaderosepulveda.app.dto.facturacion;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.lavaderosepulveda.app.model.enums.EstadoFactura;
-import com.lavaderosepulveda.app.model.enums.MetodoPago;
-import com.lavaderosepulveda.app.model.enums.TipoFactura;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
