@@ -1,25 +1,58 @@
 import { useQuery } from '@tanstack/react-query';
-import { Users, Calendar, FileText, Euro, AlertCircle } from 'lucide-react';
+import { Users, Calendar, FileText, Euro, AlertCircle, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import citaService from '../../services/citaService';
 import clienteService from '../../services/clienteService';
 import facturaService from '../../services/facturaService';
 
+// Traduce un error de axios/fetch a un mensaje entendible
+const describirError = (error) => {
+  if (!error) return 'Error desconocido';
+  const status = error.response?.status;
+  if (!error.response) return 'Sin conexión con el servidor';
+  if (status === 401 || status === 403) return 'Sesión caducada o sin permisos. Vuelve a iniciar sesión';
+  if (status === 404) return 'Servicio no encontrado (404)';
+  if (status === 429) return 'Demasiadas peticiones. Espera unos segundos';
+  if (status >= 500) return `Error interno del servidor (${status})`;
+  return `Error ${status}`;
+};
+
 const Dashboard = () => {
-  const { data: citas, isLoading: loadingCitas } = useQuery({
+  const citasQuery = useQuery({
     queryKey: ['citas-dashboard'],
     queryFn: () => citaService.getAll(),
   });
 
-  const { data: clientes } = useQuery({
+  const clientesQuery = useQuery({
     queryKey: ['clientes-dashboard'],
     queryFn: () => clienteService.getCount(),
   });
 
-  const { data: facturas } = useQuery({
+  const facturasQuery = useQuery({
     queryKey: ['facturas-dashboard'],
     queryFn: () => facturaService.getAll(0, 1000),
   });
+
+  const { data: citas, isLoading: loadingCitas } = citasQuery;
+  const { data: clientes } = clientesQuery;
+  const { data: facturas } = facturasQuery;
+
+  // ─── Estado de conexión para "Avisos Importantes" ───────────────────────
+  const servicios = [
+    { nombre: 'Citas', query: citasQuery },
+    { nombre: 'Clientes', query: clientesQuery },
+    { nombre: 'Facturas', query: facturasQuery },
+  ];
+
+  const fallos = servicios.filter(s => s.query.isError);
+  // Carga inicial (no los refrescos en segundo plano, para que el aviso no parpadee)
+  const cargandoInicial = servicios.some(s => s.query.isPending);
+  // Reintento en curso de algún servicio que había fallado
+  const reintentando = fallos.some(s => s.query.isFetching);
+
+  const reintentar = () => {
+    fallos.forEach(s => s.query.refetch());
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -188,14 +221,45 @@ const Dashboard = () => {
         <div className="p-6 border-b">
           <h2 className="text-xl font-bold text-gray-800">Avisos Importantes</h2>
         </div>
-        <div className="p-6">
-          <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-            <AlertCircle className="text-blue-600 flex-shrink-0 mt-1" size={20} />
-            <div>
-              <p className="font-semibold text-blue-900">Sistema funcionando correctamente</p>
-              <p className="text-sm text-blue-700">Todas las funcionalidades están operativas</p>
+        <div className="p-6 space-y-3">
+          {fallos.length > 0 ? (
+            <>
+              {fallos.map(({ nombre, query }) => (
+                <div key={nombre} className="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
+                  <AlertCircle className="text-red-600 flex-shrink-0 mt-1" size={20} />
+                  <div>
+                    <p className="font-semibold text-red-900">Fallo de conexión: {nombre}</p>
+                    <p className="text-sm text-red-700">{describirError(query.error)}</p>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={reintentar}
+                disabled={reintentando}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-60"
+              >
+                <RefreshCw size={16} className={reintentando ? 'animate-spin' : ''} />
+                {reintentando ? 'Reintentando...' : 'Reintentar'}
+              </button>
+            </>
+          ) : cargandoInicial ? (
+            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+              <Loader2 className="text-gray-500 flex-shrink-0 mt-1 animate-spin" size={20} />
+              <div>
+                <p className="font-semibold text-gray-800">Comprobando conexión...</p>
+                <p className="text-sm text-gray-600">Verificando el estado de los servicios</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
+              <CheckCircle className="text-green-600 flex-shrink-0 mt-1" size={20} />
+              <div>
+                <p className="font-semibold text-green-900">Todo funciona correctamente</p>
+                <p className="text-sm text-green-700">Citas, clientes y facturas conectados sin incidencias</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
