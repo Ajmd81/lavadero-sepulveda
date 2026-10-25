@@ -1,10 +1,13 @@
 package com.lavaderosepulveda.app.service.facturacion;
 
 import com.lavaderosepulveda.app.dto.facturacion.FacturaRecibidaDTO;
-import com.lavaderosepulveda.app.model.*;
+
 import com.lavaderosepulveda.app.model.enums.*;
-import com.lavaderosepulveda.app.repository.FacturaRecibidaRepository;
-import com.lavaderosepulveda.app.repository.ProveedorRepository;
+
+import com.lavaderosepulveda.app.repository.facturacion.FacturaRecibidaRepository;
+import com.lavaderosepulveda.app.repository.facturacion.ProveedorRepository;
+import com.lavaderosepulveda.app.model.facturacion.FacturaRecibida;
+import com.lavaderosepulveda.app.model.facturacion.Proveedor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

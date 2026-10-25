@@ -1,7 +1,8 @@
 package com.lavaderosepulveda.app.mapper.facturacion;
 
 import com.lavaderosepulveda.app.dto.facturacion.ProveedorDTO;
-import com.lavaderosepulveda.app.model.Proveedor;
+
+import com.lavaderosepulveda.app.model.facturacion.Proveedor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

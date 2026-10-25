@@ -1,6 +1,7 @@
 package com.lavaderosepulveda.app.fiscal.model;
 
 import com.lavaderosepulveda.app.model.enums.EstadoDeclaracion;
+
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;

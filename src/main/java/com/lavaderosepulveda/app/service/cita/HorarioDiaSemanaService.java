@@ -1,8 +1,9 @@
 package com.lavaderosepulveda.app.service.cita;
 
-import com.lavaderosepulveda.app.model.HorarioDiaSemana;
+import com.lavaderosepulveda.app.model.cita.HorarioDiaSemana;
 import com.lavaderosepulveda.app.model.enums.DiaSemana;
-import com.lavaderosepulveda.app.repository.HorarioDiaSemanaRepository;
+
+import com.lavaderosepulveda.app.repository.cita.HorarioDiaSemanaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

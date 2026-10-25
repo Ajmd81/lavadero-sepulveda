@@ -1,10 +1,14 @@
 package com.lavaderosepulveda.app.service.facturacion;
 
-import com.lavaderosepulveda.app.model.*;
 import com.lavaderosepulveda.app.model.enums.*;
-import com.lavaderosepulveda.app.repository.CitaRepository;
-import com.lavaderosepulveda.app.repository.ClienteRepository;
-import com.lavaderosepulveda.app.repository.FacturaRepository;
+
+import com.lavaderosepulveda.app.repository.cita.CitaRepository;
+import com.lavaderosepulveda.app.repository.cliente.ClienteRepository;
+import com.lavaderosepulveda.app.repository.facturacion.FacturaRepository;
+import com.lavaderosepulveda.app.model.cita.Cita;
+import com.lavaderosepulveda.app.model.cliente.Cliente;
+import com.lavaderosepulveda.app.model.facturacion.Factura;
+import com.lavaderosepulveda.app.model.facturacion.LineaFactura;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,7 +1,8 @@
 package com.lavaderosepulveda.app.mapper.cliente;
 
 import com.lavaderosepulveda.app.dto.cliente.ClienteDTO;
-import com.lavaderosepulveda.app.model.Cliente;
+
+import com.lavaderosepulveda.app.model.cliente.Cliente;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

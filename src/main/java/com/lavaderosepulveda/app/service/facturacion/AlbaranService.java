@@ -1,12 +1,14 @@
 package com.lavaderosepulveda.app.service.facturacion;
 
 import com.lavaderosepulveda.app.dto.facturacion.AlbaranDTO;
+
 import com.lavaderosepulveda.app.dto.facturacion.LineaAlbaranDTO;
-import com.lavaderosepulveda.app.model.Albaran;
-import com.lavaderosepulveda.app.model.Cliente;
-import com.lavaderosepulveda.app.model.LineaAlbaran;
-import com.lavaderosepulveda.app.repository.AlbaranRepository;
-import com.lavaderosepulveda.app.repository.ClienteRepository;
+
+import com.lavaderosepulveda.app.model.facturacion.Albaran;
+import com.lavaderosepulveda.app.model.cliente.Cliente;
+import com.lavaderosepulveda.app.model.facturacion.LineaAlbaran;
+import com.lavaderosepulveda.app.repository.facturacion.AlbaranRepository;
+import com.lavaderosepulveda.app.repository.cliente.ClienteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

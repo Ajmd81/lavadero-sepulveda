@@ -1,12 +1,16 @@
 package com.lavaderosepulveda.app.controller.admin;
 
 import com.lavaderosepulveda.app.dto.cliente.ClienteEstadisticaDTO;
-import com.lavaderosepulveda.app.model.Cita;
+
+import com.lavaderosepulveda.app.model.cita.Cita;
 import com.lavaderosepulveda.app.model.enums.EstadoCita;
-import com.lavaderosepulveda.app.model.VehicleModel;
-import com.lavaderosepulveda.app.repository.VehicleModelRepository;
+
+import com.lavaderosepulveda.app.model.cita.VehicleModel;
+import com.lavaderosepulveda.app.repository.cita.VehicleModelRepository;
 import com.lavaderosepulveda.app.service.cita.CitaService;
+
 import com.lavaderosepulveda.app.service.notification.EmailService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

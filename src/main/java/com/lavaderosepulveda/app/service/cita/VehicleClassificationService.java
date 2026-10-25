@@ -1,10 +1,11 @@
 package com.lavaderosepulveda.app.service.cita;
 
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
-import com.lavaderosepulveda.app.model.VehicleCategory;
-import com.lavaderosepulveda.app.model.VehicleModel;
-import com.lavaderosepulveda.app.repository.VehicleCategoryRepository;
-import com.lavaderosepulveda.app.repository.VehicleModelRepository;
+
+import com.lavaderosepulveda.app.model.cita.VehicleCategory;
+import com.lavaderosepulveda.app.model.cita.VehicleModel;
+import com.lavaderosepulveda.app.repository.cita.VehicleCategoryRepository;
+import com.lavaderosepulveda.app.repository.cita.VehicleModelRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;

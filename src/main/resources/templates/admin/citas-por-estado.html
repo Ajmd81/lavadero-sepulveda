@@ -44,7 +44,7 @@
                         <h5 class="card-title">Filtrar por Estado</h5>
                         <div class="d-flex gap-2">
                             <a href="/admin/citas-por-estado" class="btn btn-outline-primary">Todos</a>
-                            <a th:each="estado : ${T(com.lavaderosepulveda.app.model.EstadoCita).values()}"
+                            <a th:each="estado : ${T(com.lavaderosepulveda.app.model.enums.EstadoCita).values()}"
                                 th:href="@{/admin/citas-por-estado(estado=${estado})}" th:class="${'btn ' + (estado.name() == 'PENDIENTE' ? 'btn-warning' :
                                                 estado.name() == 'CONFIRMADA' ? 'btn-primary' :
                                                 estado.name() == 'COMPLETADA' ? 'btn-success' :
@@ -134,7 +134,7 @@
                                                         <label for="estado" class="form-label">Nuevo Estado:</label>
                                                         <select class="form-select" id="estado" name="estado" required>
                                                             <option
-                                                                th:each="estadoOpt : ${T(com.lavaderosepulveda.app.model.EstadoCita).values()}"
+                                                                th:each="estadoOpt : ${T(com.lavaderosepulveda.app.model.enums.EstadoCita).values()}"
                                                                 th:value="${estadoOpt}"
                                                                 th:text="${estadoOpt.descripcion}"
                                                                 th:selected="${estadoOpt == cita.estado}">

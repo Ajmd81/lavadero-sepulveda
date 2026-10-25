@@ -1,8 +1,9 @@
 package com.lavaderosepulveda.app.service.facturacion;
 
-import com.lavaderosepulveda.app.model.ConfiguracionHorario;
+import com.lavaderosepulveda.app.model.cita.ConfiguracionHorario;
 import com.lavaderosepulveda.app.model.enums.ModoHorario;
-import com.lavaderosepulveda.app.repository.ConfiguracionHorarioRepository;
+
+import com.lavaderosepulveda.app.repository.cita.ConfiguracionHorarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

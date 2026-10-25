@@ -1,6 +1,6 @@
 package com.lavaderosepulveda.app.security;
 
-import com.lavaderosepulveda.app.repository.UsuarioRepository;
+import com.lavaderosepulveda.app.repository.auth.UsuarioRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,11 +1,11 @@
 package com.lavaderosepulveda.app.config;
 
-import com.lavaderosepulveda.app.model.Usuario;
-import com.lavaderosepulveda.app.repository.UsuarioRepository;
-import com.lavaderosepulveda.app.model.VehicleCategory;
-import com.lavaderosepulveda.app.model.VehicleModel;
-import com.lavaderosepulveda.app.repository.VehicleCategoryRepository;
-import com.lavaderosepulveda.app.repository.VehicleModelRepository;
+import com.lavaderosepulveda.app.model.auth.Usuario;
+import com.lavaderosepulveda.app.repository.auth.UsuarioRepository;
+import com.lavaderosepulveda.app.model.cita.VehicleCategory;
+import com.lavaderosepulveda.app.model.cita.VehicleModel;
+import com.lavaderosepulveda.app.repository.cita.VehicleCategoryRepository;
+import com.lavaderosepulveda.app.repository.cita.VehicleModelRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

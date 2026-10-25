@@ -1,16 +1,21 @@
 package com.lavaderosepulveda.app.controller.web;
 
-import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.model.HorarioDiaSemana;
+import com.lavaderosepulveda.app.model.cita.Cita;
+import com.lavaderosepulveda.app.model.cita.HorarioDiaSemana;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
-import com.lavaderosepulveda.app.model.VehicleModel;
-import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
-import com.lavaderosepulveda.app.repository.HorarioDiaSemanaRepository;
-import com.lavaderosepulveda.app.repository.VehicleModelRepository;
+
+import com.lavaderosepulveda.app.model.cita.VehicleModel;
+import com.lavaderosepulveda.app.repository.cita.DiaCerradoRepository;
+import com.lavaderosepulveda.app.repository.cita.HorarioDiaSemanaRepository;
+import com.lavaderosepulveda.app.repository.cita.VehicleModelRepository;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
+
 import com.lavaderosepulveda.app.service.cita.CitaService;
+
 import com.lavaderosepulveda.app.service.cita.HorarioService;
+
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;

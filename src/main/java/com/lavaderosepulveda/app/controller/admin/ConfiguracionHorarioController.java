@@ -1,7 +1,8 @@
 package com.lavaderosepulveda.app.controller.admin;
 
-import com.lavaderosepulveda.app.model.ConfiguracionHorario;
+import com.lavaderosepulveda.app.model.cita.ConfiguracionHorario;
 import com.lavaderosepulveda.app.service.facturacion.ConfiguracionHorarioService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

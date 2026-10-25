@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.controller.admin;
 
-import com.lavaderosepulveda.app.model.PlantillaFacturaConfig;
-import com.lavaderosepulveda.app.repository.PlantillaFacturaConfigRepository;
+import com.lavaderosepulveda.app.model.facturacion.PlantillaFacturaConfig;
+import com.lavaderosepulveda.app.repository.facturacion.PlantillaFacturaConfigRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

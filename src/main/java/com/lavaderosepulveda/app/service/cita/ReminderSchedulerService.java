@@ -2,8 +2,9 @@ package com.lavaderosepulveda.app.service.cita;
 
 
 import com.lavaderosepulveda.app.service.notification.EmailService;
-import com.lavaderosepulveda.app.model.Cita;
-import com.lavaderosepulveda.app.repository.CitaRepository;
+
+import com.lavaderosepulveda.app.model.cita.Cita;
+import com.lavaderosepulveda.app.repository.cita.CitaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

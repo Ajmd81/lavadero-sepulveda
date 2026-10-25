@@ -1,7 +1,7 @@
 package com.lavaderosepulveda.app.controller.admin;
 
-import com.lavaderosepulveda.app.model.DiaCerrado;
-import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
+import com.lavaderosepulveda.app.model.cita.DiaCerrado;
+import com.lavaderosepulveda.app.repository.cita.DiaCerradoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;

@@ -1,9 +1,11 @@
 package com.lavaderosepulveda.app.service.notification;
 
-import com.lavaderosepulveda.app.model.Cita;
+import com.lavaderosepulveda.app.model.cita.Cita;
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
-import com.lavaderosepulveda.app.repository.CitaRepository;
+
+import com.lavaderosepulveda.app.repository.cita.CitaRepository;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;

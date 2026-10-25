@@ -1,12 +1,17 @@
 package com.lavaderosepulveda.app.mapper.facturacion;
 
 import com.lavaderosepulveda.app.dto.facturacion.FacturaRecibidaDTO;
-import com.lavaderosepulveda.app.model.FacturaRecibida;
-import com.lavaderosepulveda.app.model.Proveedor;
+
+import com.lavaderosepulveda.app.model.facturacion.FacturaRecibida;
+import com.lavaderosepulveda.app.model.facturacion.Proveedor;
 import com.lavaderosepulveda.app.model.enums.CategoriaGasto;
+
 import com.lavaderosepulveda.app.model.enums.EstadoFactura;
+
 import com.lavaderosepulveda.app.model.enums.MetodoPago;
+
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
+
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

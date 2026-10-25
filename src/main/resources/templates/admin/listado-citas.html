@@ -285,7 +285,7 @@
                                                     <label class="form-label">Nuevo Estado:</label>
                                                     <select class="form-select" name="estado" required>
                                                         <option
-                                                            th:each="estadoOpt : ${T(com.lavaderosepulveda.app.model.EstadoCita).values()}"
+                                                            th:each="estadoOpt : ${T(com.lavaderosepulveda.app.model.enums.EstadoCita).values()}"
                                                             th:value="${estadoOpt}" th:text="${estadoOpt.descripcion}"
                                                             th:selected="${estadoOpt == cita.estado}">
                                                         </option>

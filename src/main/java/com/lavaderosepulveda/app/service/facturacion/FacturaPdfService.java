@@ -1,10 +1,11 @@
 package com.lavaderosepulveda.app.service.facturacion;
 
-import com.lavaderosepulveda.app.model.Factura;
-import com.lavaderosepulveda.app.model.LineaFactura;
+import com.lavaderosepulveda.app.model.facturacion.Factura;
+import com.lavaderosepulveda.app.model.facturacion.LineaFactura;
 import com.lavaderosepulveda.app.model.enums.MetodoPago;
-import com.lavaderosepulveda.app.model.PlantillaFacturaConfig;
-import com.lavaderosepulveda.app.repository.PlantillaFacturaConfigRepository;
+
+import com.lavaderosepulveda.app.model.facturacion.PlantillaFacturaConfig;
+import com.lavaderosepulveda.app.repository.facturacion.PlantillaFacturaConfigRepository;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
 import org.slf4j.Logger;

@@ -1,7 +1,9 @@
 package com.lavaderosepulveda.app.fiscal.repository;
 
 import com.lavaderosepulveda.app.fiscal.model.DeclaracionFiscal;
+
 import com.lavaderosepulveda.app.model.enums.EstadoDeclaracion;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

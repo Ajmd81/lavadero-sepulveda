@@ -1,11 +1,13 @@
 package com.lavaderosepulveda.app.service.cliente;
 
 import com.lavaderosepulveda.app.dto.cliente.ClienteDTO;
-import com.lavaderosepulveda.app.model.Cliente;
-import com.lavaderosepulveda.app.model.Cita;
+
+import com.lavaderosepulveda.app.model.cliente.Cliente;
+import com.lavaderosepulveda.app.model.cita.Cita;
 import com.lavaderosepulveda.app.model.enums.EstadoCita;
-import com.lavaderosepulveda.app.repository.ClienteRepository;
-import com.lavaderosepulveda.app.repository.CitaRepository;
+
+import com.lavaderosepulveda.app.repository.cliente.ClienteRepository;
+import com.lavaderosepulveda.app.repository.cita.CitaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

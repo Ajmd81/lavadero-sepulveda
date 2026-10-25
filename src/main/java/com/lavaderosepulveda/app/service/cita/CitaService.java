@@ -2,13 +2,18 @@ package com.lavaderosepulveda.app.service.cita;
 
 
 import com.lavaderosepulveda.app.service.notification.EmailService;
+
 import com.lavaderosepulveda.app.dto.cliente.ClienteEstadisticaDTO;
-import com.lavaderosepulveda.app.model.Cita;
+
+import com.lavaderosepulveda.app.model.cita.Cita;
 import com.lavaderosepulveda.app.model.enums.EstadoCita;
+
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
-import com.lavaderosepulveda.app.repository.CitaRepository;
+
+import com.lavaderosepulveda.app.repository.cita.CitaRepository;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
-import com.lavaderosepulveda.app.repository.DiaCerradoRepository;
+
+import com.lavaderosepulveda.app.repository.cita.DiaCerradoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
