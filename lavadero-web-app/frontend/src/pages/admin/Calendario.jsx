@@ -41,7 +41,9 @@ function getDiasDelMes(fecha) {
     dias.push({ fecha: new Date(year, month, -i + 1), esDelMesActual: false });
   for (let i = 1; i <= ultimoDia.getDate(); i++)
     dias.push({ fecha: new Date(year, month, i), esDelMesActual: true });
-  const restantes = 42 - dias.length;
+  // Completar solo la última semana (antes se rellenaba siempre hasta 6 semanas = 42 casillas,
+  // dejando a menudo una fila entera vacía del mes siguiente)
+  const restantes = (7 - (dias.length % 7)) % 7;
   for (let i = 1; i <= restantes; i++)
     dias.push({ fecha: new Date(year, month + 1, i), esDelMesActual: false });
   return dias;
@@ -211,7 +213,7 @@ const Calendario = () => {
   const hoy = new Date();
 
   return (
-    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-4 lg:h-[calc(100vh-3rem)] lg:min-h-[40rem] lg:flex lg:flex-col">
+    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-4 lg:-m-6 lg:h-[calc(100vh-0rem)] lg:min-h-[40rem] lg:flex lg:flex-col">
 
       {/* ── Cabecera ── */}
       <div className="flex items-center gap-3 mb-4">
@@ -275,7 +277,11 @@ const Calendario = () => {
 
               {/* Celdas */}
               {/* En escritorio las 6 semanas se reparten todo el alto disponible */}
-              <div className="grid grid-cols-7 gap-2 lg:flex-1 lg:min-h-0 lg:grid-rows-6">
+              {/* Tantas filas como semanas tenga el mes (4, 5 o 6), repartiendo todo el alto */}
+              <div
+                className="grid grid-cols-7 gap-2 lg:flex-1 lg:min-h-0 lg:[grid-template-rows:var(--filas-semanas)]"
+                style={{ '--filas-semanas': `repeat(${semanas.length}, minmax(0, 1fr))` }}
+              >
                 {semanas.map((semana, si) =>
                   semana.map((dia, di) => {
                     const diaNum   = dia.fecha.getDate();
