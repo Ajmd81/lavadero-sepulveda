@@ -23,7 +23,7 @@ const Citas = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(10);
 
   const [horariosDisponibles, setHorariosDisponibles] = useState([]);
   const [horariosPortDia, setHorariosPortDia] = useState({});
