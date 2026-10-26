@@ -532,7 +532,7 @@ const Calendario = () => {
               ) : citasSeleccionadas.length === 0 ? (
                 <p className="text-sepulveda-silver/60 text-center py-4">No hay citas para este día</p>
               ) : (
-                <div className="space-y-3 overflow-y-auto pr-1 max-h-96 lg:max-h-none lg:flex-1 lg:min-h-0">
+                <div className="space-y-3 overflow-y-auto overflow-x-hidden pr-1 max-h-96 lg:max-h-none lg:flex-1 lg:min-h-0">
                   {[...citasSeleccionadas]
                     .sort((a, b) => {
                       const ha = a.hora ? a.hora.substring(0, 5) : '00:00';
@@ -551,7 +551,16 @@ const Calendario = () => {
                         </div>
                         <div className="text-sm font-semibold text-sepulveda-silver-light">{cita.nombre}</div>
                         <div className="text-xs text-sepulveda-silver">{cita.modeloVehiculo}</div>
-                        <div className="text-xs text-sepulveda-silver/70 mt-1">{cita.tipoLavado}</div>
+                        {/* Guiones bajos → espacios para que el texto pueda partirse y no se salga del panel */}
+                        <div className="text-xs text-sepulveda-silver/70 mt-1 break-words">
+                          {(cita.tipoLavado || '').replace(/_/g, ' ')}
+                        </div>
+                        {cita.observaciones?.trim() && (
+                          <div className="mt-2 px-2 py-1.5 rounded bg-sepulveda-carbon/70 border-l-2 border-amber-400 text-xs text-sepulveda-silver-light whitespace-pre-line break-words">
+                            <span className="font-semibold text-amber-300">📝 Observaciones: </span>
+                            {cita.observaciones.trim()}
+                          </div>
+                        )}
                         <div className="text-xs mt-2">
                           <span className={`px-2 py-1 rounded font-semibold ${
                             cita.estado === 'CONFIRMADA'  ? 'bg-green-900/60 text-green-300' :
