@@ -170,7 +170,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6" style={{ marginBottom: '40px' }}>
+      <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-3">
           <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img src="/assets/icons/panel.png" alt="Dashboard" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -179,12 +179,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <div
             key={index}
-            className={`bg-white rounded-lg shadow p-6 ${stat.label === 'Próximas Citas' ? 'pt-12' : ''} ${stat.label === 'Facturación Mes' ? 'pb-12' : ''}`}
-            style={stat.label === 'Facturación Mes' ? { marginBottom: '40px' } : {}}
+            className="bg-white rounded-lg shadow p-6"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -235,7 +234,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow" style={{ marginTop: '30px' }}>
+      <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b">
           <h2 className="text-xl font-bold text-gray-800">Avisos Importantes</h2>
         </div>
