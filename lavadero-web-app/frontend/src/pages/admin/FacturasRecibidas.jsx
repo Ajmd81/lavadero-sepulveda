@@ -1,136 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import facturaRecibidaService from '../../services/facturaRecibidaService';
 import proveedorService from '../../services/proveedorService';
+import ProveedorFormModal from '../../components/ProveedorFormModal';
 import enumsService from '../../services/enumsService';
 import * as XLSX from 'xlsx';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Alta rápida de proveedor desde la factura (pantalla completa)
-// Solo el nombre es obligatorio. Al guardar, el proveedor creado se devuelve a
-// la factura para dejarlo seleccionado.
-// ─────────────────────────────────────────────────────────────────────────────
-const PROVEEDOR_VACIO = {
-  nombre: '',
-  nif: '',
-  telefono: '',
-  email: '',
-  contacto: '',
-  direccion: '',
-};
-
-const ProveedorRapidoModal = ({ onClose, onCreado }) => {
-  const [datos, setDatos] = useState(PROVEEDOR_VACIO);
-  const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setDatos(prev => ({ ...prev, [name]: value }));
-  };
-
-  const guardar = async (e) => {
-    e.preventDefault();
-    if (!datos.nombre.trim()) {
-      setError('El nombre es obligatorio');
-      return;
-    }
-    setGuardando(true);
-    setError('');
-    try {
-      const payload = Object.fromEntries(
-        Object.entries(datos).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])
-      );
-      payload.nif = payload.nif.toUpperCase();
-      const response = await proveedorService.create({ ...payload, activo: true });
-      onCreado(response.data);
-    } catch (err) {
-      setError(
-        err.response?.data?.error ||
-        err.response?.data?.mensaje ||
-        err.response?.data?.message ||
-        'No se pudo crear el proveedor: ' + err.message
-      );
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  const input = 'w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500';
-  const label = 'block text-base font-semibold text-gray-700 mb-2';
-
-  return (
-    <div className="fixed inset-0 z-[60] bg-white flex flex-col" role="dialog" aria-modal="true">
-      <div className="shrink-0 flex items-center justify-between px-10 py-6 border-b border-gray-200 bg-linear-to-r from-orange-50 to-orange-100">
-        <h3 className="text-3xl font-bold text-gray-900">Nuevo Proveedor</h3>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Cerrar"
-          className="text-gray-500 hover:text-gray-900 text-3xl leading-none px-2"
-        >
-          ✕
-        </button>
-      </div>
-
-      <form onSubmit={guardar} className="flex-1 min-h-0 flex flex-col">
-        <div className="flex-1 min-h-0 overflow-y-auto px-10 py-8 space-y-8">
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-300 text-red-800 rounded-lg">{error}</div>
-          )}
-
-          <div>
-            <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-orange-300">
-              Datos del proveedor
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className={label}>Nombre o razón social*</label>
-                <input name="nombre" value={datos.nombre} onChange={handleChange} className={input} required autoFocus />
-              </div>
-              <div>
-                <label className={label}>NIF / CIF</label>
-                <input name="nif" value={datos.nif} onChange={handleChange} className={input} placeholder="B12345678" />
-              </div>
-              <div>
-                <label className={label}>Teléfono</label>
-                <input type="tel" name="telefono" value={datos.telefono} onChange={handleChange} className={input} />
-              </div>
-              <div>
-                <label className={label}>Email</label>
-                <input type="email" name="email" value={datos.email} onChange={handleChange} className={input} />
-              </div>
-              <div>
-                <label className={label}>Persona de contacto</label>
-                <input name="contacto" value={datos.contacto} onChange={handleChange} className={input} />
-              </div>
-              <div>
-                <label className={label}>Dirección</label>
-                <input name="direccion" value={datos.direccion} onChange={handleChange} className={input} placeholder="Calle, número, CP, ciudad" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="shrink-0 px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={guardando}
-            className="px-6 py-3 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-base font-semibold rounded-lg transition-colors shadow-md"
-          >
-            {guardando ? 'Guardando...' : 'Crear y seleccionar'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-};
 
 const FacturasRecibidas = () => {
   const [facturas, setFacturas] = useState([]);
@@ -1233,9 +1106,12 @@ const FacturasRecibidas = () => {
 
       {/* Alta rápida de proveedor (por encima del modal de factura) */}
       {modalProveedorAbierto && (
-        <ProveedorRapidoModal
+        <ProveedorFormModal
+          proveedor={null}
+          zIndex="z-[60]"
+          textoGuardar="Crear y seleccionar"
           onClose={() => setModalProveedorAbierto(false)}
-          onCreado={handleProveedorCreado}
+          onSaved={handleProveedorCreado}
         />
       )}
     </div>

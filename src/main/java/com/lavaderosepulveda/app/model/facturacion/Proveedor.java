@@ -19,6 +19,12 @@ public class Proveedor {
 
     private String direccion;
 
+    @Column(length = 100)
+    private String ciudad;
+
+    @Column(name = "codigo_postal", length = 10)
+    private String codigoPostal;
+
     private String telefono;
 
     private String email;
@@ -29,6 +35,12 @@ public class Proveedor {
     private String iban; // Cuenta bancaria
 
     private String notas;
+
+    @Column(length = 50)
+    private String categoria; // Suministros, Servicios, Mantenimiento, Equipamiento
+
+    @Column(name = "forma_pago", length = 30)
+    private String formaPago; // TRANSFERENCIA, CHEQUE, EFECTIVO, TARJETA
 
     private Boolean activo = true;
 
@@ -69,6 +81,12 @@ public class Proveedor {
     public String getDireccion() { return direccion; }
     public void setDireccion(String direccion) { this.direccion = direccion; }
 
+    public String getCiudad() { return ciudad; }
+    public void setCiudad(String ciudad) { this.ciudad = ciudad; }
+
+    public String getCodigoPostal() { return codigoPostal; }
+    public void setCodigoPostal(String codigoPostal) { this.codigoPostal = codigoPostal; }
+
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
 
@@ -83,6 +101,12 @@ public class Proveedor {
 
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
+
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
+
+    public String getFormaPago() { return formaPago; }
+    public void setFormaPago(String formaPago) { this.formaPago = formaPago; }
 
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }

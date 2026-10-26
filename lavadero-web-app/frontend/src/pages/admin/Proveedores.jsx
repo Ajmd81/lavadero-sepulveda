@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Plus, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import proveedorService from '../../services/proveedorService';
+import ProveedorFormModal from '../../components/ProveedorFormModal';
 import * as XLSX from 'xlsx';
 
 const Proveedores = () => {
@@ -73,6 +74,10 @@ const Proveedores = () => {
             nombre: row.nombre || '',
             nif: row.nif || '',
             direccion: row.direccion || '',
+            ciudad: row.ciudad || '',
+            codigoPostal: row.codigoPostal ? String(row.codigoPostal) : '',
+            categoria: row.categoria || '',
+            formaPago: row.formaPago || 'TRANSFERENCIA',
             telefono: row.telefono ? String(row.telefono) : '',
             email: row.email || '',
             contacto: row.contacto || '',
@@ -322,221 +327,16 @@ const Proveedores = () => {
 
       {/* Modal para crear/editar */}
       {showModal && (
-        <ProveedorModal
+        <ProveedorFormModal
           proveedor={selectedProveedor}
           onClose={() => setShowModal(false)}
-          onSuccess={() => {
+          onSaved={() => {
+            alert(selectedProveedor ? 'Proveedor actualizado correctamente' : 'Proveedor creado correctamente');
             queryClient.invalidateQueries(['proveedores']);
             setShowModal(false);
           }}
         />
       )}
-    </div>
-  );
-};
-
-const ProveedorModal = ({ proveedor, onClose, onSuccess }) => {
-  const [formData, setFormData] = useState(proveedor || {
-    nombre: '',
-    nif: '',
-    telefono: '',
-    email: '',
-    direccion: '',
-    ciudad: '',
-    codigoPostal: '',
-    contacto: '',
-    categoria: '',
-    formaPago: 'TRANSFERENCIA',
-    activo: true,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (data) => proveedorService.create(data),
-    onSuccess: () => {
-      alert('Proveedor creado correctamente');
-      onSuccess();
-    },
-    onError: (err) => alert(`Error: ${err.message}`),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (data) => proveedorService.update(proveedor.id, data),
-    onSuccess: () => {
-      alert('Proveedor actualizado correctamente');
-      onSuccess();
-    },
-    onError: (err) => alert(`Error: ${err.message}`),
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.nombre || !formData.email) {
-      alert('Nombre y email son obligatorios');
-      return;
-    }
-    if (proveedor) {
-      updateMutation.mutate(formData);
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
-      <div className="bg-white w-full h-full overflow-y-auto flex flex-col">
-        <div className="sticky top-0 z-10 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {proveedor ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="text-gray-500 hover:text-gray-900 text-2xl leading-none px-2"
-          >
-            ✕
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-1">Nombre*</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-                placeholder="Nombre proveedor"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">NIF/CIF</label>
-              <input
-                type="text"
-                value={formData.nif}
-                onChange={(e) => setFormData({ ...formData, nif: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-                placeholder="NIF/CIF"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Email*</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-                placeholder="email@ejemplo.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Teléfono</label>
-              <input
-                type="tel"
-                value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-                placeholder="600000000"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Contacto</label>
-              <input
-                type="text"
-                value={formData.contacto}
-                onChange={(e) => setFormData({ ...formData, contacto: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-                placeholder="Nombre contacto"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Categoría</label>
-              <select
-                value={formData.categoria}
-                onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-              >
-                <option value="">Seleccionar categoría</option>
-                <option value="Suministros">Suministros</option>
-                <option value="Servicios">Servicios</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="Equipamiento">Equipamiento</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Dirección</label>
-              <input
-                type="text"
-                value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-                placeholder="Dirección"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Ciudad</label>
-              <input
-                type="text"
-                value={formData.ciudad}
-                onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-                placeholder="Ciudad"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Código Postal</label>
-              <input
-                type="text"
-                value={formData.codigoPostal}
-                onChange={(e) => setFormData({ ...formData, codigoPostal: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-                placeholder="CP"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">Forma de Pago</label>
-              <select
-                value={formData.formaPago}
-                onChange={(e) => setFormData({ ...formData, formaPago: e.target.value })}
-                className="w-full border rounded px-3 py-2 text-sm"
-              >
-                <option value="TRANSFERENCIA">Transferencia</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="EFECTIVO">Efectivo</option>
-                <option value="TARJETA">Tarjeta</option>
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.activo}
-                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm font-semibold">Activo</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="mt-auto sticky bottom-0 bg-white flex justify-end gap-2 py-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border rounded font-semibold hover:bg-gray-100"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
-            >
-              {proveedor ? 'Actualizar' : 'Crear'}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 };

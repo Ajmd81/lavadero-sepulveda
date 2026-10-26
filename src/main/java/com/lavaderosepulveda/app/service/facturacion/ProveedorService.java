@@ -56,13 +56,16 @@ public class ProveedorService {
     }
 
     public ProveedorDTO crear(ProveedorDTO dto) {
+        validar(dto);
         Proveedor proveedor = new Proveedor();
         actualizarDesdeDTO(proveedor, dto);
-        proveedor.setActivo(true);
+        // Respeta el check "Activo" del formulario; por defecto, activo
+        proveedor.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
         return toDTO(proveedorRepository.save(proveedor));
     }
 
     public ProveedorDTO actualizar(Long id, ProveedorDTO dto) {
+        validar(dto);
         Proveedor proveedor = proveedorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Proveedor no encontrado"));
         actualizarDesdeDTO(proveedor, dto);
@@ -87,15 +90,26 @@ public class ProveedorService {
         proveedorRepository.deleteById(id);
     }
 
+    /** El nombre es el único dato imprescindible para poder facturar */
+    private void validar(ProveedorDTO dto) {
+        if (dto == null || dto.getNombre() == null || dto.getNombre().isBlank()) {
+            throw new IllegalArgumentException("El nombre del proveedor es obligatorio");
+        }
+    }
+
     private void actualizarDesdeDTO(Proveedor proveedor, ProveedorDTO dto) {
-        proveedor.setNombre(dto.getNombre());
-        proveedor.setNif(dto.getNif());
+        proveedor.setNombre(dto.getNombre().trim());
+        proveedor.setNif(dto.getNif() != null ? dto.getNif().trim().toUpperCase() : null);
         proveedor.setDireccion(dto.getDireccion());
+        proveedor.setCiudad(dto.getCiudad());
+        proveedor.setCodigoPostal(dto.getCodigoPostal());
         proveedor.setTelefono(dto.getTelefono());
         proveedor.setEmail(dto.getEmail());
         proveedor.setContacto(dto.getContacto());
         proveedor.setIban(dto.getIban());
         proveedor.setNotas(dto.getNotas());
+        proveedor.setCategoria(dto.getCategoria());
+        proveedor.setFormaPago(dto.getFormaPago());
         if (dto.getActivo() != null) {
             proveedor.setActivo(dto.getActivo());
         }
@@ -107,11 +121,15 @@ public class ProveedorService {
         dto.setNombre(proveedor.getNombre());
         dto.setNif(proveedor.getNif());
         dto.setDireccion(proveedor.getDireccion());
+        dto.setCiudad(proveedor.getCiudad());
+        dto.setCodigoPostal(proveedor.getCodigoPostal());
         dto.setTelefono(proveedor.getTelefono());
         dto.setEmail(proveedor.getEmail());
         dto.setContacto(proveedor.getContacto());
         dto.setIban(proveedor.getIban());
         dto.setNotas(proveedor.getNotas());
+        dto.setCategoria(proveedor.getCategoria());
+        dto.setFormaPago(proveedor.getFormaPago());
         dto.setActivo(proveedor.getActivo());
         return dto;
     }

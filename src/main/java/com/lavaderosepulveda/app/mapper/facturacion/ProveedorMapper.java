@@ -28,11 +28,15 @@ public class ProveedorMapper {
         dto.setNombre(proveedor.getNombre());
         dto.setNif(proveedor.getNif());
         dto.setDireccion(proveedor.getDireccion());
+        dto.setCiudad(proveedor.getCiudad());
+        dto.setCodigoPostal(proveedor.getCodigoPostal());
         dto.setTelefono(proveedor.getTelefono());
         dto.setEmail(proveedor.getEmail());
         dto.setContacto(proveedor.getContacto());
         dto.setIban(proveedor.getIban());
         dto.setNotas(proveedor.getNotas());
+        dto.setCategoria(proveedor.getCategoria());
+        dto.setFormaPago(proveedor.getFormaPago());
         dto.setActivo(proveedor.getActivo());
 
         return dto;
@@ -51,11 +55,15 @@ public class ProveedorMapper {
         proveedor.setNombre(dto.getNombre());
         proveedor.setNif(dto.getNif());
         proveedor.setDireccion(dto.getDireccion());
+        proveedor.setCiudad(dto.getCiudad());
+        proveedor.setCodigoPostal(dto.getCodigoPostal());
         proveedor.setTelefono(dto.getTelefono());
         proveedor.setEmail(dto.getEmail());
         proveedor.setContacto(dto.getContacto());
         proveedor.setIban(dto.getIban());
         proveedor.setNotas(dto.getNotas());
+        proveedor.setCategoria(dto.getCategoria());
+        proveedor.setFormaPago(dto.getFormaPago());
         proveedor.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
 
         return proveedor;
@@ -72,11 +80,15 @@ public class ProveedorMapper {
         if (dto.getNombre() != null) proveedor.setNombre(dto.getNombre());
         if (dto.getNif() != null) proveedor.setNif(dto.getNif());
         if (dto.getDireccion() != null) proveedor.setDireccion(dto.getDireccion());
+        if (dto.getCiudad() != null) proveedor.setCiudad(dto.getCiudad());
+        if (dto.getCodigoPostal() != null) proveedor.setCodigoPostal(dto.getCodigoPostal());
         if (dto.getTelefono() != null) proveedor.setTelefono(dto.getTelefono());
         if (dto.getEmail() != null) proveedor.setEmail(dto.getEmail());
         if (dto.getContacto() != null) proveedor.setContacto(dto.getContacto());
         if (dto.getIban() != null) proveedor.setIban(dto.getIban());
         if (dto.getNotas() != null) proveedor.setNotas(dto.getNotas());
+        if (dto.getCategoria() != null) proveedor.setCategoria(dto.getCategoria());
+        if (dto.getFormaPago() != null) proveedor.setFormaPago(dto.getFormaPago());
         if (dto.getActivo() != null) proveedor.setActivo(dto.getActivo());
     }
 
