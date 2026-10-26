@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import citaService from '../../services/citaService';
+import api from '../../services/api';
 
 // Todos los estados del enum EstadoCita del backend, en el orden natural del flujo
 const ESTADOS_CITA = [
@@ -29,6 +30,14 @@ const Citas = () => {
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [validandoDisponibilidad, setValidandoDisponibilidad] = useState(false);
 
+  // ─── Vehículo: marca → modelo → tipos de lavado según su categoría ───────
+  const [marcasModelos, setMarcasModelos] = useState({});        // { Marca: [{id, name}] }
+  const [marca, setMarca] = useState('');
+  const [modeloId, setModeloId] = useState('');
+  const [categoriaVehiculo, setCategoriaVehiculo] = useState(''); // descripción legible
+  const [serviciosDisponibles, setServiciosDisponibles] = useState(null); // null = todos
+  const [clasificando, setClasificando] = useState(false);
+
   const [formData, setFormData] = useState({
     nombre: '',
     telefono: '',
@@ -45,6 +54,13 @@ const Citas = () => {
     cargarTiposLavado();
     cargarHorariosConfiguracion();
   }, [currentPage, pageSize]);
+
+  // Catálogo de marcas y modelos (solo una vez)
+  useEffect(() => {
+    api.get('/vehicle/brands-models')
+      .then(res => setMarcasModelos(res.data || {}))
+      .catch(err => console.error('Error cargando marcas y modelos:', err));
+  }, []);
 
   // Cuando cambia la fecha, recalcular horarios disponibles
   useEffect(() => {
@@ -182,6 +198,99 @@ const Citas = () => {
     }
   };
 
+  // ─── Vehículo ─────────────────────────────────────────────────────────────
+
+  const capitalizar = (txt) => (txt ? txt.charAt(0).toUpperCase() + txt.slice(1) : '');
+
+  const resetVehiculo = () => {
+    setMarca('');
+    setModeloId('');
+    setCategoriaVehiculo('');
+    setServiciosDisponibles(null);
+  };
+
+  /**
+   * Pide al backend la categoría del modelo y deja solo los lavados válidos.
+   * Si el tipo actual sigue siendo válido se mantiene; si no, se preselecciona
+   * el Lavado Completo de su categoría.
+   */
+  const clasificarVehiculo = async (id, tipoActual = '') => {
+    setClasificando(true);
+    try {
+      const { data } = await api.get('/vehicle/classify-by-id', { params: { id } });
+      const disponibles = data.availableServices || [];
+
+      // Turismo y ranchera comparten carrocería: se ofrecen las dos variantes
+      const esTurismo = data.category === 'turismo' || data.category === 'ranchera';
+      const servicios = esTurismo
+        ? [...new Set([
+            ...disponibles,
+            ...tiposLavado.map(t => t.nombre).filter(n => n.endsWith('_TURISMO') || n.endsWith('_RANCHERA')),
+          ])]
+        : disponibles;
+
+      setServiciosDisponibles(servicios);
+      setCategoriaVehiculo(data.categoryDescription || data.category || '');
+
+      const porDefecto = disponibles.find(n => n.startsWith('LAVADO_COMPLETO_')) || servicios[0] || '';
+      setFormData(prev => ({
+        ...prev,
+        tipoLavado: servicios.includes(tipoActual) ? tipoActual : porDefecto,
+      }));
+    } catch (err) {
+      console.error('Error clasificando vehículo:', err);
+      setServiciosDisponibles(null); // si falla, se muestran todos
+      setCategoriaVehiculo('');
+    } finally {
+      setClasificando(false);
+    }
+  };
+
+  const handleMarcaChange = (e) => {
+    setMarca(e.target.value);
+    setModeloId('');
+    setCategoriaVehiculo('');
+    setServiciosDisponibles(null);
+    setFormData(prev => ({ ...prev, modeloVehiculo: '', tipoLavado: '' }));
+  };
+
+  const handleModeloChange = (e) => {
+    const id = e.target.value;
+    setModeloId(id);
+    if (!id) {
+      setCategoriaVehiculo('');
+      setServiciosDisponibles(null);
+      setFormData(prev => ({ ...prev, modeloVehiculo: '', tipoLavado: '' }));
+      return;
+    }
+    const modelo = (marcasModelos[marca] || []).find(m => String(m.id) === String(id));
+    setFormData(prev => ({ ...prev, modeloVehiculo: modelo ? modelo.name : '' }));
+    clasificarVehiculo(id);
+  };
+
+  /** Al editar: localiza marca y modelo por el nombre guardado en la cita */
+  const preseleccionarVehiculo = (cita) => {
+    const nombre = (cita.modeloVehiculo || '').trim().toLowerCase();
+    if (!nombre) { resetVehiculo(); return; }
+    for (const [brand, modelos] of Object.entries(marcasModelos)) {
+      const encontrado = modelos.find(m => m.name.toLowerCase() === nombre);
+      if (encontrado) {
+        setMarca(brand);
+        setModeloId(String(encontrado.id));
+        clasificarVehiculo(encontrado.id, cita.tipoLavado);
+        return;
+      }
+    }
+    resetVehiculo(); // no está en el catálogo: se conserva el texto guardado
+  };
+
+  const tiposFiltrados = serviciosDisponibles
+    ? tiposLavado.filter(t => serviciosDisponibles.includes(t.nombre))
+    : tiposLavado;
+
+  // Cita antigua cuyo modelo no está en el catálogo: no obligar a elegir uno nuevo
+  const modeloFueraDeCatalogo = !!editingCita && !modeloId && !!formData.modeloVehiculo;
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -212,12 +321,20 @@ const Citas = () => {
   const abrirModalEditar = (cita) => {
     setEditingCita(cita);
     setFormData(cita);
+    preseleccionarVehiculo(cita);
+    setShowModal(true);
+  };
+
+  const abrirModalNueva = () => {
+    setEditingCita(null);
+    resetVehiculo();
     setShowModal(true);
   };
 
   const cerrarModal = () => {
     setShowModal(false);
     setEditingCita(null);
+    resetVehiculo();
     setFormData({ nombre: '', telefono: '', email: '', fecha: '', hora: '', tipoLavado: '', modeloVehiculo: '', observaciones: '' });
   };
 
@@ -259,7 +376,7 @@ const Citas = () => {
     <div className="p-6 bg-white rounded-lg shadow-lg">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Gestión de Citas</h1>
-        <button onClick={() => { setShowModal(true); setEditingCita(null); }} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+        <button onClick={abrirModalNueva} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
           + Nueva Cita
         </button>
       </div>
@@ -372,12 +489,28 @@ const Citas = () => {
                   <input type="tel" name="telefono" value={formData.telefono} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Marca Vehículo *</label>
+                  <select value={marca} onChange={handleMarcaChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required={!modeloFueraDeCatalogo}>
+                    <option value="">Seleccionar marca</option>
+                    {Object.keys(marcasModelos).sort().map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Modelo Vehículo *</label>
-                  <input type="text" name="modeloVehiculo" value={formData.modeloVehiculo} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
+                  <select value={modeloId} onChange={handleModeloChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100" required={!modeloFueraDeCatalogo} disabled={!marca}>
+                    <option value="">{marca ? 'Seleccionar modelo' : 'Primero elige la marca'}</option>
+                    {(marcasModelos[marca] || []).map(m => (
+                      <option key={m.id} value={m.id}>{capitalizar(m.name)}</option>
+                    ))}
+                  </select>
+                  {modeloFueraDeCatalogo && (
+                    <p className="text-sm text-amber-700 mt-2">
+                      Modelo guardado: <strong>{formData.modeloVehiculo}</strong> (no está en el catálogo).
+                      Elige marca y modelo solo si quieres cambiarlo.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha *</label>
@@ -391,10 +524,17 @@ const Citas = () => {
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo Lavado *</label>
-                  <select name="tipoLavado" value={formData.tipoLavado} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
-                    <option value="">Seleccionar tipo</option>
-                    {tiposLavado.map(tipo => <option key={tipo.id} value={tipo.id}>{tipo.descripcion}</option>)}
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Tipo Lavado *
+                    {categoriaVehiculo && (
+                      <span className="ml-2 font-normal text-blue-700">Categoría detectada: {categoriaVehiculo}</span>
+                    )}
+                  </label>
+                  <select name="tipoLavado" value={formData.tipoLavado} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100" required disabled={clasificando}>
+                    <option value="">{clasificando ? 'Calculando lavados para este modelo...' : 'Seleccionar tipo'}</option>
+                    {tiposFiltrados.map(tipo => (
+                      <option key={tipo.nombre} value={tipo.nombre}>{tipo.descripcion} — {Number(tipo.precio).toFixed(2)} €</option>
+                    ))}
                   </select>
                 </div>
               </div>
