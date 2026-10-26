@@ -346,58 +346,73 @@ const Citas = () => {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
-            <h2 className="text-2xl font-bold mb-4">{editingCita ? 'Editar Cita' : 'Nueva Cita'}</h2>
-            <form onSubmit={guardarCita} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+        /* Formulario a pantalla completa: cabecera, campos con scroll y botones fijos abajo */
+        <div className="fixed inset-0 z-50 bg-white flex flex-col" role="dialog" aria-modal="true">
+          <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900">{editingCita ? 'Editar Cita' : 'Nueva Cita'}</h2>
+            <button
+              type="button"
+              onClick={cerrarModal}
+              aria-label="Cerrar"
+              className="text-gray-500 hover:text-gray-900 text-2xl leading-none px-2"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form onSubmit={guardarCita} className="flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6 flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Nombre *</label>
-                  <input type="text" name="nombre" value={formData.nombre} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre *</label>
+                  <input type="text" name="nombre" value={formData.nombre} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Teléfono *</label>
-                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Teléfono *</label>
+                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Email</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full border rounded px-3 py-2" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Modelo Vehículo *</label>
-                  <input type="text" name="modeloVehiculo" value={formData.modeloVehiculo} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Modelo Vehículo *</label>
+                  <input type="text" name="modeloVehiculo" value={formData.modeloVehiculo} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Fecha *</label>
-                  <input type="date" name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha *</label>
+                  <input type="date" name="fecha" value={formData.fecha} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Hora *</label>
-                  <select name="hora" value={formData.hora} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required disabled={!formData.fecha || loadingHorarios}>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hora *</label>
+                  <select name="hora" value={formData.hora} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100" required disabled={!formData.fecha || loadingHorarios}>
                     <option value="">{loadingHorarios ? 'Cargando...' : 'Seleccionar hora'}</option>
                     {horariosDisponibles.map(hora => <option key={hora} value={hora}>{hora}</option>)}
                   </select>
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-semibold mb-1">Tipo Lavado *</label>
-                  <select name="tipoLavado" value={formData.tipoLavado} onChange={handleInputChange} className="w-full border rounded px-3 py-2" required>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo Lavado *</label>
+                  <select name="tipoLavado" value={formData.tipoLavado} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                     <option value="">Seleccionar tipo</option>
                     {tiposLavado.map(tipo => <option key={tipo.id} value={tipo.id}>{tipo.descripcion}</option>)}
                   </select>
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-semibold mb-1">Observaciones</label>
-                  <textarea name="observaciones" value={formData.observaciones} onChange={handleInputChange} className="w-full border rounded px-3 py-2" rows="3" />
-                </div>
               </div>
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={cerrarModal} className="px-6 py-2 border rounded hover:bg-gray-100">Cancelar</button>
-                <button type="submit" disabled={validandoDisponibilidad} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-                  {validandoDisponibilidad ? 'Validando...' : editingCita ? 'Actualizar' : 'Crear'}
-                </button>
+
+              {/* Observaciones rellena el alto que sobra */}
+              <div className="flex-1 flex flex-col min-h-[8rem]">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Observaciones</label>
+                <textarea name="observaciones" value={formData.observaciones || ''} onChange={handleInputChange} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex-1 resize-none" />
               </div>
-            </form>
-          </div>
+            </div>
+
+            <div className="shrink-0 flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <button type="button" onClick={cerrarModal} className="px-6 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-100 font-medium">Cancelar</button>
+              <button type="submit" disabled={validandoDisponibilidad} className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
+                {validandoDisponibilidad ? 'Validando...' : editingCita ? 'Actualizar' : 'Crear'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
