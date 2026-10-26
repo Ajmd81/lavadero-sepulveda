@@ -412,9 +412,11 @@ const Calendario = () => {
           </div>
 
           {/* ── Panel lateral ── */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-sepulveda-carbon rounded-lg p-4 border border-sepulveda-silver/20">
-              <h4 className="text-lg font-bold mb-4 text-sepulveda-silver-light">
+          {/* En escritorio el panel se posiciona en absoluto para ocupar exactamente
+              el alto del calendario sin estirarlo; la lista de citas rellena el resto */}
+          <div className="lg:col-span-1 lg:relative">
+            <div className="bg-sepulveda-carbon rounded-lg p-4 border border-sepulveda-silver/20 flex flex-col lg:absolute lg:inset-0">
+              <h4 className="shrink-0 text-lg font-bold mb-4 text-sepulveda-silver-light">
                 {diaSeleccionado
                   ? `${diaSeleccionado}/${fecha.getMonth() + 1}/${fecha.getFullYear()}`
                   : 'Citas del día'}
@@ -422,7 +424,7 @@ const Calendario = () => {
 
               {/* ✅ NUEVO: Panel de disponibilidad */}
               {diaSeleccionado && obtenerDisponibilidadDia(diaSeleccionado) && (
-                <div className="mb-4 p-3 bg-sepulveda-graphite rounded-lg border border-sepulveda-silver/30">
+                <div className="shrink-0 mb-4 p-3 bg-sepulveda-graphite rounded-lg border border-sepulveda-silver/30">
                   <div className="font-bold text-sepulveda-silver-light mb-2">Disponibilidad</div>
                   <div className="space-y-2 text-sm text-sepulveda-silver">
                     <div className="flex justify-between">
@@ -461,7 +463,7 @@ const Calendario = () => {
 
               {/* ── Bloque días cerrados ── */}
               {diaSeleccionado && (
-                <div className="mb-4">
+                <div className="shrink-0 mb-4">
                   {infoCierre ? (
                     /* Día CERRADO */
                     <div className="bg-sepulveda-graphite border border-sepulveda-silver rounded-lg p-3">
@@ -549,7 +551,7 @@ const Calendario = () => {
               ) : citasSeleccionadas.length === 0 ? (
                 <p className="text-sepulveda-silver/60 text-center py-4">No hay citas para este día</p>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3 overflow-y-auto pr-1 max-h-96 lg:max-h-none lg:flex-1 lg:min-h-0">
                   {[...citasSeleccionadas]
                     .sort((a, b) => {
                       const ha = a.hora ? a.hora.substring(0, 5) : '00:00';
