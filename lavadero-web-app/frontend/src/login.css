@@ -5,23 +5,14 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  /* Degradado estático: animar background-position repintaba la pantalla completa en cada fotograma */
   background: linear-gradient(135deg, #0d47a1 0%, #1e3a8a 25%, #3b82f6 50%, #1e3a8a 75%, #0d47a1 100%);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-@keyframes gradientShift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
 
 /* ==================== IMAGEN FONDO (COCHE LAVADO) ==================== */
 .audi-background {
@@ -36,19 +27,11 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
-  filter: brightness(0.95) contrast(1.1) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.2));
-  animation: carSway 20s ease-in-out infinite;
+  /* Filtro estático: animarlo (brillo 0.95 → 0.97, imperceptible) y el background-attachment: fixed
+     obligaban a repintar la foto a pantalla completa en cada fotograma */
+  filter: brightness(0.95) contrast(1.1);
 }
 
-@keyframes carSway {
-  0%, 100% {
-    filter: brightness(0.95) contrast(1.1) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.2));
-  }
-  50% {
-    filter: brightness(0.97) contrast(1.1) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.2));
-  }
-}
 
 /* ==================== BURBUJAS FLOTANTES ==================== */
 .bubble-container {
@@ -68,12 +51,11 @@
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 1), rgba(173, 216, 255, 0.8), rgba(100, 180, 255, 0.4));
   opacity: 1;
+  /* Sin backdrop-filter (se recalculaba en cada fotograma y por cada burbuja) y con 3 sombras en vez de 5 */
   box-shadow: inset -4px -4px 12px rgba(0, 100, 200, 0.2),
               inset 3px 3px 8px rgba(255, 255, 255, 0.9),
-              0 10px 30px rgba(135, 206, 235, 0.6),
-              0 0 40px rgba(100, 180, 255, 0.5),
-              0 0 60px rgba(70, 150, 255, 0.3);
-  backdrop-filter: blur(3px);
+              0 0 24px rgba(100, 180, 255, 0.5);
+  will-change: transform, opacity;
   animation: float linear infinite;
   border: 2px solid rgba(255, 255, 255, 0.6);
   box-sizing: border-box;
@@ -424,7 +406,6 @@
   border-radius: 12px;
   padding: 32px 24px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(10px);
 }
 
 .form-card h1 {
@@ -506,4 +487,9 @@
   .bubble {
     display: none;
   }
+}
+
+/* ==================== ACCESIBILIDAD / RENDIMIENTO ==================== */
+@media (prefers-reduced-motion: reduce) {
+  .bubble { display: none; }
 }
