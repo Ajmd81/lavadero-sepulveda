@@ -115,7 +115,9 @@ const Login = () => {
     return () => clearInterval(intervalo);
   }, [bloqueadoHasta]);
 
-  const estaBloqueado = bloqueadoHasta && Date.now() < bloqueadoHasta;
+  // Derivado solo del estado (sin Date.now() en el render): el useEffect de arriba
+  // pone bloqueadoHasta a null y countdown a 0 cuando termina el bloqueo.
+  const estaBloqueado = bloqueadoHasta !== null && countdown > 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
