@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import citaService from '../../services/citaService';
 
+// Todos los estados del enum EstadoCita del backend, en el orden natural del flujo
+const ESTADOS_CITA = [
+  { valor: 'PENDIENTE', etiqueta: 'PENDIENTE' },
+  { valor: 'CONFIRMADA', etiqueta: 'CONFIRMADA' },
+  { valor: 'EN_PROCESO', etiqueta: 'EN PROCESO' },
+  { valor: 'COMPLETADA', etiqueta: 'COMPLETADA' },
+  { valor: 'NO_PRESENTADO', etiqueta: 'NO PRESENTADO' },
+  { valor: 'CANCELADA', etiqueta: 'CANCELADA' },
+];
+
 const Citas = () => {
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,7 +22,7 @@ const Citas = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(20);
 
   const [horariosDisponibles, setHorariosDisponibles] = useState([]);
   const [horariosPortDia, setHorariosPortDia] = useState({});
@@ -215,7 +225,13 @@ const Citas = () => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar esta cita?')) return;
     try {
       await citaService.delete(id);
-      cargarCitas();
+      // Si era la única cita de la página (y no es la primera), volver a la anterior.
+      // Cambiar currentPage ya dispara la recarga a través del useEffect.
+      if (citas.length === 1 && currentPage > 0) {
+        setCurrentPage(currentPage - 1);
+      } else {
+        cargarCitas();
+      }
     } catch (err) {
       setError('Error al eliminar la cita: ' + err.message);
     }
@@ -230,7 +246,8 @@ const Citas = () => {
     }
   };
 
-  const getPaginaInicio = () => currentPage * pageSize + 1;
+  const getPaginaInicio = () => (totalElements === 0 ? 0 : currentPage * pageSize + 1);
+  const esUltimaPagina = currentPage >= totalPages - 1;
   const getPaginaFin = () => Math.min((currentPage + 1) * pageSize, totalElements);
   const irAPagina = (pagina) => setCurrentPage(pagina);
   const cambiarTamanoPagina = (size) => {
@@ -287,10 +304,9 @@ const Citas = () => {
                         onChange={(e) => cambiarEstado(cita.id, e.target.value)}
                         className="border border-gray-300 rounded px-2 py-1"
                       >
-                        <option value="PENDIENTE">PENDIENTE</option>
-                        <option value="CONFIRMADA">CONFIRMADA</option>
-                        <option value="COMPLETADA">COMPLETADA</option>
-                        <option value="CANCELADA">CANCELADA</option>
+                        {ESTADOS_CITA.map(({ valor, etiqueta }) => (
+                          <option key={valor} value={valor}>{etiqueta}</option>
+                        ))}
                       </select>
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
@@ -304,12 +320,26 @@ const Citas = () => {
           </div>
 
           <div className="mt-4 flex justify-between items-center">
-            <p className="text-gray-700">Mostrando {getPaginaInicio()} a {getPaginaFin()} de {totalElements}</p>
+            <div className="flex items-center gap-4">
+              <p className="text-gray-700">Mostrando {getPaginaInicio()} a {getPaginaFin()} de {totalElements}</p>
+              <label className="flex items-center gap-2 text-gray-700">
+                Mostrar
+                <select
+                  value={pageSize}
+                  onChange={(e) => cambiarTamanoPagina(Number(e.target.value))}
+                  className="border border-gray-300 rounded px-2 py-1"
+                >
+                  {[10, 20, 50].map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <div className="flex gap-2">
               <button onClick={() => irAPagina(0)} disabled={currentPage === 0} className="px-4 py-2 border rounded disabled:opacity-50">Primera</button>
               <button onClick={() => irAPagina(currentPage - 1)} disabled={currentPage === 0} className="px-4 py-2 border rounded disabled:opacity-50">Anterior</button>
-              <button onClick={() => irAPagina(currentPage + 1)} disabled={currentPage === totalPages - 1} className="px-4 py-2 border rounded disabled:opacity-50">Siguiente</button>
-              <button onClick={() => irAPagina(totalPages - 1)} disabled={currentPage === totalPages - 1} className="px-4 py-2 border rounded disabled:opacity-50">Última</button>
+              <button onClick={() => irAPagina(currentPage + 1)} disabled={esUltimaPagina} className="px-4 py-2 border rounded disabled:opacity-50">Siguiente</button>
+              <button onClick={() => irAPagina(totalPages - 1)} disabled={esUltimaPagina} className="px-4 py-2 border rounded disabled:opacity-50">Última</button>
             </div>
           </div>
         </>
