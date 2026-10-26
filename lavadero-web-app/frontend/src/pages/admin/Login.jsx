@@ -199,8 +199,8 @@ const Login = () => {
       <div className="login-container">
         <div className="form-card">
           <div className="text-center mb-6 animate-fadeInUp">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full mb-4 shadow-lg">
-              <img src="/assets/icons/logo_crm.png" alt="Logo Lavadero" className="w-full h-full object-contain drop-shadow-lg p-2" fetchPriority='high' loading='eager' />
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full overflow-hidden mb-4 shadow-lg ring-4 ring-blue-500/70">
+              <img src="/assets/icons/logo_crm.png" alt="Logo Lavadero" className="w-full h-full object-cover rounded-full" fetchPriority='high' loading='eager' />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-blue-700 bg-clip-text text-transparent mb-1">Lavadero Sepúlveda</h1>
             <p className="text-slate-600 font-medium text-sm">CRM Administrativo</p>
@@ -242,7 +242,7 @@ const Login = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                 Usuario
               </label>
-              <div className={`relative transition-all duration-300 ${focusedField === 'username' ? 'scale-105' : 'scale-100'}`}>
+              <div className={`relative transition-all duration-300 ${focusedField === 'username' ? 'scale-[1.02]' : 'scale-100'}`}>
                 <input type="text" value={credentials.username} onChange={(e) => setCredentials({ ...credentials, username: e.target.value })} onFocus={() => setFocusedField('username')} onBlur={() => setFocusedField(null)} disabled={!!estaBloqueado} className="w-full px-4 py-2.5 text-sm bg-white/90 border-2 border-slate-200 rounded-lg transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder="Usuario" required />
                 {credentials.username && !estaBloqueado && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />}
               </div>
@@ -253,7 +253,7 @@ const Login = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                 Contraseña
               </label>
-              <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-105' : 'scale-100'}`}>
+              <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.02]' : 'scale-100'}`}>
                 <input ref={passwordInputRef} type="password" value={credentials.password} onChange={(e) => setCredentials({ ...credentials, password: e.target.value })} disabled={!!estaBloqueado} className="sr-only" placeholder="Contraseña" required />
                 <div onClick={() => passwordInputRef.current?.focus()} onFocus={() => setFocusedField('password')} onBlur={() => setFocusedField(null)} className="w-full px-4 py-2.5 text-lg bg-white/90 border-2 border-slate-200 rounded-lg transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none pr-12 disabled:opacity-50 disabled:cursor-not-allowed cursor-text">
                   <span className="tracking-wide">{credentials.password.length > 0 ? renderPasswordSponges() : ''}</span>
