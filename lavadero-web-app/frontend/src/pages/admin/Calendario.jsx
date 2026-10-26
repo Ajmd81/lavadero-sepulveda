@@ -211,15 +211,15 @@ const Calendario = () => {
   const hoy = new Date();
 
   return (
-    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-6 lg:h-[calc(100vh-3rem)] lg:min-h-[40rem] lg:flex lg:flex-col">
+    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-4 lg:h-[calc(100vh-3rem)] lg:min-h-[40rem] lg:flex lg:flex-col">
 
       {/* ── Cabecera ── */}
-      <div className="flex items-center gap-3 mb-6">
-        <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="flex items-center gap-3 mb-4">
+        <div style={{ width: 40, height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src="/assets/icons/calendario.png" alt="Calendario" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-sepulveda-silver-light">Calendario de Citas</h1>
+          <h1 className="text-2xl font-bold text-sepulveda-silver-light">Calendario de Citas</h1>
           <p className="text-sm text-sepulveda-silver/70">Disponibilidad y gestión de días cerrados</p>
         </div>
       </div>
@@ -239,14 +239,14 @@ const Calendario = () => {
       )}
 
       {!loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:flex-1 lg:min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:flex-1 lg:min-h-0">
 
           {/* ── Calendario ── */}
-          <div className="lg:col-span-2 lg:flex lg:flex-col lg:min-h-0">
+          <div className="lg:col-span-3 lg:flex lg:flex-col lg:min-h-0">
             <div className="bg-sepulveda-carbon rounded-lg p-4 border border-sepulveda-silver/20 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
 
               {/* Navegación mes */}
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-3">
                 <button
                   onClick={mesAnterior}
                   className="bg-sepulveda-blue hover:bg-sepulveda-blue-dark text-white px-3 py-1 rounded font-semibold transition-colors"
@@ -265,9 +265,9 @@ const Calendario = () => {
               </div>
 
               {/* Cabecera días semana */}
-              <div className="grid grid-cols-7 gap-2 mb-2">
+              <div className="grid grid-cols-7 gap-2 mb-1">
                 {DIAS_SEMANA.map(d => (
-                  <div key={d} className="text-center font-bold text-sepulveda-silver py-2 text-sm">
+                  <div key={d} className="text-center font-bold text-sepulveda-silver py-1 text-sm">
                     {d}
                   </div>
                 ))}
@@ -371,7 +371,7 @@ const Calendario = () => {
               </div>
 
               {/* Leyenda */}
-              <div className="flex flex-wrap gap-4 mt-4 text-xs text-sepulveda-silver">
+              <div className="flex flex-wrap gap-4 mt-3 text-xs text-sepulveda-silver">
                 <span className="flex items-center gap-1.5">
                   <span className="w-4 h-4 rounded bg-slate-800 border-2 border-amber-400 inline-block" />
                   <span>Hoy</span>
