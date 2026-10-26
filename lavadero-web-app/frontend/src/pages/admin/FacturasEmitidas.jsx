@@ -2026,65 +2026,79 @@ const FacturasEmitidas = () => {
         />
       )}
 
-      {/* Modal para cobrar factura */}
+      {/* Modal para cobrar factura (pantalla completa) */}
       {modalCobrarAbierto && facturaParaCobrar && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
-            <h3 className="text-2xl font-bold mb-4 text-gray-800">
-              💰 Registrar Pago
-            </h3>
+        <div className="fixed inset-0 z-50 bg-white flex flex-col" role="dialog" aria-modal="true">
+          <div className="shrink-0 flex items-center justify-between px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
+            <h3 className="text-3xl font-bold text-gray-900">💰 Registrar Pago</h3>
+            <button
+              type="button"
+              onClick={cerrarModalCobrar}
+              aria-label="Cerrar"
+              className="text-gray-500 hover:text-gray-900 text-3xl leading-none px-2"
+            >
+              ✕
+            </button>
+          </div>
 
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600">Factura Nº</p>
-              <p className="text-xl font-bold text-blue-600 mb-2">
-                {facturaParaCobrar.numero}
-              </p>
-              <p className="text-sm text-gray-600">Cliente</p>
-              <p className="text-lg font-semibold text-gray-800 mb-2">
-                {facturaParaCobrar.clienteNombre}
-              </p>
-              <p className="text-sm text-gray-600">Importe a Cobrar</p>
-              <p className="text-2xl font-bold text-green-600">
-                {new Intl.NumberFormat("es-ES", {
-                  style: "currency",
-                  currency: "EUR",
-                }).format(facturaParaCobrar.total)}
-              </p>
-            </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-10 py-10">
+            <div className="max-w-3xl mx-auto space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-gray-50 rounded-xl border border-gray-200">
+                <div>
+                  <p className="text-base text-gray-600">Factura Nº</p>
+                  <p className="text-2xl font-bold text-blue-600">{facturaParaCobrar.numero}</p>
+                </div>
+                <div>
+                  <p className="text-base text-gray-600">Cliente</p>
+                  <p className="text-2xl font-semibold text-gray-800">{facturaParaCobrar.clienteNombre}</p>
+                </div>
+                <div className="md:col-span-2 pt-6 border-t border-gray-200">
+                  <p className="text-base text-gray-600">Importe a cobrar</p>
+                  <p className="text-5xl font-bold text-green-600">
+                    {new Intl.NumberFormat("es-ES", {
+                      style: "currency",
+                      currency: "EUR",
+                    }).format(facturaParaCobrar.total)}
+                  </p>
+                </div>
+              </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Método de Pago
-              </label>
-              <select
-                value={metodoPagoCobro}
-                onChange={(e) => setMetodoPagoCobro(e.target.value)}
-                className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="">-- Selecciona un método --</option>
-                {metodosPago.map((metodo) => (
-                  <option key={metodo.valor} value={metodo.valor}>
-                    {metodo.descripcion}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-base font-semibold text-gray-700 mb-2">
+                  Método de Pago
+                </label>
+                <select
+                  value={metodoPagoCobro}
+                  onChange={(e) => setMetodoPagoCobro(e.target.value)}
+                  className="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-3 text-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="">-- Selecciona un método --</option>
+                  {metodosPago.map((metodo) => (
+                    <option key={metodo.valor} value={metodo.valor}>
+                      {metodo.descripcion}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+          </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={cerrarModalCobrar}
-                className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={procesarPago}
-                disabled={loading}
-                className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors shadow-md"
-              >
-                {loading ? "Procesando..." : "✓ Confirmar Pago"}
-              </button>
-            </div>
+          <div className="shrink-0 px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={cerrarModalCobrar}
+              className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={procesarPago}
+              disabled={loading}
+              className="px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-base font-semibold rounded-lg transition-colors shadow-md"
+            >
+              {loading ? "Procesando..." : "✓ Confirmar Pago"}
+            </button>
           </div>
         </div>
       )}
