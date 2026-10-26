@@ -458,15 +458,23 @@ const Gastos = () => {
 
       {/* Modal */}
       {modalAbierto && (
-        <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
-            <div className="px-10 py-6 border-b border-gray-200 bg-linear-to-r from-purple-50 to-purple-100">
+        <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+          <div className="bg-white w-full h-full flex flex-col">
+            <div className="shrink-0 flex items-center justify-between px-10 py-6 border-b border-gray-200 bg-linear-to-r from-purple-50 to-purple-100">
               <h3 className="text-3xl font-bold text-gray-900">
                 {editandoGasto ? 'Editar Gasto' : 'Nuevo Gasto'}
               </h3>
+              <button
+                type="button"
+                onClick={cerrarModal}
+                aria-label="Cerrar"
+                className="text-gray-500 hover:text-gray-900 text-3xl leading-none px-2"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="px-10 py-8 overflow-y-auto flex-1">
+            <div className="px-10 py-8 overflow-y-auto flex-1 min-h-0">
               <form onSubmit={guardarGasto} className="space-y-8">
                 <div>
                   <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-purple-300">
@@ -590,7 +598,7 @@ const Gastos = () => {
               </form>
             </div>
 
-            <div className="px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <div className="shrink-0 px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={cerrarModal}

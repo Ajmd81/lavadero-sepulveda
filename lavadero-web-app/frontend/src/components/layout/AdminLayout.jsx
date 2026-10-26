@@ -50,11 +50,11 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex">
-      <aside className={`bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 text-white transition-all duration-500 ${sidebarOpen ? 'w-72' : 'w-20'} flex flex-col shadow-2xl border-r border-slate-700`}>
+    <div className="h-screen overflow-hidden bg-linear-to-br from-slate-50 to-slate-100 flex">
+      <aside className={`bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 text-white transition-all duration-500 ${sidebarOpen ? 'w-72' : 'w-20'} shrink-0 h-full flex flex-col shadow-2xl border-r border-slate-700`}>
         {/* Header con Logo */}
-        <div className="p-4 border-b border-slate-700 bg-linear-to-r from-slate-800 to-slate-700">
-          <div className="flex items-center justify-between mb-3">
+        <div className="shrink-0 px-4 py-3 border-b border-slate-700 bg-linear-to-r from-slate-800 to-slate-700">
+          <div className="flex items-center justify-between">
             {sidebarOpen && (
               <div className="flex items-center gap-3 flex-1">
                 <div className="relative">
@@ -80,12 +80,12 @@ const AdminLayout = () => {
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 p-3 overflow-y-auto scrollbar-hide">
+        <nav className="flex-1 min-h-0 px-3 py-3 overflow-y-auto scrollbar-hide">
           {menuItems.map((item, index) => {
             // Renderizar separador
             if (item.separator) {
               return sidebarOpen ? (
-                <div key={`separator-${index}`} className="my-4 h-px bg-linear-to-r from-slate-700 via-slate-600 to-slate-700"></div>
+                <div key={`separator-${index}`} className="my-3 h-px bg-linear-to-r from-slate-700 via-slate-600 to-slate-700"></div>
               ) : null;
             }
 
@@ -94,9 +94,9 @@ const AdminLayout = () => {
               <Link 
                 key={item.path} 
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-300 relative group overflow-hidden ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl mb-1 transition-all duration-300 relative group overflow-hidden ${
                   isActive(item.path) 
-                    ? `bg-linear-to-r ${getCategoryGradient(item.category)} shadow-lg shadow-slate-900/50 scale-105` 
+                    ? `bg-linear-to-r ${getCategoryGradient(item.category)} shadow-lg shadow-slate-900/50` 
                     : 'hover:bg-slate-700/50 hover:translate-x-1'
                 }`}
                 title={!sidebarOpen ? item.label : ''}
@@ -114,7 +114,7 @@ const AdminLayout = () => {
                 <img 
                   src={item.icon} 
                   alt={item.label} 
-                  className={`w-8 h-8 object-contain shrink-0 transition-transform duration-300 ${
+                  className={`w-7 h-7 object-contain shrink-0 transition-transform duration-300 ${
                     isActive(item.path) 
                       ? `scale-110 ${item.rotateOnActive ? 'rotate-180' : ''}` 
                       : `group-hover:scale-110 ${item.rotateOnActive ? 'group-hover:rotate-90' : ''}`
@@ -132,9 +132,9 @@ const AdminLayout = () => {
         </nav>
 
         {/* Footer - Usuario y Logout */}
-        <div className="p-4 border-t border-slate-700 bg-linear-to-r from-slate-800 to-slate-700">
+        <div className="shrink-0 px-4 py-3 border-t border-slate-700 bg-linear-to-r from-slate-800 to-slate-700">
           {sidebarOpen ? (
-            <div className="mb-3">
+            <div className="mb-2">
               <p className="text-xs text-slate-400 uppercase tracking-wider">Usuario</p>
               <p className="font-semibold text-sm truncate text-white mt-1">{user?.username || 'Admin'}</p>
             </div>
@@ -145,7 +145,7 @@ const AdminLayout = () => {
           )}
           <button 
             onClick={handleLogout} 
-            className={`w-full flex items-center gap-2 p-3 bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-300 group hover:shadow-lg hover:shadow-red-700/50 hover:scale-105 ${!sidebarOpen ? 'justify-center' : ''}`}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-300 group hover:shadow-lg hover:shadow-red-700/50 hover:scale-105 ${!sidebarOpen ? 'justify-center' : ''}`}
             title={!sidebarOpen ? 'Cerrar Sesión' : ''}
           >
             <LogOut size={20} className="group-hover:animate-bounce" />
@@ -154,9 +154,9 @@ const AdminLayout = () => {
         </div>
       </aside>
 
-      {/* Contenido Principal */}
-      <main className="flex-1 overflow-auto w-full">
-        <div className="w-full h-full px-6 py-6">
+      {/* Contenido Principal: la ventana no hace scroll; el menú queda fijo y solo se desplaza esta zona */}
+      <main className="flex-1 min-w-0 h-full overflow-y-auto">
+        <div className="w-full px-6 py-6">
           <Outlet />
         </div>
       </main>

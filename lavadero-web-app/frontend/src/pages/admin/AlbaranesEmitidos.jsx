@@ -519,17 +519,25 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
   const totales = calcularTotales();
 
   return (
-    <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+      <div className="bg-white w-full h-full flex flex-col">
         {/* Header del modal */}
-        <div className="px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+        <div className="shrink-0 flex items-center justify-between px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
           <h3 className="text-3xl font-bold text-gray-900">
             {mode === 'edit' ? 'Editar Albarán' : 'Nuevo Albarán'}
           </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="text-gray-500 hover:text-gray-900 text-3xl leading-none px-2"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Contenido con scroll */}
-        <div className="px-10 py-8 overflow-y-auto flex-1">
+        <div className="px-10 py-8 overflow-y-auto flex-1 min-h-0">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Sección: Datos del Albarán */}
             <div>
@@ -776,7 +784,7 @@ const AlbaranModal = ({ mode, albaran, clientes, onClose, onSave }) => {
         </div>
 
         {/* Footer con botones */}
-        <div className="px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+        <div className="shrink-0 px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
@@ -805,11 +813,11 @@ const FacturarAlbaranesModal = ({ albaranes, selectedAlbaranes, onToggle, onClos
     .reduce((sum, a) => sum + (a.total || 0), 0);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-gray-900">Seleccionar Albaranes para Facturar</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+      <div className="bg-white w-full h-full overflow-hidden flex flex-col">
+        <div className="shrink-0 bg-white border-b border-gray-200 px-10 py-6 flex justify-between items-center">
+          <h3 className="text-3xl font-bold text-gray-900">Seleccionar Albaranes para Facturar</h3>
+          <button onClick={onClose} aria-label="Cerrar" className="text-gray-500 hover:text-gray-900">
             <X size={24} />
           </button>
         </div>

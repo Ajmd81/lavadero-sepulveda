@@ -211,7 +211,7 @@ const Calendario = () => {
   const hoy = new Date();
 
   return (
-    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-6 lg:h-screen lg:min-h-[40rem] lg:flex lg:flex-col">
+    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-6 lg:h-[calc(100vh-3rem)] lg:min-h-[40rem] lg:flex lg:flex-col">
 
       {/* ── Cabecera ── */}
       <div className="flex items-center gap-3 mb-6">

@@ -243,7 +243,7 @@ const Login = () => {
                 Usuario
               </label>
               <div className={`relative transition-all duration-300 ${focusedField === 'username' ? 'scale-105' : 'scale-100'}`}>
-                <input type="text" value={credentials.username} onChange={(e) => setCredentials({ ...credentials, username: e.target.value })} onFocus={() => setFocusedField('username')} onBlur={() => setFocusedField(null)} disabled={!!estaBloqueado} className="w-full px-4 py-2.5 text-sm bg-white bg-opacity-90 border-2 border-slate-200 rounded-lg transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder="Usuario" required />
+                <input type="text" value={credentials.username} onChange={(e) => setCredentials({ ...credentials, username: e.target.value })} onFocus={() => setFocusedField('username')} onBlur={() => setFocusedField(null)} disabled={!!estaBloqueado} className="w-full px-4 py-2.5 text-sm bg-white/90 border-2 border-slate-200 rounded-lg transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder="Usuario" required />
                 {credentials.username && !estaBloqueado && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />}
               </div>
             </div>
@@ -255,7 +255,7 @@ const Login = () => {
               </label>
               <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-105' : 'scale-100'}`}>
                 <input ref={passwordInputRef} type="password" value={credentials.password} onChange={(e) => setCredentials({ ...credentials, password: e.target.value })} disabled={!!estaBloqueado} className="sr-only" placeholder="Contraseña" required />
-                <div onClick={() => passwordInputRef.current?.focus()} onFocus={() => setFocusedField('password')} onBlur={() => setFocusedField(null)} className="w-full px-4 py-2.5 text-lg bg-white bg-opacity-90 border-2 border-slate-200 rounded-lg transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none pr-12 disabled:opacity-50 disabled:cursor-not-allowed cursor-text">
+                <div onClick={() => passwordInputRef.current?.focus()} onFocus={() => setFocusedField('password')} onBlur={() => setFocusedField(null)} className="w-full px-4 py-2.5 text-lg bg-white/90 border-2 border-slate-200 rounded-lg transition-all duration-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 focus:bg-white outline-none pr-12 disabled:opacity-50 disabled:cursor-not-allowed cursor-text">
                   <span className="tracking-wide">{credentials.password.length > 0 ? renderPasswordSponges() : ''}</span>
                   {credentials.password.length === 0 && <span className="text-slate-400 text-sm">Contraseña</span>}
                 </div>
