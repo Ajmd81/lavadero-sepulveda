@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Users, Calendar, FileText, Euro, AlertCircle, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
@@ -18,6 +19,14 @@ const describirError = (error) => {
 };
 
 const Dashboard = () => {
+  // Reloj que se actualiza cada minuto para que las citas pasadas desaparezcan solas
+  const [ahora, setAhora] = useState(() => new Date());
+
+  useEffect(() => {
+    const intervalo = setInterval(() => setAhora(new Date()), 60 * 1000);
+    return () => clearInterval(intervalo);
+  }, []);
+
   const citasQuery = useQuery({
     queryKey: ['citas-dashboard'],
     queryFn: () => citaService.getAll(),
@@ -65,7 +74,8 @@ const Dashboard = () => {
     }
   };
 
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const today = format(ahora, 'yyyy-MM-dd');
+  const horaActual = format(ahora, 'HH:mm');
 
   const citasArray = Array.isArray(citas?.data)
     ? citas.data
@@ -88,12 +98,19 @@ const Dashboard = () => {
 
   const totalFacturas = facturasArray.length || 0;
 
+  // "HH:mm:ss" o "HH:mm" → "HH:mm" para comparar como texto
+  const normalizarHora = (hora) => (hora ? String(hora).slice(0, 5) : '');
+
+  // Citas de hoy que aún no han llegado a su hora y siguen pendientes de realizar
+  const ESTADOS_EXCLUIDOS = ['COMPLETADA', 'CANCELADA', 'NO_PRESENTADO', 'EN_PROCESO'];
+
   const proximasCitas = (citasArray || [])
-    .filter(c => c.fecha === today && c.estado !== 'COMPLETADA' && c.estado !== 'CANCELADA')
-    .sort((a, b) => {
-      if (a.fecha !== b.fecha) return a.fecha.localeCompare(b.fecha);
-      return a.hora.localeCompare(b.hora);
-    })
+    .filter(c =>
+      c.fecha === today &&
+      !ESTADOS_EXCLUIDOS.includes(c.estado) &&
+      normalizarHora(c.hora) >= horaActual
+    )
+    .sort((a, b) => normalizarHora(a.hora).localeCompare(normalizarHora(b.hora)))
     .slice(0, 5);
 
   const mesActual = new Date().getMonth() + 1;
