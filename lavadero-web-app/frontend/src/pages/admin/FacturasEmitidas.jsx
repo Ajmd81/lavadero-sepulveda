@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import facturaService from "../../services/facturaService";
 import clienteService from "../../services/clienteService";
+import ConceptoAutocomplete from "../../components/ConceptoAutocomplete";
 import enumsService from "../../services/enumsService";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -1734,21 +1735,15 @@ const FacturasEmitidas = () => {
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
                           Concepto (incluye matrícula si aplica)
                         </label>
-                        <input
-                          type="text"
+                        <ConceptoAutocomplete
                           name="concepto"
                           value={nuevaLinea.concepto}
                           onChange={handleNuevaLineaChange}
                           onBlur={handleConceptoBlur}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                          opciones={tiposLavado}
+                          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
                           placeholder="Ej: Lavado Completo Turismo - 1234ABC"
-                          list="tiposLavadoList"
                         />
-                        <datalist id="tiposLavadoList">
-                          {tiposLavado.map((tipo) => (
-                            <option key={tipo.valor} value={tipo.descripcion} />
-                          ))}
-                        </datalist>
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -1820,28 +1815,20 @@ const FacturasEmitidas = () => {
                             >
                               <td className="px-4 py-3 text-sm">
                                 {lineaEditando === linea.id ? (
-                                  <input
-                                    type="text"
+                                  <ConceptoAutocomplete
+                                    name="conceptoEditado"
                                     value={conceptoEditado}
                                     onChange={(e) =>
                                       setConceptoEditado(e.target.value)
                                     }
                                     onBlur={(e) => handleConceptoBlur(e, true)}
-                                    className="w-full border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500"
+                                    opciones={tiposLavado}
+                                    className="w-full bg-white border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500"
                                     placeholder="Ej: Lavado Completo Turismo - 1234ABC"
-                                    list="tiposLavadoEditList"
                                   />
                                 ) : (
                                   linea.concepto
                                 )}
-                                <datalist id="tiposLavadoEditList">
-                                  {tiposLavado.map((tipo) => (
-                                    <option
-                                      key={tipo.valor}
-                                      value={tipo.descripcion}
-                                    />
-                                  ))}
-                                </datalist>
                               </td>
                               <td className="px-4 py-3 text-sm text-center">
                                 {linea.cantidad}
