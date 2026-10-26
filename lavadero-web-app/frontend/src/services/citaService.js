@@ -37,9 +37,9 @@ const citaService = {
   getHorariosDisponibles: (fecha) =>
     api.get('/citas/horarios-disponibles', { params: { fecha } }),
   
-  // ✅ NUEVO: Obtener todos los horarios de la semana desde HorarioDiaSemana
+  // Horarios de la semana desde HorarioDiaSemana (el endpoint es /api/horarios-admin, sin /citas)
   getHorariosDiaSemana: () =>
-    api.get('/citas/horarios-admin'),
+    api.get('/horarios-admin'),
   
   getDisponibilidadMensual: (mes, anio, tipoLavado) =>
     api.get('/citas/disponibilidad-mensual', { params: { mes, anio, tipoLavado } }),

@@ -4,9 +4,174 @@ import clienteService from "../../services/clienteService";
 import enumsService from "../../services/enumsService";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import axios from "axios";
 import api from "../../services/api";
 import * as XLSX from "xlsx";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Alta rápida de cliente desde la factura (pantalla completa)
+// Solo el nombre es obligatorio (igual que en el backend). Al guardar, el cliente
+// creado se devuelve a la factura para dejarlo seleccionado.
+// ─────────────────────────────────────────────────────────────────────────────
+const CLIENTE_VACIO = {
+  nombre: "",
+  apellidos: "",
+  nif: "",
+  telefono: "",
+  email: "",
+  direccion: "",
+  codigoPostal: "",
+  ciudad: "",
+  provincia: "",
+};
+
+const ClienteRapidoModal = ({ onClose, onCreado }) => {
+  const [datos, setDatos] = useState(CLIENTE_VACIO);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setDatos((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const guardar = async (e) => {
+    e.preventDefault();
+    if (!datos.nombre.trim()) {
+      setError("El nombre es obligatorio");
+      return;
+    }
+    setGuardando(true);
+    setError("");
+    try {
+      const payload = Object.fromEntries(
+        Object.entries(datos).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v]),
+      );
+      payload.nif = payload.nif.toUpperCase();
+      const response = await clienteService.create({ ...payload, activo: true });
+      onCreado(response.data);
+    } catch (err) {
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.mensaje ||
+          err.response?.data?.message ||
+          "No se pudo crear el cliente: " + err.message,
+      );
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const input =
+    "w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+  const label = "block text-base font-semibold text-gray-700 mb-2";
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-white flex flex-col" role="dialog" aria-modal="true">
+      <div className="shrink-0 flex items-center justify-between px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+        <h3 className="text-3xl font-bold text-gray-900">Nuevo Cliente</h3>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="text-gray-500 hover:text-gray-900 text-3xl leading-none px-2"
+        >
+          ✕
+        </button>
+      </div>
+
+      <form onSubmit={guardar} className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 overflow-y-auto px-10 py-8 space-y-8">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-300 text-red-800 rounded-lg">{error}</div>
+          )}
+
+          <div>
+            <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
+              Datos del cliente
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className={label}>Nombre o razón social*</label>
+                <input name="nombre" value={datos.nombre} onChange={handleChange} className={input} required autoFocus />
+              </div>
+              <div>
+                <label className={label}>Apellidos</label>
+                <input name="apellidos" value={datos.apellidos} onChange={handleChange} className={input} />
+              </div>
+              <div>
+                <label className={label}>NIF / CIF</label>
+                <input name="nif" value={datos.nif} onChange={handleChange} className={input} placeholder="12345678A / B12345678" />
+              </div>
+              <div>
+                <label className={label}>Teléfono</label>
+                <input type="tel" name="telefono" value={datos.telefono} onChange={handleChange} className={input} />
+              </div>
+              <div className="md:col-span-2">
+                <label className={label}>Email</label>
+                <input type="email" name="email" value={datos.email} onChange={handleChange} className={input} />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-300">
+              Dirección fiscal
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="md:col-span-3">
+                <label className={label}>Dirección</label>
+                <input name="direccion" value={datos.direccion} onChange={handleChange} className={input} placeholder="Calle, número, piso" />
+              </div>
+              <div>
+                <label className={label}>Código postal</label>
+                <input name="codigoPostal" value={datos.codigoPostal} onChange={handleChange} className={input} inputMode="numeric" maxLength={5} />
+              </div>
+              <div>
+                <label className={label}>Ciudad</label>
+                <input name="ciudad" value={datos.ciudad} onChange={handleChange} className={input} />
+              </div>
+              <div>
+                <label className={label}>Provincia</label>
+                <input name="provincia" value={datos.provincia} onChange={handleChange} className={input} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 px-10 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-base text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={guardando}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-base font-semibold rounded-lg transition-colors shadow-md"
+          >
+            {guardando ? "Guardando..." : "Crear y seleccionar"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+// Dirección completa para la factura: dirección + CP + ciudad (+ provincia),
+// sin repetir datos que ya vengan escritos en la propia dirección.
+const direccionCompletaCliente = (c) => {
+  const direccion = (c.direccion || "").trim();
+  const lower = direccion.toLowerCase();
+  const extra = [
+    [c.codigoPostal, c.ciudad].filter(Boolean).join(" "),
+    c.provincia && c.provincia !== c.ciudad ? `(${c.provincia})` : "",
+  ]
+    .filter((parte) => parte && !lower.includes(parte.toLowerCase()))
+    .join(" ");
+  return [direccion, extra].filter(Boolean).join(", ");
+};
 
 const FacturasEmitidas = () => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
@@ -17,6 +182,7 @@ const FacturasEmitidas = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalClienteAbierto, setModalClienteAbierto] = useState(false);
   const [modalCobrarAbierto, setModalCobrarAbierto] = useState(false);
   const [facturaParaCobrar, setFacturaParaCobrar] = useState(null);
   const [metodoPagoCobro, setMetodoPagoCobro] = useState("EFECTIVO");
@@ -263,17 +429,36 @@ const FacturasEmitidas = () => {
     }
 
     const cliente = clientes.find((c) => c.id === parseInt(clienteId));
-    if (cliente) {
-      setFormData((prev) => ({
-        ...prev,
-        clienteId: cliente.id,
-        clienteNombre: `${cliente.nombre} ${cliente.apellidos || ""}`.trim(),
-        clienteNif: cliente.nif || "",
-        clienteDireccion: cliente.direccion || "",
-        clienteEmail: cliente.email || "",
-        clienteTelefono: cliente.telefono || "",
-      }));
+    if (cliente) aplicarCliente(cliente);
+  };
+
+  // Rellena los datos del cliente en la factura
+  const aplicarCliente = (cliente) => {
+    setFormData((prev) => ({
+      ...prev,
+      clienteId: cliente.id,
+      clienteNombre: `${cliente.nombre} ${cliente.apellidos || ""}`.trim(),
+      clienteNif: cliente.nif || "",
+      clienteDireccion: direccionCompletaCliente(cliente),
+      clienteEmail: cliente.email || "",
+      clienteTelefono: cliente.telefono || "",
+    }));
+  };
+
+  // Cliente recién creado desde la factura: añadirlo a la lista y seleccionarlo
+  const handleClienteCreado = (cliente) => {
+    if (!cliente?.id) {
+      setModalClienteAbierto(false);
+      cargarClientes();
+      return;
     }
+    setClientes((prev) =>
+      [...prev.filter((c) => c.id !== cliente.id), cliente].sort((a, b) =>
+        `${a.nombre} ${a.apellidos || ""}`.localeCompare(`${b.nombre} ${b.apellidos || ""}`, "es"),
+      ),
+    );
+    aplicarCliente(cliente);
+    setModalClienteAbierto(false);
   };
 
   // Buscar precio de un servicio por concepto y calcular base imponible (sin IVA)
@@ -1338,19 +1523,27 @@ const FacturasEmitidas = () => {
 
       {/* Modal para crear/editar factura */}
       {modalAbierto && (
-        <div className="fixed inset-0 bg-blue-900 bg-opacity-40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+          <div className="bg-white w-full h-full flex flex-col">
             {/* Header del modal */}
-            <div className="px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+            <div className="shrink-0 flex items-center justify-between px-10 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
               <h3 className="text-3xl font-bold text-gray-900">
                 {editandoFactura
                   ? "Editar Factura Emitida"
                   : "Nueva Factura Emitida"}
               </h3>
+              <button
+                type="button"
+                onClick={cerrarModal}
+                aria-label="Cerrar"
+                className="text-gray-500 hover:text-gray-900 text-3xl leading-none px-2"
+              >
+                ✕
+              </button>
             </div>
 
             {/* Contenido con scroll */}
-            <div className="px-10 py-8 overflow-y-auto flex-1">
+            <div className="px-10 py-8 overflow-y-auto flex-1 min-h-0">
               <form onSubmit={guardarFactura} className="space-y-8">
                 {/* Sección: Datos de la Factura */}
                 <div>
@@ -1446,21 +1639,30 @@ const FacturasEmitidas = () => {
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
                         Seleccionar Cliente*
                       </label>
-                      <select
-                        name="clienteId"
-                        value={formData.clienteId}
-                        onChange={handleClienteChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">-- Selecciona un cliente --</option>
-                        {clientes.map((cliente) => (
-                          <option key={cliente.id} value={cliente.id}>
-                            {cliente.nombre} {cliente.apellidos}{" "}
-                            {cliente.nif && `(${cliente.nif})`}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <select
+                          name="clienteId"
+                          value={formData.clienteId}
+                          onChange={handleClienteChange}
+                          className="flex-1 min-w-0 border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          required
+                        >
+                          <option value="">-- Selecciona un cliente --</option>
+                          {clientes.map((cliente) => (
+                            <option key={cliente.id} value={cliente.id}>
+                              {cliente.nombre} {cliente.apellidos}{" "}
+                              {cliente.nif && `(${cliente.nif})`}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setModalClienteAbierto(true)}
+                          className="shrink-0 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors whitespace-nowrap"
+                        >
+                          + Nuevo cliente
+                        </button>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -1796,7 +1998,7 @@ const FacturasEmitidas = () => {
             </div>
 
             {/* Footer con botones */}
-            <div className="px-8 py-5 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+            <div className="shrink-0 px-8 py-5 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={cerrarModal}
@@ -1814,6 +2016,14 @@ const FacturasEmitidas = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Alta rápida de cliente (por encima del modal de factura) */}
+      {modalClienteAbierto && (
+        <ClienteRapidoModal
+          onClose={() => setModalClienteAbierto(false)}
+          onCreado={handleClienteCreado}
+        />
       )}
 
       {/* Modal para cobrar factura */}

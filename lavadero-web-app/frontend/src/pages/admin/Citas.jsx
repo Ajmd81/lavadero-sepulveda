@@ -37,6 +37,7 @@ const Citas = () => {
   const [categoriaVehiculo, setCategoriaVehiculo] = useState(''); // descripción legible
   const [serviciosDisponibles, setServiciosDisponibles] = useState(null); // null = todos
   const [clasificando, setClasificando] = useState(false);
+  const [errorClasificacion, setErrorClasificacion] = useState('');
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -207,6 +208,7 @@ const Citas = () => {
     setModeloId('');
     setCategoriaVehiculo('');
     setServiciosDisponibles(null);
+    setErrorClasificacion('');
   };
 
   /**
@@ -216,9 +218,20 @@ const Citas = () => {
    */
   const clasificarVehiculo = async (id, tipoActual = '') => {
     setClasificando(true);
+    setErrorClasificacion('');
     try {
-      const { data } = await api.get('/vehicle/classify-by-id', { params: { id } });
-      const disponibles = data.availableServices || [];
+      // El id va en la URL (no en "params") para que funcione con cualquier cliente HTTP
+      const res = await api.get(`/vehicle/classify-by-id?id=${encodeURIComponent(id)}`);
+      const data = res?.data ?? res; // axios devuelve {data}; otros wrappers, el cuerpo directo
+
+      // Los servicios pueden llegar como "LAVADO_X" o como objeto {name: "LAVADO_X", ...}
+      const disponibles = (data?.availableServices || [])
+        .map(s => (typeof s === 'string' ? s : (s?.name || s?.nombre)))
+        .filter(Boolean);
+
+      if (disponibles.length === 0) {
+        throw new Error('El backend no devolvió servicios para este modelo');
+      }
 
       // Turismo y ranchera comparten carrocería: se ofrecen las dos variantes
       const esTurismo = data.category === 'turismo' || data.category === 'ranchera';
@@ -241,6 +254,11 @@ const Citas = () => {
       console.error('Error clasificando vehículo:', err);
       setServiciosDisponibles(null); // si falla, se muestran todos
       setCategoriaVehiculo('');
+      const status = err?.response?.status;
+      setErrorClasificacion(
+        `No se pudo detectar la categoría del modelo${status ? ` (error ${status})` : ''}. ` +
+        'Se muestran todos los lavados: elige el adecuado manualmente.'
+      );
     } finally {
       setClasificando(false);
     }
@@ -249,6 +267,7 @@ const Citas = () => {
   const handleMarcaChange = (e) => {
     setMarca(e.target.value);
     setModeloId('');
+    setErrorClasificacion('');
     setCategoriaVehiculo('');
     setServiciosDisponibles(null);
     setFormData(prev => ({ ...prev, modeloVehiculo: '', tipoLavado: '' }));
@@ -258,13 +277,14 @@ const Citas = () => {
     const id = e.target.value;
     setModeloId(id);
     if (!id) {
+      setErrorClasificacion('');
       setCategoriaVehiculo('');
       setServiciosDisponibles(null);
       setFormData(prev => ({ ...prev, modeloVehiculo: '', tipoLavado: '' }));
       return;
     }
     const modelo = (marcasModelos[marca] || []).find(m => String(m.id) === String(id));
-    setFormData(prev => ({ ...prev, modeloVehiculo: modelo ? modelo.name : '' }));
+    setFormData(prev => ({ ...prev, modeloVehiculo: modelo ? modelo.name : '', tipoLavado: '' }));
     clasificarVehiculo(id);
   };
 
@@ -536,6 +556,9 @@ const Citas = () => {
                       <option key={tipo.nombre} value={tipo.nombre}>{tipo.descripcion} — {Number(tipo.precio).toFixed(2)} €</option>
                     ))}
                   </select>
+                  {errorClasificacion && (
+                    <p className="text-sm text-red-700 mt-2">{errorClasificacion}</p>
+                  )}
                 </div>
               </div>
 

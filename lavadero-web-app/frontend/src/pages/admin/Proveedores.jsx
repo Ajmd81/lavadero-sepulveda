@@ -382,13 +382,23 @@ const ProveedorModal = ({ proveedor, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">
-          {proveedor ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-        </h2>
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+      <div className="bg-white w-full h-full overflow-y-auto flex flex-col">
+        <div className="sticky top-0 z-10 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {proveedor ? 'Editar Proveedor' : 'Nuevo Proveedor'}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="text-gray-500 hover:text-gray-900 text-2xl leading-none px-2"
+          >
+            ✕
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold mb-1">Nombre*</label>
@@ -510,7 +520,7 @@ const ProveedorModal = ({ proveedor, onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="mt-auto sticky bottom-0 bg-white flex justify-end gap-2 py-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
