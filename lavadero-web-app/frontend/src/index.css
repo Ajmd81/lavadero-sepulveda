@@ -27,40 +27,67 @@
   --text-muted:     #c0c4cc;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/*
+ * IMPORTANTE (Tailwind v4): los estilos globales van dentro de @layer base.
+ * Cualquier regla escrita FUERA de una capa gana a las utilidades de Tailwind
+ * (p-*, m-*, space-*, transition-*...) aunque sea menos específica.
+ * El reset "* { margin: 0; padding: 0; box-sizing: border-box }" se ha eliminado:
+ * Tailwind v4 ya lo incluye en su preflight.
+ */
+@layer base {
+  /* Compatibilidad v3 → v4: bordes gris claro por defecto (en v4 son currentColor = negro) */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* Compatibilidad v3 → v4: cursor de mano en botones (en v4 es el cursor por defecto) */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    animation: fadeInUp 0.5s ease;
+  }
+
+  /* Transiciones suaves por defecto (las clases transition-* de Tailwind pueden sobrescribirlas) */
+  * {
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer components {
+  .spinner {
+    border: 3px solid var(--surface-raised);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+  }
 }
 
-.spinner {
-  border: 3px solid var(--surface-raised);
-  border-top: 3px solid var(--primary-color);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto;
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
+  .animate-shake    { animation: shake 0.5s ease-in-out; }
 }
 
 @keyframes spin {
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--surface-raised); }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-on-dark); }
-
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 @keyframes slideInLeft {
   from { opacity: 0; transform: translateX(-20px); }
@@ -72,18 +99,14 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-body { animation: fadeInUp 0.5s ease; }
-
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25%       { transform: translateX(-5px); }
   75%       { transform: translateX(5px); }
 }
 
-.animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
-.animate-shake    { animation: shake 0.5s ease-in-out; }
-
-* {
-  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* Barra de scroll (pseudo-elementos: no chocan con las utilidades) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--surface-raised); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-on-dark); }
