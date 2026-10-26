@@ -409,20 +409,25 @@ const Citas = () => {
         </button>
       </div>
 
+      {/* Error flotante: no empuja la tabla hacia abajo (evita saltos de diseño) */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-red-800">
-          {error}
-          <button onClick={() => setError(null)} className="float-right text-red-600 hover:text-red-900">✕</button>
+        <div role="alert" className="fixed top-4 right-4 z-40 max-w-md flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 shadow-lg">
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError(null)} aria-label="Cerrar" className="text-red-600 hover:text-red-900">✕</button>
         </div>
       )}
 
-      {loading ? (
+      {/* Spinner solo en la primera carga; en las recargas la tabla se queda en su sitio */}
+      {loading && citas.length === 0 ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
+          <div
+            className={`overflow-x-auto transition-opacity ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+            aria-busy={loading}
+          >
             <table className="w-full border-collapse border border-gray-300">
               <thead className="bg-gray-100">
                 <tr>
