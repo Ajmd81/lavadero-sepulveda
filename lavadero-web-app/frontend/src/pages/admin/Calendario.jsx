@@ -211,7 +211,7 @@ const Calendario = () => {
   const hoy = new Date();
 
   return (
-    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-6">
+    <div className="bg-sepulveda-graphite rounded-lg shadow-lg p-6 lg:h-screen lg:min-h-[40rem] lg:flex lg:flex-col">
 
       {/* ── Cabecera ── */}
       <div className="flex items-center gap-3 mb-6">
@@ -239,11 +239,11 @@ const Calendario = () => {
       )}
 
       {!loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:flex-1 lg:min-h-0">
 
           {/* ── Calendario ── */}
-          <div className="lg:col-span-2">
-            <div className="bg-sepulveda-carbon rounded-lg p-4 border border-sepulveda-silver/20">
+          <div className="lg:col-span-2 lg:flex lg:flex-col lg:min-h-0">
+            <div className="bg-sepulveda-carbon rounded-lg p-4 border border-sepulveda-silver/20 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
 
               {/* Navegación mes */}
               <div className="flex justify-between items-center mb-6">
@@ -274,7 +274,8 @@ const Calendario = () => {
               </div>
 
               {/* Celdas */}
-              <div className="grid grid-cols-7 gap-2">
+              {/* En escritorio las 6 semanas se reparten todo el alto disponible */}
+              <div className="grid grid-cols-7 gap-2 lg:flex-1 lg:min-h-0 lg:grid-rows-6">
                 {semanas.map((semana, si) =>
                   semana.map((dia, di) => {
                     const diaNum   = dia.fecha.getDate();
@@ -290,7 +291,7 @@ const Calendario = () => {
                     const colorDisponibilidad = dia.esDelMesActual ? obtenerColorPorDisponibilidad(diaNum) : null;
 
                     // ── Estilo de la casilla (prioridad: fuera de mes > seleccionado > cerrado > hoy > con citas > normal)
-                    let clases = 'p-2 rounded-lg text-sm h-24 relative text-left transition-all ';
+                    let clases = 'p-2 rounded-lg text-sm h-24 lg:h-auto lg:min-h-0 overflow-hidden relative text-left flex flex-col justify-start transition-all ';
                     if (!dia.esDelMesActual) {
                       clases += 'bg-transparent border border-dashed border-slate-700 text-slate-600 cursor-not-allowed';
                     } else if (esSelec) {
