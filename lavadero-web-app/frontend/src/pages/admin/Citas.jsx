@@ -394,8 +394,16 @@ const Citas = () => {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Gestión de Citas</h1>
+      <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/assets/icons/citas.png" alt="Citas" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gestión de Citas</h1>
+            <p className="text-base text-gray-600">Total: <span className="font-semibold text-blue-600">{totalElements}</span> citas</p>
+          </div>
+        </div>
         <button onClick={abrirModalNueva} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
           + Nueva Cita
         </button>
