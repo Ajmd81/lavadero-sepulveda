@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import citaService from '../../services/citaService';
 import api from '../../services/api';
 
@@ -264,35 +264,8 @@ const Calendario = () => {
                 </button>
               </div>
 
-              {/* ✅ NUEVO: Leyenda de disponibilidad */}
-              <div className="mb-4 p-3 bg-sepulveda-graphite/50 rounded-lg border border-sepulveda-silver/20">
-                <p className="text-xs font-semibold text-sepulveda-silver mb-2">Ocupación por color:</p>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-green-400" />
-                    <span className="text-sepulveda-silver">0% (Libre)</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span className="text-sepulveda-silver">0-25%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                    <span className="text-sepulveda-silver">25-50%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-orange-400" />
-                    <span className="text-sepulveda-silver">50-75%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-red-400" />
-                    <span className="text-sepulveda-silver">75%+ (Lleno)</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Cabecera días semana */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
+              <div className="grid grid-cols-7 gap-2 mb-2">
                 {DIAS_SEMANA.map(d => (
                   <div key={d} className="text-center font-bold text-sepulveda-silver py-2 text-sm">
                     {d}
@@ -301,7 +274,7 @@ const Calendario = () => {
               </div>
 
               {/* Celdas */}
-              <div className="grid grid-cols-7 gap-1">
+              <div className="grid grid-cols-7 gap-2">
                 {semanas.map((semana, si) =>
                   semana.map((dia, di) => {
                     const diaNum   = dia.fecha.getDate();
@@ -309,29 +282,27 @@ const Calendario = () => {
                     const tieneCitas = dia.esDelMesActual && !!citasDelMes[diaNum];
                     const cantCitas  = tieneCitas ? citasDelMes[diaNum].length : 0;
                     const esCerrado  = dia.esDelMesActual && !!diasCerrados[isoFecha];
-                    const esHoy =
-                      hoy.getDate()        === diaNum &&
-                      hoy.getMonth()       === fecha.getMonth() &&
-                      hoy.getFullYear()    === fecha.getFullYear();
-                    const esSelec = diaSeleccionado === diaNum && dia.esDelMesActual;
+                    const esHoy      = dia.esDelMesActual && isoFecha === toISODate(hoy);
+                    const esSelec    = dia.esDelMesActual && diaSeleccionado === diaNum;
 
-                    // ✅ NUEVO: Datos de disponibilidad
-                    const disponibilidad = obtenerDisponibilidadDia(diaNum);
-                    const colorDisponibilidad = obtenerColorPorDisponibilidad(diaNum);
+                    // Disponibilidad solo para los días del mes actual
+                    const disponibilidad      = dia.esDelMesActual ? obtenerDisponibilidadDia(diaNum) : null;
+                    const colorDisponibilidad = dia.esDelMesActual ? obtenerColorPorDisponibilidad(diaNum) : null;
 
-                    let clases = 'p-2 rounded text-sm h-24 relative transition-all ';
+                    // ── Estilo de la casilla (prioridad: fuera de mes > seleccionado > cerrado > hoy > con citas > normal)
+                    let clases = 'p-2 rounded-lg text-sm h-24 relative text-left transition-all ';
                     if (!dia.esDelMesActual) {
-                      clases += 'bg-sepulveda-carbon/50 text-sepulveda-silver/30 cursor-not-allowed border border-sepulveda-silver/10';
+                      clases += 'bg-transparent border border-dashed border-slate-700 text-slate-600 cursor-not-allowed';
                     } else if (esSelec) {
-                      clases += 'bg-sepulveda-blue text-white font-bold border-2 border-sepulveda-blue-light';
+                      clases += 'bg-blue-600 border-2 border-white text-white shadow-lg shadow-blue-900/50 scale-[1.03] z-10';
                     } else if (esCerrado) {
-                      clases += 'bg-sepulveda-graphite hover:bg-sepulveda-graphite/80 border-2 border-red-500 text-sepulveda-silver';
+                      clases += 'bg-red-950/70 hover:bg-red-950 border-2 border-red-500 text-red-100';
                     } else if (esHoy) {
-                      clases += 'bg-sepulveda-blue-light text-white font-bold border-2 border-sepulveda-blue';
+                      clases += 'bg-slate-800 hover:bg-slate-700 border-2 border-amber-400 text-white';
                     } else if (tieneCitas || disponibilidad) {
-                      clases += 'bg-sepulveda-blue/20 hover:bg-sepulveda-blue/30 border-2 border-sepulveda-blue text-sepulveda-silver-light';
+                      clases += 'bg-slate-700 hover:bg-slate-600 border border-slate-500 text-white';
                     } else {
-                      clases += 'bg-sepulveda-graphite/60 hover:bg-sepulveda-graphite border border-sepulveda-silver/20 text-sepulveda-silver-light';
+                      clases += 'bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200';
                     }
 
                     return (
@@ -343,23 +314,32 @@ const Calendario = () => {
                         title={disponibilidad ? `Disponibles: ${disponibilidad.disponibles}/${disponibilidad.total}` : ''}
                       >
                         <div className="font-bold flex items-center justify-between mb-1">
-                          <span>{diaNum}</span>
+                          {esHoy ? (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="bg-amber-400 text-slate-900 rounded-full min-w-[1.5rem] h-6 px-1 inline-flex items-center justify-center">
+                                {diaNum}
+                              </span>
+                              <span className={`text-[10px] font-extrabold tracking-wide ${esSelec ? 'text-white' : 'text-amber-300'}`}>HOY</span>
+                            </span>
+                          ) : (
+                            <span>{diaNum}</span>
+                          )}
                           {esCerrado && <span title="Día cerrado">🔒</span>}
                         </div>
 
                         {esCerrado && (
-                          <div className="text-xs mt-1 font-semibold text-red-400 truncate">
+                          <div className={`text-xs mt-1 font-semibold truncate ${esSelec ? 'text-white' : 'text-red-300'}`}>
                             {diasCerrados[isoFecha]?.tipo || 'Cerrado'}
                           </div>
                         )}
 
-                        {/* ✅ NUEVO: Mostrar disponibilidad */}
+                        {/* Disponibilidad */}
                         {!esCerrado && disponibilidad && (
                           <div className="text-xs space-y-0.5">
-                            <div className={`font-bold ${colorDisponibilidad}`}>
+                            <div className={`font-bold ${esSelec ? 'text-white' : colorDisponibilidad}`}>
                               {disponibilidad.disponibles}/{disponibilidad.total}
                             </div>
-                            <div className="w-full h-1 bg-sepulveda-graphite rounded overflow-hidden">
+                            <div className="w-full h-1.5 bg-black/40 rounded overflow-hidden">
                               <div
                                 className={`h-full transition-all ${
                                   disponibilidad.porcentajeOcupacion === 0 ? 'bg-green-500' :
@@ -371,15 +351,15 @@ const Calendario = () => {
                                 style={{ width: `${disponibilidad.porcentajeOcupacion}%` }}
                               />
                             </div>
-                            <div className="text-xs text-sepulveda-silver/70">
+                            <div className={`text-xs ${esSelec ? 'text-white/90' : 'text-slate-300'}`}>
                               {disponibilidad.porcentajeOcupacion}% lleno
                             </div>
                           </div>
                         )}
 
-                        {/* Mostrar cantidad de citas si no hay disponibilidad cargada */}
+                        {/* Cantidad de citas si no hay disponibilidad cargada */}
                         {!esCerrado && !disponibilidad && tieneCitas && (
-                          <div className="text-xs mt-1 font-semibold text-sepulveda-blue-light">
+                          <div className={`text-xs mt-1 font-semibold ${esSelec ? 'text-white' : 'text-sky-300'}`}>
                             {cantCitas} {cantCitas === 1 ? 'cita' : 'citas'}
                           </div>
                         )}
@@ -391,21 +371,21 @@ const Calendario = () => {
 
               {/* Leyenda */}
               <div className="flex flex-wrap gap-4 mt-4 text-xs text-sepulveda-silver">
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded bg-sepulveda-blue-light inline-block border border-sepulveda-blue" />
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded bg-slate-800 border-2 border-amber-400 inline-block" />
                   <span>Hoy</span>
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded bg-sepulveda-blue/20 border border-sepulveda-blue inline-block" />
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded bg-blue-600 border-2 border-white inline-block" />
+                  <span>Seleccionado</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded bg-slate-700 border border-slate-500 inline-block" />
                   <span>Con citas</span>
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded bg-sepulveda-graphite border border-red-500 inline-block" />
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded bg-red-950 border-2 border-red-500 inline-block" />
                   <span>🔒 Cerrado</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded bg-sepulveda-blue inline-block" />
-                  <span>Seleccionado</span>
                 </span>
               </div>
             </div>
