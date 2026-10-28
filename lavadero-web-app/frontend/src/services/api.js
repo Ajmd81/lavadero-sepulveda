@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tokenStorage } from './tokenStorage';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
@@ -12,9 +13,8 @@ const api = axios.create({
 // ─── REQUEST: adjuntar JWT ────────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = tokenStorage.getToken();
     if (token) {
-      // JWT estándar: "Bearer <token>"
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -23,18 +23,21 @@ api.interceptors.request.use(
 );
 
 // ─── RESPONSE: manejar 401 ────────────────────────────────────────────────────
+// El backend responde 401 cuando el token falta, caduca, se revocó (logout / cambio de
+// contraseña) o el usuario se desactivó. En todos esos casos hay que volver al login.
+const RUTAS_SIN_REDIRECCION = ['/auth/login', '/auth/logout'];
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
     const url = error.config?.url ?? '';
 
-    // Redirigir al login si el JWT expiró o es inválido,
-    // pero nunca en el propio endpoint de login (evita bucle)
-    if (status === 401 && !url.includes('/auth/login')) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = '/admin/login';
+    if (status === 401 && !RUTAS_SIN_REDIRECCION.some((r) => url.includes(r))) {
+      tokenStorage.limpiar();
+      if (!window.location.pathname.startsWith('/admin/login')) {
+        window.location.href = '/admin/login?expirada=1';
+      }
     }
 
     return Promise.reject(error);
@@ -43,28 +46,26 @@ api.interceptors.response.use(
 
 export default api;
 
-
 // ─── authService ──────────────────────────────────────────────────────────────
 
 export const authService = {
   login: (credentials) => api.post('/auth/login', credentials),
 
-  // Con JWT stateless el logout real es eliminar el token en cliente.
-  // Llamamos igualmente al backend para tener un punto de cierre limpio.
+  // Revoca en el servidor el token de este dispositivo
   logout: () => api.post('/auth/logout'),
 
-  // Verifica el JWT contra el backend (firma + expiración + usuario activo en BD)
+  // Cierra la sesión en todos los dispositivos
+  logoutAll: () => api.post('/auth/logout-all'),
+
+  // Renueva el token (solo funciona si el actual sigue siendo válido y no se superó el máximo de sesión)
+  refresh: () => api.post('/auth/refresh'),
+
+  // Verifica el JWT contra el backend (firma + expiración + revocación + usuario activo)
   verify: () => api.get('/auth/verify'),
 
-  limpiarStorage: () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-  },
+  limpiarStorage: () => tokenStorage.limpiar(),
 
-  getCurrentUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  },
+  getCurrentUser: () => tokenStorage.getUser(),
 
-  isAuthenticated: () => !!localStorage.getItem('authToken'),
+  isAuthenticated: () => tokenStorage.hayToken(),
 };
