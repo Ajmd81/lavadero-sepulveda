@@ -1,5 +1,7 @@
 package com.lavaderosepulveda.app.controller.admin;
 
+import jakarta.validation.Valid;
+
 import com.lavaderosepulveda.app.model.facturacion.PlantillaFacturaConfig;
 import com.lavaderosepulveda.app.repository.facturacion.PlantillaFacturaConfigRepository;
 import org.slf4j.Logger;
@@ -42,7 +44,7 @@ public class PlantillaFacturaConfigController {
      * Guardar/actualizar configuración
      */
     @PostMapping
-    public ResponseEntity<PlantillaFacturaConfig> guardarConfiguracion(@RequestBody PlantillaFacturaConfig config) {
+    public ResponseEntity<PlantillaFacturaConfig> guardarConfiguracion(@Valid @RequestBody PlantillaFacturaConfig config) {
         try {
             // Siempre usar ID = 1 (solo hay una configuración)
             config.setId(1L);
@@ -63,7 +65,7 @@ public class PlantillaFacturaConfigController {
      * Actualizar configuración (alias de POST)
      */
     @PutMapping
-    public ResponseEntity<PlantillaFacturaConfig> actualizarConfiguracion(@RequestBody PlantillaFacturaConfig config) {
+    public ResponseEntity<PlantillaFacturaConfig> actualizarConfiguracion(@Valid @RequestBody PlantillaFacturaConfig config) {
         return guardarConfiguracion(config);
     }
 

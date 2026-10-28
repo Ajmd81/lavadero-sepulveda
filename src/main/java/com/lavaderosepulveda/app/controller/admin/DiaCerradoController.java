@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/dias-cerrados")
-@CrossOrigin(origins = "*")
 public class DiaCerradoController {
 
     @Autowired
@@ -27,12 +26,15 @@ public class DiaCerradoController {
     public ResponseEntity<List<DiaCerrado>> getPorRango(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
+        if (!rangoValido(inicio, fin)) return ResponseEntity.badRequest().build();
         return ResponseEntity.ok(diasCerradoRepository.findByRango(inicio, fin));
     }
 
     /** Marcar un día como cerrado */
     @PostMapping
-    public ResponseEntity<?> marcar(@RequestBody DiaCerrado diaCerrado) {
+    public ResponseEntity<?> marcar(@jakarta.validation.Valid @RequestBody DiaCerrado diaCerrado) {
+        diaCerrado.setId(null); // nunca sobrescribir un registro existente
+        if (diaCerrado.getTipo() == null || diaCerrado.getTipo().isBlank()) diaCerrado.setTipo("FESTIVO");
         if (diasCerradoRepository.existsByFecha(diaCerrado.getFecha())) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "El día " + diaCerrado.getFecha() + " ya está marcado como cerrado"));
@@ -73,10 +75,16 @@ public class DiaCerradoController {
     public ResponseEntity<List<String>> getFechasCerradas(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
+        if (!rangoValido(inicio, fin)) return ResponseEntity.badRequest().build();
         List<String> fechas = diasCerradoRepository.findFechasByRango(inicio, fin)
                 .stream()
                 .map(LocalDate::toString)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(fechas);
+    }
+
+    /** Rango coherente y acotado (máx. ~13 meses) para evitar consultas abusivas desde la API pública. */
+    private boolean rangoValido(LocalDate inicio, LocalDate fin) {
+        return !fin.isBefore(inicio) && !fin.isAfter(inicio.plusDays(400));
     }
 }

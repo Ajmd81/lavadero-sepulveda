@@ -1,27 +1,54 @@
 package com.lavaderosepulveda.app.dto.facturacion;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+
 import java.math.BigDecimal;
 
 public class FacturaRecibidaDTO {
     private Long id;
+    @Size(max = 50)
     private String numeroFactura;
+    @Positive
     private Long proveedorId;
+    @Size(max = 150)
     private String proveedorNombre;
+    @Size(max = 20)
+    @Pattern(regexp = "^$|^[A-Za-z0-9\\-]{5,20}$", message = "NIF/CIF con formato inválido")
     private String proveedorNif;
+    @Pattern(regexp = "^$|^\\d{2}/\\d{2}/\\d{4}$|^\\d{4}-\\d{2}-\\d{2}$", message = "Fecha con formato inválido (dd/MM/yyyy)")
     private String fechaFactura;      // dd/MM/yyyy
+    @Pattern(regexp = "^$|^\\d{2}/\\d{2}/\\d{4}$|^\\d{4}-\\d{2}-\\d{2}$", message = "Fecha con formato inválido (dd/MM/yyyy)")
     private String fechaVencimiento;  // dd/MM/yyyy
+    @Pattern(regexp = "^$|^\\d{2}/\\d{2}/\\d{4}$|^\\d{4}-\\d{2}-\\d{2}$", message = "Fecha con formato inválido (dd/MM/yyyy)")
     private String fechaPago;         // dd/MM/yyyy
+    @Size(max = 50)
     private String categoria;
+    @Size(max = 255)
     private String concepto;
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal baseImponible;
+    @DecimalMin(value = "0", message = "No puede ser negativo")
+    @DecimalMax(value = "100", message = "No puede superar 100")
+    @Digits(integer = 3, fraction = 4)
     private BigDecimal tipoIva;
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal cuotaIva;
+    @DecimalMin(value = "0", message = "No puede ser negativo")
+    @DecimalMax(value = "100", message = "No puede superar 100")
+    @Digits(integer = 3, fraction = 4)
     private BigDecimal tipoIrpf;
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal cuotaIrpf;
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal total;
+    @Size(max = 30)
     private String estado;
+    @Size(max = 30)
     private String metodoPago;
+    @Size(max = 500)
     private String documentoAdjunto;
+    @Size(max = 2000)
     private String notas;
 
     // Constructores

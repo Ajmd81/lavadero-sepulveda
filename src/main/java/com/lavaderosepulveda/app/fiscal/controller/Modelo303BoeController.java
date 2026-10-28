@@ -25,9 +25,6 @@ import java.math.BigDecimal;
  */
 @RestController
 @RequestMapping("/api/fiscal/modelo303")
-@CrossOrigin(origins = "*", exposedHeaders = {
-        HttpHeaders.CONTENT_DISPOSITION, "X-Tipo-Declaracion", "X-Resultado", "X-Cuotas-Pendientes-Compensar"
-})
 public class Modelo303BoeController {
 
     @Autowired
@@ -70,7 +67,7 @@ public class Modelo303BoeController {
 
     @PostMapping("/exportar-boe")
     public ResponseEntity<byte[]> exportarBoeCompleto(
-            @RequestBody Modelo303BoeService.Modelo303Datos datos
+            @jakarta.validation.Valid @RequestBody Modelo303BoeService.Modelo303Datos datos
     ) {
         Resultado303 r = modelo303BoeService.generarCompleto(datos);
 

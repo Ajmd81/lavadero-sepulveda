@@ -1,5 +1,7 @@
 package com.lavaderosepulveda.app.controller.api;
 
+import jakarta.validation.Valid;
+
 import com.lavaderosepulveda.app.dto.cliente.ClienteDTO;
 
 import com.lavaderosepulveda.app.service.cliente.ClienteService;
@@ -103,7 +105,7 @@ public class ClienteApiController {
      * ACTUALIZADO: Solo nombre es obligatorio (para importación de contabilidad)
      */
     @PostMapping
-    public ResponseEntity<?> crearCliente(@RequestBody ClienteDTO clienteDTO) {
+    public ResponseEntity<?> crearCliente(@Valid @RequestBody ClienteDTO clienteDTO) {
         try {
             // Validación mínima: solo nombre obligatorio
             if (clienteDTO.getNombre() == null || clienteDTO.getNombre().trim().isEmpty()) {
@@ -135,7 +137,7 @@ public class ClienteApiController {
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarCliente(
             @PathVariable Long id,
-            @RequestBody ClienteDTO clienteDTO) {
+            @Valid @RequestBody ClienteDTO clienteDTO) {
         try {
             // Validación mínima
             if (clienteDTO.getNombre() == null || clienteDTO.getNombre().trim().isEmpty()) {

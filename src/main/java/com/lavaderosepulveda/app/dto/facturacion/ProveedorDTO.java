@@ -1,18 +1,38 @@
 package com.lavaderosepulveda.app.dto.facturacion;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+
 public class ProveedorDTO {
     private Long id;
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(max = 150)
     private String nombre;
+    @Size(max = 20)
+    @Pattern(regexp = "^$|^[A-Za-z0-9\\-]{5,20}$", message = "NIF/CIF con formato inválido")
     private String nif;
+    @Size(max = 255)
     private String direccion;
+    @Size(max = 100)
     private String ciudad;
+    @Size(max = 10)
     private String codigoPostal;
+    @Size(max = 20)
+    @Pattern(regexp = "^$|^[+0-9\\s\\-()]{6,20}$", message = "Teléfono con formato inválido")
     private String telefono;
+    @Email(message = "Formato de email no válido")
+    @Size(max = 150)
     private String email;
+    @Size(max = 100)
     private String contacto;
+    @Size(max = 42)
+    @Pattern(regexp = "^$|^[A-Za-z]{2}[0-9A-Za-z\\s]{13,40}$", message = "IBAN con formato inválido")
     private String iban;
+    @Size(max = 2000)
     private String notas;
+    @Size(max = 50)
     private String categoria;
+    @Size(max = 50)
     private String formaPago;
     private Boolean activo;
 

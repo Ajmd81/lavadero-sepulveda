@@ -1,20 +1,28 @@
 package com.lavaderosepulveda.app.controller.api;
 
+import com.lavaderosepulveda.app.dto.auth.ActualizarPerfilRequest;
+import com.lavaderosepulveda.app.dto.auth.CambiarPasswordRequest;
+import com.lavaderosepulveda.app.dto.auth.CambiarUsernameRequest;
 import com.lavaderosepulveda.app.dto.auth.LoginRequest;
-
 import com.lavaderosepulveda.app.dto.auth.LoginResponse;
-
 import com.lavaderosepulveda.app.dto.auth.UserDTO;
-
 import com.lavaderosepulveda.app.model.auth.Usuario;
 import com.lavaderosepulveda.app.repository.auth.UsuarioRepository;
+import com.lavaderosepulveda.app.security.AuthenticatedUser;
+import com.lavaderosepulveda.app.security.ClientIpResolver;
 import com.lavaderosepulveda.app.security.JwtService;
-
+import com.lavaderosepulveda.app.security.JwtService.TokenEmitido;
+import com.lavaderosepulveda.app.security.JwtService.TokenInfo;
 import com.lavaderosepulveda.app.security.LoginRateLimiter;
-
+import com.lavaderosepulveda.app.security.TokenBlacklist;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,221 +31,243 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Autenticación y perfil del usuario del CRM.
+ *
+ * Regla de oro: el usuario sobre el que se actúa SIEMPRE sale del token
+ * (@AuthenticationPrincipal), nunca de un "username" enviado en el body o la URL.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
+    /**
+     * Hash BCrypt de una contraseña aleatoria. Se compara contra él cuando el usuario no existe
+     * para que la respuesta tarde lo mismo y no se pueda averiguar qué usernames existen.
+     */
+    private static final String HASH_FICTICIO =
+            "$2a$10$//uqzSS5QkgDVbiG72oLEuVaZ6XNVadgNxDp.0DLXcuX0RNuRCKqu";
+
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter rateLimiter;
     private final JwtService jwtService;
+    private final TokenBlacklist tokenBlacklist;
+    private final ClientIpResolver ipResolver;
 
     // ─── LOGIN ────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(
-            @RequestBody LoginRequest request,
-            HttpServletRequest httpRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
 
         // ① Rate limiting por IP
-        String ip = obtenerIpReal(httpRequest);
+        String ip = ipResolver.resolver(httpRequest);
         if (!rateLimiter.intentoPermitido(ip)) {
             long espera = rateLimiter.segundosHastaReset(ip);
-            return ResponseEntity.status(429).body(Map.of(
-                    "error", "Demasiados intentos fallidos. Espera " + espera + " segundos.",
-                    "retryAfter", espera
-            ));
+            return demasiadosIntentos(espera);
         }
 
-        // ② Validar credenciales
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(request.getUsername());
+        // ② Rate limiting por usuario (intentos fallidos desde cualquier IP)
+        String username = request.getUsername().trim();
+        if (rateLimiter.usuarioBloqueado(username)) {
+            log.warn("Login bloqueado temporalmente para usuario '{}' (ip {})", username, ip);
+            return demasiadosIntentos(rateLimiter.segundosHastaDesbloqueoUsuario(username));
+        }
 
-        if (usuarioOpt.isEmpty() || !usuarioOpt.get().getActivo()) {
-            return ResponseEntity.status(401).body("Credenciales inválidas");
+        // ③ Validar credenciales en tiempo constante
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
+        String hash = usuarioOpt.map(Usuario::getPassword).orElse(HASH_FICTICIO);
+        boolean passwordOk = passwordEncoder.matches(request.getPassword(), hash);
+
+        if (usuarioOpt.isEmpty() || !passwordOk || !Boolean.TRUE.equals(usuarioOpt.get().getActivo())) {
+            rateLimiter.registrarFallo(username);
+            log.warn("Login fallido para usuario '{}' desde ip {}", username, ip);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Credenciales inválidas"));
         }
 
         Usuario usuario = usuarioOpt.get();
+        rateLimiter.registrarExito(username);
 
-        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
-            return ResponseEntity.status(401).body("Credenciales inválidas");
-        }
-
-        // ③ Generar JWT firmado y actualizar último acceso
-        String token = jwtService.generarToken(usuario.getUsername());
-
+        // ④ Emitir JWT y actualizar último acceso
+        TokenEmitido emitido = jwtService.generarToken(usuario);
         usuario.setUltimoAcceso(LocalDateTime.now());
         usuarioRepository.save(usuario);
 
-        UserDTO user = new UserDTO();
-        user.setUsername(usuario.getUsername());
-        user.setNombre(usuario.getNombreCompleto());
-        user.setRole("ADMIN");
-
-        LoginResponse response = new LoginResponse();
-        response.setToken(token);
-        response.setUser(user);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new LoginResponse(emitido.token(), toUserDTO(usuario),
+                emitido.expiresAt().toEpochMilli()));
     }
 
-    // ─── VERIFY TOKEN ─────────────────────────────────────────────────────────
+    // ─── VERIFY ───────────────────────────────────────────────────────────────
+    // Si el token no es válido, Spring Security ya responde 401 antes de llegar aquí.
 
     @GetMapping("/verify")
-    public ResponseEntity<?> verifyToken(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public ResponseEntity<?> verifyToken(@AuthenticationPrincipal AuthenticatedUser actual) {
+        return usuarioRepository.findById(actual.id())
+                .<ResponseEntity<?>>map(u -> ResponseEntity.ok(toUserDTO(u)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Usuario no encontrado o inactivo")));
+    }
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(401).body("Token inválido");
+    // ─── REFRESH ──────────────────────────────────────────────────────────────
+    // El frontend lo llama mientras hay actividad. Si el usuario deja el CRM abierto sin
+    // tocarlo, el token (30 min) caduca y tendrá que volver a entrar.
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@AuthenticationPrincipal AuthenticatedUser actual,
+                                     @RequestHeader("Authorization") String authHeader) {
+        Optional<TokenInfo> info = JwtService.extraerBearer(authHeader).flatMap(jwtService::validar);
+        if (info.isEmpty() || !jwtService.sesionRenovable(info.get())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "La sesión ha alcanzado su duración máxima. Vuelve a iniciar sesión."));
         }
 
-        String token = authHeader.substring(7);
-
-        if (!jwtService.esValido(token)) {
-            return ResponseEntity.status(401).body("Token expirado o inválido");
-        }
-
-        String username = jwtService.extraerUsername(token);
-
-        return usuarioRepository.findByUsername(username)
-                .filter(u -> Boolean.TRUE.equals(u.getActivo()))
-                .map(usuario -> {
-                    UserDTO user = new UserDTO();
-                    user.setUsername(usuario.getUsername());
-                    user.setNombre(usuario.getNombreCompleto());
-                    user.setRole("ADMIN");
-                    return ResponseEntity.ok((Object) user);
+        return usuarioRepository.findById(actual.id())
+                .<ResponseEntity<?>>map(usuario -> {
+                    TokenEmitido nuevo = jwtService.generarToken(usuario, info.get().authTime());
+                    tokenBlacklist.revocar(info.get().jti(), info.get().expiresAt()); // el anterior deja de valer
+                    return ResponseEntity.ok(new LoginResponse(nuevo.token(), toUserDTO(usuario),
+                            nuevo.expiresAt().toEpochMilli()));
                 })
-                .orElse(ResponseEntity.status(401).body("Usuario no encontrado o inactivo"));
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
     // ─── LOGOUT ───────────────────────────────────────────────────────────────
-    // Con JWT stateless el logout real se gestiona en el cliente (eliminar token).
-    // Este endpoint existe para que el frontend tenga un punto de cierre limpio.
+    // Revoca el token de ESTE dispositivo. Público para que funcione aunque el token ya haya caducado.
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
+    public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        JwtService.extraerBearer(authHeader)
+                .flatMap(jwtService::validar)
+                .ifPresent(info -> tokenBlacklist.revocar(info.jti(), info.expiresAt()));
         return ResponseEntity.ok(Map.of("message", "Sesión cerrada correctamente"));
     }
 
-    // ─── OBTENER PERFIL ───────────────────────────────────────────────────────
-
-    @GetMapping("/perfil")
-    public ResponseEntity<?> getPerfil(@RequestParam String username) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
-        if (usuarioOpt.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
-        }
-
-        Usuario usuario = usuarioOpt.get();
-
-        Map<String, Object> perfil = new HashMap<>();
-        perfil.put("username", usuario.getUsername());
-        perfil.put("nombreCompleto", usuario.getNombreCompleto());
-        perfil.put("email", usuario.getEmail());
-        perfil.put("dni", usuario.getDni());
-
-        return ResponseEntity.ok(perfil);
+    /** Cierra la sesión en TODOS los dispositivos (p.ej. si crees que te han robado el acceso). */
+    @PostMapping("/logout-all")
+    public ResponseEntity<?> logoutAll(@AuthenticationPrincipal AuthenticatedUser actual) {
+        return usuarioRepository.findById(actual.id())
+                .<ResponseEntity<?>>map(u -> {
+                    u.invalidarTodosLosTokens();
+                    usuarioRepository.save(u);
+                    log.info("Usuario {} ha cerrado todas sus sesiones", u.getUsername());
+                    return ResponseEntity.ok(Map.of("message", "Se han cerrado todas las sesiones"));
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
-    // ─── ACTUALIZAR DATOS PERSONALES ──────────────────────────────────────────
+    // ─── PERFIL ───────────────────────────────────────────────────────────────
+
+    /** El parámetro ?username= que manda el frontend antiguo se ignora: siempre es el usuario del token. */
+    @GetMapping("/perfil")
+    public ResponseEntity<?> getPerfil(@AuthenticationPrincipal AuthenticatedUser actual) {
+        return usuarioRepository.findById(actual.id())
+                .<ResponseEntity<?>>map(usuario -> {
+                    Map<String, Object> perfil = new HashMap<>();
+                    perfil.put("username", usuario.getUsername());
+                    perfil.put("nombreCompleto", usuario.getNombreCompleto());
+                    perfil.put("email", usuario.getEmail());
+                    perfil.put("dni", usuario.getDni());
+                    return ResponseEntity.ok(perfil);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Usuario no encontrado")));
+    }
 
     @PutMapping("/perfil/datos")
-    public ResponseEntity<?> actualizarDatos(@RequestBody Map<String, String> payload) {
-        String username = payload.get("username");
-        String nombreCompleto = payload.get("nombreCompleto");
-        String email = payload.get("email");
-        String dni = payload.get("dni");
-
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
+    public ResponseEntity<?> actualizarDatos(@AuthenticationPrincipal AuthenticatedUser actual,
+                                             @Valid @RequestBody ActualizarPerfilRequest req) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(actual.id());
         if (usuarioOpt.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Usuario no encontrado"));
         }
-
         Usuario usuario = usuarioOpt.get();
 
-        if (nombreCompleto != null && !nombreCompleto.isBlank()) usuario.setNombreCompleto(nombreCompleto);
-        if (email != null && !email.isBlank()) usuario.setEmail(email);
-
-        if (dni != null && !dni.isBlank()) {
-            if (!dni.matches("^[0-9]{8}[A-Z]$")) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Formato de DNI inválido. Ejemplo: 12345678A"));
+        if (req.nombreCompleto() != null && !req.nombreCompleto().isBlank()) {
+            usuario.setNombreCompleto(req.nombreCompleto().trim());
+        }
+        if (req.email() != null && !req.email().isBlank()) {
+            usuario.setEmail(req.email().trim());
+        }
+        if (req.dni() != null && !req.dni().isBlank()) {
+            Optional<Usuario> dniExistente = usuarioRepository.findByDni(req.dni());
+            if (dniExistente.isPresent() && !dniExistente.get().getId().equals(usuario.getId())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El DNI ya está registrado en otro usuario"));
             }
-            Optional<Usuario> dniExistente = usuarioRepository.findByDni(dni);
-            if (dniExistente.isPresent() && !dniExistente.get().getUsername().equals(username)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "El DNI ya está registrado en otro usuario"));
-            }
-            usuario.setDni(dni);
+            usuario.setDni(req.dni());
         }
 
         usuarioRepository.save(usuario);
         return ResponseEntity.ok(Map.of("message", "Datos actualizados correctamente"));
     }
 
-    // ─── CAMBIAR USERNAME ─────────────────────────────────────────────────────
-
     @PutMapping("/perfil/username")
-    public ResponseEntity<?> cambiarUsername(@RequestBody Map<String, String> payload) {
-        String currentUsername = payload.get("currentUsername");
-        String nuevoUsername = payload.get("nuevoUsername");
-
-        if (nuevoUsername == null || nuevoUsername.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "El nuevo username no puede estar vacío"));
-        }
-
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(currentUsername);
-        if (usuarioOpt.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
-        }
-
-        if (usuarioRepository.findByUsername(nuevoUsername).isPresent()) {
+    public ResponseEntity<?> cambiarUsername(@AuthenticationPrincipal AuthenticatedUser actual,
+                                             @Valid @RequestBody CambiarUsernameRequest req) {
+        String nuevo = req.nuevoUsername().trim();
+        if (usuarioRepository.findByUsername(nuevo).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("error", "El username ya está en uso"));
         }
-
-        Usuario usuario = usuarioOpt.get();
-        usuario.setUsername(nuevoUsername);
-        usuarioRepository.save(usuario);
-
-        return ResponseEntity.ok(Map.of("message", "Username actualizado"));
+        return usuarioRepository.findById(actual.id())
+                .<ResponseEntity<?>>map(usuario -> {
+                    usuario.setUsername(nuevo);
+                    usuarioRepository.save(usuario);
+                    return ResponseEntity.ok(Map.of("message", "Username actualizado"));
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Usuario no encontrado")));
     }
 
-    // ─── CAMBIAR CONTRASEÑA ───────────────────────────────────────────────────
-
+    /**
+     * Cambiar contraseña invalida TODAS las sesiones abiertas (si alguien te robó el token,
+     * deja de valer) y devuelve un token nuevo para que esta sesión continúe.
+     */
     @PutMapping("/perfil/password")
-    public ResponseEntity<?> cambiarPassword(@RequestBody Map<String, String> payload) {
-        String username = payload.get("username");
-        String passwordActual = payload.get("passwordActual");
-        String passwordNueva = payload.get("passwordNueva");
-
-        if (passwordNueva == null || passwordNueva.length() < 6) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "La contraseña debe tener al menos 6 caracteres"));
-        }
-
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
+    public ResponseEntity<?> cambiarPassword(@AuthenticationPrincipal AuthenticatedUser actual,
+                                             @Valid @RequestBody CambiarPasswordRequest req) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(actual.id());
         if (usuarioOpt.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Usuario no encontrado"));
         }
-
         Usuario usuario = usuarioOpt.get();
 
-        if (!passwordEncoder.matches(passwordActual, usuario.getPassword())) {
+        // Un token robado no debe servir para adivinar la contraseña actual a base de intentos
+        if (rateLimiter.usuarioBloqueado(usuario.getUsername())) {
+            return demasiadosIntentos(rateLimiter.segundosHastaDesbloqueoUsuario(usuario.getUsername()));
+        }
+        if (!passwordEncoder.matches(req.passwordActual(), usuario.getPassword())) {
+            rateLimiter.registrarFallo(usuario.getUsername());
             return ResponseEntity.badRequest().body(Map.of("error", "La contraseña actual es incorrecta"));
         }
 
-        usuario.setPassword(passwordEncoder.encode(passwordNueva));
+        usuario.setPassword(passwordEncoder.encode(req.passwordNueva()));
+        usuario.invalidarTodosLosTokens();
         usuarioRepository.save(usuario);
 
-        return ResponseEntity.ok(Map.of("message", "Contraseña actualizada correctamente"));
+        TokenEmitido emitido = jwtService.generarToken(usuario);
+        log.info("Usuario {} ha cambiado su contraseña; sesiones anteriores invalidadas", usuario.getUsername());
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Contraseña actualizada correctamente",
+                "token", emitido.token(),
+                "expiresAt", emitido.expiresAt().toEpochMilli()));
     }
 
-    // ─── HELPER ───────────────────────────────────────────────────────────────
+    // ─── HELPERS ──────────────────────────────────────────────────────────────
 
-    private String obtenerIpReal(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
-        return request.getRemoteAddr();
+    private UserDTO toUserDTO(Usuario usuario) {
+        UserDTO user = new UserDTO();
+        user.setUsername(usuario.getUsername());
+        user.setNombre(usuario.getNombreCompleto());
+        user.setRole("ADMIN");
+        return user;
+    }
+
+    private ResponseEntity<?> demasiadosIntentos(long espera) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(espera))
+                .body(Map.of(
+                        "error", "Demasiados intentos fallidos. Espera " + espera + " segundos.",
+                        "retryAfter", espera));
     }
 }

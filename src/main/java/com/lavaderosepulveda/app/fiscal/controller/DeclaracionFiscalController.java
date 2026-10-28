@@ -26,7 +26,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/fiscal/declaraciones")
-@CrossOrigin(origins = "*")
 public class DeclaracionFiscalController {
 
     @Autowired

@@ -142,27 +142,37 @@ public class Modelo130BoeService {
 
     /** DTO de entrada para el endpoint POST de exportación. */
     public static class Modelo130Datos {
+        @jakarta.validation.constraints.NotBlank(message = "El NIF es obligatorio")
+        @jakarta.validation.constraints.Pattern(regexp = "^[A-Za-z0-9\\-\\s]{8,12}$", message = "NIF con formato inválido")
         public String nif;
         /** Nombre de pila, o apellidos y nombre completos si no se envía {@code apellidos}. */
+        @jakarta.validation.constraints.Size(max = 120)
         public String nombre;
         /** Opcional: apellidos por separado. */
+        @jakarta.validation.constraints.Size(max = 120)
         public String apellidos;
+        @jakarta.validation.constraints.Min(2000) @jakarta.validation.constraints.Max(2100)
         public int    ejercicio;
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Pattern(regexp = "^[1-4]T$", message = "Periodo debe ser 1T, 2T, 3T o 4T")
         public String periodo;                    // "1T" | "2T" | "3T" | "4T"
 
         /** Casilla 01 — Ingresos computables acumulados desde el 1 de enero. */
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal ingresosTrimestre;
 
         /** Casilla 02 — Gastos deducibles acumulados desde el 1 de enero. */
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal gastosTrimestre;
 
         /** Casilla 06 — Retenciones soportadas acumuladas (normalmente 0). */
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal retencionesComputadas;
 
         /**
          * Casilla 05 — Pagos fraccionados de trimestres anteriores.
          * Si viene null se calcula a partir del historial de declaraciones.
          */
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal pagosAnteriores;
     }
 

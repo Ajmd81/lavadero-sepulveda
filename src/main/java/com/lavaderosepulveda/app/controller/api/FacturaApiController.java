@@ -1,5 +1,7 @@
 package com.lavaderosepulveda.app.controller.api;
 
+import jakarta.validation.Valid;
+
 import com.lavaderosepulveda.app.dto.facturacion.FacturaDTO;
 
 import com.lavaderosepulveda.app.model.facturacion.Factura;
@@ -177,7 +179,7 @@ public class FacturaApiController {
      * Permite crear facturas sin especificar la ruta /manual
      */
     @PostMapping
-    public ResponseEntity<FacturaDTO> crear(@RequestBody FacturaDTO facturaDTO) {
+    public ResponseEntity<FacturaDTO> crear(@Valid @RequestBody FacturaDTO facturaDTO) {
         try {
             log.info("📋 Creando factura desde POST /api/facturas");
             TipoFactura tipo = TipoFactura.valueOf(facturaDTO.getTipo());
@@ -235,14 +237,13 @@ public class FacturaApiController {
      * Crear factura completa
      */
     @PostMapping("/completa")
-    public ResponseEntity<FacturaDTO> crearCompleta(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<FacturaDTO> crearCompleta(
+            @Valid @RequestBody com.lavaderosepulveda.app.dto.facturacion.CrearFacturaCompletaRequest request) {
         try {
-            Long clienteId = Long.valueOf(request.get("clienteId").toString());
-            @SuppressWarnings("unchecked")
-            List<Integer> citaIdsInt = (List<Integer>) request.get("citaIds");
-            List<Long> citaIds = citaIdsInt.stream().map(Long::valueOf).collect(Collectors.toList());
-            String clienteNif = (String) request.get("clienteNif");
-            String clienteDireccion = (String) request.get("clienteDireccion");
+            Long clienteId = request.clienteId();
+            List<Long> citaIds = request.citaIds();
+            String clienteNif = request.clienteNif();
+            String clienteDireccion = request.clienteDireccion();
 
             Factura factura = facturaService.crearFacturaCompleta(clienteId, citaIds, clienteNif, clienteDireccion);
             return ResponseEntity.status(HttpStatus.CREATED).body(convertirADTO(factura));
@@ -262,7 +263,7 @@ public class FacturaApiController {
 
     @PostMapping("/manual")
     public ResponseEntity<?> crearManual(
-            @RequestBody FacturaDTO facturaDTO,
+            @Valid @RequestBody FacturaDTO facturaDTO,
             @RequestParam(value = "numeroFactura", required = false) String numeroFactura,
             @RequestParam(value = "fechaEmision", required = false) String fechaEmision) {
         try {
@@ -398,7 +399,7 @@ public class FacturaApiController {
     @PutMapping("/{id}")
     public ResponseEntity<FacturaDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody FacturaDTO facturaDTO) {
+            @Valid @RequestBody FacturaDTO facturaDTO) {
         try {
             Factura facturaExistente = facturaRepository.findByIdWithLineas(id)
                     .orElseThrow(() -> new Exception("Factura no encontrada"));
@@ -492,6 +493,9 @@ public class FacturaApiController {
     public ResponseEntity<FacturaDTO> marcarComoPagada(
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
+        if (request == null || request.get("metodoPago") == null || request.get("metodoPago").length() > 30) {
+            return ResponseEntity.badRequest().build();
+        }
         try {
             MetodoPago metodoPago = MetodoPago.valueOf(request.get("metodoPago"));
             Factura factura = facturaService.marcarComoPagada(id, metodoPago);

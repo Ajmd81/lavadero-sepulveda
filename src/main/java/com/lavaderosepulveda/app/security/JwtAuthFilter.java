@@ -17,12 +17,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Autentica la petición a partir del JWT. Un token solo es válido si:
+ *  1. Firma, issuer y expiración son correctos (JwtService).
+ *  2. No ha sido revocado por logout (TokenBlacklist).
+ *  3. El usuario existe y está activo en BD.
+ *  4. Su "ver" coincide con Usuario.tokenVersion (cambio de contraseña / cerrar todas las sesiones).
+ *
+ * Si falla cualquier punto la petición sigue como anónima; Spring Security devolverá 401
+ * si el endpoint requiere autenticación.
+ */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
+    private final TokenBlacklist tokenBlacklist;
 
     @Override
     protected void doFilterInternal(
@@ -30,42 +41,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-
-        // Sin header o formato incorrecto → dejar pasar (Spring Security lo rechazará si el endpoint lo requiere)
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            JwtService.extraerBearer(request.getHeader("Authorization"))
+                    .flatMap(jwtService::validar)
+                    .filter(info -> !tokenBlacklist.estaRevocado(info.jti()))
+                    .ifPresent(info -> usuarioRepository.findById(info.userId())
+                            .filter(u -> Boolean.TRUE.equals(u.getActivo()))
+                            .filter(u -> JwtService.versionDe(u) == info.version())
+                            .ifPresent(usuario -> {
+                                var principal = new AuthenticatedUser(usuario.getId(), usuario.getUsername(), info.jti());
+                                var auth = new UsernamePasswordAuthenticationToken(
+                                        principal, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+                                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                                SecurityContextHolder.getContext().setAuthentication(auth);
+                            }));
         }
-
-        final String jwt = authHeader.substring(7); // quitar "Bearer "
-
-        // Token inválido o expirado → dejar pasar sin autenticar
-        if (!jwtService.esValido(jwt)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        final String username = jwtService.extraerUsername(jwt);
-
-        // Ya autenticado en esta petición → no procesar de nuevo
-        if (username == null || SecurityContextHolder.getContext().getAuthentication() != null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // Verificar que el usuario existe y está activo en BD
-        usuarioRepository.findByUsername(username)
-                .filter(u -> Boolean.TRUE.equals(u.getActivo()))
-                .ifPresent(usuario -> {
-                    var auth = new UsernamePasswordAuthenticationToken(
-                            usuario.getUsername(),
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                    );
-                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                });
 
         filterChain.doFilter(request, response);
     }

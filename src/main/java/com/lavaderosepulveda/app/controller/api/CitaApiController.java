@@ -12,7 +12,9 @@ import com.lavaderosepulveda.app.model.enums.EstadoCita;
 
 import com.lavaderosepulveda.app.model.enums.TipoLavado;
 
+import com.lavaderosepulveda.app.security.AuthenticatedUser;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
+import com.lavaderosepulveda.app.security.ClientIpResolver;
 
 import com.lavaderosepulveda.app.repository.cita.HorarioDiaSemanaRepository;
 import com.lavaderosepulveda.app.repository.cita.DiaCerradoRepository;
@@ -39,6 +41,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.DayOfWeek;
@@ -54,12 +57,16 @@ public class CitaApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(CitaApiController.class);
 
+    /** Campos por los que se permite ordenar en /citas/paginado (evita errores 500 con campos inventados) */
+    private static final Set<String> CAMPOS_ORDENABLES =
+            Set.of("fecha", "hora", "nombre", "estado", "tipoLavado", "createdAt", "id");
+
     @Autowired private CitaService citaService;
     @Autowired private HorarioService horarioService;
     @Autowired private EmailService emailService;
     @Autowired private CitaMapper citaMapper;
     @Autowired private CitaRateLimiter citaRateLimiter;
-    @Autowired private javax.sql.DataSource dataSource;
+    @Autowired private ClientIpResolver ipResolver;
     @Autowired private HorarioDiaSemanaRepository horarioDiaSemanaRepository;
     @Autowired private HorarioDiaSemanaService horarioDiaSemanaService;
     @Autowired private DiaCerradoRepository diasCerradoRepository;
@@ -83,6 +90,11 @@ public class CitaApiController {
             @RequestParam(defaultValue = "fecha") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         try {
+            if (!CAMPOS_ORDENABLES.contains(sortBy)) {
+                return ResponseEntity.badRequest().build();
+            }
+            page = Math.max(0, page);
+            size = Math.min(Math.max(1, size), 100);
             Sort sort = sortDir.equalsIgnoreCase("asc")
                     ? Sort.by(sortBy).ascending()
                     : Sort.by(sortBy).descending();
@@ -125,11 +137,17 @@ public class CitaApiController {
         }
     }
 
-    @GetMapping("/citas/disponibilidad-mes")
+    // "disponibilidad-mensual" es el nombre que usan el formulario web y el CRM (antes daba error)
+    @GetMapping({"/citas/disponibilidad-mes", "/citas/disponibilidad-mensual"})
     public ResponseEntity<List<String>> obtenerDisponibilidadMensual(
             @RequestParam("mes") int mes,
             @RequestParam("anio") int anio,
             @RequestParam(value = "tipoLavado", required = false) String tipoLavadoStr) {
+        int anioActual = LocalDate.now().getYear();
+        if (mes < 1 || mes > 12 || anio < anioActual - 1 || anio > anioActual + 1
+                || (tipoLavadoStr != null && tipoLavadoStr.length() > 50)) {
+            return ResponseEntity.badRequest().body(List.of());
+        }
         try {
             YearMonth yearMonth = YearMonth.of(anio, mes);
             
@@ -227,11 +245,23 @@ public class CitaApiController {
     @PostMapping("/citas")
     public ResponseEntity<?> crearCita(
             @Valid @RequestBody CitaDTO citaDTO,
+            @AuthenticationPrincipal AuthenticatedUser usuario,
             HttpServletRequest httpRequest) {
 
-        // ① Rate limiting por IP
-        String ip = obtenerIpReal(httpRequest);
-        if (!citaRateLimiter.intentoPermitido(ip)) {
+        // ⓪ Nunca se acepta un ID en una creación: antes, mandando "id" se SOBRESCRIBÍA una cita existente
+        citaDTO.setId(null);
+
+        // Peticiones anónimas (web pública / app): solo datos de reserva, nada de estados ni pagos
+        if (usuario == null) {
+            citaDTO.setEstado("PENDIENTE");
+            citaDTO.setPagoAdelantado(false);
+            citaDTO.setReferenciaPago(null);
+            citaDTO.setDuracionEstimada(60);
+        }
+
+        // ① Rate limiting por IP (solo público; el CRM ya tiene su límite por usuario)
+        String ip = ipResolver.resolver(httpRequest);
+        if (usuario == null && !citaRateLimiter.intentoPermitido(ip)) {
             long espera = citaRateLimiter.segundosHastaReset(ip);
             logger.warn("Rate limit superado en POST /api/citas desde IP: {}", ip);
             return ResponseEntity.status(429).body(Map.of(
@@ -376,7 +406,7 @@ public class CitaApiController {
         } catch (Exception e) {
             logger.error("Error horarios del día: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "Error interno del servidor"));
         }
     }
 
@@ -391,7 +421,7 @@ public class CitaApiController {
         } catch (Exception e) {
             logger.error("Error días no disponibles: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "Error interno del servidor"));
         }
     }
 
@@ -410,7 +440,7 @@ public class CitaApiController {
         } catch (Exception e) {
             logger.error("Error horarios configurados: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "Error interno del servidor"));
         }
     }
 
@@ -466,8 +496,12 @@ public class CitaApiController {
     @PostMapping("/citas/{id}/cancelar")
     public ResponseEntity<CitaDTO> cancelarCita(@PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body) {
+        String motivo = body != null ? body.get("motivo") : null;
+        if (motivo != null && motivo.length() > 500) {
+            return ResponseEntity.badRequest().build();
+        }
         try {
-            Cita cita = citaService.cancelarCita(id, body != null ? body.get("motivo") : null);
+            Cita cita = citaService.cancelarCita(id, motivo);
             return ResponseEntity.ok(citaMapper.toDTO(cita));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
@@ -507,39 +541,14 @@ public class CitaApiController {
     @PostMapping("/citas/{id}/facturar")
     public ResponseEntity<CitaDTO> marcarComoFacturada(@PathVariable Long id,
             @RequestBody Map<String, Long> body) {
+        if (body == null || body.get("facturaId") == null || body.get("facturaId") <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
         try {
             Cita cita = citaService.marcarComoFacturada(id, body.get("facturaId"));
             return ResponseEntity.ok(citaMapper.toDTO(cita));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
-        }
-    }
-
-    // ─── MIGRACIONES (solo para uso puntual, no exponer en producción) ────────
-
-    @PostMapping("/citas/migrar-email")
-    public ResponseEntity<Map<String, String>> migrarColumnaEmail() {
-        try (java.sql.Connection conn = dataSource.getConnection();
-             java.sql.Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate("ALTER TABLE citas MODIFY COLUMN email VARCHAR(255) NULL");
-            return ResponseEntity.ok(Map.of("mensaje", "Migración completada",
-                    "detalle", "Columna 'email' ahora permite NULL"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/citas/migrar-estado")
-    public ResponseEntity<Map<String, String>> migrarColumnaEstado() {
-        try (java.sql.Connection conn = dataSource.getConnection();
-             java.sql.Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate("ALTER TABLE citas MODIFY COLUMN estado VARCHAR(20)");
-            return ResponseEntity.ok(Map.of("mensaje", "Migración completada",
-                    "detalle", "Columna 'estado' cambiada a VARCHAR(20)"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -553,11 +562,5 @@ public class CitaApiController {
                 logger.warn("Error email confirmación {}: {}", cita.getEmail(), e.getMessage());
             }
         }
-    }
-
-    private String obtenerIpReal(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
-        return request.getRemoteAddr();
     }
 }

@@ -1,5 +1,7 @@
 package com.lavaderosepulveda.app.controller.admin;
 
+import jakarta.validation.Valid;
+
 import com.lavaderosepulveda.app.dto.facturacion.AlbaranDTO;
 
 import com.lavaderosepulveda.app.model.facturacion.Albaran;
@@ -15,7 +17,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/albaranes")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AlbaranController {
     
     private final AlbaranService albaranService;
@@ -47,7 +48,7 @@ public class AlbaranController {
     }
     
     @PostMapping
-    public ResponseEntity<AlbaranDTO> createAlbaran(@RequestBody AlbaranDTO albaranDTO) {
+    public ResponseEntity<AlbaranDTO> createAlbaran(@Valid @RequestBody AlbaranDTO albaranDTO) {
         AlbaranDTO created = albaranService.create(albaranDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -55,7 +56,7 @@ public class AlbaranController {
     @PutMapping("/{id}")
     public ResponseEntity<AlbaranDTO> updateAlbaran(
             @PathVariable Long id,
-            @RequestBody AlbaranDTO albaranDTO) {
+            @Valid @RequestBody AlbaranDTO albaranDTO) {
         return ResponseEntity.ok(albaranService.update(id, albaranDTO));
     }
     

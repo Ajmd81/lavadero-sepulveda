@@ -1,5 +1,8 @@
 package com.lavaderosepulveda.app.dto.facturacion;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -12,43 +15,65 @@ public class FacturaDTO {
     private Long id;
     
     @JsonAlias({"numeroFactura", "numero_factura"})
+    @Size(max = 30)
     private String numero;
     
     @JsonAlias({"fechaEmision", "fecha_emision", "fecha"})
     @JsonFormat(pattern = "dd/MM/yyyy", shape = JsonFormat.Shape.STRING)
     private LocalDate fecha;
     
+    @Size(max = 30)
     private String tipo;
+    @Size(max = 30)
     private String estado;
     @JsonAlias({"metodo_pago", "metodoPago"})
+    @Size(max = 30)
     private String metodoPago;
     
     // Datos del cliente
     @JsonAlias({"cliente_id"})
+    @Positive
     private Long clienteId;
     @JsonAlias({"cliente_nombre", "nombreCliente"})
+    @Size(max = 200)
     private String clienteNombre;
     @JsonAlias({"cliente_nif", "nifCliente"})
+    @Size(max = 20)
+    @Pattern(regexp = "^$|^[A-Za-z0-9\\-]{5,20}$", message = "NIF/CIF con formato inválido")
     private String clienteNif;
     @JsonAlias({"cliente_direccion", "direccionCliente"})
+    @Size(max = 255)
     private String clienteDireccion;
     @JsonAlias({"cliente_email", "emailCliente"})
+    @Email(message = "Formato de email no válido")
+    @Size(max = 150)
     private String clienteEmail;
     @JsonAlias({"cliente_telefono", "telefonoCliente"})
+    @Size(max = 20)
+    @Pattern(regexp = "^$|^[+0-9\\s\\-()]{6,20}$", message = "Teléfono con formato inválido")
     private String clienteTelefono;
     
     // Líneas de la factura
+    @Valid
+    @Size(max = 200, message = "Demasiadas líneas en la factura")
     private List<LineaFacturaDTO> lineas;
     
     // Importes
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal baseImponible;
+    @DecimalMin(value = "0", message = "No puede ser negativo")
+    @DecimalMax(value = "100", message = "No puede superar 100")
+    @Digits(integer = 3, fraction = 4)
     private BigDecimal tipoIva;
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal importeIva;
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal total;
     
     // Otros
     @JsonFormat(pattern = "dd/MM/yyyy", shape = JsonFormat.Shape.STRING)
     private LocalDate fechaPago;
+    @Size(max = 2000)
     private String observaciones;
 
     // Constructores
@@ -211,10 +236,16 @@ public class FacturaDTO {
     // DTO interno para líneas de factura
     public static class LineaFacturaDTO {
         private Long id;
+        @Positive
         private Long citaId;
+        @Size(max = 255)
         private String concepto;
+        @Min(0)
+        @Max(100000)
         private Integer cantidad;
+        @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
         private BigDecimal precioUnitario;
+        @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
         private BigDecimal subtotal;
 
         public LineaFacturaDTO() {
