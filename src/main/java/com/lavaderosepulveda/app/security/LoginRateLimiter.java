@@ -1,36 +1,50 @@
 package com.lavaderosepulveda.app.security;
 
-import io.github.bucket4j.*;
+import com.lavaderosepulveda.app.security.RateLimitService.Politica;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Locale;
 
+/**
+ * Rate limiting del login.
+ *  - Por IP: 5 intentos / 15 min y 10 / hora (cualquier intento).
+ *  - Por usuario: 10 intentos FALLIDOS / 30 min, venga de la IP que venga
+ *    (sin esto, un ataque repartido entre muchas IPs podía probar contraseñas sin freno).
+ */
 @Component
 public class LoginRateLimiter {
 
-    // Un bucket por IP — se limpia automáticamente cuando el token se recarga
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final RateLimitService rateLimitService;
 
-    private Bucket crearBucket() {
-        return Bucket.builder()
-            // 5 intentos cada 15 minutos
-            .addLimit(Bandwidth.classic(5, Refill.intervally(5, Duration.ofMinutes(15))))
-            // Máximo 10 intentos por hora (segunda capa)
-            .addLimit(Bandwidth.classic(10, Refill.intervally(10, Duration.ofHours(1))))
-            .build();
+    public LoginRateLimiter(RateLimitService rateLimitService) {
+        this.rateLimitService = rateLimitService;
     }
 
     public boolean intentoPermitido(String ip) {
-        Bucket bucket = buckets.computeIfAbsent(ip, k -> crearBucket());
-        return bucket.tryConsume(1);
+        return rateLimitService.permitido(Politica.LOGIN_IP, ip);
     }
 
     public long segundosHastaReset(String ip) {
-        Bucket bucket = buckets.get(ip);
-        if (bucket == null) return 0;
-        return bucket.getAvailableTokens() > 0 ? 0 :
-            bucket.estimateAbilityToConsume(1).getNanosToWaitForRefill() / 1_000_000_000L;
+        return rateLimitService.segundosHastaReset(Politica.LOGIN_IP, ip);
+    }
+
+    public boolean usuarioBloqueado(String username) {
+        return rateLimitService.bloqueado(Politica.LOGIN_USUARIO, clave(username));
+    }
+
+    public long segundosHastaDesbloqueoUsuario(String username) {
+        return rateLimitService.segundosHastaReset(Politica.LOGIN_USUARIO, clave(username));
+    }
+
+    public void registrarFallo(String username) {
+        rateLimitService.consumir(Politica.LOGIN_USUARIO, clave(username));
+    }
+
+    public void registrarExito(String username) {
+        rateLimitService.reiniciar(Politica.LOGIN_USUARIO, clave(username));
+    }
+
+    private String clave(String username) {
+        return username == null ? "" : username.trim().toLowerCase(Locale.ROOT);
     }
 }

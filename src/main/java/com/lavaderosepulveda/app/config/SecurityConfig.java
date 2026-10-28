@@ -1,47 +1,75 @@
 package com.lavaderosepulveda.app.config;
 
+import com.lavaderosepulveda.app.security.ClientIpResolver;
 import com.lavaderosepulveda.app.security.JwtAuthFilter;
-
+import com.lavaderosepulveda.app.security.RateLimitFilter;
+import com.lavaderosepulveda.app.security.RateLimitService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Configuración de seguridad centralizada para la aplicación.
- * 
- * Estructura de acceso:
- * 1. PÚBLICOS: /api/auth/**, /api/vehicle/**, /api/dias-cerrados/**, /api/enums/**, /api/citas (GET/POST)
- * 2. PROTEGIDOS: Todo /api/** excepto los públicos (requiere JWT)
- * 3. ADMIN: /admin/** (requiere sesión + rol ADMIN)
- * 4. ESTÁTICOS: /css/**, /js/**, etc.
- * 5. SEO: /robots.txt, /sitemap.xml y URLs antiguas (.html) que redirigen con 301
+ * Configuración de seguridad centralizada.
+ *
+ * Mapa de acceso (todo lo que no esté en la lista pública de la API requiere JWT):
+ *
+ *  API PÚBLICA (formulario de reservas, chatbot, login) — siempre con rate limiting:
+ *    POST /api/auth/login, POST /api/auth/logout
+ *    POST /api/citas                       (reservar; campos internos se ignoran si no hay JWT)
+ *    POST /api/chatbot/message
+ *    GET  /api/citas/horarios-disponibles, /api/citas/disponibilidad-mes(nsual)
+ *    GET  /api/horarios, /api/tipos-lavado, /api/enums/**
+ *    GET  /api/dias-cerrados/fechas-cerradas
+ *    GET  /api/vehicle/classify, /classify-by-id, /brands-models
+ *
+ *  API PROTEGIDA: resto de /api/** → JWT válido (401 JSON si falta o caducó).
+ *  ADMIN THYMELEAF: /admin/** → autenticado.
+ *  WEB PÚBLICA: páginas Thymeleaf, estáticos, SEO.
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity // sin esto los @PreAuthorize de los controladores se ignoraban
 public class SecurityConfig {
 
+    private static final RequestMatcher API = AntPathRequestMatcher.antMatcher("/api/**");
+
     private final JwtAuthFilter jwtAuthFilter;
+    private final RateLimitService rateLimitService;
+    private final ClientIpResolver clientIpResolver;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOriginsStr;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter,
+                          RateLimitService rateLimitService,
+                          ClientIpResolver clientIpResolver) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.rateLimitService = rateLimitService;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Bean
@@ -49,29 +77,48 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // ─── CORS ─────────────────────────────────────────────────────────────────
+    /**
+     * Solo se aplica a /api/** (las páginas Thymeleaf son del mismo origen y no lo necesitan).
+     *  - Orígenes exactos desde APP_CORS_ALLOWED_ORIGINS; nunca "*" ni patrones.
+     *  - Sin credenciales: el JWT viaja en la cabecera Authorization, no en cookies.
+     *  - Cabeceras y métodos explícitos en lugar de "*".
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        List<String> origins = Arrays.stream(allowedOriginsStr.split(","))
+                .map(String::trim)
+                .filter(o -> !o.isEmpty())
+                .toList();
+
+        if (origins.stream().anyMatch(o -> o.contains("*"))) {
+            throw new IllegalStateException("app.cors.allowed-origins no puede contener comodines: " + origins);
+        }
+
         CorsConfiguration configuration = new CorsConfiguration();
-
-        List<String> origins = Arrays.asList(allowedOriginsStr.split(","));
         configuration.setAllowedOrigins(origins);
-
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of(
+                HttpHeaders.AUTHORIZATION, HttpHeaders.CONTENT_TYPE, HttpHeaders.ACCEPT, "X-Requested-With"));
+        configuration.setExposedHeaders(List.of(
+                HttpHeaders.CONTENT_DISPOSITION, HttpHeaders.RETRY_AFTER, "X-RateLimit-Remaining",
+                // Cabeceras de los ficheros BOE (Modelo 303/130)
+                "X-Tipo-Declaracion", "X-Resultado", "X-Cuotas-Pendientes-Compensar"));
+        configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/api/**", configuration);
         return source;
     }
+
+    // ─── CADENA DE FILTROS ────────────────────────────────────────────────────
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // ─── Headers de seguridad HTTP ──────────────────────────────────────
                 .headers(headers -> headers
@@ -94,25 +141,32 @@ public class SecurityConfig {
                         ))
                 )
 
-                // ─── AUTORIZACIÓN (CONSOLIDADA - Sin duplicación) ──────────────────
+                // ─── AUTORIZACIÓN ──────────────────────────────────────────────────
                 .authorizeHttpRequests(authz -> authz
-                        // 1️⃣ PÚBLICOS - API sin autenticación
-                        // ───────────────────────────────────
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/logout").permitAll()
-                        .requestMatchers("/api/vehicle/**").permitAll()
-                        .requestMatchers("/api/dias-cerrados/**").permitAll()
-                        .requestMatchers("/api/enums/**").permitAll()  // ✅ TIPOS DE PAGO Y LAVADO
-                        .requestMatchers("/api/citas").permitAll()  // GET citas públicas
-                        .requestMatchers("/api/citas/horarios-disponibles").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/citas").permitAll()  // POST crear cita pública
-                        
-                        // 2️⃣ PROTEGIDOS - Todo /api/** restante requiere JWT
-                        // ─────────────────────────────────────────────────
-                        .requestMatchers("/api/**").authenticated()  // ✅ UNA SOLA VEZ
-                        
-                        // 3️⃣ PÚBLICOS - Páginas Thymeleaf
-                        // ─────────────────────────────────
+                        // Preflight CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+
+                        // 1️⃣ API PÚBLICA — cada regla limitada al MÉTODO que necesita
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/citas").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/chatbot/message").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/citas/horarios-disponibles",
+                                "/api/citas/disponibilidad-mes",
+                                "/api/citas/disponibilidad-mensual",
+                                "/api/horarios",
+                                "/api/tipos-lavado",
+                                "/api/enums/**",
+                                "/api/dias-cerrados/fechas-cerradas",
+                                "/api/vehicle/classify",
+                                "/api/vehicle/classify-by-id",
+                                "/api/vehicle/brands-models"
+                        ).permitAll()
+
+                        // 2️⃣ API PROTEGIDA — todo lo demás (incluye GET /api/citas con datos de clientes)
+                        .requestMatchers("/api/**").authenticated()
+
+                        // 3️⃣ WEB PÚBLICA — páginas Thymeleaf
                         .requestMatchers(
                                 "/",
                                 "/nueva-cita",
@@ -126,13 +180,9 @@ public class SecurityConfig {
                                 "/policy",
                                 "/chatbot"
                         ).permitAll()
-                        
-                        // 4️⃣ ESTÁTICOS
-                        // ──────────────
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
 
-                        // 4️⃣.1 SEO - robots, sitemap y URLs antiguas (LegacyRedirectController)
-                        // ─────────────────────────────────────────────────────────────────────
+                        // 4️⃣ ESTÁTICOS y SEO
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                         .requestMatchers(
                                 "/robots.txt",
                                 "/sitemap.xml",
@@ -148,17 +198,21 @@ public class SecurityConfig {
                                 "/reservas.html",
                                 "/cita.html"
                         ).permitAll()
-                        
-                        // 5️⃣ ADMIN - Requiere sesión + rol ADMIN
-                        // ───────────────────────────────────────
+
+                        // 5️⃣ ADMIN Thymeleaf
                         .requestMatchers("/admin/**").authenticated()
-                        
-                        // 6️⃣ LO DEMÁS
-                        // ───────────
+
+                        // 6️⃣ Resto (páginas sueltas, /error, verificación de Google...)
                         .anyRequest().permitAll()
                 )
-                
-                // ─── Form Login (para /admin/**) ───────────────────────────────────
+
+                // ─── Respuestas JSON para la API (antes: 403 genérico o redirección al login HTML) ──
+                .exceptionHandling(ex -> ex
+                        .defaultAuthenticationEntryPointFor(apiAuthenticationEntryPoint(), API)
+                        .defaultAccessDeniedHandlerFor(apiAccessDeniedHandler(), API)
+                )
+
+                // ─── Form Login (para /admin/** Thymeleaf) ─────────────────────────
                 .formLogin(form -> form
                         .loginPage("/admin/login")
                         .loginProcessingUrl("/admin/login")
@@ -166,8 +220,7 @@ public class SecurityConfig {
                         .failureUrl("/admin/login?error=true")
                         .permitAll()
                 )
-                
-                // ─── Logout ───────────────────────────────────────────────────────
+
                 .logout(logout -> logout
                         .logoutUrl("/admin/logout")
                         .logoutSuccessUrl("/admin/login?logout=true")
@@ -175,13 +228,32 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .permitAll()
                 )
-                
-                // ─── CSRF (Deshabilitado para API, habilitado para form login) ─────
+
+                // ─── CSRF: la API usa JWT en cabecera (no cookies) → no aplica ─────
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
-                
-                // ─── JWT Filter (ANTES de UsernamePasswordAuthenticationFilter) ─────
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+                // ─── Filtros: JWT → rate limiting (ya sabe quién es el usuario) ────
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new RateLimitFilter(rateLimitService, clientIpResolver), JwtAuthFilter.class);
 
         return http.build();
+    }
+
+    private AuthenticationEntryPoint apiAuthenticationEntryPoint() {
+        return (request, response, authException) ->
+                escribirJson(response, HttpServletResponse.SC_UNAUTHORIZED,
+                        "{\"error\":\"No autenticado o sesión caducada\"}");
+    }
+
+    private AccessDeniedHandler apiAccessDeniedHandler() {
+        return (request, response, accessDeniedException) ->
+                escribirJson(response, HttpServletResponse.SC_FORBIDDEN, "{\"error\":\"Acceso denegado\"}");
+    }
+
+    private static void escribirJson(HttpServletResponse response, int status, String json) throws java.io.IOException {
+        response.setStatus(status);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.getWriter().write(json);
     }
 }

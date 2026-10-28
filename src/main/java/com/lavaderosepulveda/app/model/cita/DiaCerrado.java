@@ -14,15 +14,18 @@ public class DiaCerrado {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @jakarta.validation.constraints.NotNull(message = "La fecha es obligatoria")
     @Column(nullable = false, unique = true)
     private LocalDate fecha;
 
     /**
      * Tipo de cierre: FESTIVO, VACACIONES, MANTENIMIENTO, OTRO
      */
+    @jakarta.validation.constraints.Size(max = 30, message = "El tipo no puede superar 30 caracteres")
     @Column(nullable = false, length = 30)
     private String tipo = "FESTIVO";
 
+    @jakarta.validation.constraints.Size(max = 255, message = "El motivo no puede superar 255 caracteres")
     @Column(length = 255)
     private String motivo;
 

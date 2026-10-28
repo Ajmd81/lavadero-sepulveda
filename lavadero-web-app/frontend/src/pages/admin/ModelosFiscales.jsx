@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import api from '../../services/api';
+import { tokenStorage } from '../../services/tokenStorage';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -257,9 +258,8 @@ const ModelosFiscales = () => {
 
             // Mismo token JWT que usa api.js: sin él, Spring Security redirige
             // al login y se descargaba la página HTML con extensión .130/.303
-            const token = localStorage.getItem('authToken');
+            const token = tokenStorage.getToken();
             const resp = await fetch(url, {
-                credentials: 'include',
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
             if (!resp.ok) throw new Error(await resp.text() || `HTTP ${resp.status}`);

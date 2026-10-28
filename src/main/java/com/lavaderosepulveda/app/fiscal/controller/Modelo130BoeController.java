@@ -25,7 +25,6 @@ import java.math.BigDecimal;
  */
 @RestController
 @RequestMapping("/api/fiscal/modelo130")
-@CrossOrigin(origins = "*")
 public class Modelo130BoeController {
 
     @Autowired
@@ -67,7 +66,7 @@ public class Modelo130BoeController {
 
     @PostMapping("/exportar-boe")
     public ResponseEntity<byte[]> exportarBoeCompleto(
-            @RequestBody Modelo130BoeService.Modelo130Datos datos
+            @jakarta.validation.Valid @RequestBody Modelo130BoeService.Modelo130Datos datos
     ) {
         BigDecimal pagos = datos.pagosAnteriores != null
                 ? datos.pagosAnteriores

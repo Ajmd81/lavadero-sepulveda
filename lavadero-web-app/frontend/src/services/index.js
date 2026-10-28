@@ -1,4 +1,5 @@
 import api from './api';
+import { tokenStorage } from './tokenStorage';
 
 export const gastoService = {
   getAll: () => api.get('/gastos'),
@@ -19,15 +20,10 @@ export const proveedorService = {
   search: (query) => api.get(`/proveedores/buscar`, { params: { q: query } }),
 };
 
+// Compatibilidad: delega en el almacenamiento de sesión centralizado (sessionStorage)
 export const authService = {
   login: (credentials) => api.post('/auth/login', credentials),
-  logout: () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-  },
-  getCurrentUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  },
-  isAuthenticated: () => !!localStorage.getItem('authToken'),
+  logout: () => tokenStorage.limpiar(),
+  getCurrentUser: () => tokenStorage.getUser(),
+  isAuthenticated: () => tokenStorage.hayToken(),
 };

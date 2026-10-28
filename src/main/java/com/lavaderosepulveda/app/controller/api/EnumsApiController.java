@@ -18,7 +18,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/enums")
-@CrossOrigin(origins = {"https://lavadero-sepulveda.vercel.app", "http://localhost:3000"})
 public class EnumsApiController {
 
     @GetMapping("/categorias-gasto")

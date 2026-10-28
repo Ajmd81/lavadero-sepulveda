@@ -8,7 +8,9 @@ import com.lavaderosepulveda.app.model.cita.VehicleModel;
 import com.lavaderosepulveda.app.repository.cita.DiaCerradoRepository;
 import com.lavaderosepulveda.app.repository.cita.HorarioDiaSemanaRepository;
 import com.lavaderosepulveda.app.repository.cita.VehicleModelRepository;
+import com.lavaderosepulveda.app.dto.cita.CitaDTO;
 import com.lavaderosepulveda.app.security.CitaRateLimiter;
+import com.lavaderosepulveda.app.security.ClientIpResolver;
 
 import com.lavaderosepulveda.app.service.cita.CitaService;
 
@@ -17,7 +19,9 @@ import com.lavaderosepulveda.app.service.cita.HorarioService;
 import com.lavaderosepulveda.app.util.DateTimeFormatUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,11 +31,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
@@ -44,6 +50,17 @@ public class CitaController {
     @Autowired private VehicleModelRepository modelRepository;
     @Autowired private DiaCerradoRepository diasCerradoRepository;
     @Autowired private CitaRateLimiter citaRateLimiter;
+    @Autowired private ClientIpResolver ipResolver;
+    @Autowired private Validator validator;
+
+    /**
+     * Lista blanca de campos que el formulario público puede rellenar en la entidad Cita.
+     * Sin esto, un POST manual podía fijar id (sobrescribir otra cita), estado, pagos, facturaId...
+     */
+    @InitBinder("cita")
+    public void camposPermitidos(WebDataBinder binder) {
+        binder.setAllowedFields("nombre", "email", "telefono", "modeloVehiculo", "tipoLavado", "fecha", "hora");
+    }
     @Autowired private HorarioDiaSemanaRepository horarioDiaSemanaRepository;
 
     // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────
@@ -94,12 +111,12 @@ public class CitaController {
 
         // ① Honeypot
         if (honeypot != null && !honeypot.isBlank()) {
-            logger.warn("BOT detectado (honeypot) desde IP: {}", obtenerIpReal(httpRequest));
+            logger.warn("BOT detectado (honeypot) desde IP: {}", ipResolver.resolver(httpRequest));
             return "redirect:/confirmacion";
         }
 
         // ② Rate limiting por IP
-        String ip = obtenerIpReal(httpRequest);
+        String ip = ipResolver.resolver(httpRequest);
         if (!citaRateLimiter.intentoPermitido(ip)) {
             long espera = citaRateLimiter.segundosHastaReset(ip);
             long minutos = Math.max(1, espera / 60);
@@ -110,11 +127,30 @@ public class CitaController {
             return "formulario";
         }
 
-        // ③ Bean Validation
+        // ③ Bean Validation (entidad) + mismas reglas estrictas que la API (formato, longitudes, teléfono...)
         if (bindingResult.hasErrors()) {
             model.addAttribute("tiposLavado", TipoLavado.values());
             return "formulario";
         }
+        // Normalizar entradas habituales antes de validar ("600 12 34 56", "+34600123456", espacios sobrantes)
+        if (cita.getTelefono() != null) {
+            String tel = cita.getTelefono().replaceAll("[\\s\\-.]", "");
+            if (tel.startsWith("+34")) tel = tel.substring(3);
+            else if (tel.startsWith("0034")) tel = tel.substring(4);
+            cita.setTelefono(tel);
+        }
+        if (cita.getNombre() != null) cita.setNombre(cita.getNombre().trim());
+        if (cita.getEmail() != null) cita.setEmail(cita.getEmail().trim());
+        String errorValidacion = validarComoDTO(cita);
+        if (errorValidacion != null) {
+            model.addAttribute("error", errorValidacion);
+            model.addAttribute("tiposLavado", TipoLavado.values());
+            return "formulario";
+        }
+        // Valores internos siempre fijados por el servidor
+        cita.setId(null);
+        cita.setEstado(com.lavaderosepulveda.app.model.enums.EstadoCita.PENDIENTE);
+        cita.setPagoAdelantado(false);
 
         // ④ Rango de fecha
         LocalDate hoy = LocalDate.now();
@@ -155,7 +191,8 @@ public class CitaController {
 
         } catch (Exception e) {
             logger.error("Error al guardar cita: {}", e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "No se ha podido guardar la cita. Inténtalo de nuevo o llámanos.");
             return "redirect:/nueva-cita";
         }
     }
@@ -227,9 +264,11 @@ public class CitaController {
         }
     }
 
-    private String obtenerIpReal(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
-        return request.getRemoteAddr();
+    /** Valida la cita del formulario con las reglas de CitaDTO. Devuelve el primer error o null. */
+    private String validarComoDTO(Cita cita) {
+        CitaDTO dto = new CitaDTO(cita.getNombre(), cita.getEmail(), cita.getTelefono(),
+                cita.getModeloVehiculo(), cita.getTipoLavado(), cita.getFecha(), cita.getHora());
+        Set<ConstraintViolation<CitaDTO>> errores = validator.validate(dto);
+        return errores.isEmpty() ? null : errores.iterator().next().getMessage();
     }
 }

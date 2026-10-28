@@ -1,10 +1,19 @@
 package com.lavaderosepulveda.app.dto.cliente;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+
 public class ClienteDTO {
     private Long id;
+    @Size(max = 100, message = "El nombre no puede superar 100 caracteres")
     private String nombre;
+    @Size(max = 150)
     private String apellidos;
+    @Size(max = 20)
+    @Pattern(regexp = "^$|^[+0-9\\s\\-()]{6,20}$", message = "Teléfono con formato inválido")
     private String telefono;
+    @Email(message = "Formato de email no válido")
+    @Size(max = 150)
     private String email;
     private Boolean activo;
 
@@ -14,20 +23,33 @@ public class ClienteDTO {
     private Integer citasCanceladas;
     private Integer citasNoPresentadas;
     private Double totalFacturado;
+    @Size(max = 100)
     private String vehiculoHabitual;
 
     // ========================================
     // CAMPOS ADICIONALES PARA CRM
     // ========================================
+    @Size(max = 20)
+    @Pattern(regexp = "^$|^[A-Za-z0-9\\-]{5,20}$", message = "NIF/CIF con formato inválido")
     private String nif;
+    @Size(max = 255)
     private String direccion;
+    @Size(max = 10)
     private String codigoPostal;
+    @Size(max = 100)
     private String ciudad;
+    @Size(max = 100)
     private String provincia;
+    @Size(max = 15)
+    @Pattern(regexp = "^$|^[A-Za-z0-9\\s\\-]+$", message = "Matrícula con formato inválido")
     private String matricula;
+    @Size(max = 50)
     private String marca;
+    @Size(max = 100)
     private String modelo;
+    @Size(max = 30)
     private String color;
+    @Size(max = 2000)
     private String notas;
 
     // Constructores

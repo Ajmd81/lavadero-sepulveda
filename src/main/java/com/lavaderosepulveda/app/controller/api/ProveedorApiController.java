@@ -1,5 +1,7 @@
 package com.lavaderosepulveda.app.controller.api;
 
+import jakarta.validation.Valid;
+
 import com.lavaderosepulveda.app.dto.facturacion.ProveedorDTO;
 
 import com.lavaderosepulveda.app.service.facturacion.ProveedorService;
@@ -78,12 +80,12 @@ public class ProveedorApiController {
     }
 
     @PostMapping
-    public ResponseEntity<ProveedorDTO> crear(@RequestBody ProveedorDTO dto) {
+    public ResponseEntity<ProveedorDTO> crear(@Valid @RequestBody ProveedorDTO dto) {
         return ResponseEntity.ok(proveedorService.crear(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProveedorDTO> actualizar(@PathVariable Long id, @RequestBody ProveedorDTO dto) {
+    public ResponseEntity<ProveedorDTO> actualizar(@PathVariable Long id, @Valid @RequestBody ProveedorDTO dto) {
         return ResponseEntity.ok(proveedorService.actualizar(id, dto));
     }
 

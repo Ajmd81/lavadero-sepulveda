@@ -5,7 +5,7 @@ import api from '../../services/api';
 import { User, Lock, Mail, CreditCard, Loader2 } from 'lucide-react';
 
 const MiPerfil = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, logoutEnTodos, actualizarToken } = useAuth();
   const navigate = useNavigate();
 
   const [cargando, setCargando] = useState(true);
@@ -28,7 +28,7 @@ const MiPerfil = () => {
   useEffect(() => {
     const cargarPerfil = async () => {
       try {
-        const res = await api.get(`/auth/perfil?username=${user.username}`);
+        const res = await api.get('/auth/perfil');
         setDatosForm({
           nombreCompleto: res.data.nombreCompleto || '',
           email: res.data.email || '',
@@ -57,7 +57,6 @@ const MiPerfil = () => {
 
     try {
       await api.put('/auth/perfil/datos', {
-        username: user.username,
         nombreCompleto: datosForm.nombreCompleto,
         email: datosForm.email,
         dni: datosForm.dni
@@ -78,7 +77,6 @@ const MiPerfil = () => {
 
     try {
       await api.put('/auth/perfil/username', {
-        currentUsername: user.username,
         nuevoUsername: usernameForm
       });
       alert('✅ Username actualizado. Inicia sesión nuevamente.');
@@ -98,18 +96,19 @@ const MiPerfil = () => {
       return;
     }
 
-    if (passwordForm.passwordNueva.length < 6) {
-      alert('❌ La contraseña debe tener al menos 6 caracteres');
+    if (passwordForm.passwordNueva.length < 10) {
+      alert('❌ La contraseña debe tener al menos 10 caracteres');
       return;
     }
 
     try {
-      await api.put('/auth/perfil/password', {
-        username: user.username,
+      const { data } = await api.put('/auth/perfil/password', {
         passwordActual: passwordForm.passwordActual,
         passwordNueva: passwordForm.passwordNueva
       });
-      alert('✅ Contraseña actualizada correctamente');
+      // El backend cierra todas las demás sesiones y devuelve un token nuevo para esta
+      actualizarToken(data);
+      alert('✅ Contraseña actualizada. Se han cerrado las sesiones abiertas en otros dispositivos.');
       setPasswordForm({ passwordActual: '', passwordNueva: '', passwordConfirm: '' });
     } catch (error) {
       alert('❌ ' + (error.response?.data?.error || error.message));
@@ -272,7 +271,7 @@ const MiPerfil = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nueva Contraseña * <span className="text-gray-400">(mín. 6 caracteres)</span>
+                Nueva Contraseña * <span className="text-gray-400">(mín. 10 caracteres)</span>
               </label>
               <input
                 type="password"
@@ -283,7 +282,7 @@ const MiPerfil = () => {
                 }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
                 required
-                minLength={6}
+                minLength={10}
               />
             </div>
 
@@ -300,7 +299,7 @@ const MiPerfil = () => {
                 }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
                 required
-                minLength={6}
+                minLength={10}
               />
             </div>
 
@@ -311,6 +310,25 @@ const MiPerfil = () => {
               Cambiar Contraseña
             </button>
           </form>
+
+          {/* Seguridad de la sesión */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-600 mb-3">
+              Si has iniciado sesión en un ordenador o móvil que ya no usas, o crees que alguien
+              ha accedido a tu cuenta, cierra todas las sesiones abiertas.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('¿Cerrar la sesión en TODOS los dispositivos (incluido este)?')) {
+                  logoutEnTodos();
+                }
+              }}
+              className="w-full border border-red-600 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors font-semibold"
+            >
+              Cerrar sesión en todos los dispositivos
+            </button>
+          </div>
         </div>
 
       </div>

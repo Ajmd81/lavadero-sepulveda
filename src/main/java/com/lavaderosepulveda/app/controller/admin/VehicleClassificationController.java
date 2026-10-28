@@ -35,7 +35,7 @@ public class VehicleClassificationController {
      * Clasifica un vehículo por nombre del modelo
      */
     @GetMapping("/vehicle/classify")
-    public ResponseEntity<Map<String, Object>> classifyVehicle(@RequestParam("model") String vehicleModel) {
+    public ResponseEntity<Map<String, Object>> classifyVehicle(@RequestParam("model") @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 100) String vehicleModel) {
         try {
             String category = vehicleClassificationService.classifyVehicle(vehicleModel);
             List<TipoLavado> availableServices = vehicleClassificationService.getAvailableServices(category);
@@ -56,7 +56,7 @@ public class VehicleClassificationController {
      * Clasifica un vehículo por ID (más fiable que por nombre)
      */
     @GetMapping("/vehicle/classify-by-id")
-    public ResponseEntity<Map<String, Object>> classifyVehicleById(@RequestParam("id") Long modelId) {
+    public ResponseEntity<Map<String, Object>> classifyVehicleById(@RequestParam("id") @jakarta.validation.constraints.Positive Long modelId) {
         try {
             return modelRepository.findById(modelId).map(vehicleModel -> {
                 String category = vehicleModel.getCategory().getName();
@@ -121,7 +121,7 @@ public class VehicleClassificationController {
      * Busca modelos por query (búsqueda por nombre)
      */
     @GetMapping("/models/search")
-    public ResponseEntity<List<VehicleModel>> searchModels(@RequestParam("query") String query) {
+    public ResponseEntity<List<VehicleModel>> searchModels(@RequestParam("query") @jakarta.validation.constraints.Size(max = 100) String query) {
         List<VehicleModel> allModels = modelRepository.findAll();
         String normalizedQuery = query.toLowerCase().trim();
 
@@ -133,46 +133,10 @@ public class VehicleClassificationController {
     }
 
     /**
-     * Debug: buscar modelo con múltiples estrategias de búsqueda
-     */
-    @GetMapping("/debug/buscar-modelo")
-    public ResponseEntity<Map<String, Object>> buscarModelo(@RequestParam("modelo") String modelo) {
-        String normalizado = modelo.toLowerCase().trim();
-        Map<String, Object> resultado = new HashMap<>();
-        resultado.put("modeloOriginal", modelo);
-        resultado.put("modeloNormalizado", normalizado);
-
-        List<VehicleModel> allModels = modelRepository.findAll();
-
-        List<VehicleModel> exact = allModels.stream()
-                .filter(vm -> vm.getName().equalsIgnoreCase(normalizado))
-                .collect(Collectors.toList());
-
-        List<VehicleModel> contains = allModels.stream()
-                .filter(vm -> vm.getName().toLowerCase().contains(normalizado))
-                .collect(Collectors.toList());
-
-        String[] parts = normalizado.split("\\s+");
-        String sinMarca = parts.length > 1 ? 
-            String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length)) : normalizado;
-
-        List<VehicleModel> sinMarcaMatches = allModels.stream()
-                .filter(vm -> vm.getName().toLowerCase().contains(sinMarca))
-                .collect(Collectors.toList());
-
-        resultado.put("coincidenciaExacta", exact);
-        resultado.put("coincidenciaContiene", contains);
-        resultado.put("modeloSinMarca", sinMarca);
-        resultado.put("coincidenciaSinMarca", sinMarcaMatches);
-
-        return ResponseEntity.ok(resultado);
-    }
-
-    /**
      * POST: Crear nuevo modelo de vehículo con validación de duplicados
      */
     @PostMapping("/vehicle-models")
-    public ResponseEntity<?> createVehicleModel(@RequestBody VehicleModelDTO dto) {
+    public ResponseEntity<?> createVehicleModel(@jakarta.validation.Valid @RequestBody VehicleModelDTO dto) {
         try {
             // Validar que la categoría existe
             VehicleCategory category = categoryRepository.findById(dto.getCategoryId())
@@ -200,7 +164,7 @@ public class VehicleClassificationController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("error_interno", e.getMessage()));
+                    .body(new ErrorResponse("error_interno", "Error interno del servidor"));
         }
     }
 
@@ -210,7 +174,7 @@ public class VehicleClassificationController {
     @PutMapping("/vehicle-models/{id}")
     public ResponseEntity<?> updateVehicleModel(
             @PathVariable Long id,
-            @RequestBody VehicleModelDTO dto) {
+            @jakarta.validation.Valid @RequestBody VehicleModelDTO dto) {
         try {
             VehicleModel model = modelRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Modelo no encontrado"));
@@ -239,7 +203,7 @@ public class VehicleClassificationController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("error_interno", e.getMessage()));
+                    .body(new ErrorResponse("error_interno", "Error interno del servidor"));
         }
     }
 
@@ -257,7 +221,7 @@ public class VehicleClassificationController {
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("error_interno", e.getMessage()));
+                    .body(new ErrorResponse("error_interno", "Error interno del servidor"));
         }
     }
 
@@ -292,9 +256,21 @@ public class VehicleClassificationController {
     @lombok.AllArgsConstructor
     public static class VehicleModelDTO {
         private Long id;
+
+        @jakarta.validation.constraints.NotBlank(message = "El modelo es obligatorio")
+        @jakarta.validation.constraints.Size(max = 100, message = "El modelo no puede superar 100 caracteres")
+        @jakarta.validation.constraints.Pattern(regexp = "^[\\p{L}\\p{N}\\s\\-\\.]+$", message = "El modelo contiene caracteres no permitidos")
         private String name;
+
+        @jakarta.validation.constraints.NotBlank(message = "La marca es obligatoria")
+        @jakarta.validation.constraints.Size(max = 50, message = "La marca no puede superar 50 caracteres")
+        @jakarta.validation.constraints.Pattern(regexp = "^[\\p{L}\\p{N}\\s\\-\\.]+$", message = "La marca contiene caracteres no permitidos")
         private String brand;
+
+        @jakarta.validation.constraints.NotNull(message = "La categoría es obligatoria")
+        @jakarta.validation.constraints.Positive
         private Long categoryId;
+
         private String categoryName;
     }
 

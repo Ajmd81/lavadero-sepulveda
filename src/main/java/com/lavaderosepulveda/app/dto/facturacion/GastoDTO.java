@@ -1,20 +1,36 @@
 package com.lavaderosepulveda.app.dto.facturacion;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+
 import java.math.BigDecimal;
 
 public class GastoDTO {
     private Long id;
+    @NotBlank(message = "El concepto es obligatorio")
+    @Size(max = 255)
     private String concepto;
+    @Pattern(regexp = "^$|^\\d{2}/\\d{2}/\\d{4}$|^\\d{4}-\\d{2}-\\d{2}$", message = "Fecha con formato inválido (dd/MM/yyyy)")
     private String fecha;          // dd/MM/yyyy
+    @Size(max = 50)
     private String categoria;
+    @NotNull(message = "El importe es obligatorio")
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal importe;
     private Boolean ivaIncluido;
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal baseImponible;
+    @Digits(integer = 10, fraction = 4, message = "Importe con formato inválido")
     private BigDecimal cuotaIva;
+    @Positive
     private Long facturaRecibidaId;
+    @Size(max = 30)
     private String metodoPago;
     private Boolean recurrente;
+    @Min(1)
+    @Max(31)
     private Integer diaRecurrencia;
+    @Size(max = 2000)
     private String notas;
     private Boolean pagado;
 

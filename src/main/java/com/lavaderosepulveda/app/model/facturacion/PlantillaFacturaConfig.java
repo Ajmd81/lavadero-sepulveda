@@ -17,93 +17,120 @@ public class PlantillaFacturaConfig {
     // ========================================
     // DATOS DEL EMISOR
     // ========================================
+    @jakarta.validation.constraints.Size(max = 150)
     @Column(name = "emisor_nombre")
     private String emisorNombre = "LAVADERO SEPÚLVEDA";
     
+    @jakarta.validation.constraints.Size(max = 20)
     @Column(name = "emisor_nif")
     private String emisorNif = "44372738L";
     
+    @jakarta.validation.constraints.Size(max = 255)
     @Column(name = "emisor_direccion")
     private String emisorDireccion = "C/ Ingeniero Ruiz de Azua s/n Local 8";
     
+    @jakarta.validation.constraints.Size(max = 10)
     @Column(name = "emisor_codigo_postal")
     private String emisorCodigoPostal = "14006";
     
+    @jakarta.validation.constraints.Size(max = 100)
     @Column(name = "emisor_ciudad")
     private String emisorCiudad = "Córdoba";
     
+    @jakarta.validation.constraints.Size(max = 100)
     @Column(name = "emisor_provincia")
     private String emisorProvincia = "Córdoba";
     
+    @jakarta.validation.constraints.Size(max = 20)
     @Column(name = "emisor_telefono")
     private String emisorTelefono = "";
     
+    @jakarta.validation.constraints.Email @jakarta.validation.constraints.Size(max = 150)
     @Column(name = "emisor_email")
     private String emisorEmail = "";
     
+    @jakarta.validation.constraints.Size(max = 255)
     @Column(name = "emisor_web")
     private String emisorWeb = "";
 
     // ========================================
     // LOGO
     // ========================================
+    @jakarta.validation.constraints.Size(max = 1_000_000, message = "El logo no puede superar ~700 KB") @jakarta.validation.constraints.Pattern(regexp = "^$|^data:image/(png|jpe?g|svg\\+xml|webp);base64,[A-Za-z0-9+/=\\s]+$|^[A-Za-z0-9+/=\\s]+$", message = "El logo debe ser una imagen en base64")
     @Column(name = "logo_base64", columnDefinition = "LONGTEXT")
     private String logoBase64 = "";
     
+    @jakarta.validation.constraints.Min(10) @jakarta.validation.constraints.Max(1000)
     @Column(name = "logo_ancho")
     private Integer logoAncho = 150;
     
+    @jakarta.validation.constraints.Min(10) @jakarta.validation.constraints.Max(1000)
     @Column(name = "logo_alto")
     private Integer logoAlto = 60;
 
     // ========================================
     // COLORES
     // ========================================
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color hexadecimal inválido (#RRGGBB)")
     @Column(name = "color_primario")
     private String colorPrimario = "#2196F3";
     
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color hexadecimal inválido (#RRGGBB)")
     @Column(name = "color_secundario")
     private String colorSecundario = "#1976D2";
     
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color hexadecimal inválido (#RRGGBB)")
     @Column(name = "color_texto")
     private String colorTexto = "#333333";
     
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color hexadecimal inválido (#RRGGBB)")
     @Column(name = "color_texto_claro")
     private String colorTextoClaro = "#666666";
     
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color hexadecimal inválido (#RRGGBB)")
     @Column(name = "color_fondo")
     private String colorFondo = "#FFFFFF";
     
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color hexadecimal inválido (#RRGGBB)")
     @Column(name = "color_fondo_alt")
     private String colorFondoAlt = "#F5F5F5";
     
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color hexadecimal inválido (#RRGGBB)")
     @Column(name = "color_borde")
     private String colorBorde = "#E0E0E0";
     
+    @jakarta.validation.constraints.Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color hexadecimal inválido (#RRGGBB)")
     @Column(name = "color_exito")
     private String colorExito = "#4CAF50";
 
     // ========================================
     // TEXTOS
     // ========================================
+    @jakarta.validation.constraints.Size(max = 100)
     @Column(name = "titulo_factura")
     private String tituloFactura = "FACTURA";
     
+    @jakarta.validation.constraints.Size(max = 100)
     @Column(name = "titulo_factura_simplificada")
     private String tituloFacturaSimplificada = "FACTURA SIMPLIFICADA";
     
+    @jakarta.validation.constraints.Size(max = 2000)
     @Column(name = "pie_factura", columnDefinition = "TEXT")
     private String pieFactura = "";
     
+    @jakarta.validation.constraints.Size(max = 255)
     @Column(name = "condiciones_pago")
     private String condicionesPago = "Pago al contado";
     
+    @jakarta.validation.constraints.Size(max = 42)
     @Column(name = "cuenta_bancaria")
     private String cuentaBancaria = "";
     
+    @jakarta.validation.constraints.Size(max = 255)
     @Column(name = "texto_gracias")
     private String textoGracias = "Gracias por confiar en nosotros";
     
+    @jakarta.validation.constraints.Size(max = 255)
     @Column(name = "texto_iva")
     private String textoIva = "IVA incluido según normativa vigente";
 

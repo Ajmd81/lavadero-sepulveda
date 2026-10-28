@@ -98,6 +98,14 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Motivo por el que se cerró la sesión (lo añade AuthContext / api.js a la URL)
+  const [avisoSesion] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('inactividad')) return 'Tu sesión se cerró tras 30 minutos sin actividad.';
+    if (params.has('expirada')) return 'Tu sesión ha caducado. Vuelve a iniciar sesión.';
+    return null;
+  });
+
   useEffect(() => {
     if (!bloqueadoHasta) return;
     const intervalo = setInterval(() => {
@@ -207,6 +215,13 @@ const Login = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-blue-700 bg-clip-text text-transparent mb-1">Lavadero Sepúlveda</h1>
             <p className="text-slate-600 font-medium text-sm">CRM Administrativo</p>
           </div>
+
+          {avisoSesion && !error && (
+            <div className="mb-4 bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500 rounded p-3 flex items-start gap-2 shadow-sm">
+              <Clock className="text-blue-500 flex-shrink-0 mt-0.5" size={18} />
+              <p className="text-xs text-blue-800">{avisoSesion}</p>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 animate-shake">

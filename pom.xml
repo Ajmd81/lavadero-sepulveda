@@ -102,6 +102,13 @@
             <version>8.10.1</version>
         </dependency>
 
+        <!-- Caché con expiración para los buckets de rate limiting y la lista de tokens revocados
+             (evita que los mapas en memoria crezcan sin límite). Versión gestionada por Spring Boot. -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- JWT — JJWT (librería estándar para Spring Boot) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

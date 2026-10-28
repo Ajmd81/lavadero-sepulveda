@@ -1,5 +1,7 @@
 package com.lavaderosepulveda.app.controller.api;
 
+import jakarta.validation.Valid;
+
 import com.lavaderosepulveda.app.dto.facturacion.GastoDTO;
 
 import com.lavaderosepulveda.app.service.facturacion.GastoService;
@@ -68,12 +70,12 @@ public class GastoApiController {
     }
 
     @PostMapping
-    public ResponseEntity<GastoDTO> crear(@RequestBody GastoDTO dto) {
+    public ResponseEntity<GastoDTO> crear(@Valid @RequestBody GastoDTO dto) {
         return ResponseEntity.ok(gastoService.crear(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GastoDTO> actualizar(@PathVariable Long id, @RequestBody GastoDTO dto) {
+    public ResponseEntity<GastoDTO> actualizar(@PathVariable Long id, @Valid @RequestBody GastoDTO dto) {
         return ResponseEntity.ok(gastoService.actualizar(id, dto));
     }
 

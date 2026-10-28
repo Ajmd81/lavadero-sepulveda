@@ -143,31 +143,46 @@ public class Modelo303BoeService {
 
     /** DTO de entrada para el endpoint POST de exportación completa. */
     public static class Modelo303Datos {
+        @jakarta.validation.constraints.NotBlank(message = "El NIF es obligatorio")
+        @jakarta.validation.constraints.Pattern(regexp = "^[A-Za-z0-9\\-\\s]{8,12}$", message = "NIF con formato inválido")
         public String nif;
         /** Nombre de pila, o apellidos y nombre completos si no se envía {@code apellidos}. */
+        @jakarta.validation.constraints.Size(max = 120)
         public String nombre;
         /** Opcional: apellidos por separado. */
+        @jakarta.validation.constraints.Size(max = 120)
         public String apellidos;
+        @jakarta.validation.constraints.Min(2000) @jakarta.validation.constraints.Max(2100)
         public int    ejercicio;
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Pattern(regexp = "^[1-4]T$", message = "Periodo debe ser 1T, 2T, 3T o 4T")
         public String periodo;          // "1T" | "2T" | "3T" | "4T"
 
         // Repercutido (ventas)
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal baseRep4,  cuotaRep4;
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal baseRep10, cuotaRep10;
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal baseRep21, cuotaRep21;
 
         // Soportado (gastos corrientes)
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal baseSop4,  cuotaSop4;
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal baseSop10, cuotaSop10;
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal baseSop21, cuotaSop21;
 
         // Bienes de inversión
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal baseInversion, cuotaInversion;
 
         /** [110] Cuotas a compensar pendientes de trimestres anteriores. */
+        @jakarta.validation.constraints.Digits(integer = 12, fraction = 4)
         public BigDecimal cuotasCompensarPendientes;
 
         /** Opcional: IBAN para domiciliar el ingreso o recibir la devolución. */
+        @jakarta.validation.constraints.Pattern(regexp = "^$|^[A-Za-z]{2}[0-9A-Za-z\\s]{13,40}$", message = "IBAN con formato inválido")
         public String iban;
 
         /** Solo 4T: pedir devolución si el resultado es negativo (requiere IBAN). */
