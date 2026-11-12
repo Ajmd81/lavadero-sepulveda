@@ -5,23 +5,153 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Lavadero de Coches a Mano en Córdoba | Lavadero Sepúlveda</title>
-    <meta name="description" content="Lavadero de coches a mano en Córdoba, junto al Parque de la Asomadilla. Lavado con ozono sin químicos, tapicería y encerado. Desde 13€. Reserva tu hora online.">
+    <meta name="description" content="Tu coche impecable a mano, en tu hora exacta y sin esperas en Córdoba. Más de 25 años cuidando vehículos con tecnología de ozono 100% libre de químicos.">
     <link rel="canonical" href="https://www.lavaderosepulveda.es/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_ES">
     <meta property="og:site_name" content="Lavadero Sepúlveda">
     <meta property="og:title" content="Lavadero de Coches a Mano en Córdoba | Lavadero Sepúlveda">
-    <meta property="og:description" content="Lavadero de coches a mano en Córdoba, junto al Parque de la Asomadilla. Lavado con ozono sin químicos, tapicería y encerado. Desde 13€. Reserva tu hora online.">
+    <meta property="og:description" content="Más de 25 años cuidando vehículos con tecnología de ozono 100% libre de químicos. Cero colas. Reserva tu turno en 1 minuto.">
     <meta property="og:url" content="https://www.lavaderosepulveda.es/">
     <meta property="og:image" content="https://www.lavaderosepulveda.es/images/Logo.jpg">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:site" content="@LavaSepulveda">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="icon" type="image/png" th:href="@{/images/favicon.png?v=2}">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-dominante: #FFFFFF;
+            --color-fondo-suave: #F8FAFC;
+            --color-secundario: #0099FF;
+            --color-acento-ozono: #0284C7;
+            --color-ozono-suave: #E0F2FE;
+            --color-cta-esmeralda: #10B981;
+            --color-cta-hover: #059669;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif !important;
+            background-color: var(--color-dominante) !important;
+            color: var(--color-secundario) !important;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, .logo-text, .price, .card-title, .section-title {
+            font-family: 'Montserrat', sans-serif !important;
+            color: var(--color-secundario);
+        }
+
+        h1 { font-weight: 800 !important; }
+        h2, h3 { font-weight: 700 !important; }
+
+        header {
+            background-color: var(--color-secundario) !important;
+            color: var(--color-dominante) !important;
+        }
+        header .logo-text {
+            color: var(--color-dominante) !important;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #0099FF 0%, #d3dfe6 100%) !important;
+            color: var(--color-dominante) !important;
+        }
+        .hero h1, .hero p {
+            color: var(--color-dominante) !important;
+        }
+
+        /* Botones principales CTA en Verde Esmeralda (#10B981) */
+        .btn, button[type="submit"], .btn-cta {
+            background-color: var(--color-cta-esmeralda) !important;
+            color: var(--color-dominante) !important;
+            font-family: 'Montserrat', sans-serif !important;
+            font-weight: 700 !important;
+            border: none !important;
+            border-radius: 6px;
+            padding: 12px 24px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .btn:hover, button[type="submit"]:hover, .btn-cta:hover {
+            background-color: var(--color-cta-hover) !important;
+            transform: translateY(-1px);
+        }
+
+        header .btn-white {
+            background-color: transparent !important;
+            color: var(--color-dominante) !important;
+            border: 1px solid rgba(255,255,255,0.25) !important;
+            padding: 8px 14px;
+            font-weight: 600 !important;
+        }
+        header .btn-white:hover {
+            background-color: var(--color-acento-ozono) !important;
+            border-color: var(--color-acento-ozono) !important;
+        }
+
+        .hero .btn-white {
+            background-color: var(--color-cta-esmeralda) !important;
+            color: var(--color-dominante) !important;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+        }
+        .hero .btn-whatsapp {
+            background-color: var(--color-dominante) !important;
+            color: var(--color-secundario) !important;
+            margin-left: 10px;
+        }
+        .hero .btn-whatsapp:hover {
+            background-color: var(--color-ozono-suave) !important;
+        }
+
+        /* Tarjetas y secciones suaves (#F8FAFC) */
+        .card, .section, .schedule-item, .producto-item, .cta-section, .special-note {
+            background-color: var(--color-fondo-suave) !important;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 10px;
+        }
+
+        /* Acentos Azul Ozono (#0284C7) y fondo suave (#E0F2FE) */
+        .badge-ozono, .vehicle-category-info, .note-info {
+            background-color: var(--color-ozono-suave) !important;
+            color: var(--color-secundario) !important;
+            border-left: 4px solid var(--color-acento-ozono) !important;
+        }
+        .price {
+            color: var(--color-acento-ozono) !important;
+            font-weight: 800 !important;
+        }
+        a {
+            color: var(--color-acento-ozono);
+        }
+
+        /* Cierre CTA sobre fondo #0F172A */
+        .cta-closing-dark {
+            background-color: var(--color-secundario) !important;
+            color: var(--color-dominante) !important;
+            padding: 48px 24px;
+            text-align: center;
+            border-radius: 12px;
+            margin: 40px 0;
+        }
+        .cta-closing-dark h2, .cta-closing-dark h3, .cta-closing-dark p {
+            color: var(--color-dominante) !important;
+        }
+
+        footer {
+            background-color: var(--color-secundario) !important;
+            color: var(--color-dominante) !important;
+        }
+        footer a {
+            color: var(--color-ozono-suave) !important;
+        }
+    </style>
+
     <script type="application/ld+json" th:inline="text">
     {
       "@context": "https://schema.org",
@@ -123,107 +253,117 @@
         </div>
     </header>
 
+    <!-- Sección 1: Cabecera Principal (Hero Section) -->
     <section class="hero">
         <div class="container">
-            <h1>Lavadero de Coches a Mano en Córdoba</h1>
-            <p>Tu hora exacta, sin esperas. Lavado con ozono, sin químicos, y más de 25 años de experiencia.</p>
-            <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+            <h1>Tu coche impecable a mano, en tu hora exacta y sin esperas en Córdoba</h1>
+            <p>Más de 25 años cuidando vehículos con tecnología de ozono 100% libre de químicos. Cero colas. Reserva tu turno en 1 minuto.</p>
+            <div style="margin-top: 20px;">
+                <a href="/nueva-cita" class="btn btn-white">Reservar Cita Online</a>
+                <a href="https://api.whatsapp.com/send?phone=34658527186&amp;text=Buenas%20%C2%BFme%20podr%C3%ADan%20dar%20cita%3F" target="_blank" rel="noopener" class="btn btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> Hablar por WhatsApp: 658 527 186
+                </a>
+            </div>
         </div>
     </section>
 
     <section class="container" id="servicios">
-        <h2>Quiénes Somos</h2>
+        <!-- Sección 2: Ventaja Competitiva -->
+        <h2>¿Por qué confiar el cuidado de tu vehículo a Lavadero Sepúlveda?</h2>
         <div class="about-us">
-            <p>Somos una empresa cordobesa con más de 25 años dedicados al <strong>lavado de coches a mano</strong> y al
-                mantenimiento integral de vehículos, utilizando las últimas tecnologías.</p>
-            <p>Desde Lavadero Sepúlveda sabemos la importancia que tiene su vehículo, por eso puede confiar plenamente
-                en que estará en las mejores manos hasta su entrega.</p>
-            <p>Con nuestro <strong>sistema de lavado con ozono</strong> no necesitamos utilizar productos químicos: así
-                ayudamos a proteger el medio ambiente y no dañamos ningún componente interior ni exterior de su vehículo,
-                prolongando su conservación y su aspecto original.</p>
-            <p>Además, el lavado con ozono es más rápido que el lavado con productos químicos, ya que no hay que esperar
-                a que el vehículo se seque.</p>
-            <p>Trabajamos con <strong>cita previa</strong>: reservas tu hora, llegas, te atendemos y listo. Sin colas,
-                sin esperar turno.</p>
-            <p>Estamos en la zona Norte Sierra de Córdoba, frente al campo del Deportivo y el Parque de la Asomadilla,
-                muy cerca de Santa Rosa, Valdeolleros y El Brillante.</p>
+            <div class="card" style="margin-bottom: 16px;">
+                <h3 class="card-title"><i class="fas fa-clock" style="color: #0284C7;"></i> Cero Esperas (Cita Previa)</h3>
+                <p>Llegas a tu hora exacta, te atendemos al momento y te entregamos el coche listo. Sin perder el tiempo en colas de última hora.</p>
+            </div>
+            <div class="card" style="margin-bottom: 16px;">
+                <h3 class="card-title"><i class="fas fa-leaf" style="color: #10B981;"></i> Limpieza con Ozono (Sin Químicos)</h3>
+                <p>Desinfección total que elimina virus, bacterias y malos olores. Al no usar productos químicos agresivos, protegemos el medio ambiente y los materiales originales de tu coche.</p>
+            </div>
+            <div class="card" style="margin-bottom: 24px;">
+                <h3 class="card-title"><i class="fas fa-award" style="color: #0284C7;"></i> Más de 25 Años de Experiencia Artesanal</h3>
+                <p>Más de un cuarto de siglo dedicados al lavado a mano y mantenimiento integral en la zona Norte de Córdoba con mimo y precisión.</p>
+            </div>
         </div>
-        <br>
-        <h2>Nuestros Servicios de Lavado en Córdoba</h2>
+
+        <!-- Sección 3: Servicios Principales y Tarifas -->
+        <h2>Nuestros Servicios Estrella</h2>
         <div class="card">
-            <h3 class="card-title">Lavado Completo</h3>
-            <p>Lavado exterior e interior completo: aspirado, limpieza de salpicadero, marcos y cristales.
-                Turismos desde 25€. <a href="/tarifas">Ver precios</a></p>
+            <h3 class="card-title">Lavado Completo <span class="price">(Turismos desde 25€)</span></h3>
+            <p>Lavado exterior e interior completo: aspirado profundo, limpieza de salpicadero, marcos y cristales.</p>
+            <a href="/nueva-cita" class="btn">Reservar Lavado Completo</a>
         </div>
 
         <div class="card">
-            <h3 class="card-title">Lavado Interior</h3>
-            <p>Aspirado, limpieza de salpicadero, marcos y cristales interiores. Turismos desde 17€.
-                <a href="/tarifas">Ver precios</a></p>
+            <h3 class="card-title">Lavado Exterior <span class="price">(Turismos desde 13€)</span></h3>
+            <p>Limpieza profesional de carrocería, llantas, marcos y cristales exteriores para un brillo impecable.</p>
+            <a href="/nueva-cita" class="btn">Reservar Lavado Exterior</a>
         </div>
 
         <div class="card">
-            <h3 class="card-title">Lavado Exterior</h3>
-            <p>Limpieza de carrocería, llantas, marcos y cristales exteriores. Turismos desde 13€.
-                <a href="/tarifas">Ver precios</a></p>
+            <h3 class="card-title">Limpieza de Tapicería <span class="price">(Desde 100€)</span></h3>
+            <p>Tratamiento especializado para eliminar manchas difíciles y malos olores (disponible de lunes a jueves).</p>
+            <a href="/tarifas" class="btn">Solicitar Información</a>
         </div>
 
         <div class="card">
-            <h3 class="card-title">Limpieza de Tapicería</h3>
-            <p>Limpieza especializada de la tapicería de tu coche para eliminar manchas y malos olores, con o sin
-                desmontar asientos. Desde 100€. <a href="/galeria">Ver antes y después</a></p>
+            <h3 class="card-title">Lavado Interior <span class="price">(Turismos desde 17€)</span></h3>
+            <p>Aspirado minucioso, limpieza de salpicadero, paneles, marcos y cristales interiores.</p>
+            <a href="/tarifas" class="btn">Ver Tarifas</a>
         </div>
 
         <div class="card">
-            <h3 class="card-title">Encerado a Mano</h3>
-            <p>Aplicación de cera de alta calidad para proteger la pintura y darle brillo a tu vehículo. 25€.</p>
+            <h3 class="card-title">Encerado a Mano <span class="price">(25€)</span></h3>
+            <p>Aplicación artesanal de cera de alta calidad para proteger la pintura y potenciar el brillo de tu vehículo.</p>
+            <a href="/nueva-cita" class="btn">Reservar Encerado</a>
         </div>
 
         <div class="card">
-            <h3 class="card-title">Tratamiento de Ozono</h3>
-            <p>Desinfección completa del interior del vehículo eliminando bacterias, virus y malos olores. 15€.</p>
+            <h3 class="card-title">Tratamiento de Ozono <span class="price">(15€)</span></h3>
+            <p>Desinfección ecológica completa del habitáculo eliminando bacterias, virus y olores persistentes sin químicos.</p>
+            <a href="/nueva-cita" class="btn">Reservar Tratamiento</a>
         </div>
 
-        <h2>Preguntas Frecuentes</h2>
+        <div class="badge-ozono" style="padding: 16px; border-radius: 8px; margin: 24px 0;">
+            <p style="margin: 0;"><strong>Nota:</strong> Plazas diarias limitadas por nuestro sistema de cita previa personalizada. Asegura tu hora con antelación. Consulta todas las categorías (SUV, monovolúmenes, furgonetas) en <a href="/tarifas">nuestras tarifas</a>.</p>
+        </div>
+
+        <!-- Sección 5: Preguntas Frecuentes -->
+        <h2>Resolvemos tus dudas rápidas</h2>
         <div class="card">
-            <h3 class="card-title">¿Cuánto cuesta lavar el coche a mano en Córdoba?</h3>
-            <p>Un lavado exterior de turismo cuesta 13€ y un lavado completo 25€. Para SUV, monovolúmenes y furgonetas
-                consulta nuestras <a href="/tarifas">tarifas</a>. Puede haber un suplemento de 3€ a 5€ por exceso de
-                suciedad o pelos de animal.</p>
+            <h3 class="card-title">¿Cómo funciona la reserva online y el pago?</h3>
+            <p>Eliges tu hora, recibes confirmación al instante y aseguras tu hueco con un cómodo pago anticipado del 50% por Bizum en las 24 horas siguientes.</p>
         </div>
         <div class="card">
-            <h3 class="card-title">¿Necesito cita previa?</h3>
-            <p>Sí. Trabajamos con cita previa para atenderte a tu hora exacta. Puedes <a href="/nueva-cita">reservar
-                online</a>, llamar al <a href="tel:+34658527186">658 527 186</a> o escribirnos por WhatsApp.</p>
+            <h3 class="card-title">¿Cuánto se tarda en realizar un lavado completo?</h3>
+            <p>Gracias a nuestro sistema de secado rápido por ozono, el tiempo de entrega se reduce notablemente frente a los métodos químicos tradicionales.</p>
         </div>
         <div class="card">
-            <h3 class="card-title">¿Cómo se confirma la reserva online?</h3>
-            <p>Al reservar recibirás un email con tu número de reserva. La cita se confirma con un pago anticipado del
-                50% por Bizum en las 24 horas siguientes.</p>
-        </div>
-        <div class="card">
-            <h3 class="card-title">¿Qué ventajas tiene el lavado con ozono?</h3>
-            <p>No usa productos químicos, no daña los materiales del coche, elimina bacterias y olores y es más rápido
-                porque no hay que esperar a que el vehículo se seque.</p>
+            <h3 class="card-title">¿Es necesario pedir cita previa?</h3>
+            <p>Sí, trabajamos exclusivamente con cita previa para garantizarte una atención individualizada y cero esperas. Puedes <a href="/nueva-cita">reservar online</a> o escribirnos por WhatsApp.</p>
         </div>
         <div class="card">
             <h3 class="card-title">¿Cuándo se hace la limpieza de tapicería?</h3>
-            <p>La limpieza de tapicería se realiza de lunes a jueves a las 8:00 y tiene una duración aproximada de 24
-                horas.</p>
+            <p>La limpieza de tapicería se realiza de lunes a jueves a las 8:00 y tiene una duración aproximada de 24 horas.</p>
         </div>
 
-        <h2 id="contacto">Dónde Encontrarnos</h2>
+        <!-- Sección 4: Ubicación y Contacto Directo -->
+        <h2 id="contacto">¿Dónde estamos en Córdoba?</h2>
         <div class="location">
-            <p>Puede encontrarnos en C/Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba, <br>esquina con C/Sor Ángela
-                de la Cruz, <br>frente al campo de fútbol del Deportivo Córdoba y el Parque de la Asomadilla.</p>
-            <p>Teléfono y WhatsApp: <a href="tel:+34658527186">658 527 186</a> ·
-                <a href="/horario">Consultar horario</a></p>
+            <p><strong>Dirección:</strong> C/ Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba (Esquina con C/ Sor Ángela de la Cruz). Frente al campo de fútbol del Deportivo Córdoba y el Parque de la Asomadilla (zona Norte Sierra, junto a Santa Rosa, Valdeolleros y El Brillante).</p>
+            <p><strong>Teléfono y WhatsApp directo:</strong> <a href="tel:+34658527186"><strong>658 527 186</strong></a> · <a href="/horario">Consultar horario</a></p>
             <div class="map-container">
                 <iframe title="Mapa de ubicación de Lavadero Sepúlveda en Córdoba"
                     src="https://maps.google.com/maps?q=Lavadero+Sepulveda+Cordoba&t=&z=15&ie=UTF8&iwloc=&output=embed"
-                    width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
+                    width="100%" height="300" style="border:0; border-radius: 8px;" allowfullscreen="" loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
+        </div>
+
+        <!-- Sección 6: Cierre y Llamada a la Acción Final -->
+        <div class="cta-closing-dark">
+            <h2>¿Cansado de perder el tiempo esperando para lavar tu coche?</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 24px;">Reserva tu cita previa ahora y asegura tu hueco esta semana.</p>
+            <a href="/nueva-cita" class="btn">Reservar mi Cita Online Ahora</a>
         </div>
     </section>
 
@@ -231,8 +371,8 @@
         <div class="container">
             <div class="contact-info">
                 <p>C/Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba</p>
-                <p>Teléfono: <a href="tel:+34658527186" style="color: white;">658 527 186</a></p>
-                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es" style="color: white;">contacto@lavaderosepulveda.es</a></p>
+                <p>Teléfono: <a href="tel:+34658527186">658 527 186</a></p>
+                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es">contacto@lavaderosepulveda.es</a></p>
             </div>
             <div class="social-links">
                 <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank" rel="noopener"><i class="fab fa-facebook-f" aria-hidden="true"></i> Facebook</a>
@@ -240,16 +380,12 @@
                 <a href="https://www.instagram.com/lavaderosepulveda" target="_blank" rel="noopener"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</a>
             </div>
             <p>&copy; <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> Lavadero Sepúlveda - Todos los derechos reservados</p>
-            <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
+            <p><a href="/policy" style="text-decoration: underline;">Política de Privacidad</a></p>
         </div>
     </footer>
 
-    <!-- ============================================================ -->
     <!-- CHATBOT WIDGET -->
-    <!-- ============================================================ -->
-
     <link rel="stylesheet" th:href="@{/css/chatbot.css}">
-
     <div id="chatbot-widget">
         <div id="chatbot-button" onclick="toggleChat()">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
@@ -265,17 +401,13 @@
                     <div class="avatar">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2">
-                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z">
-                            </path>
+                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </div>
                     <div class="header-text">
                         <h3>Asistente Virtual</h3>
-                        <p class="status">
-                            <span class="status-dot"></span>
-                            En línea
-                        </p>
+                        <p class="status"><span class="status-dot"></span> En línea</p>
                     </div>
                 </div>
                 <button onclick="toggleChat()" class="close-btn" type="button" aria-label="Cerrar chat">
@@ -286,11 +418,7 @@
                     </svg>
                 </button>
             </div>
-
-            <div id="chatbot-messages">
-
-            </div>
-
+            <div id="chatbot-messages"></div>
             <div id="chatbot-input">
                 <input type="text" id="user-input" placeholder="Escribe tu mensaje..." aria-label="Mensaje para el asistente"
                     onkeypress="handleKeyPress(event)" />
@@ -306,28 +434,18 @@
     </div>
 
     <script th:src="@{/js/chatbot-widget.js}"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const menuToggle = document.getElementById('menuToggle');
             const mainNav = document.getElementById('mainNav');
-
             if (menuToggle && mainNav) {
-                if (window.innerWidth <= 768) {
-                    mainNav.style.display = 'none';
-                }
-
+                if (window.innerWidth <= 768) mainNav.style.display = 'none';
                 menuToggle.addEventListener('click', function () {
                     const abierto = !(mainNav.style.display === 'none' || mainNav.style.display === '');
-                    if (!abierto) {
-                        mainNav.style.display = 'flex';
-                        mainNav.style.flexDirection = 'column';
-                    } else {
-                        mainNav.style.display = 'none';
-                    }
+                    mainNav.style.display = abierto ? 'none' : 'flex';
+                    if (!abierto) mainNav.style.flexDirection = 'column';
                     menuToggle.setAttribute('aria-expanded', String(!abierto));
                 });
-
                 window.addEventListener('resize', function () {
                     if (window.innerWidth > 768) {
                         mainNav.style.display = 'flex';
@@ -340,7 +458,5 @@
             }
         });
     </script>
-
 </body>
-
 </html>

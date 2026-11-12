@@ -5,24 +5,154 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Precios de Lavado de Coches en Córdoba – Tarifas | Lavadero Sepúlveda</title>
-    <meta name="description" content="Precios del lavado de coches a mano en Córdoba: exterior desde 13€, completo desde 25€. Tarifas para turismos, SUV, furgonetas, tapicería y encerado.">
+    <meta name="description" content="Tarifas transparentes de lavado a mano con ozono en Córdoba: exterior desde 13€, completo desde 25€. Plazas limitadas con cita previa.">
     <link rel="canonical" href="https://www.lavaderosepulveda.es/tarifas">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_ES">
     <meta property="og:site_name" content="Lavadero Sepúlveda">
     <meta property="og:title" content="Precios de Lavado de Coches en Córdoba – Tarifas | Lavadero Sepúlveda">
-    <meta property="og:description" content="Precios del lavado de coches a mano en Córdoba: exterior desde 13€, completo desde 25€. Tarifas para turismos, SUV, furgonetas, tapicería y encerado.">
+    <meta property="og:description" content="Tarifas transparentes de lavado a mano con ozono en Córdoba: exterior desde 13€, completo desde 25€. Plazas limitadas con cita previa.">
     <meta property="og:url" content="https://www.lavaderosepulveda.es/tarifas">
     <meta property="og:image" content="https://www.lavaderosepulveda.es/images/Logo.jpg">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:site" content="@LavaSepulveda">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="stylesheet" th:href="@{/css/tarifas.css}">
     <link rel="icon" type="image/png" th:href="@{/images/favicon.png?v=2}">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-dominante: #FFFFFF;
+            --color-fondo-suave: #F8FAFC;
+            --color-secundario: #0099FF;
+            --color-acento-ozono: #0284C7;
+            --color-ozono-suave: #E0F2FE;
+            --color-cta-esmeralda: #10B981;
+            --color-cta-hover: #059669;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif !important;
+            background-color: var(--color-dominante) !important;
+            color: var(--color-secundario) !important;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, .logo-text, .price, .card-title, .section-title {
+            font-family: 'Montserrat', sans-serif !important;
+            color: var(--color-secundario);
+        }
+
+        h1 { font-weight: 800 !important; }
+        h2, h3 { font-weight: 700 !important; }
+
+        header {
+            background-color: var(--color-secundario) !important;
+            color: var(--color-dominante) !important;
+        }
+        header .logo-text {
+            color: var(--color-dominante) !important;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #0F172A 0%, #0284C7 100%) !important;
+            color: var(--color-dominante) !important;
+        }
+        .hero h1, .hero p {
+            color: var(--color-dominante) !important;
+        }
+
+        /* Botones principales CTA en Verde Esmeralda (#10B981) */
+        .btn, button[type="submit"], .btn-cta {
+            background-color: var(--color-cta-esmeralda) !important;
+            color: var(--color-dominante) !important;
+            font-family: 'Montserrat', sans-serif !important;
+            font-weight: 700 !important;
+            border: none !important;
+            border-radius: 6px;
+            padding: 12px 24px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .btn:hover, button[type="submit"]:hover, .btn-cta:hover {
+            background-color: var(--color-cta-hover) !important;
+            transform: translateY(-1px);
+        }
+
+        header .btn-white {
+            background-color: transparent !important;
+            color: var(--color-dominante) !important;
+            border: 1px solid rgba(255,255,255,0.25) !important;
+            padding: 8px 14px;
+            font-weight: 600 !important;
+        }
+        header .btn-white:hover {
+            background-color: var(--color-acento-ozono) !important;
+            border-color: var(--color-acento-ozono) !important;
+        }
+
+        .hero .btn-white {
+            background-color: var(--color-cta-esmeralda) !important;
+            color: var(--color-dominante) !important;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+        }
+        .hero .btn-whatsapp {
+            background-color: var(--color-dominante) !important;
+            color: var(--color-secundario) !important;
+            margin-left: 10px;
+        }
+        .hero .btn-whatsapp:hover {
+            background-color: var(--color-ozono-suave) !important;
+        }
+
+        /* Tarjetas y secciones suaves (#F8FAFC) */
+        .card, .section, .schedule-item, .producto-item, .cta-section, .special-note {
+            background-color: var(--color-fondo-suave) !important;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 10px;
+        }
+
+        /* Acentos Azul Ozono (#0284C7) y fondo suave (#E0F2FE) */
+        .badge-ozono, .vehicle-category-info, .note-info {
+            background-color: var(--color-ozono-suave) !important;
+            color: var(--color-secundario) !important;
+            border-left: 4px solid var(--color-acento-ozono) !important;
+        }
+        .price {
+            color: var(--color-acento-ozono) !important;
+            font-weight: 800 !important;
+        }
+        a {
+            color: var(--color-acento-ozono);
+        }
+
+        /* Cierre CTA sobre fondo #0F172A */
+        .cta-closing-dark {
+            background-color: var(--color-secundario) !important;
+            color: var(--color-dominante) !important;
+            padding: 48px 24px;
+            text-align: center;
+            border-radius: 12px;
+            margin: 40px 0;
+        }
+        .cta-closing-dark h2, .cta-closing-dark h3, .cta-closing-dark p {
+            color: var(--color-dominante) !important;
+        }
+
+        footer {
+            background-color: var(--color-secundario) !important;
+            color: var(--color-dominante) !important;
+        }
+        footer a {
+            color: var(--color-ozono-suave) !important;
+        }
+    </style>
+
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -34,212 +164,28 @@
     "@type": "OfferCatalog",
     "name": "Tarifas de lavado de coches",
     "itemListElement": [
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Completo Turismo"
-        },
-        "price": "25.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Interior Turismo"
-        },
-        "price": "17.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Exterior Turismo"
-        },
-        "price": "13.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Completo Turismo Ranchera"
-        },
-        "price": "26.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Interior Turismo Ranchera"
-        },
-        "price": "18.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Exterior Turismo Ranchera"
-        },
-        "price": "13.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Completo SUV / Monovolumen"
-        },
-        "price": "30.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Interior SUV / Monovolumen"
-        },
-        "price": "20.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Exterior SUV / Monovolumen"
-        },
-        "price": "15.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Completo Todoterreno Grande"
-        },
-        "price": "35.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Interior Todoterreno Grande"
-        },
-        "price": "22.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Exterior Todoterreno Grande"
-        },
-        "price": "18.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Completo Furgoneta Pequeña"
-        },
-        "price": "30.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Interior Furgoneta Pequeña"
-        },
-        "price": "20.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Exterior Furgoneta Pequeña"
-        },
-        "price": "15.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Completo Furgoneta Grande"
-        },
-        "price": "35.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Interior Furgoneta Grande"
-        },
-        "price": "25.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Lavado Exterior Furgoneta Grande"
-        },
-        "price": "20.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Tratamiento de Ozono"
-        },
-        "price": "15.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Encerado de Vehículo a Mano"
-        },
-        "price": "25.00"
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Limpieza de tapicería sin desmontar asientos"
-        },
-        "priceSpecification": {
-          "@type": "PriceSpecification",
-          "minPrice": 100,
-          "priceCurrency": "EUR"
-        }
-      },
-      {
-        "@type": "Offer",
-        "priceCurrency": "EUR",
-        "itemOffered": {
-          "@type": "Service",
-          "name": "Limpieza de tapicería desmontando asientos"
-        },
-        "priceSpecification": {
-          "@type": "PriceSpecification",
-          "minPrice": 150,
-          "priceCurrency": "EUR"
-        }
-      }
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Completo Turismo" }, "price": "25.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Interior Turismo" }, "price": "17.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Exterior Turismo" }, "price": "13.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Completo Turismo Ranchera" }, "price": "26.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Interior Turismo Ranchera" }, "price": "18.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Exterior Turismo Ranchera" }, "price": "13.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Completo SUV / Monovolumen" }, "price": "30.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Interior SUV / Monovolumen" }, "price": "20.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Exterior SUV / Monovolumen" }, "price": "15.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Completo Todoterreno Grande" }, "price": "35.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Interior Todoterreno Grande" }, "price": "22.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Exterior Todoterreno Grande" }, "price": "18.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Completo Furgoneta Pequeña" }, "price": "30.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Interior Furgoneta Pequeña" }, "price": "20.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Exterior Furgoneta Pequeña" }, "price": "15.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Completo Furgoneta Grande" }, "price": "35.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Interior Furgoneta Grande" }, "price": "25.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Lavado Exterior Furgoneta Grande" }, "price": "20.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Tratamiento de Ozono" }, "price": "15.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Encerado de Vehículo a Mano" }, "price": "25.00" },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Limpieza de tapicería sin desmontar asientos" }, "priceSpecification": { "@type": "PriceSpecification", "minPrice": 100, "priceCurrency": "EUR" } },
+      { "@type": "Offer", "priceCurrency": "EUR", "itemOffered": { "@type": "Service", "name": "Limpieza de tapicería desmontando asientos" }, "priceSpecification": { "@type": "PriceSpecification", "minPrice": 150, "priceCurrency": "EUR" } }
     ]
   }
 }
@@ -270,143 +216,84 @@
     <section class="hero">
         <div class="container">
             <h1>Precios del Lavado de Coches en Córdoba</h1>
-            <p>Conoce nuestras tarifas y reserva el servicio que mejor se adapte a tu vehículo.</p>
-            <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
+            <p>Lavado artesanal con tecnología de ozono 100% libre de químicos. Plazas diarias limitadas con cita previa.</p>
+            <div style="margin-top: 20px;">
+                <a href="/nueva-cita" class="btn btn-white">Reservar Cita Online</a>
+                <a href="https://api.whatsapp.com/send?phone=34658527186&amp;text=Buenas%20%C2%BFme%20podr%C3%ADan%20dar%20cita%3F" target="_blank" rel="noopener" class="btn btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> Hablar por WhatsApp: 658 527 186
+                </a>
+            </div>
         </div>
     </section>
 
     <section class="container">
         <div class="texto">
             <h2 class="title">Tarifa de Precios de Lavadero Sepúlveda</h2>
-            <p class="subtitle">*Los precios marcados pueden incrementarse entre 3€ y 5€ por exceso de suciedad o pelos de
-                animal. IVA incluido.</p>
+            <p class="subtitle">*Los precios marcados pueden incrementarse entre 3€ y 5€ por exceso de suciedad o pelos de animal. IVA incluido.</p>
         </div>
 
         <div class="price-grid">
             <div class="section">
                 <h3 class="section-title">Turismos</h3>
-                <div class="price-item">
-                    <span>Lavado Completo Turismo</span>
-                    <span class="price">25€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Interior Turismo</span>
-                    <span class="price">17€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Exterior Turismo</span>
-                    <span class="price">13€</span>
-                </div>
+                <div class="price-item"><span>Lavado Completo Turismo</span><span class="price">25€*</span></div>
+                <div class="price-item"><span>Lavado Interior Turismo</span><span class="price">17€*</span></div>
+                <div class="price-item"><span>Lavado Exterior Turismo</span><span class="price">13€</span></div>
             </div>
 
             <div class="section">
                 <h3 class="section-title">Turismos Ranchera</h3>
-                <div class="price-item">
-                    <span>Lavado Completo Turismo Ranchera</span>
-                    <span class="price">26€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Interior Turismo Ranchera</span>
-                    <span class="price">18€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Exterior Turismo Ranchera</span>
-                    <span class="price">13€</span>
-                </div>
+                <div class="price-item"><span>Lavado Completo Turismo Ranchera</span><span class="price">26€*</span></div>
+                <div class="price-item"><span>Lavado Interior Turismo Ranchera</span><span class="price">18€*</span></div>
+                <div class="price-item"><span>Lavado Exterior Turismo Ranchera</span><span class="price">13€</span></div>
             </div>
 
             <div class="section">
                 <h3 class="section-title">Monovolúmenes y Todoterrenos Pequeños o SUV</h3>
-                <div class="price-item">
-                    <span>Lavado Completo SUV / Monovolumen</span>
-                    <span class="price">30€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Interior SUV / Monovolumen</span>
-                    <span class="price">20€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Exterior SUV / Monovolumen</span>
-                    <span class="price">15€</span>
-                </div>
+                <div class="price-item"><span>Lavado Completo SUV / Monovolumen</span><span class="price">30€*</span></div>
+                <div class="price-item"><span>Lavado Interior SUV / Monovolumen</span><span class="price">20€*</span></div>
+                <div class="price-item"><span>Lavado Exterior SUV / Monovolumen</span><span class="price">15€</span></div>
             </div>
 
             <div class="section">
                 <h3 class="section-title">Monovolúmenes y Todoterrenos Grandes</h3>
-                <div class="price-item">
-                    <span>Lavado Completo Todoterreno Grande</span>
-                    <span class="price">35€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Interior Todoterreno Grande</span>
-                    <span class="price">22€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Exterior Todoterreno Grande</span>
-                    <span class="price">18€</span>
-                </div>
+                <div class="price-item"><span>Lavado Completo Todoterreno Grande</span><span class="price">35€*</span></div>
+                <div class="price-item"><span>Lavado Interior Todoterreno Grande</span><span class="price">22€*</span></div>
+                <div class="price-item"><span>Lavado Exterior Todoterreno Grande</span><span class="price">18€</span></div>
             </div>
 
             <div class="section">
                 <h3 class="section-title">Furgonetas Pequeñas</h3>
-                <div class="price-item">
-                    <span>Lavado Completo Furgoneta Pequeña</span>
-                    <span class="price">30€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Interior Furgoneta Pequeña</span>
-                    <span class="price">20€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Exterior Furgoneta Pequeña</span>
-                    <span class="price">15€</span>
-                </div>
+                <div class="price-item"><span>Lavado Completo Furgoneta Pequeña</span><span class="price">30€*</span></div>
+                <div class="price-item"><span>Lavado Interior Furgoneta Pequeña</span><span class="price">20€*</span></div>
+                <div class="price-item"><span>Lavado Exterior Furgoneta Pequeña</span><span class="price">15€</span></div>
             </div>
 
             <div class="section">
                 <h3 class="section-title">Furgonetas Grandes</h3>
-                <div class="price-item">
-                    <span>Lavado Completo Furgoneta Grande</span>
-                    <span class="price">35€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Interior Furgoneta Grande</span>
-                    <span class="price">25€*</span>
-                </div>
-                <div class="price-item">
-                    <span>Lavado Exterior Furgoneta Grande</span>
-                    <span class="price">20€</span>
-                </div>
+                <div class="price-item"><span>Lavado Completo Furgoneta Grande</span><span class="price">35€*</span></div>
+                <div class="price-item"><span>Lavado Interior Furgoneta Grande</span><span class="price">25€*</span></div>
+                <div class="price-item"><span>Lavado Exterior Furgoneta Grande</span><span class="price">20€</span></div>
             </div>
 
             <div class="section additional-services">
                 <h3 class="section-title">Servicios Adicionales</h3>
                 <div class="additional-services-grid">
-                    <div class="price-item">
-                        <span>Tratamiento de Ozono</span>
-                        <span class="price">15€</span>
-                    </div>
-                    <div class="price-item">
-                        <span>Encerado de Vehículo a Mano</span>
-                        <span class="price">25€</span>
-                    </div>
-                    <div class="price-item">
-                        <span>Limpieza de tapicería sin desmontar asientos</span>
-                        <span class="price">Desde 100€</span>
-                    </div>
-                    <div class="price-item">
-                        <span>Limpieza de tapicería desmontando asientos</span>
-                        <span class="price">Desde 150€</span>
-                    </div>
+                    <div class="price-item"><span>Tratamiento de Ozono</span><span class="price">15€</span></div>
+                    <div class="price-item"><span>Encerado de Vehículo a Mano</span><span class="price">25€</span></div>
+                    <div class="price-item"><span>Limpieza de tapicería sin desmontar asientos</span><span class="price">Desde 100€</span></div>
+                    <div class="price-item"><span>Limpieza de tapicería desmontando asientos</span><span class="price">Desde 150€</span></div>
                 </div>
             </div>
         </div>
 
-        <div class="cta-section">
-            <h3>¿Listo para reservar tu cita?</h3>
-            <p>Selecciona el servicio que necesitas y elige el día y la hora en nuestro <a href="/horario">horario</a>.
-                Puedes ver resultados reales en la <a href="/galeria">galería</a>.</p>
-            <a href="/nueva-cita" class="btn">Reservar Ahora</a>
+        <div class="badge-ozono" style="padding: 16px; border-radius: 8px; margin: 24px 0;">
+            <p style="margin: 0;"><strong>Nota recomendada:</strong> Plazas diarias limitadas por nuestro sistema de cita previa personalizada. Asegura tu hora con antelación.</p>
+        </div>
+
+        <div class="cta-closing-dark">
+            <h3>¿Cansado de perder el tiempo esperando para lavar tu coche?</h3>
+            <p>Selecciona el servicio que necesitas y elige el día y la hora en nuestro <a href="/horario" style="color: #E0F2FE; text-decoration: underline;">horario</a>. Mira resultados reales en la <a href="/galeria" style="color: #E0F2FE; text-decoration: underline;">galería</a>.</p>
+            <a href="/nueva-cita" class="btn">Reservar mi Cita Online Ahora</a>
         </div>
     </section>
 
@@ -414,8 +301,8 @@
         <div class="container">
             <div class="contact-info">
                 <p>C/Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba</p>
-                <p>Teléfono: <a href="tel:+34658527186" style="color: white;">658 527 186</a></p>
-                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es" style="color: white;">contacto@lavaderosepulveda.es</a></p>
+                <p>Teléfono: <a href="tel:+34658527186">658 527 186</a></p>
+                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es">contacto@lavaderosepulveda.es</a></p>
             </div>
             <div class="social-links">
                 <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank" rel="noopener"><i class="fab fa-facebook-f" aria-hidden="true"></i> Facebook</a>
@@ -423,7 +310,7 @@
                 <a href="https://www.instagram.com/lavaderosepulveda" target="_blank" rel="noopener"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</a>
             </div>
             <p>&copy; <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> Lavadero Sepúlveda - Todos los derechos reservados</p>
-            <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
+            <p><a href="/policy" style="text-decoration: underline;">Política de Privacidad</a></p>
         </div>
     </footer>
 
@@ -431,23 +318,14 @@
         document.addEventListener('DOMContentLoaded', function () {
             const menuToggle = document.getElementById('menuToggle');
             const mainNav = document.getElementById('mainNav');
-
             if (menuToggle && mainNav) {
-                if (window.innerWidth <= 768) {
-                    mainNav.style.display = 'none';
-                }
-
+                if (window.innerWidth <= 768) mainNav.style.display = 'none';
                 menuToggle.addEventListener('click', function () {
                     const abierto = !(mainNav.style.display === 'none' || mainNav.style.display === '');
-                    if (!abierto) {
-                        mainNav.style.display = 'flex';
-                        mainNav.style.flexDirection = 'column';
-                    } else {
-                        mainNav.style.display = 'none';
-                    }
+                    mainNav.style.display = abierto ? 'none' : 'flex';
+                    if (!abierto) mainNav.style.flexDirection = 'column';
                     menuToggle.setAttribute('aria-expanded', String(!abierto));
                 });
-
                 window.addEventListener('resize', function () {
                     if (window.innerWidth > 768) {
                         mainNav.style.display = 'flex';
@@ -460,7 +338,5 @@
             }
         });
     </script>
-
 </body>
-
 </html>
