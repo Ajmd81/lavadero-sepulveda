@@ -124,7 +124,7 @@ public class SecurityConfig {
                                 "/galeria",
                                 "/productos",
                                 "/tarifas",
-                                "/policy",
+                                "/policy"
                         ).permitAll()
                         
                         // 4️⃣ ESTÁTICOS
