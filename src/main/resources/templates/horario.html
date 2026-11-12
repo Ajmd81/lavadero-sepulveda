@@ -5,154 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Horario y Cita Previa – Lavadero de Coches en Córdoba | Lavadero Sepúlveda</title>
-    <meta name="description" content="Horario de Lavadero Sepúlveda en Córdoba: lunes a jueves de 8:00 a 15:00, viernes de 8:00 a 14:00 y sábados de 9:00 a 13:30. Cero esperas con cita previa.">
+    <meta name="description" content="Horario de Lavadero Sepúlveda en Córdoba: lunes a jueves de 8:00 a 15:00, viernes de 8:00 a 14:00 y sábados de 9:00 a 13:30. Con cita previa.">
     <link rel="canonical" href="https://www.lavaderosepulveda.es/horario">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_ES">
     <meta property="og:site_name" content="Lavadero Sepúlveda">
     <meta property="og:title" content="Horario y Cita Previa – Lavadero de Coches en Córdoba | Lavadero Sepúlveda">
-    <meta property="og:description" content="Horario de Lavadero Sepúlveda en Córdoba: lunes a jueves de 8:00 a 15:00, viernes de 8:00 a 14:00 y sábados de 9:00 a 13:30. Cero esperas con cita previa.">
+    <meta property="og:description" content="Horario de Lavadero Sepúlveda en Córdoba: lunes a jueves de 8:00 a 15:00, viernes de 8:00 a 14:00 y sábados de 9:00 a 13:30. Con cita previa.">
     <meta property="og:url" content="https://www.lavaderosepulveda.es/horario">
     <meta property="og:image" content="https://www.lavaderosepulveda.es/images/Logo.jpg">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:site" content="@LavaSepulveda">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="stylesheet" th:href="@{/css/horario.css}">
     <link rel="icon" type="image/png" th:href="@{/images/favicon.png?v=2}">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --color-dominante: #FFFFFF;
-            --color-fondo-suave: #F8FAFC;
-            --color-secundario: #0F172A;
-            --color-acento-ozono: #0284C7;
-            --color-ozono-suave: #E0F2FE;
-            --color-cta-esmeralda: #10B981;
-            --color-cta-hover: #059669;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif !important;
-            background-color: var(--color-dominante) !important;
-            color: var(--color-secundario) !important;
-            line-height: 1.6;
-        }
-
-        h1, h2, h3, h4, .logo-text, .price, .card-title, .section-title {
-            font-family: 'Montserrat', sans-serif !important;
-            color: var(--color-secundario);
-        }
-
-        h1 { font-weight: 800 !important; }
-        h2, h3 { font-weight: 700 !important; }
-
-        header {
-            background-color: var(--color-secundario) !important;
-            color: var(--color-dominante) !important;
-        }
-        header .logo-text {
-            color: var(--color-dominante) !important;
-        }
-
-        .hero {
-            background: linear-gradient(135deg, #0F172A 0%, #0284C7 100%) !important;
-            color: var(--color-dominante) !important;
-        }
-        .hero h1, .hero p {
-            color: var(--color-dominante) !important;
-        }
-
-        /* Botones principales CTA en Verde Esmeralda (#10B981) */
-        .btn, button[type="submit"], .btn-cta {
-            background-color: var(--color-cta-esmeralda) !important;
-            color: var(--color-dominante) !important;
-            font-family: 'Montserrat', sans-serif !important;
-            font-weight: 700 !important;
-            border: none !important;
-            border-radius: 6px;
-            padding: 12px 24px;
-            text-decoration: none;
-            display: inline-block;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-        }
-        .btn:hover, button[type="submit"]:hover, .btn-cta:hover {
-            background-color: var(--color-cta-hover) !important;
-            transform: translateY(-1px);
-        }
-
-        header .btn-white {
-            background-color: transparent !important;
-            color: var(--color-dominante) !important;
-            border: 1px solid rgba(255,255,255,0.25) !important;
-            padding: 8px 14px;
-            font-weight: 600 !important;
-        }
-        header .btn-white:hover {
-            background-color: var(--color-acento-ozono) !important;
-            border-color: var(--color-acento-ozono) !important;
-        }
-
-        .hero .btn-white {
-            background-color: var(--color-cta-esmeralda) !important;
-            color: var(--color-dominante) !important;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
-        }
-        .hero .btn-whatsapp {
-            background-color: var(--color-dominante) !important;
-            color: var(--color-secundario) !important;
-            margin-left: 10px;
-        }
-        .hero .btn-whatsapp:hover {
-            background-color: var(--color-ozono-suave) !important;
-        }
-
-        /* Tarjetas y secciones suaves (#F8FAFC) */
-        .card, .section, .schedule-item, .producto-item, .cta-section, .special-note {
-            background-color: var(--color-fondo-suave) !important;
-            border: 1px solid #E2E8F0 !important;
-            border-radius: 10px;
-        }
-
-        /* Acentos Azul Ozono (#0284C7) y fondo suave (#E0F2FE) */
-        .badge-ozono, .vehicle-category-info, .note-info {
-            background-color: var(--color-ozono-suave) !important;
-            color: var(--color-secundario) !important;
-            border-left: 4px solid var(--color-acento-ozono) !important;
-        }
-        .price {
-            color: var(--color-acento-ozono) !important;
-            font-weight: 800 !important;
-        }
-        a {
-            color: var(--color-acento-ozono);
-        }
-
-        /* Cierre CTA sobre fondo #0F172A */
-        .cta-closing-dark {
-            background-color: var(--color-secundario) !important;
-            color: var(--color-dominante) !important;
-            padding: 48px 24px;
-            text-align: center;
-            border-radius: 12px;
-            margin: 40px 0;
-        }
-        .cta-closing-dark h2, .cta-closing-dark h3, .cta-closing-dark p {
-            color: var(--color-dominante) !important;
-        }
-
-        footer {
-            background-color: var(--color-secundario) !important;
-            color: var(--color-dominante) !important;
-        }
-        footer a {
-            color: var(--color-ozono-suave) !important;
-        }
-    </style>
-
 </head>
 
 <body>
@@ -178,21 +48,16 @@
 
     <section class="hero">
         <div class="container">
-            <h1>Horario y Cita Previa en Córdoba</h1>
-            <p>Llegas a tu hora exacta, te atendemos al momento y te entregamos el coche listo. Cero colas.</p>
-            <div style="margin-top: 20px;">
-                <a href="/nueva-cita" class="btn btn-white">Reservar Cita Online</a>
-                <a href="https://api.whatsapp.com/send?phone=34658527186&amp;text=Buenas%20%C2%BFme%20podr%C3%ADan%20dar%20cita%3F" target="_blank" rel="noopener" class="btn btn-whatsapp">
-                    <i class="fab fa-whatsapp"></i> Hablar por WhatsApp: 658 527 186
-                </a>
-            </div>
+            <h1>Horario del Lavadero en Córdoba</h1>
+            <p>Consulta nuestro horario y reserva tu cita para lavar tu coche a mano en Córdoba, sin esperas.</p>
+            <a href="/nueva-cita" class="btn btn-white">Reservar Cita</a>
         </div>
     </section>
 
     <section class="container">
         <div class="schedule-container">
-            <div class="badge-ozono" style="padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-                <p style="margin: 0;">Trabajamos exclusivamente <strong>CON CITA PREVIA</strong> para garantizarte una atención individualizada y cero esperas.</p>
+            <div class="special-note">
+                <p>Estimados clientes, estaremos encantados de ofrecerles nuestros servicios <strong>CON CITA PREVIA</strong>.</p>
             </div>
 
             <h2>Nuestro Horario</h2>
@@ -221,17 +86,18 @@
                 <p>La limpieza de tapicería se realiza de lunes a jueves a las 8:00 y tiene una duración aproximada de 24 horas.</p>
             </div>
 
-            <div class="cta-closing-dark">
-                <h3>¿Cansado de perder el tiempo esperando para lavar tu coche?</h3>
-                <p>Eliges tu hora, recibes confirmación al instante y aseguras tu hueco. Consulta antes nuestras <a href="/tarifas" style="color: #E0F2FE; text-decoration: underline;">tarifas</a>.</p>
-                <a href="/nueva-cita" class="btn">Reservar mi Cita Online Ahora</a>
+            <div class="cita-previa">
+                <h3>Reserva tu cita</h3>
+                <p>Para ofrecerte el mejor servicio y evitar esperas, te recomendamos reservar tu cita con antelación.
+                    Consulta antes nuestras <a href="/tarifas">tarifas</a>.</p>
+                <a href="/nueva-cita" class="btn">Reservar Ahora</a>
             </div>
 
             <div class="special-note">
                 <p>También puedes contactarnos directamente por teléfono al <a href="tel:+34658527186"><strong>658 527 186</strong></a> o vía <a
                         href="https://api.whatsapp.com/send?phone=34658527186&amp;text=Buenas%20%C2%BFme%20podr%C3%ADan%20dar%20cita%3F"
                         target="_blank" rel="noopener">WhatsApp</a>.</p>
-                <p>Estamos en C/ Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba (Esquina con C/ Sor Ángela de la Cruz), frente al Parque de la Asomadilla.
+                <p>Estamos en C/Ingeniero Ruiz de Azua s/n Local 8, frente al Parque de la Asomadilla.
                     <a href="/#contacto">Ver mapa</a></p>
             </div>
         </div>
@@ -241,8 +107,8 @@
         <div class="container">
             <div class="contact-info">
                 <p>C/Ingeniero Ruiz de Azua s/n Local 8, 14006 Córdoba</p>
-                <p>Teléfono: <a href="tel:+34658527186">658 527 186</a></p>
-                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es">contacto@lavaderosepulveda.es</a></p>
+                <p>Teléfono: <a href="tel:+34658527186" style="color: white;">658 527 186</a></p>
+                <p>Email: <a href="mailto:contacto@lavaderosepulveda.es" style="color: white;">contacto@lavaderosepulveda.es</a></p>
             </div>
             <div class="social-links">
                 <a href="https://www.facebook.com/lavadero.sepulveda.96" target="_blank" rel="noopener"><i class="fab fa-facebook-f" aria-hidden="true"></i> Facebook</a>
@@ -250,7 +116,7 @@
                 <a href="https://www.instagram.com/lavaderosepulveda" target="_blank" rel="noopener"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</a>
             </div>
             <p>&copy; <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> Lavadero Sepúlveda - Todos los derechos reservados</p>
-            <p><a href="/policy" style="text-decoration: underline;">Política de Privacidad</a></p>
+            <p><a href="/policy" style="color: white; text-decoration: underline;">Política de Privacidad</a></p>
         </div>
     </footer>
 
@@ -258,14 +124,23 @@
         document.addEventListener('DOMContentLoaded', function () {
             const menuToggle = document.getElementById('menuToggle');
             const mainNav = document.getElementById('mainNav');
+
             if (menuToggle && mainNav) {
-                if (window.innerWidth <= 768) mainNav.style.display = 'none';
+                if (window.innerWidth <= 768) {
+                    mainNav.style.display = 'none';
+                }
+
                 menuToggle.addEventListener('click', function () {
                     const abierto = !(mainNav.style.display === 'none' || mainNav.style.display === '');
-                    mainNav.style.display = abierto ? 'none' : 'flex';
-                    if (!abierto) mainNav.style.flexDirection = 'column';
+                    if (!abierto) {
+                        mainNav.style.display = 'flex';
+                        mainNav.style.flexDirection = 'column';
+                    } else {
+                        mainNav.style.display = 'none';
+                    }
                     menuToggle.setAttribute('aria-expanded', String(!abierto));
                 });
+
                 window.addEventListener('resize', function () {
                     if (window.innerWidth > 768) {
                         mainNav.style.display = 'flex';
@@ -278,5 +153,7 @@
             }
         });
     </script>
+
 </body>
+
 </html>
