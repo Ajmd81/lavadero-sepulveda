@@ -7,6 +7,15 @@
     --color-text-light: #666;
     --color-success: #28a745;
     --color-error: #dc3545;
+
+    /* Paleta unificada de las páginas */
+    --color-dominante: #FFFFFF;
+    --color-fondo-suave: #F8FAFC;
+    --color-secundario: #0099FF;
+    --color-acento-ozono: #0284C7;
+    --color-ozono-suave: #E0F2FE;
+    --color-cta-esmeralda: #10B981;
+    --color-cta-hover: #059669;
 }
 
 * {
@@ -16,13 +25,30 @@
 }
 
 body {
-    font-family: 'Roboto', Arial, sans-serif;
-    background-color: var(--color-background);
-    color: var(--color-text);
+    font-family: 'Inter', 'Roboto', Arial, sans-serif;
+    background-color: var(--color-dominante);
+    color: var(--color-secundario);
     line-height: 1.6;
     margin: 0;
     padding: 0;
     font-size: 16px;
+}
+
+h1, h2, h3, h4, .logo-text, .price, .card-title, .section-title {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--color-secundario);
+}
+
+h1 {
+    font-weight: 800;
+}
+
+h2, h3 {
+    font-weight: 700;
+}
+
+a {
+    color: var(--color-acento-ozono);
 }
 
 .container {
@@ -34,8 +60,8 @@ body {
 
 /* Header y navegación */
 header {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: var(--color-secundario);
+    color: var(--color-dominante);
     padding: 15px 0;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     position: relative;
@@ -65,7 +91,7 @@ header .container {
 .logo-text {
     font-size: 1.5rem;
     font-weight: bold;
-    color: white;
+    color: var(--color-dominante);
 }
 
 nav {
@@ -75,23 +101,26 @@ nav {
     margin: 5px 0;
 }
 
-.btn {
+/* Botones principales CTA en Verde Esmeralda (#10B981) */
+.btn, button[type="submit"], .btn-cta {
     display: inline-block;
-    padding: 8px 16px;
-    background-color: var(--color-primary);
-    color: white;
+    padding: 12px 24px;
+    background-color: var(--color-cta-esmeralda);
+    color: var(--color-dominante);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
     text-decoration: none;
-    border-radius: 4px;
-    transition: background-color 0.3s, transform 0.2s;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
     border: none;
     cursor: pointer;
     font-size: 0.9rem;
     text-align: center;
 }
 
-.btn:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-2px);
+.btn:hover, button[type="submit"]:hover, .btn-cta:hover {
+    background-color: var(--color-cta-hover);
+    transform: translateY(-1px);
 }
 
 .btn-white {
@@ -101,6 +130,19 @@ nav {
 
 .btn-white:hover {
     background-color: #f0f0f0;
+}
+
+header .btn-white {
+    background-color: transparent;
+    color: var(--color-dominante);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 8px 14px;
+    font-weight: 600;
+}
+
+header .btn-white:hover {
+    background-color: var(--color-acento-ozono);
+    border-color: var(--color-acento-ozono);
 }
 
 /* Hamburger menu para móviles */
@@ -115,45 +157,152 @@ nav {
 
 /* Hero section */
 .hero {
-    background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
-    color: white;
+    background: linear-gradient(135deg, #0F172A 0%, #0284C7 100%);
+    color: var(--color-dominante);
     padding: 20px 0;
-    /* Reducido de 40px a 20px */
     text-align: center;
+}
+
+.hero.hero-home {
+    background: linear-gradient(135deg, #0099FF 0%, #d3dfe6 100%);
 }
 
 .hero h1 {
     font-size: 1.8rem;
-    /* Reducido de 2.2rem */
     margin-bottom: 10px;
-    /* Reducido de 15px */
+    color: var(--color-dominante);
 }
 
 .hero p {
     font-size: 1rem;
-    /* Reducido de 1.1rem */
     max-width: 700px;
     margin: 0 auto 15px;
-    /* Reducido de 25px a 15px */
+    color: var(--color-dominante);
+}
+
+.hero-actions {
+    margin-top: 20px;
+}
+
+.hero .btn-white {
+    background-color: var(--color-cta-esmeralda);
+    color: var(--color-dominante);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.hero .btn-whatsapp {
+    background-color: var(--color-dominante);
+    color: var(--color-secundario);
+    margin-left: 10px;
+}
+
+.hero .btn-whatsapp:hover {
+    background-color: var(--color-ozono-suave);
 }
 
 /* Cards y contenido */
+.card, .section, .schedule-item, .producto-item, .cta-section, .special-note {
+    background-color: var(--color-fondo-suave);
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+}
+
 .card {
-    background-color: white;
-    border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     padding: 20px;
     margin-bottom: 20px;
     margin-top: 30px;
 }
 
+.card-compact {
+    margin-bottom: 16px;
+}
+
+.card-compact-last {
+    margin-bottom: 24px;
+}
+
 .card-title {
-    color: var(--color-primary);
+    color: var(--color-secundario);
     font-size: 1.3rem;
     margin-top: 0;
     margin-bottom: 15px;
     border-bottom: 2px solid var(--color-primary-light);
     padding-bottom: 8px;
+}
+
+.icon-ozono {
+    color: #0284C7;
+}
+
+.icon-leaf {
+    color: #10B981;
+}
+
+/* Acentos Azul Ozono (#0284C7) y fondo suave (#E0F2FE) */
+.badge-ozono, .vehicle-category-info, .note-info {
+    background-color: var(--color-ozono-suave);
+    color: var(--color-secundario);
+    border-left: 4px solid var(--color-acento-ozono);
+}
+
+.badge-ozono-box {
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.badge-ozono-box p {
+    margin: 0;
+}
+
+.badge-ozono-banner {
+    padding: 16px;
+    border-radius: 8px;
+    margin: 24px 0;
+}
+
+.badge-ozono-banner p {
+    margin: 0;
+}
+
+.price {
+    color: var(--color-acento-ozono);
+    font-weight: 800;
+}
+
+/* Cierre CTA oscuro */
+.cta-closing-dark {
+    background-color: var(--color-secundario);
+    color: var(--color-dominante);
+    padding: 48px 24px;
+    text-align: center;
+    border-radius: 12px;
+    margin: 40px 0;
+}
+
+.cta-closing-dark h2, .cta-closing-dark h3, .cta-closing-dark p {
+    color: var(--color-dominante);
+}
+
+.cta-closing-dark .cta-lead {
+    font-size: 1.1rem;
+    margin-bottom: 24px;
+}
+
+.cta-closing-dark a:not(.btn) {
+    color: #E0F2FE;
+    text-decoration: underline;
+}
+
+.cta-closing-dark strong.highlight-ozono {
+    color: #E0F2FE;
+}
+
+.cta-closing-dark a.phone-highlight {
+    color: #E0F2FE;
+    font-weight: 700;
+    text-decoration: none;
 }
 
 /* Formularios */
@@ -185,6 +334,19 @@ textarea {
 
 .form-row .form-group {
     flex: 1;
+}
+
+.honeypot-field {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.hidden-initially {
+    display: none;
 }
 
 /* Alertas */
@@ -249,11 +411,19 @@ textarea {
 
 /* Footer */
 footer {
-    background-color: var(--color-primary-dark);
-    color: white;
+    background-color: var(--color-secundario);
+    color: var(--color-dominante);
     text-align: center;
     padding: 25px 0;
     margin-top: 40px;
+}
+
+footer a {
+    color: var(--color-ozono-suave);
+}
+
+footer .privacy-link {
+    text-decoration: underline;
 }
 
 .contact-info {
@@ -265,7 +435,7 @@ footer {
 }
 
 .social-links a {
-    color: white;
+    color: var(--color-ozono-suave);
     margin: 0 10px;
     text-decoration: none;
 }
@@ -302,7 +472,6 @@ footer {
     overflow: hidden;
     position: relative;
     padding-bottom: 56.25%;
-    /* Proporción 16:9 */
     height: 0;
 }
 
@@ -313,6 +482,7 @@ footer {
     width: 100%;
     height: 100%;
     border: 0;
+    border-radius: 8px;
 }
 
 /* Selector de tipo de vehículo */
@@ -356,8 +526,6 @@ footer {
     text-align: center;
     margin: 30px 0;
     padding: 25px 15px;
-    background-color: #e3f2fd;
-    border-radius: 8px;
 }
 
 /* Servicios Adicionales */
@@ -368,7 +536,6 @@ footer {
     align-items: center;
     text-align: center;
     box-sizing: border-box;
-    /* Asegura que el padding no afecte el ancho total */
 }
 
 .additional-services-grid {
@@ -380,13 +547,10 @@ footer {
 
 /* Estilos para información de categoría de vehículo */
 .vehicle-category-info {
-    background: #e8f4fd;
-    border: 1px solid #b8daff;
     border-radius: 5px;
     padding: 10px;
     margin: 10px 0;
     font-size: 14px;
-    color: #155724;
     display: none;
     position: relative;
     z-index: 1;
@@ -441,10 +605,8 @@ footer {
     padding: 12px 15px;
     background-color: rgba(255, 255, 255, 0.7);
     border: 1px solid #ffc107;
-    /* Agregar borde visible */
     border-radius: 6px;
     transition: all 0.2s ease;
-    /* DIMENSIONES FIJAS */
     width: 200px;
     height: 50px;
     min-width: 200px;
@@ -452,7 +614,6 @@ footer {
     min-height: 50px;
     max-height: 50px;
     box-sizing: border-box;
-    /* Evitar desbordamiento */
     overflow: hidden;
     position: relative;
 }
@@ -464,25 +625,20 @@ footer {
 
 #turismoToggle input[type="radio"] {
     margin: 0 8px 0 0;
-    /* Solo margen derecho */
     cursor: pointer;
     flex-shrink: 0;
     width: 16px;
-    /* Tamaño fijo */
     height: 16px;
     position: relative;
-    /* Asegurar posición relativa */
     z-index: 1;
 }
 
 #turismoToggle label span {
     flex: 1;
     text-align: left;
-    /* Alinear texto a la izquierda */
     line-height: 1.2;
     font-size: 14px;
     white-space: nowrap;
-    /* Evitar salto de línea */
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -496,9 +652,7 @@ footer {
 /* Estilos para la información de pago en el formulario */
 .note-info h4 {
     color: #dc3545;
-    /* Rojo */
     text-align: center;
-    /* Centrado */
     margin-top: 0;
     margin-bottom: 15px;
     font-size: 1.4rem;
@@ -507,7 +661,6 @@ footer {
 
 .note-info p {
     color: #333;
-    /* Texto normal */
     margin: 10px 0;
     font-size: 1rem;
     line-height: 1.6;
@@ -520,7 +673,6 @@ footer {
 }
 
 .note-info .payment-amount {
-    color: #333;
     font-size: 1.1rem;
     font-weight: bold;
 }
@@ -573,6 +725,8 @@ footer {
 
     nav {
         justify-content: center;
+        width: 100%;
+        flex-direction: column;
     }
 
     .form-row {
@@ -585,7 +739,6 @@ footer {
 
     .hero {
         padding: 15px 0;
-        /* Aún más compacto en móviles */
     }
 
     .hero h1 {
@@ -612,15 +765,15 @@ footer {
         right: 15px;
     }
 
-    nav {
-        width: 100%;
-        flex-direction: column;
-    }
-
     .btn {
         display: block;
         width: 100%;
         margin-bottom: 5px;
+    }
+
+    .hero .btn-whatsapp {
+        margin-left: 0;
+        margin-top: 8px;
     }
 
     /* Responsive para el toggle de turismo */
@@ -792,7 +945,7 @@ footer {
     }
 }
 
-/* ── Icono superpuesto en inputs de fecha ─────────────────────────────────── */
+/* Icono superpuesto en inputs de fecha */
 .input-icon-wrapper {
     position: relative;
     display: flex;
@@ -814,7 +967,6 @@ footer {
 
 /* Impresión */
 @media print {
-
     header,
     footer,
     .hero,

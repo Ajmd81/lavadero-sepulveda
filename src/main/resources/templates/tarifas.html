@@ -24,136 +24,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --color-dominante: #FFFFFF;
-            --color-fondo-suave: #F8FAFC;
-            --color-secundario: #0099FF;
-            --color-acento-ozono: #0284C7;
-            --color-ozono-suave: #E0F2FE;
-            --color-cta-esmeralda: #10B981;
-            --color-cta-hover: #059669;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif !important;
-            background-color: var(--color-dominante) !important;
-            color: var(--color-secundario) !important;
-            line-height: 1.6;
-        }
-
-        h1, h2, h3, h4, .logo-text, .price, .card-title, .section-title {
-            font-family: 'Montserrat', sans-serif !important;
-            color: var(--color-secundario);
-        }
-
-        h1 { font-weight: 800 !important; }
-        h2, h3 { font-weight: 700 !important; }
-
-        header {
-            background-color: var(--color-secundario) !important;
-            color: var(--color-dominante) !important;
-        }
-        header .logo-text {
-            color: var(--color-dominante) !important;
-        }
-
-        .hero {
-            background: linear-gradient(135deg, #0F172A 0%, #0284C7 100%) !important;
-            color: var(--color-dominante) !important;
-        }
-        .hero h1, .hero p {
-            color: var(--color-dominante) !important;
-        }
-
-        /* Botones principales CTA en Verde Esmeralda (#10B981) */
-        .btn, button[type="submit"], .btn-cta {
-            background-color: var(--color-cta-esmeralda) !important;
-            color: var(--color-dominante) !important;
-            font-family: 'Montserrat', sans-serif !important;
-            font-weight: 700 !important;
-            border: none !important;
-            border-radius: 6px;
-            padding: 12px 24px;
-            text-decoration: none;
-            display: inline-block;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-        }
-        .btn:hover, button[type="submit"]:hover, .btn-cta:hover {
-            background-color: var(--color-cta-hover) !important;
-            transform: translateY(-1px);
-        }
-
-        header .btn-white {
-            background-color: transparent !important;
-            color: var(--color-dominante) !important;
-            border: 1px solid rgba(255,255,255,0.25) !important;
-            padding: 8px 14px;
-            font-weight: 600 !important;
-        }
-        header .btn-white:hover {
-            background-color: var(--color-acento-ozono) !important;
-            border-color: var(--color-acento-ozono) !important;
-        }
-
-        .hero .btn-white {
-            background-color: var(--color-cta-esmeralda) !important;
-            color: var(--color-dominante) !important;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
-        }
-        .hero .btn-whatsapp {
-            background-color: var(--color-dominante) !important;
-            color: var(--color-secundario) !important;
-            margin-left: 10px;
-        }
-        .hero .btn-whatsapp:hover {
-            background-color: var(--color-ozono-suave) !important;
-        }
-
-        /* Tarjetas y secciones suaves (#F8FAFC) */
-        .card, .section, .schedule-item, .producto-item, .cta-section, .special-note {
-            background-color: var(--color-fondo-suave) !important;
-            border: 1px solid #E2E8F0 !important;
-            border-radius: 10px;
-        }
-
-        /* Acentos Azul Ozono (#0284C7) y fondo suave (#E0F2FE) */
-        .badge-ozono, .vehicle-category-info, .note-info {
-            background-color: var(--color-ozono-suave) !important;
-            color: var(--color-secundario) !important;
-            border-left: 4px solid var(--color-acento-ozono) !important;
-        }
-        .price {
-            color: var(--color-acento-ozono) !important;
-            font-weight: 800 !important;
-        }
-        a {
-            color: var(--color-acento-ozono);
-        }
-
-        /* Cierre CTA sobre fondo #0F172A */
-        .cta-closing-dark {
-            background-color: var(--color-secundario) !important;
-            color: var(--color-dominante) !important;
-            padding: 48px 24px;
-            text-align: center;
-            border-radius: 12px;
-            margin: 40px 0;
-        }
-        .cta-closing-dark h2, .cta-closing-dark h3, .cta-closing-dark p {
-            color: var(--color-dominante) !important;
-        }
-
-        footer {
-            background-color: var(--color-secundario) !important;
-            color: var(--color-dominante) !important;
-        }
-        footer a {
-            color: var(--color-ozono-suave) !important;
-        }
-    </style>
-
-    <script type="application/ld+json">
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "AutoWash",
@@ -217,7 +88,7 @@
         <div class="container">
             <h1>Precios del Lavado de Coches en Córdoba</h1>
             <p>Lavado artesanal con tecnología de ozono 100% libre de químicos. Plazas diarias limitadas con cita previa.</p>
-            <div style="margin-top: 20px;">
+            <div class="hero-actions">
                 <a href="/nueva-cita" class="btn btn-white">Reservar Cita Online</a>
                 <a href="https://api.whatsapp.com/send?phone=34658527186&amp;text=Buenas%20%C2%BFme%20podr%C3%ADan%20dar%20cita%3F" target="_blank" rel="noopener" class="btn btn-whatsapp">
                     <i class="fab fa-whatsapp"></i> Hablar por WhatsApp: 658 527 186
@@ -286,13 +157,13 @@
             </div>
         </div>
 
-        <div class="badge-ozono" style="padding: 16px; border-radius: 8px; margin: 24px 0;">
-            <p style="margin: 0;"><strong>Nota recomendada:</strong> Plazas diarias limitadas por nuestro sistema de cita previa personalizada. Asegura tu hora con antelación.</p>
+        <div class="badge-ozono badge-ozono-banner">
+            <p><strong>Nota recomendada:</strong> Plazas diarias limitadas por nuestro sistema de cita previa personalizada. Asegura tu hora con antelación.</p>
         </div>
 
         <div class="cta-closing-dark">
             <h3>¿Cansado de perder el tiempo esperando para lavar tu coche?</h3>
-            <p>Selecciona el servicio que necesitas y elige el día y la hora en nuestro <a href="/horario" style="color: #E0F2FE; text-decoration: underline;">horario</a>. Mira resultados reales en la <a href="/galeria" style="color: #E0F2FE; text-decoration: underline;">galería</a>.</p>
+            <p>Selecciona el servicio que necesitas y elige el día y la hora en nuestro <a href="/horario" >horario</a>. Mira resultados reales en la <a href="/galeria" >galería</a>.</p>
             <a href="/nueva-cita" class="btn">Reservar mi Cita Online Ahora</a>
         </div>
     </section>
@@ -310,7 +181,7 @@
                 <a href="https://www.instagram.com/lavaderosepulveda" target="_blank" rel="noopener"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</a>
             </div>
             <p>&copy; <span th:text="${#temporals.year(#temporals.createNow())}">2026</span> Lavadero Sepúlveda - Todos los derechos reservados</p>
-            <p><a href="/policy" style="text-decoration: underline;">Política de Privacidad</a></p>
+            <p><a href="/policy" class="privacy-link">Política de Privacidad</a></p>
         </div>
     </footer>
 
