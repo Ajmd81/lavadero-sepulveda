@@ -124,7 +124,7 @@ public class SecurityConfig {
                                 "/productos",
                                 "/tarifas",
                                 "/policy",
-                                "/chatbot"
+                                "api/chatbot"
                         ).permitAll()
                         
                         // 4️⃣ ESTÁTICOS
