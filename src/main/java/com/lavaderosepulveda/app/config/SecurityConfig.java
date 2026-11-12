@@ -106,7 +106,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/citas").permitAll()  // GET citas públicas
                         .requestMatchers("/api/citas/horarios-disponibles").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/citas").permitAll()  // POST crear cita pública
-                        .requestMatchers("/api/chatbot/message").permitAll
+                        .requestMatchers("/api/chatbot/message").permitAll()
                         
                         // 2️⃣ PROTEGIDOS - Todo /api/** restante requiere JWT
                         // ─────────────────────────────────────────────────
